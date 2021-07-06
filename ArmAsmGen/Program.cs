@@ -8,6 +8,7 @@ namespace ArmAsmGen
     class Program
     {
         static int iterations = 1000000000 / 2;
+        static int structTestIterations = 5000000;
 
         static void Main(string[] args)
         {
@@ -16,7 +17,7 @@ namespace ArmAsmGen
             /*int[] robTestCounts = new[] { 4, 8, 16, 24, 32, 48, 64, 72, 80, 96, 100, 112, 128, 140, 160, 192, 200, 
                 220, 224, 225, 230, 256, 300, 324, 356, 384, 512, 768 };*/
 
-            int robSizeMax = 768;
+            int robSizeMax = 200;
             int robSizeMin = 4;
             int[] robTestCounts = new int[robSizeMax - robSizeMin + 1];
             for (int i = robSizeMin; i < robSizeMax; i++)
@@ -24,7 +25,7 @@ namespace ArmAsmGen
                 robTestCounts[i - robSizeMin] = i;
             }
 
-            int rfSizeMax = 512;
+            int rfSizeMax = 200;
             int rfSizeMin = 4;
             List<int> rfTestCountsList = new List<int>();
             for (int i = rfSizeMin; i < rfSizeMax; i += 4)
@@ -43,12 +44,12 @@ namespace ArmAsmGen
             StringBuilder x86NasmFile = new StringBuilder();
 
             // Generate C file for linux
-            cSourceFile.AppendLine("#include <stdio.h>\n#include<stdint.h>\n#include<sys/time.h>\n#include <stdlib.h>\n");
+            cSourceFile.AppendLine("#include <stdio.h>\n#include<stdint.h>\n#include<sys/time.h>\n#include <stdlib.h>\n#include <string.h>\n");
             GenerateFunctionDeclarations(cSourceFile, branchCounts, paddings, robTestCounts, rfTestCounts);
             cSourceFile.AppendLine("int main(int argc, char *argv[]) {");
             cSourceFile.AppendLine("  struct timeval startTv, endTv;");
             cSourceFile.AppendLine("  struct timezone startTz, endTz;");
-            cSourceFile.AppendLine("  uint64_t time_diff_ms, iterations = " + iterations + ";");
+            cSourceFile.AppendLine($"  uint64_t time_diff_ms, iterations = {iterations}, structIterations = {structTestIterations};");
             cSourceFile.AppendLine("  float latency;");
             GenerateLatencyTestArray(cSourceFile);
 
@@ -78,7 +79,7 @@ namespace ArmAsmGen
             GenerateVsFunctionDeclarations(vsCSourceFile, branchCounts, paddings, robTestCounts, rfTestCounts);
             vsCSourceFile.AppendLine("int main(int argc, char *argv[]) {");
             vsCSourceFile.AppendLine("  struct timeb start, end;");
-            vsCSourceFile.AppendLine("  uint64_t time_diff_ms, iterations = " + iterations + ";");
+            vsCSourceFile.AppendLine($"  uint64_t time_diff_ms, iterations = {iterations}, structIterations = {structTestIterations};");
             vsCSourceFile.AppendLine("  float latency;");
             GenerateLatencyTestArray(vsCSourceFile);
 
@@ -106,14 +107,15 @@ namespace ArmAsmGen
 
             armAsmFile.AppendLine(".arch armv8-a\n.text\n");
             GenerateAsmGlobalLines(armAsmFile, branchCounts, paddings, robTestCounts, rfTestCounts);
-            GenerateAsmPrfFuncs(armAsmFile, rfTestCounts);
             GenerateAsmRobFuncs(armAsmFile, robTestCounts);
+            GenerateAsmPrfFuncs(armAsmFile, rfTestCounts);
             GenerateAsmFuncs(armAsmFile, branchCounts, paddings);
             File.WriteAllText("branchtest_arm.s", armAsmFile.ToString());
 
             x86AsmFile.AppendLine(".text\n");
             GenerateAsmGlobalLines(x86AsmFile, branchCounts, paddings, robTestCounts, rfTestCounts);
             GenerateX86AsmRobFuncs(x86AsmFile, robTestCounts);
+            GenerateX86AsmPrfFuncs(x86AsmFile, rfTestCounts);
             GenerateX86AsmFuncs(x86AsmFile, branchCounts, paddings);
             File.WriteAllText("branchtest_x86.s", x86AsmFile.ToString());
 
@@ -195,10 +197,10 @@ namespace ArmAsmGen
             for (int i = 0; i < robTestCounts.Length; i++)
             {
                 sb.AppendLine("  gettimeofday(&startTv, &startTz);");
-                sb.AppendLine("  " + GetRobFuncName(robTestCounts[i]) + "(iterations / 40, A);");
+                sb.AppendLine("  " + GetRobFuncName(robTestCounts[i]) + "(iterations / 80, A);");
                 sb.AppendLine("  gettimeofday(&endTv, &endTz);");
                 sb.AppendLine("  time_diff_ms = 1000 * (endTv.tv_sec - startTv.tv_sec) + ((endTv.tv_usec - startTv.tv_usec) / 1000);");
-                sb.AppendLine("  latency = 1e6 * (float)time_diff_ms / (float)(iterations / 40);");
+                sb.AppendLine("  latency = 1e6 * (float)time_diff_ms / (float)(iterations / 80);");
                 sb.AppendLine("  printf(\"" + robTestCounts[i] + ",%f\\n\", latency);\n");
             }
         }
@@ -208,10 +210,10 @@ namespace ArmAsmGen
             for (int i = 0; i < rfTestCounts.Length; i++)
             {
                 sb.AppendLine("  gettimeofday(&startTv, &startTz);");
-                sb.AppendLine("  " + GetPrfFuncName(rfTestCounts[i]) + "(iterations / 40, A);");
+                sb.AppendLine("  " + GetPrfFuncName(rfTestCounts[i]) + "(iterations / 80, A);");
                 sb.AppendLine("  gettimeofday(&endTv, &endTz);");
                 sb.AppendLine("  time_diff_ms = 1000 * (endTv.tv_sec - startTv.tv_sec) + ((endTv.tv_usec - startTv.tv_usec) / 1000);");
-                sb.AppendLine("  latency = 1e6 * (float)time_diff_ms / (float)(iterations / 40);");
+                sb.AppendLine("  latency = 1e6 * (float)time_diff_ms / (float)(iterations / 80);");
                 sb.AppendLine("  printf(\"" + rfTestCounts[i] + ",%f\\n\", latency);\n");
             }
         }
@@ -221,10 +223,10 @@ namespace ArmAsmGen
             for (int i = 0; i < rfTestCounts.Length; i++)
             {
                 sb.AppendLine("  ftime(&start);");
-                sb.AppendLine("  " + GetPrfFuncName(rfTestCounts[i]) + "(iterations / 40, A);");
+                sb.AppendLine("  " + GetPrfFuncName(rfTestCounts[i]) + "(iterations / 80, A);");
                 sb.AppendLine("  ftime(&end);");
                 sb.AppendLine("  time_diff_ms = 1000 * (end.time - start.time) + (end.millitm - start.millitm);");
-                sb.AppendLine("  latency = 1e6 * (float)time_diff_ms / (float)(iterations / 40);");
+                sb.AppendLine("  latency = 1e6 * (float)time_diff_ms / (float)(iterations / 80);");
                 sb.AppendLine("  printf(\"" + rfTestCounts[i] + ",%f\\n\", latency);\n");
             }
         }
@@ -234,10 +236,10 @@ namespace ArmAsmGen
             for (int i = 0; i < robTestCounts.Length; i++)
             {
                 sb.AppendLine("  ftime(&start);");
-                sb.AppendLine("  " + GetRobFuncName(robTestCounts[i]) + "(iterations / 40, A);");
+                sb.AppendLine("  " + GetRobFuncName(robTestCounts[i]) + "(iterations / 80, A);");
                 sb.AppendLine("  ftime(&end);");
                 sb.AppendLine("  time_diff_ms = 1000 * (end.time - start.time) + (end.millitm - start.millitm);");
-                sb.AppendLine("  latency = 1e6 * (float)time_diff_ms / (float)(iterations / 40);");
+                sb.AppendLine("  latency = 1e6 * (float)time_diff_ms / (float)(iterations / 80);");
                 sb.AppendLine("  printf(\"" + robTestCounts[i] + ",%f\\n\", latency);\n");
             }
         }
@@ -402,6 +404,54 @@ namespace ArmAsmGen
                 sb.AppendLine("  mov (%rdx,%rsi,4), %esi");
                 sb.AppendLine("  dec %rcx");
                 sb.AppendLine("  jne " + funcName + "start");
+                sb.AppendLine("  pop %r15");
+                sb.AppendLine("  pop %rdi");
+                sb.AppendLine("  pop %rsi");
+                sb.AppendLine("  ret\n\n");
+            }
+        }
+
+        static void GenerateX86AsmPrfFuncs(StringBuilder sb, int[] rfCounts)
+        {
+            for (int i = 0; i < rfCounts.Length; i++)
+            {
+                string funcName = GetPrfFuncName(rfCounts[i]);
+                sb.AppendLine("\n" + funcName + ":");
+                sb.AppendLine("  push %rsi");
+                sb.AppendLine("  push %rdi");
+                sb.AppendLine("  push %r15");
+                sb.AppendLine("  push %r14");
+                sb.AppendLine("  push %r13");
+                sb.AppendLine("  push %r12");
+                sb.AppendLine("  push %rcx");
+                sb.AppendLine("  push %rdx");
+                sb.AppendLine("  mov %rsi, %rdx");
+                sb.AppendLine("  mov %rdi, %rcx");
+                sb.AppendLine("  xor %r15, %r15");
+                sb.AppendLine("  mov $0x1, %r14");
+                sb.AppendLine("  mov $0x1, %r13");
+                sb.AppendLine("  mov $0x3, %r12");
+                sb.AppendLine("  xor %rdi, %rdi");
+                sb.AppendLine("  mov $0x40, %esi");
+                sb.AppendLine("\n" + funcName + "start:");
+                sb.AppendLine("  mov (%rdx,%rdi,4), %edi");
+                for (int nopIdx = 0; nopIdx < rfCounts[i] - 2; nopIdx += 4)
+                {
+                    // actually write to the register
+                    sb.AppendLine("  add $0x1, %r15");
+                    sb.AppendLine("  add $0x2, %r14");
+                    sb.AppendLine("  add $0x3, %r13");
+                    sb.AppendLine("  add $0x4, %r12");
+                }
+
+                sb.AppendLine("  mov (%rdx,%rsi,4), %esi");
+                sb.AppendLine("  dec %rcx");
+                sb.AppendLine("  jne " + funcName + "start");
+                sb.AppendLine("  pop %rdx");
+                sb.AppendLine("  pop %rcx");
+                sb.AppendLine("  pop %r12");
+                sb.AppendLine("  pop %r13");
+                sb.AppendLine("  pop %r14");
                 sb.AppendLine("  pop %r15");
                 sb.AppendLine("  pop %rdi");
                 sb.AppendLine("  pop %rsi");
