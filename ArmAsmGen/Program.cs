@@ -9,6 +9,7 @@ namespace ArmAsmGen
     {
         static int iterations = 1000000000 / 2;
         static int structTestIterations = 5000000;
+        static int latencyListSize = 131072 * 1024 / 4; // 128 MB
 
         static void Main(string[] args)
         {
@@ -46,23 +47,23 @@ namespace ArmAsmGen
             // Generate C file for linux
             cSourceFile.AppendLine("#include <stdio.h>\n#include<stdint.h>\n#include<sys/time.h>\n#include <stdlib.h>\n#include <string.h>\n");
             GenerateFunctionDeclarations(cSourceFile, branchCounts, paddings, robTestCounts, rfTestCounts);
-            cSourceFile.AppendLine("int main(int argc, char *argv[]) {");
+            AddCommonInitCode(cSourceFile);
             cSourceFile.AppendLine("  struct timeval startTv, endTv;");
             cSourceFile.AppendLine("  struct timezone startTz, endTz;");
-            cSourceFile.AppendLine($"  uint64_t time_diff_ms, iterations = {iterations}, structIterations = {structTestIterations};");
-            cSourceFile.AppendLine("  float latency;");
-            GenerateLatencyTestArray(cSourceFile);
 
-            // linux string lib doesn't support safe (counted) comparisons
-            cSourceFile.AppendLine("  if (argc == 1 || argc > 1 && strcmp(argv[1], \"rob\") == 0) {");
+            cSourceFile.AppendLine("  if (argc == 1 || argc > 1 && strncmp(argv[1], \"rob\", 3) == 0) {");
             cSourceFile.AppendLine("  printf(\"Testing ROB Capacity:\\n\");");
             GenerateRobTestFunctionCalls(cSourceFile, robTestCounts);
+            cSourceFile.AppendLine("  free(A); return 0;");
             cSourceFile.AppendLine("  }\n");
 
-            cSourceFile.AppendLine("  if (argc == 1 || argc > 1 && strcmp(argv[1], \"prf\") == 0) {");
+            cSourceFile.AppendLine("  if (argc == 1 || argc > 1 && strncmp(argv[1], \"prf\", 3) == 0) {");
             cSourceFile.AppendLine("  printf(\"Testing Register File Capacity:\\n\");");
             GeneratePrfTestFunctionCalls(cSourceFile, rfTestCounts);
+            cSourceFile.AppendLine("  free(A); return 0;");
             cSourceFile.AppendLine("  }\n");
+
+            cSourceFile.AppendLine("  free(A);");
 
             cSourceFile.AppendLine("  printf(\"Branch Per 16B:\\n\");");
             GenerateFunctionCalls(cSourceFile, branchCounts, paddings[2]);
@@ -77,23 +78,26 @@ namespace ArmAsmGen
             vsCSourceFile.AppendLine("#include <stdio.h>\n#include<stdint.h>\n#include<sys\\timeb.h>\n#include <stdlib.h>\n");
             vsCSourceFile.AppendLine("#include <string.h>\n");
             GenerateVsFunctionDeclarations(vsCSourceFile, branchCounts, paddings, robTestCounts, rfTestCounts);
-            vsCSourceFile.AppendLine("int main(int argc, char *argv[]) {");
+            AddCommonInitCode(vsCSourceFile);
             vsCSourceFile.AppendLine("  struct timeb start, end;");
-            vsCSourceFile.AppendLine($"  uint64_t time_diff_ms, iterations = {iterations}, structIterations = {structTestIterations};");
-            vsCSourceFile.AppendLine("  float latency;");
             GenerateLatencyTestArray(vsCSourceFile);
 
             // ROB size test
             vsCSourceFile.AppendLine("  if (argc == 1 || argc > 1 && _strnicmp(argv[1], \"rob\", 3) == 0) {");
             vsCSourceFile.AppendLine("  printf(\"Testing ROB Capacity:\\n\");");
             GenerateVSRobTestFunctionCalls(vsCSourceFile, robTestCounts);
+            vsCSourceFile.AppendLine("  free(A); return 0;");
             vsCSourceFile.AppendLine("  }\n");
 
             // PRF size test
             vsCSourceFile.AppendLine("  if (argc == 1 || argc > 1 && _strnicmp(argv[1], \"prf\", 3) == 0) {");
             vsCSourceFile.AppendLine("  printf(\"Testing Register File Capacity:\\n\");");
             GenerateVSPrfTestFunctionCalls(vsCSourceFile, rfTestCounts);
+            vsCSourceFile.AppendLine("  free(A); return 0;");
             vsCSourceFile.AppendLine("  }\n");
+
+            // after structure size tests we don't care about this array
+            vsCSourceFile.AppendLine("  free(A);");
 
             // BTB size test
             vsCSourceFile.AppendLine("  printf(\"Branch Per 16B:\\n\");");
@@ -144,6 +148,16 @@ namespace ArmAsmGen
             return funcName + "part" + part;
         }
 
+        static void AddCommonInitCode(StringBuilder sb)
+        {
+            sb.AppendLine("int main(int argc, char *argv[]) {");
+            sb.AppendLine($"  uint64_t time_diff_ms, iterations = {iterations}, structIterations = {structTestIterations};");
+            sb.AppendLine("  float latency;");
+            sb.AppendLine($"  printf(\"Usage: [rob/prf/branchonly] [latency list size] [struct iterations = {structTestIterations}]\\n\");");
+            sb.AppendLine("  if (argc > 3) { structIterations = atoi(argv[3]); }");
+            GenerateLatencyTestArray(sb);
+        }
+
         static void GenerateFunctionDeclarations(StringBuilder sb, int[] branchCounts, int[] paddings, int[] robTestCounts, int[] rfCounts)
         {
             for (int i = 0; i < branchCounts.Length; i++)
@@ -173,9 +187,8 @@ namespace ArmAsmGen
 
         static void GenerateLatencyTestArray(StringBuilder sb)
         {
-            int list_size = 131072 * 1024 / 4; // 128 MB
-                                               // Fill list to create random access pattern
-            sb.AppendLine("  uint32_t list_size = " + list_size + ";");
+            // Fill list to create random access pattern
+            sb.AppendLine("  uint32_t list_size = " + latencyListSize + ";");
 
             sb.AppendLine("  if (argc > 2) list_size = atoi(argv[2]);");
 
@@ -197,10 +210,10 @@ namespace ArmAsmGen
             for (int i = 0; i < robTestCounts.Length; i++)
             {
                 sb.AppendLine("  gettimeofday(&startTv, &startTz);");
-                sb.AppendLine("  " + GetRobFuncName(robTestCounts[i]) + "(iterations / 80, A);");
+                sb.AppendLine("  " + GetRobFuncName(robTestCounts[i]) + "(structIterations, A);");
                 sb.AppendLine("  gettimeofday(&endTv, &endTz);");
                 sb.AppendLine("  time_diff_ms = 1000 * (endTv.tv_sec - startTv.tv_sec) + ((endTv.tv_usec - startTv.tv_usec) / 1000);");
-                sb.AppendLine("  latency = 1e6 * (float)time_diff_ms / (float)(iterations / 80);");
+                sb.AppendLine("  latency = 1e6 * (float)time_diff_ms / (float)(structIterations);");
                 sb.AppendLine("  printf(\"" + robTestCounts[i] + ",%f\\n\", latency);\n");
             }
         }
@@ -210,10 +223,10 @@ namespace ArmAsmGen
             for (int i = 0; i < rfTestCounts.Length; i++)
             {
                 sb.AppendLine("  gettimeofday(&startTv, &startTz);");
-                sb.AppendLine("  " + GetPrfFuncName(rfTestCounts[i]) + "(iterations / 80, A);");
+                sb.AppendLine("  " + GetPrfFuncName(rfTestCounts[i]) + "(structIterations, A);");
                 sb.AppendLine("  gettimeofday(&endTv, &endTz);");
                 sb.AppendLine("  time_diff_ms = 1000 * (endTv.tv_sec - startTv.tv_sec) + ((endTv.tv_usec - startTv.tv_usec) / 1000);");
-                sb.AppendLine("  latency = 1e6 * (float)time_diff_ms / (float)(iterations / 80);");
+                sb.AppendLine("  latency = 1e6 * (float)time_diff_ms / (float)(structIterations);");
                 sb.AppendLine("  printf(\"" + rfTestCounts[i] + ",%f\\n\", latency);\n");
             }
         }
@@ -223,10 +236,10 @@ namespace ArmAsmGen
             for (int i = 0; i < rfTestCounts.Length; i++)
             {
                 sb.AppendLine("  ftime(&start);");
-                sb.AppendLine("  " + GetPrfFuncName(rfTestCounts[i]) + "(iterations / 80, A);");
+                sb.AppendLine("  " + GetPrfFuncName(rfTestCounts[i]) + "(structIterations, A);");
                 sb.AppendLine("  ftime(&end);");
                 sb.AppendLine("  time_diff_ms = 1000 * (end.time - start.time) + (end.millitm - start.millitm);");
-                sb.AppendLine("  latency = 1e6 * (float)time_diff_ms / (float)(iterations / 80);");
+                sb.AppendLine("  latency = 1e6 * (float)time_diff_ms / (float)(structIterations);");
                 sb.AppendLine("  printf(\"" + rfTestCounts[i] + ",%f\\n\", latency);\n");
             }
         }
@@ -236,10 +249,10 @@ namespace ArmAsmGen
             for (int i = 0; i < robTestCounts.Length; i++)
             {
                 sb.AppendLine("  ftime(&start);");
-                sb.AppendLine("  " + GetRobFuncName(robTestCounts[i]) + "(iterations / 80, A);");
+                sb.AppendLine("  " + GetRobFuncName(robTestCounts[i]) + "(structIterations, A);");
                 sb.AppendLine("  ftime(&end);");
                 sb.AppendLine("  time_diff_ms = 1000 * (end.time - start.time) + (end.millitm - start.millitm);");
-                sb.AppendLine("  latency = 1e6 * (float)time_diff_ms / (float)(iterations / 80);");
+                sb.AppendLine("  latency = 1e6 * (float)time_diff_ms / (float)(structIterations);");
                 sb.AppendLine("  printf(\"" + robTestCounts[i] + ",%f\\n\", latency);\n");
             }
         }
@@ -255,7 +268,6 @@ namespace ArmAsmGen
                 sb.AppendLine("  time_diff_ms = 1000 * (endTv.tv_sec - startTv.tv_sec) + ((endTv.tv_usec - startTv.tv_usec) / 1000);");
                 sb.AppendLine("  latency = 1e6 * (float)time_diff_ms / (float)(iterations);");
                 sb.AppendLine("  printf(\"" + branchCounts[i] + ",%f\\n\", latency);\n");
-                //sb.AppendLine("  if (time_diff_ms > 10000) iterations /= 10;");
             }
         }
 
@@ -270,7 +282,6 @@ namespace ArmAsmGen
                 sb.AppendLine("  time_diff_ms = 1000 * (end.time - start.time) + (end.millitm - start.millitm);");
                 sb.AppendLine("  latency = 1e6 * (float)time_diff_ms / (float)(iterations);");
                 sb.AppendLine("  printf(\"" + branchCounts[i] + ",%f\\n\", latency);\n");
-                //sb.AppendLine("  if (time_diff_ms > 10000) iterations /= 10;");
             }
         }
 
