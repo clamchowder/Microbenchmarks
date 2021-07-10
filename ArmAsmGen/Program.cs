@@ -18,7 +18,7 @@ namespace ArmAsmGen
             /*int[] robTestCounts = new[] { 4, 8, 16, 24, 32, 48, 64, 72, 80, 96, 100, 112, 128, 140, 160, 192, 200, 
                 220, 224, 225, 230, 256, 300, 324, 356, 384, 512, 768 };*/
 
-            int robSizeMax = 200;
+            int robSizeMax = 300;
             int robSizeMin = 4;
             int[] robTestCounts = new int[robSizeMax - robSizeMin + 1];
             for (int i = robSizeMin; i < robSizeMax; i++)
@@ -54,12 +54,18 @@ namespace ArmAsmGen
             cSourceFile.AppendLine("  if (argc == 1 || argc > 1 && strncmp(argv[1], \"rob\", 3) == 0) {");
             cSourceFile.AppendLine("  printf(\"Testing ROB Capacity:\\n\");");
             GenerateRobTestFunctionCalls(cSourceFile, robTestCounts);
-            cSourceFile.AppendLine("  free(A); return 0;");
+            cSourceFile.AppendLine("  return 0;");
             cSourceFile.AppendLine("  }\n");
 
             cSourceFile.AppendLine("  if (argc == 1 || argc > 1 && strncmp(argv[1], \"prf\", 3) == 0) {");
             cSourceFile.AppendLine("  printf(\"Testing Register File Capacity:\\n\");");
             GeneratePrfTestFunctionCalls(cSourceFile, rfTestCounts);
+            cSourceFile.AppendLine("  return 0;");
+            cSourceFile.AppendLine("  }\n");
+
+            cSourceFile.AppendLine("  if (argc == 1 || argc > 1 && strncmp(argv[1], \"frf\", 3) == 0) {");
+            cSourceFile.AppendLine("  printf(\"Testing FP Register File Capacity:\\n\");");
+            GenerateFrfTestFunctionCalls(cSourceFile, rfTestCounts);
             cSourceFile.AppendLine("  free(A); return 0;");
             cSourceFile.AppendLine("  }\n");
 
@@ -80,20 +86,25 @@ namespace ArmAsmGen
             GenerateVsFunctionDeclarations(vsCSourceFile, branchCounts, paddings, robTestCounts, rfTestCounts);
             AddCommonInitCode(vsCSourceFile);
             vsCSourceFile.AppendLine("  struct timeb start, end;");
-            GenerateLatencyTestArray(vsCSourceFile);
 
             // ROB size test
             vsCSourceFile.AppendLine("  if (argc == 1 || argc > 1 && _strnicmp(argv[1], \"rob\", 3) == 0) {");
             vsCSourceFile.AppendLine("  printf(\"Testing ROB Capacity:\\n\");");
             GenerateVSRobTestFunctionCalls(vsCSourceFile, robTestCounts);
-            vsCSourceFile.AppendLine("  free(A); return 0;");
+            vsCSourceFile.AppendLine("  return 0;");
             vsCSourceFile.AppendLine("  }\n");
 
             // PRF size test
             vsCSourceFile.AppendLine("  if (argc == 1 || argc > 1 && _strnicmp(argv[1], \"prf\", 3) == 0) {");
             vsCSourceFile.AppendLine("  printf(\"Testing Register File Capacity:\\n\");");
             GenerateVSPrfTestFunctionCalls(vsCSourceFile, rfTestCounts);
-            vsCSourceFile.AppendLine("  free(A); return 0;");
+            vsCSourceFile.AppendLine("  return 0;");
+            vsCSourceFile.AppendLine("  }\n");
+
+            vsCSourceFile.AppendLine("  if (argc == 1 || argc > 1 && strncmp(argv[1], \"frf\", 3) == 0) {");
+            vsCSourceFile.AppendLine("  printf(\"Testing FP Register File Capacity:\\n\");");
+            GenerateVSFrfTestFunctionCalls(vsCSourceFile, rfTestCounts);
+            vsCSourceFile.AppendLine("  return 0;");
             vsCSourceFile.AppendLine("  }\n");
 
             // after structure size tests we don't care about this array
@@ -107,12 +118,13 @@ namespace ArmAsmGen
             vsCSourceFile.AppendLine("  printf(\"Branch Per 4B:\\n\");");
             GenerateVSFunctionCalls(vsCSourceFile, branchCounts, paddings[2]);
             vsCSourceFile.AppendLine("  return 0; }");
-            File.WriteAllText("vsbranchtest.c", vsCSourceFile.ToString());
+            File.WriteAllText("clammicrobench.cpp", vsCSourceFile.ToString());
 
             armAsmFile.AppendLine(".arch armv8-a\n.text\n");
             GenerateAsmGlobalLines(armAsmFile, branchCounts, paddings, robTestCounts, rfTestCounts);
             GenerateAsmRobFuncs(armAsmFile, robTestCounts);
             GenerateAsmPrfFuncs(armAsmFile, rfTestCounts);
+            GenerateAsmFrfFuncs(armAsmFile, rfTestCounts);
             GenerateAsmFuncs(armAsmFile, branchCounts, paddings);
             File.WriteAllText("branchtest_arm.s", armAsmFile.ToString());
 
@@ -120,6 +132,7 @@ namespace ArmAsmGen
             GenerateAsmGlobalLines(x86AsmFile, branchCounts, paddings, robTestCounts, rfTestCounts);
             GenerateX86AsmRobFuncs(x86AsmFile, robTestCounts);
             GenerateX86AsmPrfFuncs(x86AsmFile, rfTestCounts);
+            GenerateX86AsmFrfFuncs(x86AsmFile, rfTestCounts);
             GenerateX86AsmFuncs(x86AsmFile, branchCounts, paddings);
             File.WriteAllText("branchtest_x86.s", x86AsmFile.ToString());
 
@@ -131,8 +144,9 @@ namespace ArmAsmGen
             GenerateNasmGlobalLines(x86NasmFile, branchCounts, paddings, robTestCounts, rfTestCounts);
             GenerateX86NasmRobFuncs(x86NasmFile, robTestCounts);
             GenerateX86NasmPrfFuncs(x86NasmFile, rfTestCounts);
+            GenerateX86NasmFrfFuncs(x86NasmFile, rfTestCounts);
             GenerateX86NasmFuncs(x86NasmFile, branchCounts, paddings);
-            File.WriteAllText("branchtest_nasm.asm", x86NasmFile.ToString());
+            File.WriteAllText("clammicrobench_nasm.asm", x86NasmFile.ToString());
         }
 
         static string GetFuncName(int branchCount, int padding)
@@ -142,6 +156,7 @@ namespace ArmAsmGen
 
         static string GetRobFuncName(int count) { return "rob" + count; }
         static string GetPrfFuncName(int count) { return "prf" + count; }
+        static string GetFrfFuncName(int count) { return "frf" + count; }
 
         static string GetLabelName(string funcName, int part)
         {
@@ -169,6 +184,9 @@ namespace ArmAsmGen
 
             for (int i = 0; i < rfCounts.Length; i++)
                 sb.AppendLine("extern uint64_t " + GetPrfFuncName(rfCounts[i]) + "(uint64_t iterations, int *arr);");
+
+            for (int i = 0; i < rfCounts.Length; i++)
+                sb.AppendLine("extern uint64_t " + GetFrfFuncName(rfCounts[i]) + "(uint64_t iterations, int *arr);");
         }
 
         static void GenerateVsFunctionDeclarations(StringBuilder sb, int[] branchCounts, int[] paddings, int[] robTestCounts, int[] rfCounts)
@@ -183,6 +201,9 @@ namespace ArmAsmGen
 
             for (int i = 0; i < rfCounts.Length; i++)
                 sb.AppendLine("extern \"C\" uint64_t " + GetPrfFuncName(rfCounts[i]) + "(uint64_t iterations, int *arr);");
+
+            for (int i = 0; i < rfCounts.Length; i++)
+                sb.AppendLine("extern \"C\" uint64_t " + GetFrfFuncName(rfCounts[i]) + "(uint64_t iterations, int *arr);");
         }
 
         static void GenerateLatencyTestArray(StringBuilder sb)
@@ -231,12 +252,38 @@ namespace ArmAsmGen
             }
         }
 
+        static void GenerateFrfTestFunctionCalls(StringBuilder sb, int[] rfTestCounts)
+        {
+            for (int i = 0; i < rfTestCounts.Length; i++)
+            {
+                sb.AppendLine("  gettimeofday(&startTv, &startTz);");
+                sb.AppendLine("  " + GetFrfFuncName(rfTestCounts[i]) + "(structIterations, A);");
+                sb.AppendLine("  gettimeofday(&endTv, &endTz);");
+                sb.AppendLine("  time_diff_ms = 1000 * (endTv.tv_sec - startTv.tv_sec) + ((endTv.tv_usec - startTv.tv_usec) / 1000);");
+                sb.AppendLine("  latency = 1e6 * (float)time_diff_ms / (float)(structIterations);");
+                sb.AppendLine("  printf(\"" + rfTestCounts[i] + ",%f\\n\", latency);\n");
+            }
+        }
+
         static void GenerateVSPrfTestFunctionCalls(StringBuilder sb, int[] rfTestCounts)
         {
             for (int i = 0; i < rfTestCounts.Length; i++)
             {
                 sb.AppendLine("  ftime(&start);");
                 sb.AppendLine("  " + GetPrfFuncName(rfTestCounts[i]) + "(structIterations, A);");
+                sb.AppendLine("  ftime(&end);");
+                sb.AppendLine("  time_diff_ms = 1000 * (end.time - start.time) + (end.millitm - start.millitm);");
+                sb.AppendLine("  latency = 1e6 * (float)time_diff_ms / (float)(structIterations);");
+                sb.AppendLine("  printf(\"" + rfTestCounts[i] + ",%f\\n\", latency);\n");
+            }
+        }
+
+        static void GenerateVSFrfTestFunctionCalls(StringBuilder sb, int[] rfTestCounts)
+        {
+            for (int i = 0; i < rfTestCounts.Length; i++)
+            {
+                sb.AppendLine("  ftime(&start);");
+                sb.AppendLine("  " + GetFrfFuncName(rfTestCounts[i]) + "(structIterations, A);");
                 sb.AppendLine("  ftime(&end);");
                 sb.AppendLine("  time_diff_ms = 1000 * (end.time - start.time) + (end.millitm - start.millitm);");
                 sb.AppendLine("  latency = 1e6 * (float)time_diff_ms / (float)(structIterations);");
@@ -293,6 +340,9 @@ namespace ArmAsmGen
             for (int i = 0; i < rfCounts.Length; i++)
                 sb.AppendLine(".global " + GetPrfFuncName(rfCounts[i]));
 
+            for (int i = 0; i < rfCounts.Length; i++)
+                sb.AppendLine(".global " + GetFrfFuncName(rfCounts[i]));
+
             for (int i = 0; i < branchCounts.Length; i++)
                 for (int p = 0; p < paddings.Length; p++)
                     sb.AppendLine(".global " + GetFuncName(branchCounts[i], paddings[p]));
@@ -302,6 +352,9 @@ namespace ArmAsmGen
         {
             for (int i = 0; i < prfCounts.Length; i++)
                 sb.AppendLine("global " + GetPrfFuncName(prfCounts[i]));
+
+            for (int i = 0; i < prfCounts.Length; i++)
+                sb.AppendLine("global " + GetFrfFuncName(prfCounts[i]));
 
             for (int i = 0; i < robCounts.Length; i++)
                 sb.AppendLine("global " + GetRobFuncName(robCounts[i]));
@@ -313,32 +366,82 @@ namespace ArmAsmGen
 
         static void GenerateAsmPrfFuncs(StringBuilder sb, int[] rfCounts)
         {
+            string[] unrolledAdds = new string[4];
+            unrolledAdds[0] = "  add x30, x30, 1";
+            unrolledAdds[1] = "  add x29, x29, 2";
+            unrolledAdds[2] = "  add x28, x28, 3";
+            unrolledAdds[3] = "  add x27, x27, 4";
+
             for (int i = 0; i < rfCounts.Length; i++)
             {
                 string funcName = GetPrfFuncName(rfCounts[i]);
 
                 // args in x0, x1
                 sb.AppendLine("\n" + funcName + ":");
-                sb.AppendLine("  stp x29, x30, [sp]");
-                sb.AppendLine("  stp x27, x28, [sp, #0x10]");
+                sb.AppendLine("  stp x29, x30, [sp, #0x10]");
+                sb.AppendLine("  stp x27, x28, [sp, #0x20]");
                 sb.AppendLine("  mov w2, #0x0");
                 sb.AppendLine("  mov w3, #0x40");
                 sb.AppendLine("\n" + funcName + "start:");
                 sb.AppendLine("  ldr w2, [x1, w2, uxtw #2]"); // current = A[current]
-                for (int nopIdx = 0; nopIdx < rfCounts[i] - 2; nopIdx += 4)
+                for (int nopIdx = 0, addIdx = 0; nopIdx < rfCounts[i] - 2; nopIdx++)
                 {
-                    sb.AppendLine("  add x30, x30, 1");
-                    sb.AppendLine("  add x29, x29, 2");
-                    sb.AppendLine("  add x28, x28, 3");
-                    sb.AppendLine("  add x27, x27, 4");
+                    sb.AppendLine(unrolledAdds[addIdx]);
+                    addIdx = (addIdx + 1) % 4;
                 }
 
                 sb.AppendLine("  ldr w3, [x1, w3, uxtw #2]");
+                for (int nopIdx = 0, addIdx = 0; nopIdx < rfCounts[i] - 2; nopIdx++)
+                {
+                    sb.AppendLine(unrolledAdds[addIdx]);
+                    addIdx = (addIdx + 1) % 4;
+                }
 
                 sb.AppendLine("  sub x0, x0, 1");
                 sb.AppendLine("  cbnz x0, " + funcName + "start");
-                sb.AppendLine("  ldp x27, x28, [sp, #0x10]");
-                sb.AppendLine("  ldp x29, x30, [sp]");
+                sb.AppendLine("  ldp x27, x28, [sp, #0x20]");
+                sb.AppendLine("  ldp x29, x30, [sp, #0x10]");
+                sb.AppendLine("  ret\n\n");
+            }
+        }
+
+        static void GenerateAsmFrfFuncs(StringBuilder sb, int[] rfCounts)
+        {
+            string[] unrolledAdds = new string[4];
+            unrolledAdds[0] = "  add v0.4s, v0.4s, v0.4s";
+            unrolledAdds[1] = "  add v1.4s, v1.4s, v1.4s";
+            unrolledAdds[2] = "  add v2.4s, v2.4s, v2.4s";
+            unrolledAdds[3] = "  add v3.4s, v3.4s, v3.4s";
+
+            for (int i = 0; i < rfCounts.Length; i++)
+            {
+                string funcName = GetFrfFuncName(rfCounts[i]);
+
+                // args in x0, x1
+                sb.AppendLine("\n" + funcName + ":");
+                sb.AppendLine("  mov w2, #0x0");
+                sb.AppendLine("  mov w3, #0x40");
+                sb.AppendLine("  ldr q0, [x1]"); // get clobbered?
+                sb.AppendLine("  ldr q1, [x1, #0x10]");
+                sb.AppendLine("  ldr q2, [x1, #0x20]");
+                sb.AppendLine("  ldr q3, [x1, #0x30]");
+                sb.AppendLine("\n" + funcName + "start:");
+                sb.AppendLine("  ldr w2, [x1, w2, uxtw #2]"); // current = A[current]
+                for (int nopIdx = 0, addIdx = 0; nopIdx < rfCounts[i] - 2; nopIdx++)
+                {
+                    sb.AppendLine(unrolledAdds[addIdx]);
+                    addIdx = (addIdx + 1) % 4;
+                }
+
+                sb.AppendLine("  ldr w3, [x1, w3, uxtw #2]");
+                for (int nopIdx = 0, addIdx = 0; nopIdx < rfCounts[i] - 2; nopIdx++)
+                {
+                    sb.AppendLine(unrolledAdds[addIdx]);
+                    addIdx = (addIdx + 1) % 4;
+                }
+
+                sb.AppendLine("  sub x0, x0, 1");
+                sb.AppendLine("  cbnz x0, " + funcName + "start");
                 sb.AppendLine("  ret\n\n");
             }
         }
@@ -355,12 +458,17 @@ namespace ArmAsmGen
                 sb.AppendLine("  mov w3, #0x40");
                 sb.AppendLine("\n" + funcName + "start:");
                 sb.AppendLine("  ldr w2, [x1, w2, uxtw #2]"); // current = A[current]
+                // followed by nops
                 for (int nopIdx = 0; nopIdx < robCounts[i] - 2; nopIdx++)
                 {
                     sb.AppendLine("  nop");
                 }
 
                 sb.AppendLine("  ldr w3, [x1, w3, uxtw #2]");
+                for (int nopIdx = 0; nopIdx < robCounts[i] - 2; nopIdx++)
+                {
+                    sb.AppendLine("  nop");
+                }
 
                 sb.AppendLine("  sub x0, x0, 1");
                 sb.AppendLine("  cbnz x0, " + funcName + "start");
@@ -413,6 +521,11 @@ namespace ArmAsmGen
                 }
 
                 sb.AppendLine("  mov (%rdx,%rsi,4), %esi");
+                for (int nopIdx = 0; nopIdx < robCounts[i] - 2; nopIdx++)
+                {
+                    sb.AppendLine("  nop");
+                }
+
                 sb.AppendLine("  dec %rcx");
                 sb.AppendLine("  jne " + funcName + "start");
                 sb.AppendLine("  pop %r15");
@@ -424,6 +537,12 @@ namespace ArmAsmGen
 
         static void GenerateX86AsmPrfFuncs(StringBuilder sb, int[] rfCounts)
         {
+            string[] unrolledAdds = new string[4];
+            unrolledAdds[0] = "  add $0x1, %r15";
+            unrolledAdds[1] = "  add $0x2, %r14";
+            unrolledAdds[2] = "  add $0x3, %r13";
+            unrolledAdds[3] = "  add $0x4, %r12";
+
             for (int i = 0; i < rfCounts.Length; i++)
             {
                 string funcName = GetPrfFuncName(rfCounts[i]);
@@ -446,16 +565,19 @@ namespace ArmAsmGen
                 sb.AppendLine("  mov $0x40, %esi");
                 sb.AppendLine("\n" + funcName + "start:");
                 sb.AppendLine("  mov (%rdx,%rdi,4), %edi");
-                for (int nopIdx = 0; nopIdx < rfCounts[i] - 2; nopIdx += 4)
+                for (int nopIdx = 0, addIdx = 0; nopIdx < rfCounts[i] - 2; nopIdx++)
                 {
-                    // actually write to the register
-                    sb.AppendLine("  add $0x1, %r15");
-                    sb.AppendLine("  add $0x2, %r14");
-                    sb.AppendLine("  add $0x3, %r13");
-                    sb.AppendLine("  add $0x4, %r12");
+                    sb.AppendLine(unrolledAdds[addIdx]);
+                    addIdx = (addIdx + 1) % 4;
                 }
 
                 sb.AppendLine("  mov (%rdx,%rsi,4), %esi");
+                for (int nopIdx = 0, addIdx = 0; nopIdx < rfCounts[i] - 2; nopIdx++)
+                {
+                    sb.AppendLine(unrolledAdds[addIdx]);
+                    addIdx = (addIdx + 1) % 4;
+                }
+
                 sb.AppendLine("  dec %rcx");
                 sb.AppendLine("  jne " + funcName + "start");
                 sb.AppendLine("  pop %rdx");
@@ -464,6 +586,55 @@ namespace ArmAsmGen
                 sb.AppendLine("  pop %r13");
                 sb.AppendLine("  pop %r14");
                 sb.AppendLine("  pop %r15");
+                sb.AppendLine("  pop %rdi");
+                sb.AppendLine("  pop %rsi");
+                sb.AppendLine("  ret\n\n");
+            }
+        }
+
+        static void GenerateX86AsmFrfFuncs(StringBuilder sb, int[] rfCounts)
+        {
+            string[] unrolledAdds = new string[4];
+            unrolledAdds[0] = "  paddd %xmm1, %xmm1";
+            unrolledAdds[1] = "  paddd %xmm2, %xmm2";
+            unrolledAdds[2] = "  paddd %xmm3, %xmm3";
+            unrolledAdds[3] = "  paddd %xmm4, %xmm4";
+
+            for (int i = 0; i < rfCounts.Length; i++)
+            {
+                string funcName = GetFrfFuncName(rfCounts[i]);
+                sb.AppendLine("\n" + funcName + ":");
+                sb.AppendLine("  push %rsi");
+                sb.AppendLine("  push %rdi");
+                sb.AppendLine("  push %rcx");
+                sb.AppendLine("  push %rdx");
+                sb.AppendLine("  mov %rsi, %rdx");
+                sb.AppendLine("  mov %rdi, %rcx");
+                sb.AppendLine("  xor %rdi, %rdi");
+                sb.AppendLine("  mov $0x40, %esi");
+                sb.AppendLine("  movdqu (%rdx,%rdi,4), %xmm1");
+                sb.AppendLine("  movdqu (%rdx,%rsi,4), %xmm1");
+                sb.AppendLine("  movdqu (%rdx,%rdi,8), %xmm1");
+                sb.AppendLine("  movdqu (%rdx,%rsi,8), %xmm1");
+                sb.AppendLine("\n" + funcName + "start:");
+                sb.AppendLine("  mov (%rdx,%rdi,4), %edi");
+                for (int nopIdx = 0, addIdx = 0; nopIdx < rfCounts[i] - 2; nopIdx++)
+                {
+                    sb.AppendLine(unrolledAdds[addIdx]);
+                    addIdx = (addIdx + 1) % 4;
+                }
+
+                sb.AppendLine("  mov (%rdx,%rsi,4), %esi");
+                for (int nopIdx = 0, addIdx = 0; nopIdx < rfCounts[i] - 2; nopIdx++)
+                {
+                    sb.AppendLine(unrolledAdds[addIdx]);
+                    addIdx = (addIdx + 1) % 4;
+                }
+
+                sb.AppendLine("  dec %rcx");
+                sb.AppendLine("  jne " + funcName + "start");
+                sb.AppendLine("  pop %rdx");
+                sb.AppendLine("  pop %rcx");
                 sb.AppendLine("  pop %rdi");
                 sb.AppendLine("  pop %rsi");
                 sb.AppendLine("  ret\n\n");
@@ -522,6 +693,11 @@ namespace ArmAsmGen
                 }
 
                 sb.AppendLine("  mov esi, [rdx + rsi * 4]");
+                for (int nopIdx = 0; nopIdx < robCounts[i] - 2; nopIdx++)
+                {
+                    sb.AppendLine("  nop");
+                }
+
                 sb.AppendLine("  dec rcx");
                 sb.AppendLine("  jne " + funcName + "start");
                 sb.AppendLine("  pop r15");
@@ -533,6 +709,12 @@ namespace ArmAsmGen
 
         static void GenerateX86NasmPrfFuncs(StringBuilder sb, int[] rfCounts)
         {
+            string[] unrolledAdds = new string[4];
+            unrolledAdds[0] = "  add r15, 1";
+            unrolledAdds[1] = "  add r14, 2";
+            unrolledAdds[2] = "  add r13, 3";
+            unrolledAdds[3] = "  add r12, 4";
+
             for (int i = 0; i < rfCounts.Length; i++)
             {
                 string funcName = GetPrfFuncName(rfCounts[i]);
@@ -551,22 +733,68 @@ namespace ArmAsmGen
                 sb.AppendLine("  mov esi, 64");
                 sb.AppendLine("\n" + funcName + "start:");
                 sb.AppendLine("  mov edi, [rdx + rdi * 4]");
-                for (int nopIdx = 0; nopIdx < rfCounts[i] - 2; nopIdx += 4)
+                for (int nopIdx = 0, addIdx = 0; nopIdx < rfCounts[i] - 2; nopIdx++)
                 {
-                    // actually write to the register
-                    sb.AppendLine("  add r15, 1");
-                    sb.AppendLine("  add r14, 2");
-                    sb.AppendLine("  add r13, 3");
-                    sb.AppendLine("  add r12, 4");
+                    sb.AppendLine(unrolledAdds[addIdx]);
+                    addIdx = (addIdx + 1) % 4;
                 }
 
                 sb.AppendLine("  mov esi, [rdx + rsi * 4]");
+                for (int nopIdx = 0, addIdx = 0; nopIdx < rfCounts[i] - 2; nopIdx++)
+                {
+                    sb.AppendLine(unrolledAdds[addIdx]);
+                    addIdx = (addIdx + 1) % 4;
+                }
+
                 sb.AppendLine("  dec rcx");
                 sb.AppendLine("  jne " + funcName + "start");
                 sb.AppendLine("  pop r12");
                 sb.AppendLine("  pop r13");
                 sb.AppendLine("  pop r14");
                 sb.AppendLine("  pop r15");
+                sb.AppendLine("  pop rdi");
+                sb.AppendLine("  pop rsi");
+                sb.AppendLine("  ret\n\n");
+            }
+        }
+
+        static void GenerateX86NasmFrfFuncs(StringBuilder sb, int[] rfCounts)
+        {
+            string[] unrolledAdds = new string[4];
+            unrolledAdds[0] = "  paddd xmm1, xmm1";
+            unrolledAdds[1] = "  paddd xmm2, xmm2";
+            unrolledAdds[2] = "  paddd xmm3, xmm3";
+            unrolledAdds[3] = "  paddd xmm4, xmm4";
+
+            for (int i = 0; i < rfCounts.Length; i++)
+            {
+                string funcName = GetFrfFuncName(rfCounts[i]);
+                sb.AppendLine("\n" + funcName + ":");
+                sb.AppendLine("  push rsi");
+                sb.AppendLine("  push rdi");
+                sb.AppendLine("  xor rdi, rdi");
+                sb.AppendLine("  mov esi, 64");
+                sb.AppendLine("  movdqu xmm1, [rdx]");
+                sb.AppendLine("  movdqu xmm2, [rdx]");
+                sb.AppendLine("  movdqu xmm3, [rdx + rsi * 4]");
+                sb.AppendLine("  movdqu xmm4, [rdx + rsi * 8]");
+                sb.AppendLine("\n" + funcName + "start:");
+                sb.AppendLine("  mov edi, [rdx + rdi * 4]");
+                for (int nopIdx = 0, addIdx = 0; nopIdx < rfCounts[i] - 2; nopIdx++)
+                {
+                    sb.AppendLine(unrolledAdds[addIdx]);
+                    addIdx = (addIdx + 1) % 4;
+                }
+
+                sb.AppendLine("  mov esi, [rdx + rsi * 4]");
+                for (int nopIdx = 0, addIdx = 0; nopIdx < rfCounts[i] - 2; nopIdx++)
+                {
+                    sb.AppendLine(unrolledAdds[addIdx]);
+                    addIdx = (addIdx + 1) % 4;
+                }
+
+                sb.AppendLine("  dec rcx");
+                sb.AppendLine("  jne " + funcName + "start");
                 sb.AppendLine("  pop rdi");
                 sb.AppendLine("  pop rsi");
                 sb.AppendLine("  ret\n\n");
