@@ -469,7 +469,7 @@ extern "C" uint64_t frf196(uint64_t iterations, int *arr);
 int main(int argc, char *argv[]) {
   uint64_t time_diff_ms, iterations = 500000000, structIterations = 5000000;
   float latency;
-  printf("Usage: [rob/prf/branchonly] [latency list size] [struct iterations = 5000000]\n");
+  printf("Usage: [rob/prf/frf/branchonly] [latency list size] [struct iterations = 5000000]\n");
   if (argc > 3) { structIterations = atoi(argv[3]); }
   uint32_t list_size = 33554432;
   if (argc > 2) list_size = atoi(argv[2]);
