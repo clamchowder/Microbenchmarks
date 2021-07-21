@@ -21,7 +21,7 @@ namespace AsmGen
             int robSizeMax = 300;
             int robSizeMin = 4;
             int[] robTestCounts = new int[robSizeMax - robSizeMin + 1];
-            for (int i = robSizeMin; i < robSizeMax; i++)
+            for (int i = robSizeMin; i <= robSizeMax; i++)
             {
                 robTestCounts[i - robSizeMin] = i;
             }
@@ -32,6 +32,14 @@ namespace AsmGen
             for (int i = rfSizeMin; i < rfSizeMax; i += 4)
             {
                 rfTestCountsList.Add(i);
+            }
+
+            int ldmSizeMax = 64;
+            int ldmSizeMin = 2;
+            int[] ldmTestCounts = new int[ldmSizeMax - ldmSizeMin + 1];
+            for (int i = ldmSizeMin; i <= ldmSizeMax; i++)
+            {
+                ldmTestCounts[i - ldmSizeMin] = i;
             }
 
             int[] rfTestCounts = rfTestCountsList.ToArray();
@@ -83,7 +91,7 @@ namespace AsmGen
             // Generate C file for VS
             vsCSourceFile.AppendLine("#include <stdio.h>\n#include<stdint.h>\n#include<sys\\timeb.h>\n#include <stdlib.h>\n");
             vsCSourceFile.AppendLine("#include <string.h>\n");
-            GenerateVsFunctionDeclarations(vsCSourceFile, branchCounts, paddings, robTestCounts, rfTestCounts);
+            GenerateVsFunctionDeclarations(vsCSourceFile, branchCounts, paddings, robTestCounts, rfTestCounts, ldmTestCounts);
             AddCommonInitCode(vsCSourceFile);
             vsCSourceFile.AppendLine("  struct timeb start, end;");
 
@@ -104,6 +112,12 @@ namespace AsmGen
             vsCSourceFile.AppendLine("  if (argc == 1 || argc > 1 && strncmp(argv[1], \"frf\", 3) == 0) {");
             vsCSourceFile.AppendLine("  printf(\"Testing FP Register File Capacity:\\n\");");
             GenerateVSFrfTestFunctionCalls(vsCSourceFile, rfTestCounts);
+            vsCSourceFile.AppendLine("  return 0;");
+            vsCSourceFile.AppendLine("  }\n");
+
+            vsCSourceFile.AppendLine("  if (argc == 1 || argc > 1 && strncmp(argv[1], \"ldm\", 3) == 0) {");
+            vsCSourceFile.AppendLine("  printf(\"Testing LDM Capacity:\\n\");");
+            GenerateVSLdmFunctionCalls(vsCSourceFile, ldmTestCounts);
             vsCSourceFile.AppendLine("  return 0;");
             vsCSourceFile.AppendLine("  }\n");
 
@@ -141,10 +155,11 @@ namespace AsmGen
             x86NasmFile.AppendLine("%define nop2 db 0x66, 0x90\n");
             x86NasmFile.AppendLine("%define nop4 db 0x0F, 0x1F, 0x40, 0x00\n");
             x86NasmFile.AppendLine("%define nop12 db 0x66, 0x66, 0x66, 0x66, 0x0F, 0x1F, 0x84, 0x00, 0x00, 0x00, 0x00, 0x00\n\n");
-            GenerateNasmGlobalLines(x86NasmFile, branchCounts, paddings, robTestCounts, rfTestCounts);
+            x86Nasm.GenerateGlobalLines(x86NasmFile, branchCounts, paddings, robTestCounts, rfTestCounts, ldmTestCounts);
             x86Nasm.GenerateX86NasmRobFuncs(x86NasmFile, robTestCounts);
             x86Nasm.GenerateX86NasmPrfFuncs(x86NasmFile, rfTestCounts);
             x86Nasm.GenerateX86NasmFrfFuncs(x86NasmFile, rfTestCounts);
+            x86Nasm.GenerateX86NasmLdmFuncs(x86NasmFile, ldmTestCounts);
             x86Nasm.GenerateX86NasmBranchFuncs(x86NasmFile, branchCounts, paddings);
             File.WriteAllText("clammicrobench_nasm.asm", x86NasmFile.ToString());
         }
@@ -153,6 +168,7 @@ namespace AsmGen
         public static string GetRobFuncName(int count) { return "rob" + count; }
         public static string GetPrfFuncName(int count) { return "prf" + count; }
         public static string GetFrfFuncName(int count) { return "frf" + count; }
+        public static string GetLdmFuncName(int count) { return "ldm" + count; }
         public static string GetLabelName(string funcName, int part) { return funcName + "part" + part; }
 
         static void AddCommonInitCode(StringBuilder sb)
@@ -181,7 +197,7 @@ namespace AsmGen
                 sb.AppendLine("extern uint64_t " + GetFrfFuncName(rfCounts[i]) + "(uint64_t iterations, int *arr);");
         }
 
-        static void GenerateVsFunctionDeclarations(StringBuilder sb, int[] branchCounts, int[] paddings, int[] robTestCounts, int[] rfCounts)
+        static void GenerateVsFunctionDeclarations(StringBuilder sb, int[] branchCounts, int[] paddings, int[] robTestCounts, int[] rfCounts, int[] ldmCounts)
         {
             // extern "C" uint64_t testfunc(uint64_t iterations);
             for (int i = 0; i < branchCounts.Length; i++)
@@ -196,6 +212,9 @@ namespace AsmGen
 
             for (int i = 0; i < rfCounts.Length; i++)
                 sb.AppendLine("extern \"C\" uint64_t " + GetFrfFuncName(rfCounts[i]) + "(uint64_t iterations, int *arr);");
+
+            for (int i = 0; i < ldmCounts.Length; i++)
+                sb.AppendLine("extern \"C\" uint64_t " + GetLdmFuncName(ldmCounts[i]) + "(uint64_t iterations, int *arr);");
         }
 
         static void GenerateLatencyTestArray(StringBuilder sb)
@@ -310,6 +329,19 @@ namespace AsmGen
             }
         }
 
+        static void GenerateVSLdmFunctionCalls(StringBuilder sb, int[] ldmCounts)
+        {
+            for (int i = 0; i < ldmCounts.Length; i++)
+            {
+                sb.AppendLine("  ftime(&start);");
+                sb.AppendLine("  " + GetLdmFuncName(ldmCounts[i]) + "(structIterations, A);");
+                sb.AppendLine("  ftime(&end);");
+                sb.AppendLine("  time_diff_ms = 1000 * (end.time - start.time) + (end.millitm - start.millitm);");
+                sb.AppendLine("  latency = 1e6 * (float)time_diff_ms / (float)(structIterations);");
+                sb.AppendLine("  printf(\"" + ldmCounts[i] + ",%f\\n\", latency);\n");
+            }
+        }
+
         static void GenerateVSBranchFunctionCalls(StringBuilder sb, int[] branchCounts, int padding)
         {
             sb.AppendLine("  iterations = " + iterations + ";");
@@ -338,22 +370,6 @@ namespace AsmGen
             for (int i = 0; i < branchCounts.Length; i++)
                 for (int p = 0; p < paddings.Length; p++)
                     sb.AppendLine(".global " + GetFuncName(branchCounts[i], paddings[p]));
-        }
-
-        static void GenerateNasmGlobalLines(StringBuilder sb, int[] branchCounts, int[] paddings, int[] robCounts, int[] prfCounts)
-        {
-            for (int i = 0; i < prfCounts.Length; i++)
-                sb.AppendLine("global " + GetPrfFuncName(prfCounts[i]));
-
-            for (int i = 0; i < prfCounts.Length; i++)
-                sb.AppendLine("global " + GetFrfFuncName(prfCounts[i]));
-
-            for (int i = 0; i < robCounts.Length; i++)
-                sb.AppendLine("global " + GetRobFuncName(robCounts[i]));
-
-            for (int i = 0; i < branchCounts.Length; i++)
-                for (int p = 0; p < paddings.Length; p++)
-                    sb.AppendLine("global " + GetFuncName(branchCounts[i], paddings[p]));
         }
     }
 }

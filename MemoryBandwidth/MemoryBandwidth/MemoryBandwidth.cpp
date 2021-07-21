@@ -4,6 +4,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <stdint.h>
+#include <string.h>
 #include <sys\timeb.h>
 #include <intrin.h>
 #include <immintrin.h>
@@ -28,13 +29,52 @@ extern "C" float avx_asm_read(float* arr, uint64_t arr_length, uint64_t iteratio
 uint64_t GetIterationCount(uint64_t testSize, uint64_t threads);
 DWORD WINAPI ReadBandwidthTestThread(LPVOID param);
 
-float (*bw_func)(float*, uint64_t, uint64_t) = avx_asm_read;
+float (*bw_func)(float*, uint64_t, uint64_t) = scalar_read;
 
 int main(int argc, char *argv[]) {
     float bw = MeasureBw(262144, 10, 8);
     int threads = 1;
+    int cpuid_data[4];
     if (argc > 1) {
         threads = atoi(argv[1]);
+        if (threads > 64) {
+            threads = 64;
+            fprintf(stderr, "Too many threads pls stop. Setting thread count to 64\n");
+        }
+    }
+
+    if (argc > 2) {
+        if (_strnicmp(argv[2], "sse", 3) == 0) {
+            fprintf(stderr, "Using SSE\n");
+            bw_func = sse_read;
+        }
+        else if (_strnicmp(argv[2], "avx", 3) == 0) {
+            fprintf(stderr, "Using AVX\n");
+            bw_func = avx_read;
+        }
+        else if (_strnicmp(argv[2], "asm_avx", 7) == 0) {
+            fprintf(stderr, "Using AVX (asm)\n");
+            bw_func = avx_asm_read;
+        }
+        else {
+            fprintf(stderr, "Using scalar C code\n");
+            bw_func = scalar_read;
+        }
+    }
+    else
+    {
+        // check for sse/avx
+        __cpuidex(cpuid_data, 1, 0);
+        // EDX bit 25 = SSE
+        if (cpuid_data[3] & (1UL << 25)) {
+            fprintf(stderr, "SSE supported\n");
+            bw_func = sse_read;
+        }
+
+        if (cpuid_data[2] & (1UL << 28)) {
+            fprintf(stderr, "AVX supported\n");
+            bw_func = avx_asm_read;
+        }
     }
 
     printf("Using %d threads\n", threads);
@@ -53,13 +93,13 @@ int main(int argc, char *argv[]) {
 /// <returns>Iterations per thread</returns>
 uint64_t GetIterationCount(uint64_t testSize, uint64_t threads)
 {
-    uint64_t gbToTransfer = 256;
+    uint64_t gbToTransfer = 512;
     if (testSize > 64) gbToTransfer = 64;
     if (testSize > 512) gbToTransfer = 32;
     if (testSize > 8192) gbToTransfer = 16;
     uint64_t iterations = gbToTransfer * 1024 * 1024 / testSize;
 
-    if (iterations == 0) return 1;
+    if (iterations < 8) return 8; // set a minimum to reduce noise
     else return iterations;
 }
 
@@ -70,13 +110,18 @@ float MeasureBw(uint64_t sizeKb, uint64_t iterations, uint64_t threads) {
 
     // make array and fill it with something
     float* testArr = (float*)malloc(elements * sizeof(float));
+    if (testArr == NULL) {
+        fprintf(stderr, "Could not allocate memory\n");
+        return 0;
+    }
+
     for (uint64_t i = 0; i < elements; i++) {
         testArr[i] = i + 0.5f;
     }
 
     HANDLE* testThreads = (HANDLE*)malloc(threads * sizeof(HANDLE));
     DWORD* tids = (DWORD*)malloc(threads * sizeof(DWORD));
-    bw_func(testArr, 128, iterations);
+    //bw_func(testArr, 128, iterations);
     struct BandwidthTestThreadData* threadData = (struct BandwidthTestThreadData*)malloc(threads * sizeof(struct BandwidthTestThreadData));
 
     ftime(&start);
@@ -86,6 +131,7 @@ float MeasureBw(uint64_t sizeKb, uint64_t iterations, uint64_t threads) {
         threadData[i].iterations = iterations;
         threadData[i].bw = 0;
         testThreads[i] = CreateThread(NULL, 0, ReadBandwidthTestThread, threadData + i, 0, tids + i);
+        SetThreadAffinityMask(testThreads[i], 1UL << i);
     }
 
     WaitForMultipleObjects(threads, testThreads, TRUE, INFINITE);
@@ -105,18 +151,20 @@ float MeasureBw(uint64_t sizeKb, uint64_t iterations, uint64_t threads) {
 float scalar_read(float* arr, uint64_t arr_length, uint64_t iterations) {
     float sum = 0;
     for (uint64_t iter_idx = 0; iter_idx < iterations; iter_idx++) {
+        float s1 = 0, s2 = 1, s3 = 0, s4 = 1, s5 = 0, s6 = 1, s7 = 0, s8 = 1;
         for (uint64_t i = 0; (i + 15) < arr_length; i += 16) {
             // sum elements 0-15 for consistency
-            float partialSum1 = arr[i] + arr[i + 1];
-            float partialSum2 = arr[i + 2] + arr[i + 3];
-            float partialSum3 = arr[i + 4] + arr[i + 5];
-            float partialSum4 = arr[i + 6] + arr[i + 7];
-            float partialSum5 = arr[i + 8] + arr[i + 9];
-            float partialSum6 = arr[i + 10] + arr[i + 11];
-            float partialSum7 = arr[i + 12] + arr[i + 13];
-            float partialSum8 = arr[i + 14] + arr[i + 15];
-            sum += partialSum1 + partialSum2 + partialSum3 + partialSum4 + partialSum5 + partialSum6 + partialSum7 + partialSum8;
+            s1 += arr[i];
+            s2 *= arr[i + 1];
+            s3 += arr[i + 2];
+            s4 *= arr[i + 3];
+            s5 += arr[i + 4];
+            s6 *= arr[i + 5];
+            s7 += arr[i + 6];
+            s8 *= arr[i + 7];
         }
+        
+        sum += s1 + s2 + s3 + s4 + s5 + s6 + s7 + s8;
     }
 
     return sum;
@@ -128,9 +176,16 @@ float sse_read(float* arr, uint64_t arr_length, uint64_t iterations) {
     for (uint64_t iter_idx = 0; iter_idx < iterations; iter_idx++) {
         float iterSum = 0;
         // zero two sums
-        __m128 vecSum = _mm_setzero_ps();
+        __m128 s1 = _mm_setzero_ps();
+        __m128 s2 = _mm_setzero_ps();
+        __m128 s3 = _mm_loadu_ps(arr);
+        __m128 s4 = _mm_loadu_ps(arr);
+        __m128 s5 = _mm_setzero_ps();
+        __m128 s6 = _mm_setzero_ps();
+        __m128 s7 = _mm_loadu_ps(arr);
+        __m128 s8 = _mm_loadu_ps(arr);
         __m128 zero = _mm_setzero_ps();
-        for (uint64_t i = 0; (i + 15) < arr_length; i += 16)
+        for (uint64_t i = 0; (i + 31) < arr_length; i += 32)
         {
             // each 128-bit vector has 4x32-bit elements
             // unrolled loop loads elements 0-15
@@ -138,16 +193,25 @@ float sse_read(float* arr, uint64_t arr_length, uint64_t iterations) {
             __m128 e2 = _mm_loadu_ps(arr + i + 4);
             __m128 e3 = _mm_loadu_ps(arr + i + 8);
             __m128 e4 = _mm_loadu_ps(arr + i + 12);
-            __m128 partialSum1 = _mm_add_ps(e1, e2);
-            __m128 partialSum2 = _mm_add_ps(e3, e4);
-            vecSum = _mm_add_ps(vecSum, partialSum1);
-            vecSum = _mm_add_ps(vecSum, partialSum2);
+            __m128 e5 = _mm_loadu_ps(arr + i + 16);
+            __m128 e6 = _mm_loadu_ps(arr + i + 20);
+            __m128 e7 = _mm_loadu_ps(arr + i + 24);
+            __m128 e8 = _mm_loadu_ps(arr + i + 28);
+            s1 = _mm_add_ps(s1, e1);
+            s2 = _mm_add_ps(s2, e2);
+            s3 = _mm_mul_ps(s3, e3);
+            s4 = _mm_mul_ps(s4, e4);
+            s5 = _mm_add_ps(s5, e5);
+            s6 = _mm_add_ps(s6, e6);
+            s7 = _mm_mul_ps(s7, e7);
+            s8 = _mm_mul_ps(s8, e8);
         }
 
         // who cares just extract the first one, sink the result somehow
         //vecSum = _mm_hadd_ps(vecSum, zero);
         //vecSum = _mm_hadd_ps(vecSum, zero);
-        iterSum = _mm_cvtss_f32(vecSum);
+        iterSum = _mm_cvtss_f32(s1) + _mm_cvtss_f32(s2) + _mm_cvtss_f32(s3) + _mm_cvtss_f32(s4) + 
+            _mm_cvtss_f32(s5) + _mm_cvtss_f32(s6) + _mm_cvtss_f32(s7) + _mm_cvtss_f32(s8);
         sum = iterSum;
     }
 

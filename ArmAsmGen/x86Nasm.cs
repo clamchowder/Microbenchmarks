@@ -8,6 +8,25 @@ namespace AsmGen
 {
     class x86Nasm
     {
+        public static void GenerateGlobalLines(StringBuilder sb, int[] branchCounts, int[] paddings, int[] robCounts, int[] prfCounts, int[] ldmCounts)
+        {
+            for (int i = 0; i < prfCounts.Length; i++)
+                sb.AppendLine("global " + Program.GetPrfFuncName(prfCounts[i]));
+
+            for (int i = 0; i < prfCounts.Length; i++)
+                sb.AppendLine("global " + Program.GetFrfFuncName(prfCounts[i]));
+
+            for (int i = 0; i < robCounts.Length; i++)
+                sb.AppendLine("global " + Program.GetRobFuncName(robCounts[i]));
+
+            for (int i = 0;i < ldmCounts.Length; i++)
+                sb.AppendLine("global " + Program.GetLdmFuncName(ldmCounts[i]));
+
+            for (int i = 0; i < branchCounts.Length; i++)
+                for (int p = 0; p < paddings.Length; p++)
+                    sb.AppendLine("global " + Program.GetFuncName(branchCounts[i], paddings[p]));
+        }
+
         public static void GenerateX86NasmRobFuncs(StringBuilder sb, int[] robCounts)
         {
             for (int i = 0; i < robCounts.Length; i++)
@@ -77,6 +96,68 @@ namespace AsmGen
                 for (int nopIdx = 0, addIdx = 0; nopIdx < rfCounts[i] - 2; nopIdx++)
                 {
                     sb.AppendLine(unrolledAdds[addIdx]);
+                    addIdx = (addIdx + 1) % 4;
+                }
+
+                sb.AppendLine("  dec rcx");
+                sb.AppendLine("  jne " + funcName + "start");
+                sb.AppendLine("  pop r12");
+                sb.AppendLine("  pop r13");
+                sb.AppendLine("  pop r14");
+                sb.AppendLine("  pop r15");
+                sb.AppendLine("  pop rdi");
+                sb.AppendLine("  pop rsi");
+                sb.AppendLine("  ret\n\n");
+            }
+        }
+
+        /// <summary>
+        /// Tries to test load dependency matrix capacity with instructions
+        /// that depend on an outstanding load
+        /// </summary>
+        /// <param name="sb">StringBuilder to append ASM to</param>
+        /// <param name="ldmCounts">Array of counts</param>
+        public static void GenerateX86NasmLdmFuncs(StringBuilder sb, int[] ldmCounts)
+        {
+            string[] unrolledAdds = new string[4];
+            unrolledAdds[0] = "  add r15, rdi";
+            unrolledAdds[1] = "  add r14, rdi";
+            unrolledAdds[2] = "  add r13, rdi";
+            unrolledAdds[3] = "  add r12, rdi";
+
+            string[] unrolledAdds1 = new string[4];
+            unrolledAdds1[0] = "  add r15, rsi";
+            unrolledAdds1[1] = "  add r14, rsi";
+            unrolledAdds1[2] = "  add r13, rsi";
+            unrolledAdds1[3] = "  add r12, rsi";
+            for (int i = 0; i < ldmCounts.Length; i++)
+            {
+                string funcName = Program.GetLdmFuncName(ldmCounts[i]);
+                sb.AppendLine("\n" + funcName + ":");
+                sb.AppendLine("  push rsi");
+                sb.AppendLine("  push rdi");
+                sb.AppendLine("  push r15");
+                sb.AppendLine("  push r14");
+                sb.AppendLine("  push r13");
+                sb.AppendLine("  push r12");
+                sb.AppendLine("  xor r15, r15");
+                sb.AppendLine("  mov r14, 1");
+                sb.AppendLine("  mov r13, 2");
+                sb.AppendLine("  mov r12, 3");
+                sb.AppendLine("  xor rdi, rdi");
+                sb.AppendLine("  mov esi, 64");
+                sb.AppendLine("\n" + funcName + "start:");
+                sb.AppendLine("  mov edi, [rdx + rdi * 4]");
+                for (int nopIdx = 0, addIdx = 0; nopIdx < ldmCounts[i] - 2; nopIdx++)
+                {
+                    sb.AppendLine(unrolledAdds[addIdx]);
+                    addIdx = (addIdx + 1) % 4;
+                }
+
+                sb.AppendLine("  mov esi, [rdx + rsi * 4]");
+                for (int nopIdx = 0, addIdx = 0; nopIdx < ldmCounts[i] - 2; nopIdx++)
+                {
+                    sb.AppendLine(unrolledAdds1[addIdx]);
                     addIdx = (addIdx + 1) % 4;
                 }
 
