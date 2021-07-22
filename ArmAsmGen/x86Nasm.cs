@@ -27,50 +27,20 @@ namespace AsmGen
                     sb.AppendLine("global " + Program.GetFuncName(branchCounts[i], paddings[p]));
         }
 
-        public static void GenerateX86NasmRobFuncs(StringBuilder sb, int[] robCounts)
+        /// <summary>
+        /// Basic template for generating a load of structure test funcs
+        /// regs r12, r13, r14, and r15 are usable for filler funcs
+        /// </summary>
+        /// <param name="sb">stringbuilder to append to</param>
+        /// <param name="counts">structure sizes to test</param>
+        /// <param name="funcNamePrefix">function name prefix</param>
+        /// <param name="fillerInstrs1">instructions after first pointer chasing load (rdi = [rdi])</param>
+        /// <param name="fillerInstrs2">instructions after second pointer chasing load (rsi = [rsi])</param>
+        public static void GenerateX86NasmStructureTestFuncs(StringBuilder sb, int[] counts, string funcNamePrefix, string[] fillerInstrs1, string[] fillerInstrs2)
         {
-            for (int i = 0; i < robCounts.Length; i++)
+            for (int i = 0; i < counts.Length; i++)
             {
-                string funcName = Program.GetRobFuncName(robCounts[i]);
-                sb.AppendLine("\n" + funcName + ":");
-                sb.AppendLine("  push rsi");
-                sb.AppendLine("  push rdi");
-                sb.AppendLine("  push r15");
-                sb.AppendLine("  xor rdi, rdi");
-                sb.AppendLine("  mov esi, 64");
-                sb.AppendLine("\n" + funcName + "start:");
-                sb.AppendLine("  mov edi, [rdx + rdi * 4]");
-                for (int nopIdx = 0; nopIdx < robCounts[i] - 2; nopIdx++)
-                {
-                    sb.AppendLine("  nop");
-                }
-
-                sb.AppendLine("  mov esi, [rdx + rsi * 4]");
-                for (int nopIdx = 0; nopIdx < robCounts[i] - 2; nopIdx++)
-                {
-                    sb.AppendLine("  nop");
-                }
-
-                sb.AppendLine("  dec rcx");
-                sb.AppendLine("  jne " + funcName + "start");
-                sb.AppendLine("  pop r15");
-                sb.AppendLine("  pop rdi");
-                sb.AppendLine("  pop rsi");
-                sb.AppendLine("  ret\n\n");
-            }
-        }
-
-        public static void GenerateX86NasmPrfFuncs(StringBuilder sb, int[] rfCounts)
-        {
-            string[] unrolledAdds = new string[4];
-            unrolledAdds[0] = "  add r15, 1";
-            unrolledAdds[1] = "  add r14, 2";
-            unrolledAdds[2] = "  add r13, 3";
-            unrolledAdds[3] = "  add r12, 4";
-
-            for (int i = 0; i < rfCounts.Length; i++)
-            {
-                string funcName = Program.GetPrfFuncName(rfCounts[i]);
+                string funcName = funcNamePrefix + counts[i];
                 sb.AppendLine("\n" + funcName + ":");
                 sb.AppendLine("  push rsi");
                 sb.AppendLine("  push rdi");
@@ -86,17 +56,17 @@ namespace AsmGen
                 sb.AppendLine("  mov esi, 64");
                 sb.AppendLine("\n" + funcName + "start:");
                 sb.AppendLine("  mov edi, [rdx + rdi * 4]");
-                for (int nopIdx = 0, addIdx = 0; nopIdx < rfCounts[i] - 2; nopIdx++)
+                for (int nopIdx = 0, addIdx = 0; nopIdx < counts[i] - 2; nopIdx++)
                 {
-                    sb.AppendLine(unrolledAdds[addIdx]);
-                    addIdx = (addIdx + 1) % 4;
+                    sb.AppendLine(fillerInstrs1[addIdx]);
+                    addIdx = (addIdx + 1) % fillerInstrs1.Length;
                 }
 
                 sb.AppendLine("  mov esi, [rdx + rsi * 4]");
-                for (int nopIdx = 0, addIdx = 0; nopIdx < rfCounts[i] - 2; nopIdx++)
+                for (int nopIdx = 0, addIdx = 0; nopIdx < counts[i] - 2; nopIdx++)
                 {
-                    sb.AppendLine(unrolledAdds[addIdx]);
-                    addIdx = (addIdx + 1) % 4;
+                    sb.AppendLine(fillerInstrs2[addIdx]);
+                    addIdx = (addIdx + 1) % fillerInstrs2.Length;
                 }
 
                 sb.AppendLine("  dec rcx");
@@ -109,6 +79,22 @@ namespace AsmGen
                 sb.AppendLine("  pop rsi");
                 sb.AppendLine("  ret\n\n");
             }
+        }
+
+        public static void GenerateX86NasmRobFuncs(StringBuilder sb, int[] robCounts)
+        {
+            string[] nop = new string[] { "nop" };
+            GenerateX86NasmStructureTestFuncs(sb, robCounts, "rob", nop, nop);
+        }
+
+        public static void GenerateX86NasmPrfFuncs(StringBuilder sb, int[] rfCounts)
+        {
+            string[] unrolledAdds = new string[4];
+            unrolledAdds[0] = "  add r15, 1";
+            unrolledAdds[1] = "  add r14, 2";
+            unrolledAdds[2] = "  add r13, 3";
+            unrolledAdds[3] = "  add r12, 4";
+            GenerateX86NasmStructureTestFuncs(sb, rfCounts, "prf", unrolledAdds, unrolledAdds);
         }
 
         /// <summary>
@@ -130,47 +116,7 @@ namespace AsmGen
             unrolledAdds1[1] = "  add r14, rsi";
             unrolledAdds1[2] = "  add r13, rsi";
             unrolledAdds1[3] = "  add r12, rsi";
-            for (int i = 0; i < ldmCounts.Length; i++)
-            {
-                string funcName = Program.GetLdmFuncName(ldmCounts[i]);
-                sb.AppendLine("\n" + funcName + ":");
-                sb.AppendLine("  push rsi");
-                sb.AppendLine("  push rdi");
-                sb.AppendLine("  push r15");
-                sb.AppendLine("  push r14");
-                sb.AppendLine("  push r13");
-                sb.AppendLine("  push r12");
-                sb.AppendLine("  xor r15, r15");
-                sb.AppendLine("  mov r14, 1");
-                sb.AppendLine("  mov r13, 2");
-                sb.AppendLine("  mov r12, 3");
-                sb.AppendLine("  xor rdi, rdi");
-                sb.AppendLine("  mov esi, 64");
-                sb.AppendLine("\n" + funcName + "start:");
-                sb.AppendLine("  mov edi, [rdx + rdi * 4]");
-                for (int nopIdx = 0, addIdx = 0; nopIdx < ldmCounts[i] - 2; nopIdx++)
-                {
-                    sb.AppendLine(unrolledAdds[addIdx]);
-                    addIdx = (addIdx + 1) % 4;
-                }
-
-                sb.AppendLine("  mov esi, [rdx + rsi * 4]");
-                for (int nopIdx = 0, addIdx = 0; nopIdx < ldmCounts[i] - 2; nopIdx++)
-                {
-                    sb.AppendLine(unrolledAdds1[addIdx]);
-                    addIdx = (addIdx + 1) % 4;
-                }
-
-                sb.AppendLine("  dec rcx");
-                sb.AppendLine("  jne " + funcName + "start");
-                sb.AppendLine("  pop r12");
-                sb.AppendLine("  pop r13");
-                sb.AppendLine("  pop r14");
-                sb.AppendLine("  pop r15");
-                sb.AppendLine("  pop rdi");
-                sb.AppendLine("  pop rsi");
-                sb.AppendLine("  ret\n\n");
-            }
+            GenerateX86NasmStructureTestFuncs(sb, ldmCounts, "ldm", unrolledAdds, unrolledAdds1);
         }
 
         public static void GenerateX86NasmFrfFuncs(StringBuilder sb, int[] rfCounts)
