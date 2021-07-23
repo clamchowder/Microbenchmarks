@@ -9,12 +9,30 @@ global avx_asm_read
 avx_asm_read:
   push rsi
   push rdi
-  sub rdx, 32 ; last iteration: rsi == rdx. rsi > rdx = break
+  sub rdx, 128 ; last iteration: rsi == rdx. rsi > rdx = break
 avx_asm_read_loop
   xor rsi, rsi
 avx_asm_read_pass_loop:
   lea rdi, [rcx + rsi * 4]
-; xmm0 to 5 are considered volatile
+  ; xmm0 to 5 are considered volatile
+  vmovups ymm0, [rdi]
+  vmovups ymm1, [rdi + 32]
+  vmovups ymm2, [rdi + 64]
+  vmovups ymm3, [rdi + 96]
+  add rsi, 32
+  lea rdi, [rcx + rsi * 4]
+  vmovups ymm0, [rdi]
+  vmovups ymm1, [rdi + 32]
+  vmovups ymm2, [rdi + 64]
+  vmovups ymm3, [rdi + 96]
+  add rsi, 32
+  lea rdi, [rcx + rsi * 4]
+  vmovups ymm0, [rdi]
+  vmovups ymm1, [rdi + 32]
+  vmovups ymm2, [rdi + 64]
+  vmovups ymm3, [rdi + 96]
+  add rsi, 32
+  lea rdi, [rcx + rsi * 4]
   vmovups ymm0, [rdi]
   vmovups ymm1, [rdi + 32]
   vmovups ymm2, [rdi + 64]

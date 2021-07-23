@@ -27,10 +27,11 @@ namespace AsmGen
             int rfSizeMax = 200;
             int rfSizeMin = 4;
             List<int> rfTestCountsList = new List<int>();
-            for (int i = rfSizeMin; i < rfSizeMax; i += 4)
+            for (int i = rfSizeMin; i < rfSizeMax; i ++)
             {
                 rfTestCountsList.Add(i);
             }
+            int[] rfTestCounts = rfTestCountsList.ToArray();
 
             int ldmSizeMax = 128;
             int ldmSizeMin = 2;
@@ -40,7 +41,13 @@ namespace AsmGen
                 ldmTestCounts[i - ldmSizeMin] = i;
             }
 
-            int[] rfTestCounts = rfTestCountsList.ToArray();
+            int ldqSizeMax = 160;
+            int ldqSizeMin = 2;
+            int[] ldqTestCounts = new int[ldqSizeMax - ldqSizeMin + 1];
+            for (int i = ldqSizeMin; i <= ldqSizeMax; i++)
+            {
+                ldqTestCounts[i - ldqSizeMin] = i;
+            }
 
             // number of 4B nops to pad. 0, 1, 3 corresponds to jump per 4B, 8B, 16B
             int[] paddings = new[] { 0, 1, 3 };
@@ -52,7 +59,7 @@ namespace AsmGen
 
             // Generate C file for linux
             cSourceFile.AppendLine("#include <stdio.h>\n#include<stdint.h>\n#include<sys/time.h>\n#include <stdlib.h>\n#include <string.h>\n");
-            GenerateFunctionDeclarations(cSourceFile, branchCounts, paddings, robTestCounts, rfTestCounts, ldmTestCounts);
+            GenerateFunctionDeclarations(cSourceFile, branchCounts, paddings, robTestCounts, rfTestCounts, ldmTestCounts, ldqTestCounts);
             AddCommonInitCode(cSourceFile);
             cSourceFile.AppendLine("  struct timeval startTv, endTv;");
             cSourceFile.AppendLine("  struct timezone startTz, endTz;");
@@ -81,6 +88,18 @@ namespace AsmGen
             cSourceFile.AppendLine("  free(A); return 0;");
             cSourceFile.AppendLine("  }\n");
 
+            cSourceFile.AppendLine("  if (argc == 1 || argc > 1 && strncmp(argv[1], \"ldq\", 3) == 0) {");
+            cSourceFile.AppendLine("  printf(\"Testing LDQ Capacity:\\n\");");
+            GenerateLdmTestFunctionCalls(cSourceFile, ldqTestCounts);
+            cSourceFile.AppendLine("  free(A); return 0;");
+            cSourceFile.AppendLine("  }\n");
+
+            cSourceFile.AppendLine("  if (argc == 1 || argc > 1 && strncmp(argv[1], \"stq\", 3) == 0) {");
+            cSourceFile.AppendLine("  printf(\"Testing STQ Capacity:\\n\");");
+            GenerateLdmTestFunctionCalls(cSourceFile, ldqTestCounts);
+            cSourceFile.AppendLine("  free(A); return 0;");
+            cSourceFile.AppendLine("  }\n");
+
             cSourceFile.AppendLine("  free(A);");
 
             cSourceFile.AppendLine("  printf(\"Branch Per 16B:\\n\");");
@@ -95,7 +114,7 @@ namespace AsmGen
             // Generate C file for VS
             vsCSourceFile.AppendLine("#include <stdio.h>\n#include<stdint.h>\n#include<sys\\timeb.h>\n#include <stdlib.h>\n");
             vsCSourceFile.AppendLine("#include <string.h>\n");
-            GenerateVsFunctionDeclarations(vsCSourceFile, branchCounts, paddings, robTestCounts, rfTestCounts, ldmTestCounts);
+            GenerateVsFunctionDeclarations(vsCSourceFile, branchCounts, paddings, robTestCounts, rfTestCounts, ldmTestCounts, ldqTestCounts);
             AddCommonInitCode(vsCSourceFile);
             vsCSourceFile.AppendLine("  struct timeb start, end;");
 
@@ -125,6 +144,18 @@ namespace AsmGen
             vsCSourceFile.AppendLine("  return 0;");
             vsCSourceFile.AppendLine("  }\n");
 
+            vsCSourceFile.AppendLine("  if (argc == 1 || argc > 1 && strncmp(argv[1], \"ldq\", 3) == 0) {");
+            vsCSourceFile.AppendLine("  printf(\"Testing LDQ Capacity:\\n\");");
+            GenerateVSLdqFunctionCalls(vsCSourceFile, ldqTestCounts);
+            vsCSourceFile.AppendLine("  return 0;");
+            vsCSourceFile.AppendLine("  }\n");
+
+            vsCSourceFile.AppendLine("  if (argc == 1 || argc > 1 && strncmp(argv[1], \"stq\", 3) == 0) {");
+            vsCSourceFile.AppendLine("  printf(\"Testing STQ Capacity:\\n\");");
+            GenerateVSStqFunctionCalls(vsCSourceFile, ldqTestCounts);
+            vsCSourceFile.AppendLine("  return 0;");
+            vsCSourceFile.AppendLine("  }\n");
+
             // after structure size tests we don't care about this array
             vsCSourceFile.AppendLine("  free(A);");
 
@@ -139,7 +170,7 @@ namespace AsmGen
             File.WriteAllText("clammicrobench.cpp", vsCSourceFile.ToString());
 
             armAsmFile.AppendLine(".arch armv8-a\n.text\n");
-            GenerateAsmGlobalLines(armAsmFile, branchCounts, paddings, robTestCounts, rfTestCounts, ldmTestCounts);
+            GenerateAsmGlobalLines(armAsmFile, branchCounts, paddings, robTestCounts, rfTestCounts, ldmTestCounts, ldqTestCounts);
             ARM.GenerateArmAsmRobFuncs(armAsmFile, robTestCounts);
             ARM.GenerateArmAsmPrfFuncs(armAsmFile, rfTestCounts);
             ARM.GenerateArmAsmFrfFuncs(armAsmFile, rfTestCounts);
@@ -148,11 +179,13 @@ namespace AsmGen
             File.WriteAllText("branchtest_arm.s", armAsmFile.ToString());
 
             x86AsmFile.AppendLine(".text\n");
-            GenerateAsmGlobalLines(x86AsmFile, branchCounts, paddings, robTestCounts, rfTestCounts, ldmTestCounts);
+            GenerateAsmGlobalLines(x86AsmFile, branchCounts, paddings, robTestCounts, rfTestCounts, ldmTestCounts, ldqTestCounts);
             x86.GenerateX86AsmRobFuncs(x86AsmFile, robTestCounts);
             x86.GenerateX86AsmPrfFuncs(x86AsmFile, rfTestCounts);
             x86.GenerateX86AsmFrfFuncs(x86AsmFile, rfTestCounts);
             x86.GenerateX86AsmLdmFuncs(x86AsmFile, ldmTestCounts);
+            x86.GenerateX86AsmLdqFuncs(x86AsmFile, ldqTestCounts);
+            x86.GenerateX86AsmStqFuncs(x86AsmFile, ldqTestCounts);
             x86.GenerateX86AsmBranchFuncs(x86AsmFile, branchCounts, paddings);
             File.WriteAllText("branchtest_x86.s", x86AsmFile.ToString());
 
@@ -161,37 +194,43 @@ namespace AsmGen
             x86NasmFile.AppendLine("%define nop2 db 0x66, 0x90\n");
             x86NasmFile.AppendLine("%define nop4 db 0x0F, 0x1F, 0x40, 0x00\n");
             x86NasmFile.AppendLine("%define nop12 db 0x66, 0x66, 0x66, 0x66, 0x0F, 0x1F, 0x84, 0x00, 0x00, 0x00, 0x00, 0x00\n\n");
-            x86Nasm.GenerateGlobalLines(x86NasmFile, branchCounts, paddings, robTestCounts, rfTestCounts, ldmTestCounts);
+            x86Nasm.GenerateGlobalLines(x86NasmFile, branchCounts, paddings, robTestCounts, rfTestCounts, ldmTestCounts, ldqTestCounts);
             x86Nasm.GenerateX86NasmRobFuncs(x86NasmFile, robTestCounts);
             x86Nasm.GenerateX86NasmPrfFuncs(x86NasmFile, rfTestCounts);
             x86Nasm.GenerateX86NasmFrfFuncs(x86NasmFile, rfTestCounts);
             x86Nasm.GenerateX86NasmLdmFuncs(x86NasmFile, ldmTestCounts);
+            x86Nasm.GenerateX86NasmStqFuncs(x86NasmFile, ldqTestCounts);
+            x86Nasm.GenerateX86NasmLdqFuncs(x86NasmFile, ldqTestCounts);
             x86Nasm.GenerateX86NasmBranchFuncs(x86NasmFile, branchCounts, paddings);
             File.WriteAllText("clammicrobench_nasm.asm", x86NasmFile.ToString());
         }
 
-        public static string GetFuncName(int branchCount, int padding) { return "branch" + branchCount + "pad" + padding; }
+        public static string GetBranchFuncName(int branchCount, int padding) { return "branch" + branchCount + "pad" + padding; }
         public static string GetRobFuncName(int count) { return "rob" + count; }
         public static string GetPrfFuncName(int count) { return "prf" + count; }
         public static string GetFrfFuncName(int count) { return "frf" + count; }
         public static string GetLdmFuncName(int count) { return "ldm" + count; }
         public static string GetLabelName(string funcName, int part) { return funcName + "part" + part; }
 
+        public const string ldqPrefix = "ldq";
+        public const string stqPrefix = "stq";
+
         static void AddCommonInitCode(StringBuilder sb)
         {
             sb.AppendLine("int main(int argc, char *argv[]) {");
             sb.AppendLine($"  uint64_t time_diff_ms, iterations = {iterations}, structIterations = {structTestIterations};");
             sb.AppendLine("  float latency;");
-            sb.AppendLine($"  printf(\"Usage: [rob/prf/frf/branchonly] [latency list size] [struct iterations = {structTestIterations}]\\n\");");
+            sb.AppendLine("  uint64_t tmpsink;");
+            sb.AppendLine($"  printf(\"Usage: [rob/prf/frf/ldm/branchonly] [latency list size] [struct iterations = {structTestIterations}]\\n\");");
             sb.AppendLine("  if (argc > 3) { structIterations = atoi(argv[3]); }");
             GenerateLatencyTestArray(sb);
         }
 
-        static void GenerateFunctionDeclarations(StringBuilder sb, int[] branchCounts, int[] paddings, int[] robTestCounts, int[] rfCounts, int[] ldmCounts)
+        static void GenerateFunctionDeclarations(StringBuilder sb, int[] branchCounts, int[] paddings, int[] robTestCounts, int[] rfCounts, int[] ldmCounts, int[] ldqCounts)
         {
             for (int i = 0; i < branchCounts.Length; i++)
                 for (int p = 0; p < paddings.Length; p++)
-                    sb.AppendLine("extern uint64_t " + GetFuncName(branchCounts[i], paddings[p]) + "(uint64_t iterations);");
+                    sb.AppendLine("extern uint64_t " + GetBranchFuncName(branchCounts[i], paddings[p]) + "(uint64_t iterations);");
 
             for (int i = 0; i < robTestCounts.Length; i++)
                 sb.AppendLine("extern uint64_t " + GetRobFuncName(robTestCounts[i]) + "(uint64_t iterations, int *arr);");
@@ -204,14 +243,20 @@ namespace AsmGen
 
             for (int i = 0; i < ldmCounts.Length; i++)
                 sb.AppendLine("extern uint64_t " + GetLdmFuncName(ldmCounts[i]) + "(uint64_t iterations, int *arr);");
+
+            for (int i = 0; i < ldqCounts.Length; i++)
+                sb.AppendLine("extern uint64_t " + ldqPrefix + ldqCounts[i] + "(uint64_t iterations, int *arr);");
+
+            for (int i = 0; i < ldqCounts.Length; i++)
+                sb.AppendLine("extern uint64_t " + stqPrefix + ldqCounts[i] + "(uint64_t iterations, int *arr);");
         }
 
-        static void GenerateVsFunctionDeclarations(StringBuilder sb, int[] branchCounts, int[] paddings, int[] robTestCounts, int[] rfCounts, int[] ldmCounts)
+        static void GenerateVsFunctionDeclarations(StringBuilder sb, int[] branchCounts, int[] paddings, int[] robTestCounts, int[] rfCounts, int[] ldmCounts, int[] ldqCounts)
         {
             // extern "C" uint64_t testfunc(uint64_t iterations);
             for (int i = 0; i < branchCounts.Length; i++)
                 for (int p = 0; p < paddings.Length; p++)
-                    sb.AppendLine("extern \"C\" uint64_t " + GetFuncName(branchCounts[i], paddings[p]) + "(uint64_t iterations);");
+                    sb.AppendLine("extern \"C\" uint64_t " + GetBranchFuncName(branchCounts[i], paddings[p]) + "(uint64_t iterations);");
 
             for (int i = 0; i < robTestCounts.Length; i++)
                 sb.AppendLine("extern \"C\" uint64_t " + GetRobFuncName(robTestCounts[i]) + "(uint64_t iterations, int *arr);");
@@ -224,6 +269,12 @@ namespace AsmGen
 
             for (int i = 0; i < ldmCounts.Length; i++)
                 sb.AppendLine("extern \"C\" uint64_t " + GetLdmFuncName(ldmCounts[i]) + "(uint64_t iterations, int *arr);");
+
+            for (int i = 0; i < ldqCounts.Length; i++)
+                sb.AppendLine("extern \"C\" uint64_t " + ldqPrefix + ldqCounts[i] + "(uint64_t iterations, int *arr);");
+
+            for (int i = 0; i < ldqCounts.Length; i++)
+                sb.AppendLine("extern \"C\" uint64_t " + stqPrefix + ldqCounts[i] + "(uint64_t iterations, int *arr, uint64_t *sink);");
         }
 
         static void GenerateLatencyTestArray(StringBuilder sb)
@@ -269,6 +320,32 @@ namespace AsmGen
                 sb.AppendLine("  time_diff_ms = 1000 * (endTv.tv_sec - startTv.tv_sec) + ((endTv.tv_usec - startTv.tv_usec) / 1000);");
                 sb.AppendLine("  latency = 1e6 * (float)time_diff_ms / (float)(structIterations);");
                 sb.AppendLine("  printf(\"" + ldmTestCounts[i] + ",%f\\n\", latency);\n");
+            }
+        }
+
+        static void GenerateLdqTestFunctionCalls(StringBuilder sb, int[] ldqTestCounts)
+        {
+            for (int i = 0; i < ldqTestCounts.Length; i++)
+            {
+                sb.AppendLine("  gettimeofday(&startTv, &startTz);");
+                sb.AppendLine("  " + ldqPrefix + ldqTestCounts[i] + "(structIterations, A);");
+                sb.AppendLine("  gettimeofday(&endTv, &endTz);");
+                sb.AppendLine("  time_diff_ms = 1000 * (endTv.tv_sec - startTv.tv_sec) + ((endTv.tv_usec - startTv.tv_usec) / 1000);");
+                sb.AppendLine("  latency = 1e6 * (float)time_diff_ms / (float)(structIterations);");
+                sb.AppendLine("  printf(\"" + ldqTestCounts[i] + ",%f\\n\", latency);\n");
+            }
+        }
+
+        static void GenerateStqTestFunctionCalls(StringBuilder sb, int[] ldqTestCounts)
+        {
+            for (int i = 0; i < ldqTestCounts.Length; i++)
+            {
+                sb.AppendLine("  gettimeofday(&startTv, &startTz);");
+                sb.AppendLine("  " + stqPrefix + ldqTestCounts[i] + "(structIterations, A, &tmpsink);");
+                sb.AppendLine("  gettimeofday(&endTv, &endTz);");
+                sb.AppendLine("  time_diff_ms = 1000 * (endTv.tv_sec - startTv.tv_sec) + ((endTv.tv_usec - startTv.tv_usec) / 1000);");
+                sb.AppendLine("  latency = 1e6 * (float)time_diff_ms / (float)(structIterations);");
+                sb.AppendLine("  printf(\"" + ldqTestCounts[i] + ",%f\\n\", latency);\n");
             }
         }
 
@@ -343,7 +420,7 @@ namespace AsmGen
             for (int i = 0; i < branchCounts.Length; i++)
             {
                 sb.AppendLine("  gettimeofday(&startTv, &startTz);");
-                sb.AppendLine("  " + GetFuncName(branchCounts[i], padding) + "(" + iterations + "/" + branchCounts[i] + ");");
+                sb.AppendLine("  " + GetBranchFuncName(branchCounts[i], padding) + "(" + iterations + "/" + branchCounts[i] + ");");
                 sb.AppendLine("  gettimeofday(&endTv, &endTz);");
                 sb.AppendLine("  time_diff_ms = 1000 * (endTv.tv_sec - startTv.tv_sec) + ((endTv.tv_usec - startTv.tv_usec) / 1000);");
                 sb.AppendLine("  latency = 1e6 * (float)time_diff_ms / (float)(iterations);");
@@ -364,13 +441,39 @@ namespace AsmGen
             }
         }
 
+        static void GenerateVSLdqFunctionCalls(StringBuilder sb, int[] ldqCounts)
+        {
+            for (int i = 0; i < ldqCounts.Length; i++)
+            {
+                sb.AppendLine("  ftime(&start);");
+                sb.AppendLine("  " + ldqPrefix + ldqCounts[i] + "(structIterations, A);");
+                sb.AppendLine("  ftime(&end);");
+                sb.AppendLine("  time_diff_ms = 1000 * (end.time - start.time) + (end.millitm - start.millitm);");
+                sb.AppendLine("  latency = 1e6 * (float)time_diff_ms / (float)(structIterations);");
+                sb.AppendLine("  printf(\"" + ldqCounts[i] + ",%f\\n\", latency);\n");
+            }
+        }
+
+        static void GenerateVSStqFunctionCalls(StringBuilder sb, int[] stqCounts)
+        {
+            for (int i = 0; i < stqCounts.Length; i++)
+            {
+                sb.AppendLine("  ftime(&start);");
+                sb.AppendLine("  " + stqPrefix + stqCounts[i] + "(structIterations, A, &tmpsink);");
+                sb.AppendLine("  ftime(&end);");
+                sb.AppendLine("  time_diff_ms = 1000 * (end.time - start.time) + (end.millitm - start.millitm);");
+                sb.AppendLine("  latency = 1e6 * (float)time_diff_ms / (float)(structIterations);");
+                sb.AppendLine("  printf(\"" + stqCounts[i] + ",%f\\n\", latency);\n");
+            }
+        }
+
         static void GenerateVSBranchFunctionCalls(StringBuilder sb, int[] branchCounts, int padding)
         {
             sb.AppendLine("  iterations = " + iterations + ";");
             for (int i = 0; i < branchCounts.Length; i++)
             {
                 sb.AppendLine("  ftime(&start);");
-                sb.AppendLine("  " + GetFuncName(branchCounts[i], padding) + "(" + iterations + "/" + branchCounts[i] + ");");
+                sb.AppendLine("  " + GetBranchFuncName(branchCounts[i], padding) + "(" + iterations + "/" + branchCounts[i] + ");");
                 sb.AppendLine("  ftime(&end);");
                 sb.AppendLine("  time_diff_ms = 1000 * (end.time - start.time) + (end.millitm - start.millitm);");
                 sb.AppendLine("  latency = 1e6 * (float)time_diff_ms / (float)(iterations);");
@@ -378,7 +481,7 @@ namespace AsmGen
             }
         }
 
-        static void GenerateAsmGlobalLines(StringBuilder sb, int[] branchCounts, int[] paddings, int[] robCounts, int[] rfCounts, int[] ldmCounts)
+        static void GenerateAsmGlobalLines(StringBuilder sb, int[] branchCounts, int[] paddings, int[] robCounts, int[] rfCounts, int[] ldmCounts, int[] ldqCounts)
         {
             for (int i = 0; i < robCounts.Length; i++)
                 sb.AppendLine(".global " + GetRobFuncName(robCounts[i]));
@@ -392,9 +495,18 @@ namespace AsmGen
             for (int i = 0; i < ldmCounts.Length; i++)
                 sb.AppendLine(".global " + GetLdmFuncName(ldmCounts[i]));
 
+            for (int i = 0; i < ldmCounts.Length; i++)
+                sb.AppendLine(".global " + GetLdmFuncName(ldmCounts[i]));
+
+            for (int i = 0; i < ldqCounts.Length; i++)
+                sb.AppendLine(".global " + ldqPrefix + ldqCounts[i]);
+
+            for (int i = 0; i < ldqCounts.Length; i++)
+                sb.AppendLine(".global " + stqPrefix + ldqCounts[i]);
+
             for (int i = 0; i < branchCounts.Length; i++)
                 for (int p = 0; p < paddings.Length; p++)
-                    sb.AppendLine(".global " + GetFuncName(branchCounts[i], paddings[p]));
+                    sb.AppendLine(".global " + GetBranchFuncName(branchCounts[i], paddings[p]));
         }
     }
 }

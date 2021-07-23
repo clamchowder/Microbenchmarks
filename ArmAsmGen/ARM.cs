@@ -172,7 +172,7 @@ namespace AsmGen
             for (int p = 0; p < paddings.Length; p++)
                 for (int i = 0; i < branchCounts.Length; i++)
                 {
-                    string funcName = Program.GetFuncName(branchCounts[i], paddings[p]);
+                    string funcName = Program.GetBranchFuncName(branchCounts[i], paddings[p]);
                     //sb.AppendLine("; Start of function for branch count " + branchCounts[i] + " padding " + paddings[p]);
                     sb.AppendLine(funcName + ":");
                     for (int branchIdx = 1; branchIdx < branchCounts[i]; branchIdx++)

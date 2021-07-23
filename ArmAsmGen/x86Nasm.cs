@@ -8,7 +8,7 @@ namespace AsmGen
 {
     class x86Nasm
     {
-        public static void GenerateGlobalLines(StringBuilder sb, int[] branchCounts, int[] paddings, int[] robCounts, int[] prfCounts, int[] ldmCounts)
+        public static void GenerateGlobalLines(StringBuilder sb, int[] branchCounts, int[] paddings, int[] robCounts, int[] prfCounts, int[] ldmCounts, int[] ldqCounts)
         {
             for (int i = 0; i < prfCounts.Length; i++)
                 sb.AppendLine("global " + Program.GetPrfFuncName(prfCounts[i]));
@@ -22,9 +22,15 @@ namespace AsmGen
             for (int i = 0;i < ldmCounts.Length; i++)
                 sb.AppendLine("global " + Program.GetLdmFuncName(ldmCounts[i]));
 
+            for (int i = 0; i < ldqCounts.Length; i++)
+                sb.AppendLine("global " + Program.ldqPrefix + ldqCounts[i]);
+
+            for (int i = 0; i < ldqCounts.Length; i++)
+                sb.AppendLine("global " + Program.stqPrefix + ldqCounts[i]);
+
             for (int i = 0; i < branchCounts.Length; i++)
                 for (int p = 0; p < paddings.Length; p++)
-                    sb.AppendLine("global " + Program.GetFuncName(branchCounts[i], paddings[p]));
+                    sb.AppendLine("global " + Program.GetBranchFuncName(branchCounts[i], paddings[p]));
         }
 
         /// <summary>
@@ -119,6 +125,42 @@ namespace AsmGen
             GenerateX86NasmStructureTestFuncs(sb, ldmCounts, "ldm", unrolledAdds, unrolledAdds1);
         }
 
+        public static void GenerateX86NasmIntSchedFuncs(StringBuilder sb, int[] schedCounts)
+        {
+            string[] unrolledAdds = new string[4];
+            unrolledAdds[0] = "  add r15, rdi";
+            unrolledAdds[1] = "  add r14, r15";
+            unrolledAdds[2] = "  add r13, r15";
+            unrolledAdds[3] = "  add r12, r15";
+
+            string[] unrolledAdds1 = new string[4];
+            unrolledAdds1[0] = "  add r15, rsi";
+            unrolledAdds1[1] = "  add r14, r15";
+            unrolledAdds1[2] = "  add r13, r15";
+            unrolledAdds1[3] = "  add r12, r15";
+            GenerateX86NasmStructureTestFuncs(sb, schedCounts, "intsched", unrolledAdds, unrolledAdds1);
+        }
+
+        public static void GenerateX86NasmLdqFuncs(StringBuilder sb, int[] ldqCounts)
+        {
+            string[] unrolledMovs = new string[4];
+            unrolledMovs[0] = "  mov r15, [rdx]";
+            unrolledMovs[1] = "  mov r14, [rdx]";
+            unrolledMovs[2] = "  mov r13, [rdx]";
+            unrolledMovs[3] = "  mov r12, [rdx]";
+            GenerateX86NasmStructureTestFuncs(sb, ldqCounts, "ldq", unrolledMovs, unrolledMovs);
+        }
+
+        public static void GenerateX86NasmStqFuncs(StringBuilder sb, int[] stqCounts)
+        {
+            string[] unrolledMovs = new string[4];
+            unrolledMovs[0] = "  mov [r8], r15";
+            unrolledMovs[1] = "  mov [r8], r14";
+            unrolledMovs[2] = "  mov [r8], r13";
+            unrolledMovs[3] = "  mov [r8], r12";
+            GenerateX86NasmStructureTestFuncs(sb, stqCounts, "stq", unrolledMovs, unrolledMovs);
+        }
+
         public static void GenerateX86NasmFrfFuncs(StringBuilder sb, int[] rfCounts)
         {
             string[] unrolledAdds = new string[4];
@@ -185,7 +227,7 @@ namespace AsmGen
 
                 for (int i = 0; i < branchCounts.Length; i++)
                 {
-                    string funcName = Program.GetFuncName(branchCounts[i], paddings[p]);
+                    string funcName = Program.GetBranchFuncName(branchCounts[i], paddings[p]);
                     //sb.AppendLine("; Start of function for branch count " + branchCounts[i] + " padding " + paddings[p]);
                     sb.AppendLine(funcName + ":\n");
                     for (int branchIdx = 1; branchIdx < branchCounts[i]; branchIdx++)
