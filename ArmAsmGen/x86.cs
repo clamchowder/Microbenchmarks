@@ -43,8 +43,6 @@ namespace AsmGen
             }
         }
 
-
-
         public static void GenerateX86AsmStructureTestFuncs(StringBuilder sb, int[] counts, string funcNamePrefix, string[] fillerInstrs1, string[] fillerInstrs2)
         {
             for (int i = 0; i < counts.Length; i++)
@@ -63,9 +61,9 @@ namespace AsmGen
 
                 // arguments are in RDI, RSI, RDX, RCX, R8, and R9
                 // move them into familiar windows argument regs (rcx, rdx, r8)
-                sb.AppendLine("  mov %rsi, %rdx");
-                sb.AppendLine("  mov %rdi, %rcx");
-                sb.AppendLine("  mov %rdx, %r8");
+                sb.AppendLine("  mov %rdx, %r8"); // r8 <- rdx
+                sb.AppendLine("  mov %rsi, %rdx"); // rdx <- rsi
+                sb.AppendLine("  mov %rdi, %rcx"); // rcx <- rdi
 
                 sb.AppendLine("  xor %r15, %r15");
                 sb.AppendLine("  mov $0x1, %r14");
@@ -92,6 +90,7 @@ namespace AsmGen
                 sb.AppendLine("  jne " + funcName + "start");
                 sb.AppendLine("  pop %rdx");
                 sb.AppendLine("  pop %rcx");
+                sb.AppendLine("  pop %r8");
                 sb.AppendLine("  pop %r12");
                 sb.AppendLine("  pop %r13");
                 sb.AppendLine("  pop %r14");
@@ -119,7 +118,7 @@ namespace AsmGen
             loads[1] = "  mov %r14, (%r8)";
             loads[2] = "  mov %r13, (%r8)";
             loads[3] = "  mov %r12, (%r8)";
-            GenerateX86AsmStructureTestFuncs(sb, stqCounts, Program.ldqPrefix, loads, loads);
+            GenerateX86AsmStructureTestFuncs(sb, stqCounts, Program.stqPrefix, loads, loads);
         }
 
         public static void GenerateX86AsmLdmFuncs(StringBuilder sb, int[] ldmCounts)

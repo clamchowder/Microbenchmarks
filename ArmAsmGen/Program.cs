@@ -90,13 +90,13 @@ namespace AsmGen
 
             cSourceFile.AppendLine("  if (argc == 1 || argc > 1 && strncmp(argv[1], \"ldq\", 3) == 0) {");
             cSourceFile.AppendLine("  printf(\"Testing LDQ Capacity:\\n\");");
-            GenerateLdmTestFunctionCalls(cSourceFile, ldqTestCounts);
+            GenerateLdqTestFunctionCalls(cSourceFile, ldqTestCounts);
             cSourceFile.AppendLine("  free(A); return 0;");
             cSourceFile.AppendLine("  }\n");
 
             cSourceFile.AppendLine("  if (argc == 1 || argc > 1 && strncmp(argv[1], \"stq\", 3) == 0) {");
             cSourceFile.AppendLine("  printf(\"Testing STQ Capacity:\\n\");");
-            GenerateLdmTestFunctionCalls(cSourceFile, ldqTestCounts);
+            GenerateStqTestFunctionCalls(cSourceFile, ldqTestCounts);
             cSourceFile.AppendLine("  free(A); return 0;");
             cSourceFile.AppendLine("  }\n");
 
@@ -221,7 +221,7 @@ namespace AsmGen
             sb.AppendLine($"  uint64_t time_diff_ms, iterations = {iterations}, structIterations = {structTestIterations};");
             sb.AppendLine("  float latency;");
             sb.AppendLine("  uint64_t tmpsink;");
-            sb.AppendLine($"  printf(\"Usage: [rob/prf/frf/ldm/branchonly] [latency list size] [struct iterations = {structTestIterations}]\\n\");");
+            sb.AppendLine($"  printf(\"Usage: [rob/prf/frf/ldm/ldq/stq/branch] [latency list size] [struct iterations = {structTestIterations}]\\n\");");
             sb.AppendLine("  if (argc > 3) { structIterations = atoi(argv[3]); }");
             GenerateLatencyTestArray(sb);
         }
@@ -248,7 +248,7 @@ namespace AsmGen
                 sb.AppendLine("extern uint64_t " + ldqPrefix + ldqCounts[i] + "(uint64_t iterations, int *arr);");
 
             for (int i = 0; i < ldqCounts.Length; i++)
-                sb.AppendLine("extern uint64_t " + stqPrefix + ldqCounts[i] + "(uint64_t iterations, int *arr);");
+                sb.AppendLine("extern uint64_t " + stqPrefix + ldqCounts[i] + "(uint64_t iterations, int *arr, uint64_t *sink);");
         }
 
         static void GenerateVsFunctionDeclarations(StringBuilder sb, int[] branchCounts, int[] paddings, int[] robTestCounts, int[] rfCounts, int[] ldmCounts, int[] ldqCounts)
@@ -491,9 +491,6 @@ namespace AsmGen
 
             for (int i = 0; i < rfCounts.Length; i++)
                 sb.AppendLine(".global " + GetFrfFuncName(rfCounts[i]));
-
-            for (int i = 0; i < ldmCounts.Length; i++)
-                sb.AppendLine(".global " + GetLdmFuncName(ldmCounts[i]));
 
             for (int i = 0; i < ldmCounts.Length; i++)
                 sb.AppendLine(".global " + GetLdmFuncName(ldmCounts[i]));
