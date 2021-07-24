@@ -7,42 +7,6 @@ namespace AsmGen
 {
     class x86
     {
-        public static void GenerateX86AsmRobFuncs(StringBuilder sb, int[] robCounts)
-        {
-            for (int i = 0; i < robCounts.Length; i++)
-            {
-                // args in rdi, rsi, rdx, rcx
-                string funcName = Program.GetRobFuncName(robCounts[i]);
-                sb.AppendLine("\n" + funcName + ":");
-                sb.AppendLine("  push %rdx");
-                sb.AppendLine("  push %rcx");
-                sb.AppendLine("  push %r15");
-                sb.AppendLine("  mov %rsi, %rdx");
-                sb.AppendLine("  mov %rdi, %rcx");
-                sb.AppendLine("  xor %rdi, %rdi");
-                sb.AppendLine("  mov $0x40, %esi");
-                sb.AppendLine("\n" + funcName + "start:");
-                sb.AppendLine("  mov (%rdx,%rdi,4), %edi");
-                for (int nopIdx = 0; nopIdx < robCounts[i] - 2; nopIdx++)
-                {
-                    sb.AppendLine("  nop");
-                }
-
-                sb.AppendLine("  mov (%rdx,%rsi,4), %esi");
-                for (int nopIdx = 0; nopIdx < robCounts[i] - 2; nopIdx++)
-                {
-                    sb.AppendLine("  nop");
-                }
-
-                sb.AppendLine("  dec %rcx");
-                sb.AppendLine("  jne " + funcName + "start");
-                sb.AppendLine("  pop %r15");
-                sb.AppendLine("  pop %rdi");
-                sb.AppendLine("  pop %rsi");
-                sb.AppendLine("  ret\n\n");
-            }
-        }
-
         public static void GenerateX86AsmStructureTestFuncs(StringBuilder sb, int[] counts, string funcNamePrefix, string[] fillerInstrs1, string[] fillerInstrs2)
         {
             for (int i = 0; i < counts.Length; i++)
@@ -101,6 +65,12 @@ namespace AsmGen
             }
         }
 
+        public static void GenerateX86AsmRobFuncs(StringBuilder sb, int[] robCounts)
+        {
+            string[] nops = new string[] { "nop" };
+            GenerateX86AsmStructureTestFuncs(sb, robCounts, Program.robPrefix, nops, nops);
+        }
+
         public static void GenerateX86AsmLdqFuncs(StringBuilder sb, int[] ldqCounts)
         {
             string[] loads = new string[4];
@@ -134,54 +104,7 @@ namespace AsmGen
             unrolledAdds1[1] = "  add %rsi, %r14";
             unrolledAdds1[2] = "  add %rsi, %r13";
             unrolledAdds1[3] = "  add %rsi, %r12";
-
-            for (int i = 0; i < ldmCounts.Length; i++)
-            {
-                string funcName = Program.GetLdmFuncName(ldmCounts[i]);
-                sb.AppendLine("\n" + funcName + ":");
-                sb.AppendLine("  push %rsi");
-                sb.AppendLine("  push %rdi");
-                sb.AppendLine("  push %r15");
-                sb.AppendLine("  push %r14");
-                sb.AppendLine("  push %r13");
-                sb.AppendLine("  push %r12");
-                sb.AppendLine("  push %rcx");
-                sb.AppendLine("  push %rdx");
-                sb.AppendLine("  mov %rsi, %rdx");
-                sb.AppendLine("  mov %rdi, %rcx");
-                sb.AppendLine("  xor %r15, %r15");
-                sb.AppendLine("  mov $0x1, %r14");
-                sb.AppendLine("  mov $0x1, %r13");
-                sb.AppendLine("  mov $0x3, %r12");
-                sb.AppendLine("  xor %rdi, %rdi");
-                sb.AppendLine("  mov $0x40, %esi");
-                sb.AppendLine("\n" + funcName + "start:");
-                sb.AppendLine("  mov (%rdx,%rdi,4), %edi");
-                for (int nopIdx = 0, addIdx = 0; nopIdx < ldmCounts[i] - 2; nopIdx++)
-                {
-                    sb.AppendLine(unrolledAdds[addIdx]);
-                    addIdx = (addIdx + 1) % 4;
-                }
-
-                sb.AppendLine("  mov (%rdx,%rsi,4), %esi");
-                for (int nopIdx = 0, addIdx = 0; nopIdx < ldmCounts[i] - 2; nopIdx++)
-                {
-                    sb.AppendLine(unrolledAdds1[addIdx]);
-                    addIdx = (addIdx + 1) % 4;
-                }
-
-                sb.AppendLine("  dec %rcx");
-                sb.AppendLine("  jne " + funcName + "start");
-                sb.AppendLine("  pop %rdx");
-                sb.AppendLine("  pop %rcx");
-                sb.AppendLine("  pop %r12");
-                sb.AppendLine("  pop %r13");
-                sb.AppendLine("  pop %r14");
-                sb.AppendLine("  pop %r15");
-                sb.AppendLine("  pop %rdi");
-                sb.AppendLine("  pop %rsi");
-                sb.AppendLine("  ret\n\n");
-            }
+            GenerateX86AsmStructureTestFuncs(sb, ldmCounts, Program.ldmPrefix, unrolledAdds, unrolledAdds1);
         }
 
         public static void GenerateX86AsmPrfFuncs(StringBuilder sb, int[] rfCounts)
@@ -191,54 +114,7 @@ namespace AsmGen
             unrolledAdds[1] = "  add $0x2, %r14";
             unrolledAdds[2] = "  add $0x3, %r13";
             unrolledAdds[3] = "  add $0x4, %r12";
-
-            for (int i = 0; i < rfCounts.Length; i++)
-            {
-                string funcName = Program.GetPrfFuncName(rfCounts[i]);
-                sb.AppendLine("\n" + funcName + ":");
-                sb.AppendLine("  push %rsi");
-                sb.AppendLine("  push %rdi");
-                sb.AppendLine("  push %r15");
-                sb.AppendLine("  push %r14");
-                sb.AppendLine("  push %r13");
-                sb.AppendLine("  push %r12");
-                sb.AppendLine("  push %rcx");
-                sb.AppendLine("  push %rdx");
-                sb.AppendLine("  mov %rsi, %rdx");
-                sb.AppendLine("  mov %rdi, %rcx");
-                sb.AppendLine("  xor %r15, %r15");
-                sb.AppendLine("  mov $0x1, %r14");
-                sb.AppendLine("  mov $0x1, %r13");
-                sb.AppendLine("  mov $0x3, %r12");
-                sb.AppendLine("  xor %rdi, %rdi");
-                sb.AppendLine("  mov $0x40, %esi");
-                sb.AppendLine("\n" + funcName + "start:");
-                sb.AppendLine("  mov (%rdx,%rdi,4), %edi");
-                for (int nopIdx = 0, addIdx = 0; nopIdx < rfCounts[i] - 2; nopIdx++)
-                {
-                    sb.AppendLine(unrolledAdds[addIdx]);
-                    addIdx = (addIdx + 1) % 4;
-                }
-
-                sb.AppendLine("  mov (%rdx,%rsi,4), %esi");
-                for (int nopIdx = 0, addIdx = 0; nopIdx < rfCounts[i] - 2; nopIdx++)
-                {
-                    sb.AppendLine(unrolledAdds[addIdx]);
-                    addIdx = (addIdx + 1) % 4;
-                }
-
-                sb.AppendLine("  dec %rcx");
-                sb.AppendLine("  jne " + funcName + "start");
-                sb.AppendLine("  pop %rdx");
-                sb.AppendLine("  pop %rcx");
-                sb.AppendLine("  pop %r12");
-                sb.AppendLine("  pop %r13");
-                sb.AppendLine("  pop %r14");
-                sb.AppendLine("  pop %r15");
-                sb.AppendLine("  pop %rdi");
-                sb.AppendLine("  pop %rsi");
-                sb.AppendLine("  ret\n\n");
-            }
+            GenerateX86AsmStructureTestFuncs(sb, rfCounts, Program.prfPrefix, unrolledAdds, unrolledAdds);
         }
 
         public static void GenerateX86AsmFrfFuncs(StringBuilder sb, int[] rfCounts)
@@ -251,7 +127,7 @@ namespace AsmGen
 
             for (int i = 0; i < rfCounts.Length; i++)
             {
-                string funcName = Program.GetFrfFuncName(rfCounts[i]);
+                string funcName = Program.frfPrefix + rfCounts[i];
                 sb.AppendLine("\n" + funcName + ":");
                 sb.AppendLine("  push %rsi");
                 sb.AppendLine("  push %rdi");

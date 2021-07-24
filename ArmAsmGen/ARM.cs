@@ -8,51 +8,99 @@ namespace AsmGen
 {
     class ARM
     {
-        public static void GenerateArmAsmLdmFuncs(StringBuilder sb, int[] rfCounts)
+        public static void GenerateArmAsmStructureTestFuncs(StringBuilder sb, int[] counts, string funcNamePrefix, string[] fillerInstrs1, string[] fillerInstrs2)
         {
-            string[] unrolledAdds = new string[4];
-            unrolledAdds[0] = "  add x30, x30, x2";
-            unrolledAdds[1] = "  add x29, x29, x2";
-            unrolledAdds[2] = "  add x28, x28, x2";
-            unrolledAdds[3] = "  add x27, x27, x2";
-
-            string[] unrolledAdds1 = new string[4];
-            unrolledAdds1[0] = "  add x30, x30, x3";
-            unrolledAdds1[1] = "  add x29, x29, x3";
-            unrolledAdds1[2] = "  add x28, x28, x3";
-            unrolledAdds1[3] = "  add x27, x27, x3";
-
-            for (int i = 0; i < rfCounts.Length; i++)
+            for (int i = 0; i < counts.Length; i++)
             {
-                string funcName = Program.GetLdmFuncName(rfCounts[i]);
+                string funcName = funcNamePrefix + counts[i];
 
                 // args in x0, x1
                 sb.AppendLine("\n" + funcName + ":");
                 sb.AppendLine("  stp x29, x30, [sp, #0x10]");
                 sb.AppendLine("  stp x27, x28, [sp, #0x20]");
-                sb.AppendLine("  mov w2, #0x0");
-                sb.AppendLine("  mov w3, #0x40");
+                sb.AppendLine("  stp x25, x26, [sp, #0x30]");
+                sb.AppendLine("  mov w25, 0x0");
+                sb.AppendLine("  mov w26, 0x40");
                 sb.AppendLine("\n" + funcName + "start:");
-                sb.AppendLine("  ldr w2, [x1, w2, uxtw #2]"); // current = A[current]
-                for (int nopIdx = 0, addIdx = 0; nopIdx < rfCounts[i] - 2; nopIdx++)
+                sb.AppendLine("  ldr w25, [x1, w25, uxtw #2]"); // current = A[current]
+                for (int nopIdx = 0, addIdx = 0; nopIdx < counts[i] - 2; nopIdx++)
                 {
-                    sb.AppendLine(unrolledAdds[addIdx]);
-                    addIdx = (addIdx + 1) % 4;
+                    sb.AppendLine(fillerInstrs1[addIdx]);
+                    addIdx = (addIdx + 1) % fillerInstrs1.Length;
                 }
 
-                sb.AppendLine("  ldr w3, [x1, w3, uxtw #2]");
-                for (int nopIdx = 0, addIdx = 0; nopIdx < rfCounts[i] - 2; nopIdx++)
+                sb.AppendLine("  ldr w26, [x1, w26, uxtw #2]");
+                for (int nopIdx = 0, addIdx = 0; nopIdx < counts[i] - 2; nopIdx++)
                 {
-                    sb.AppendLine(unrolledAdds1[addIdx]);
-                    addIdx = (addIdx + 1) % 4;
+                    sb.AppendLine(fillerInstrs2[addIdx]);
+                    addIdx = (addIdx + 1) % fillerInstrs2.Length;
                 }
 
                 sb.AppendLine("  sub x0, x0, 1");
                 sb.AppendLine("  cbnz x0, " + funcName + "start");
+                sb.AppendLine("  ldp x25, x26, [sp, #0x30]");
                 sb.AppendLine("  ldp x27, x28, [sp, #0x20]");
                 sb.AppendLine("  ldp x29, x30, [sp, #0x10]");
                 sb.AppendLine("  ret\n\n");
             }
+        }
+
+        public static void GenerateArmAsmIntSchedFuncs(StringBuilder sb, int[] counts)
+        {
+            // like ldm but fewer adds are directly dependent on load result
+            string[] unrolledAdds = new string[4];
+            unrolledAdds[0] = "  add x30, x30, x25";
+            unrolledAdds[1] = "  add x29, x29, x30";
+            unrolledAdds[2] = "  add x28, x28, x30";
+            unrolledAdds[3] = "  add x27, x27, x30";
+
+            string[] unrolledAdds1 = new string[4];
+            unrolledAdds1[0] = "  add x30, x30, x26";
+            unrolledAdds1[1] = "  add x29, x29, x30";
+            unrolledAdds1[2] = "  add x28, x28, x30";
+            unrolledAdds1[3] = "  add x27, x27, x30";
+
+            GenerateArmAsmStructureTestFuncs(sb, counts, Program.intSchedPrefix, unrolledAdds, unrolledAdds1);
+        }
+
+        public static void GenerateArmAsmLdmFuncs(StringBuilder sb, int[] ldmcounts)
+        {
+            string[] unrolledAdds = new string[4];
+            unrolledAdds[0] = "  add x30, x30, x25";
+            unrolledAdds[1] = "  add x29, x29, x25";
+            unrolledAdds[2] = "  add x28, x28, x25";
+            unrolledAdds[3] = "  add x27, x27, x25";
+
+            string[] unrolledAdds1 = new string[4];
+            unrolledAdds1[0] = "  add x30, x30, x26";
+            unrolledAdds1[1] = "  add x29, x29, x26";
+            unrolledAdds1[2] = "  add x28, x28, x26";
+            unrolledAdds1[3] = "  add x27, x27, x26";
+
+            GenerateArmAsmStructureTestFuncs(sb, ldmcounts, Program.ldmPrefix, unrolledAdds, unrolledAdds1);
+        }
+
+        public static void GenerateArmAsmLdqFuncs(StringBuilder sb, int[] ldqCounts)
+        {
+            string[] unrolledLoads = new string[4];
+            unrolledLoads[0] = "  ldr w30, [x1]";
+            unrolledLoads[1] = "  ldr w29, [x1]";
+            unrolledLoads[2] = "  ldr w28, [x1]";
+            unrolledLoads[3] = "  ldr w27, [x1]";
+
+            GenerateArmAsmStructureTestFuncs(sb, ldqCounts, Program.ldqPrefix, unrolledLoads, unrolledLoads);
+        }
+
+        public static void GenerateArmAsmStqFuncs(StringBuilder sb, int[] stqCounts)
+        {
+            // program will pass &tmpsink as a third argument, which goes in x2
+            string[] unrolledStores = new string[4];
+            unrolledStores[0] = "  str x30, [x2]";
+            unrolledStores[1] = "  str x29, [x2]";
+            unrolledStores[2] = "  str x28, [x2]";
+            unrolledStores[3] = "  str x27, [x2]";
+
+            GenerateArmAsmStructureTestFuncs(sb, stqCounts, Program.stqPrefix, unrolledStores, unrolledStores);
         }
 
         public static void GenerateArmAsmPrfFuncs(StringBuilder sb, int[] rfCounts)
@@ -63,37 +111,13 @@ namespace AsmGen
             unrolledAdds[2] = "  add x28, x28, 3";
             unrolledAdds[3] = "  add x27, x27, 4";
 
-            for (int i = 0; i < rfCounts.Length; i++)
-            {
-                string funcName = Program.GetPrfFuncName(rfCounts[i]);
+            GenerateArmAsmStructureTestFuncs(sb, rfCounts, Program.prfPrefix, unrolledAdds, unrolledAdds);
+        }
 
-                // args in x0, x1
-                sb.AppendLine("\n" + funcName + ":");
-                sb.AppendLine("  stp x29, x30, [sp, #0x10]");
-                sb.AppendLine("  stp x27, x28, [sp, #0x20]");
-                sb.AppendLine("  mov w2, #0x0");
-                sb.AppendLine("  mov w3, #0x40");
-                sb.AppendLine("\n" + funcName + "start:");
-                sb.AppendLine("  ldr w2, [x1, w2, uxtw #2]"); // current = A[current]
-                for (int nopIdx = 0, addIdx = 0; nopIdx < rfCounts[i] - 2; nopIdx++)
-                {
-                    sb.AppendLine(unrolledAdds[addIdx]);
-                    addIdx = (addIdx + 1) % 4;
-                }
-
-                sb.AppendLine("  ldr w3, [x1, w3, uxtw #2]");
-                for (int nopIdx = 0, addIdx = 0; nopIdx < rfCounts[i] - 2; nopIdx++)
-                {
-                    sb.AppendLine(unrolledAdds[addIdx]);
-                    addIdx = (addIdx + 1) % 4;
-                }
-
-                sb.AppendLine("  sub x0, x0, 1");
-                sb.AppendLine("  cbnz x0, " + funcName + "start");
-                sb.AppendLine("  ldp x27, x28, [sp, #0x20]");
-                sb.AppendLine("  ldp x29, x30, [sp, #0x10]");
-                sb.AppendLine("  ret\n\n");
-            }
+        public static void GenerateArmAsmRobFuncs(StringBuilder sb, int[] robCounts)
+        {
+            string[] nops = new string[] { "nop" };
+            GenerateArmAsmStructureTestFuncs(sb, robCounts, Program.robPrefix, nops, nops);
         }
 
         public static void GenerateArmAsmFrfFuncs(StringBuilder sb, int[] rfCounts)
@@ -106,7 +130,7 @@ namespace AsmGen
 
             for (int i = 0; i < rfCounts.Length; i++)
             {
-                string funcName = Program.GetFrfFuncName(rfCounts[i]);
+                string funcName = Program.frfPrefix + rfCounts[i];
 
                 // args in x0, x1
                 sb.AppendLine("\n" + funcName + ":");
@@ -129,36 +153,6 @@ namespace AsmGen
                 {
                     sb.AppendLine(unrolledAdds[addIdx]);
                     addIdx = (addIdx + 1) % 4;
-                }
-
-                sb.AppendLine("  sub x0, x0, 1");
-                sb.AppendLine("  cbnz x0, " + funcName + "start");
-                sb.AppendLine("  ret\n\n");
-            }
-        }
-
-        public static void GenerateArmAsmRobFuncs(StringBuilder sb, int[] robCounts)
-        {
-            for (int i = 0; i < robCounts.Length; i++)
-            {
-                string funcName = Program.GetRobFuncName(robCounts[i]);
-
-                // args in x0, x1
-                sb.AppendLine("\n" + funcName + ":");
-                sb.AppendLine("  mov w2, #0x0");
-                sb.AppendLine("  mov w3, #0x40");
-                sb.AppendLine("\n" + funcName + "start:");
-                sb.AppendLine("  ldr w2, [x1, w2, uxtw #2]"); // current = A[current]
-                // followed by nops
-                for (int nopIdx = 0; nopIdx < robCounts[i] - 2; nopIdx++)
-                {
-                    sb.AppendLine("  nop");
-                }
-
-                sb.AppendLine("  ldr w3, [x1, w3, uxtw #2]");
-                for (int nopIdx = 0; nopIdx < robCounts[i] - 2; nopIdx++)
-                {
-                    sb.AppendLine("  nop");
                 }
 
                 sb.AppendLine("  sub x0, x0, 1");

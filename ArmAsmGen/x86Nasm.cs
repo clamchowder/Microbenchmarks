@@ -11,16 +11,16 @@ namespace AsmGen
         public static void GenerateGlobalLines(StringBuilder sb, int[] branchCounts, int[] paddings, int[] robCounts, int[] prfCounts, int[] ldmCounts, int[] ldqCounts)
         {
             for (int i = 0; i < prfCounts.Length; i++)
-                sb.AppendLine("global " + Program.GetPrfFuncName(prfCounts[i]));
+                sb.AppendLine("global " + Program.prfPrefix + prfCounts[i]);
 
             for (int i = 0; i < prfCounts.Length; i++)
-                sb.AppendLine("global " + Program.GetFrfFuncName(prfCounts[i]));
+                sb.AppendLine("global " + Program.frfPrefix + prfCounts[i]);
 
             for (int i = 0; i < robCounts.Length; i++)
-                sb.AppendLine("global " + Program.GetRobFuncName(robCounts[i]));
+                sb.AppendLine("global " + Program.robPrefix + robCounts[i]);
 
             for (int i = 0;i < ldmCounts.Length; i++)
-                sb.AppendLine("global " + Program.GetLdmFuncName(ldmCounts[i]));
+                sb.AppendLine("global " + Program.ldmPrefix + ldmCounts[i]);
 
             for (int i = 0; i < ldqCounts.Length; i++)
                 sb.AppendLine("global " + Program.ldqPrefix + ldqCounts[i]);
@@ -171,7 +171,7 @@ namespace AsmGen
 
             for (int i = 0; i < rfCounts.Length; i++)
             {
-                string funcName = Program.GetFrfFuncName(rfCounts[i]);
+                string funcName = Program.frfPrefix + rfCounts[i];
                 sb.AppendLine("\n" + funcName + ":");
                 sb.AppendLine("  push rsi");
                 sb.AppendLine("  push rdi");

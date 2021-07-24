@@ -109,7 +109,7 @@ namespace AsmGen
             cSourceFile.AppendLine("  printf(\"Branch Per 4B:\\n\");");
             GenerateBranchFunctionCalls(cSourceFile, branchCounts, paddings[0]);
             cSourceFile.AppendLine("  return 0; }");
-            File.WriteAllText("branchtest.c", cSourceFile.ToString());
+            File.WriteAllText("clammicrobench.c", cSourceFile.ToString());
 
             // Generate C file for VS
             vsCSourceFile.AppendLine("#include <stdio.h>\n#include<stdint.h>\n#include<sys\\timeb.h>\n#include <stdlib.h>\n");
@@ -175,8 +175,10 @@ namespace AsmGen
             ARM.GenerateArmAsmPrfFuncs(armAsmFile, rfTestCounts);
             ARM.GenerateArmAsmFrfFuncs(armAsmFile, rfTestCounts);
             ARM.GenerateArmAsmLdmFuncs(armAsmFile, ldmTestCounts);
+            ARM.GenerateArmAsmLdqFuncs(armAsmFile, ldqTestCounts);
+            ARM.GenerateArmAsmStqFuncs(armAsmFile, ldqTestCounts);
             ARM.GenerateArmAsmBranchFuncs(armAsmFile, branchCounts, paddings);
-            File.WriteAllText("branchtest_arm.s", armAsmFile.ToString());
+            File.WriteAllText("clammicrobench_arm.s", armAsmFile.ToString());
 
             x86AsmFile.AppendLine(".text\n");
             GenerateAsmGlobalLines(x86AsmFile, branchCounts, paddings, robTestCounts, rfTestCounts, ldmTestCounts, ldqTestCounts);
@@ -187,7 +189,7 @@ namespace AsmGen
             x86.GenerateX86AsmLdqFuncs(x86AsmFile, ldqTestCounts);
             x86.GenerateX86AsmStqFuncs(x86AsmFile, ldqTestCounts);
             x86.GenerateX86AsmBranchFuncs(x86AsmFile, branchCounts, paddings);
-            File.WriteAllText("branchtest_x86.s", x86AsmFile.ToString());
+            File.WriteAllText("clammicrobench_x86.s", x86AsmFile.ToString());
 
             x86NasmFile.AppendLine("section .text\n");
             x86NasmFile.AppendLine("bits 64\n\n");
@@ -206,14 +208,15 @@ namespace AsmGen
         }
 
         public static string GetBranchFuncName(int branchCount, int padding) { return "branch" + branchCount + "pad" + padding; }
-        public static string GetRobFuncName(int count) { return "rob" + count; }
-        public static string GetPrfFuncName(int count) { return "prf" + count; }
-        public static string GetFrfFuncName(int count) { return "frf" + count; }
-        public static string GetLdmFuncName(int count) { return "ldm" + count; }
         public static string GetLabelName(string funcName, int part) { return funcName + "part" + part; }
 
         public const string ldqPrefix = "ldq";
         public const string stqPrefix = "stq";
+        public const string prfPrefix = "prf";
+        public const string frfPrefix = "frf";
+        public const string ldmPrefix = "ldm";
+        public const string robPrefix = "rob";
+        public const string intSchedPrefix = "intsched";
 
         static void AddCommonInitCode(StringBuilder sb)
         {
@@ -233,16 +236,16 @@ namespace AsmGen
                     sb.AppendLine("extern uint64_t " + GetBranchFuncName(branchCounts[i], paddings[p]) + "(uint64_t iterations);");
 
             for (int i = 0; i < robTestCounts.Length; i++)
-                sb.AppendLine("extern uint64_t " + GetRobFuncName(robTestCounts[i]) + "(uint64_t iterations, int *arr);");
+                sb.AppendLine("extern uint64_t " + robPrefix + robTestCounts[i] + "(uint64_t iterations, int *arr);"); ;
 
             for (int i = 0; i < rfCounts.Length; i++)
-                sb.AppendLine("extern uint64_t " + GetPrfFuncName(rfCounts[i]) + "(uint64_t iterations, int *arr);");
+                sb.AppendLine("extern uint64_t " + prfPrefix + rfCounts[i] + "(uint64_t iterations, int *arr);");
 
             for (int i = 0; i < rfCounts.Length; i++)
-                sb.AppendLine("extern uint64_t " + GetFrfFuncName(rfCounts[i]) + "(uint64_t iterations, int *arr);");
+                sb.AppendLine("extern uint64_t " + frfPrefix + rfCounts[i] + "(uint64_t iterations, int *arr);");
 
             for (int i = 0; i < ldmCounts.Length; i++)
-                sb.AppendLine("extern uint64_t " + GetLdmFuncName(ldmCounts[i]) + "(uint64_t iterations, int *arr);");
+                sb.AppendLine("extern uint64_t " + ldmPrefix + ldmCounts[i] + "(uint64_t iterations, int *arr);");
 
             for (int i = 0; i < ldqCounts.Length; i++)
                 sb.AppendLine("extern uint64_t " + ldqPrefix + ldqCounts[i] + "(uint64_t iterations, int *arr);");
@@ -259,16 +262,16 @@ namespace AsmGen
                     sb.AppendLine("extern \"C\" uint64_t " + GetBranchFuncName(branchCounts[i], paddings[p]) + "(uint64_t iterations);");
 
             for (int i = 0; i < robTestCounts.Length; i++)
-                sb.AppendLine("extern \"C\" uint64_t " + GetRobFuncName(robTestCounts[i]) + "(uint64_t iterations, int *arr);");
+                sb.AppendLine("extern \"C\" uint64_t " + robPrefix + robTestCounts[i] + "(uint64_t iterations, int *arr);");
 
             for (int i = 0; i < rfCounts.Length; i++)
-                sb.AppendLine("extern \"C\" uint64_t " + GetPrfFuncName(rfCounts[i]) + "(uint64_t iterations, int *arr);");
+                sb.AppendLine("extern \"C\" uint64_t " + prfPrefix + rfCounts[i] + "(uint64_t iterations, int *arr);");
 
             for (int i = 0; i < rfCounts.Length; i++)
-                sb.AppendLine("extern \"C\" uint64_t " + GetFrfFuncName(rfCounts[i]) + "(uint64_t iterations, int *arr);");
+                sb.AppendLine("extern \"C\" uint64_t " + frfPrefix + rfCounts[i] + "(uint64_t iterations, int *arr);");
 
             for (int i = 0; i < ldmCounts.Length; i++)
-                sb.AppendLine("extern \"C\" uint64_t " + GetLdmFuncName(ldmCounts[i]) + "(uint64_t iterations, int *arr);");
+                sb.AppendLine("extern \"C\" uint64_t " + ldmPrefix + ldmCounts[i] + "(uint64_t iterations, int *arr);");
 
             for (int i = 0; i < ldqCounts.Length; i++)
                 sb.AppendLine("extern \"C\" uint64_t " + ldqPrefix + ldqCounts[i] + "(uint64_t iterations, int *arr);");
@@ -302,7 +305,7 @@ namespace AsmGen
             for (int i = 0; i < robTestCounts.Length; i++)
             {
                 sb.AppendLine("  gettimeofday(&startTv, &startTz);");
-                sb.AppendLine("  " + GetRobFuncName(robTestCounts[i]) + "(structIterations, A);");
+                sb.AppendLine("  " + robPrefix + robTestCounts[i] + "(structIterations, A);");
                 sb.AppendLine("  gettimeofday(&endTv, &endTz);");
                 sb.AppendLine("  time_diff_ms = 1000 * (endTv.tv_sec - startTv.tv_sec) + ((endTv.tv_usec - startTv.tv_usec) / 1000);");
                 sb.AppendLine("  latency = 1e6 * (float)time_diff_ms / (float)(structIterations);");
@@ -315,7 +318,7 @@ namespace AsmGen
             for (int i = 0; i < ldmTestCounts.Length; i++)
             {
                 sb.AppendLine("  gettimeofday(&startTv, &startTz);");
-                sb.AppendLine("  " + GetLdmFuncName(ldmTestCounts[i]) + "(structIterations, A);");
+                sb.AppendLine("  " + ldmPrefix + ldmTestCounts[i] + "(structIterations, A);");
                 sb.AppendLine("  gettimeofday(&endTv, &endTz);");
                 sb.AppendLine("  time_diff_ms = 1000 * (endTv.tv_sec - startTv.tv_sec) + ((endTv.tv_usec - startTv.tv_usec) / 1000);");
                 sb.AppendLine("  latency = 1e6 * (float)time_diff_ms / (float)(structIterations);");
@@ -354,7 +357,7 @@ namespace AsmGen
             for (int i = 0; i < rfTestCounts.Length; i++)
             {
                 sb.AppendLine("  gettimeofday(&startTv, &startTz);");
-                sb.AppendLine("  " + GetPrfFuncName(rfTestCounts[i]) + "(structIterations, A);");
+                sb.AppendLine("  " + prfPrefix + rfTestCounts[i] + "(structIterations, A);");
                 sb.AppendLine("  gettimeofday(&endTv, &endTz);");
                 sb.AppendLine("  time_diff_ms = 1000 * (endTv.tv_sec - startTv.tv_sec) + ((endTv.tv_usec - startTv.tv_usec) / 1000);");
                 sb.AppendLine("  latency = 1e6 * (float)time_diff_ms / (float)(structIterations);");
@@ -367,7 +370,7 @@ namespace AsmGen
             for (int i = 0; i < rfTestCounts.Length; i++)
             {
                 sb.AppendLine("  gettimeofday(&startTv, &startTz);");
-                sb.AppendLine("  " + GetFrfFuncName(rfTestCounts[i]) + "(structIterations, A);");
+                sb.AppendLine("  " + frfPrefix + rfTestCounts[i] + "(structIterations, A);");
                 sb.AppendLine("  gettimeofday(&endTv, &endTz);");
                 sb.AppendLine("  time_diff_ms = 1000 * (endTv.tv_sec - startTv.tv_sec) + ((endTv.tv_usec - startTv.tv_usec) / 1000);");
                 sb.AppendLine("  latency = 1e6 * (float)time_diff_ms / (float)(structIterations);");
@@ -380,7 +383,7 @@ namespace AsmGen
             for (int i = 0; i < rfTestCounts.Length; i++)
             {
                 sb.AppendLine("  ftime(&start);");
-                sb.AppendLine("  " + GetPrfFuncName(rfTestCounts[i]) + "(structIterations, A);");
+                sb.AppendLine("  " + prfPrefix + rfTestCounts[i] + "(structIterations, A);");
                 sb.AppendLine("  ftime(&end);");
                 sb.AppendLine("  time_diff_ms = 1000 * (end.time - start.time) + (end.millitm - start.millitm);");
                 sb.AppendLine("  latency = 1e6 * (float)time_diff_ms / (float)(structIterations);");
@@ -393,7 +396,7 @@ namespace AsmGen
             for (int i = 0; i < rfTestCounts.Length; i++)
             {
                 sb.AppendLine("  ftime(&start);");
-                sb.AppendLine("  " + GetFrfFuncName(rfTestCounts[i]) + "(structIterations, A);");
+                sb.AppendLine("  " + frfPrefix + rfTestCounts[i] + "(structIterations, A);");
                 sb.AppendLine("  ftime(&end);");
                 sb.AppendLine("  time_diff_ms = 1000 * (end.time - start.time) + (end.millitm - start.millitm);");
                 sb.AppendLine("  latency = 1e6 * (float)time_diff_ms / (float)(structIterations);");
@@ -406,7 +409,7 @@ namespace AsmGen
             for (int i = 0; i < robTestCounts.Length; i++)
             {
                 sb.AppendLine("  ftime(&start);");
-                sb.AppendLine("  " + GetRobFuncName(robTestCounts[i]) + "(structIterations, A);");
+                sb.AppendLine("  " + robPrefix + robTestCounts[i] + "(structIterations, A);");
                 sb.AppendLine("  ftime(&end);");
                 sb.AppendLine("  time_diff_ms = 1000 * (end.time - start.time) + (end.millitm - start.millitm);");
                 sb.AppendLine("  latency = 1e6 * (float)time_diff_ms / (float)(structIterations);");
@@ -433,7 +436,7 @@ namespace AsmGen
             for (int i = 0; i < ldmCounts.Length; i++)
             {
                 sb.AppendLine("  ftime(&start);");
-                sb.AppendLine("  " + GetLdmFuncName(ldmCounts[i]) + "(structIterations, A);");
+                sb.AppendLine("  " + ldmPrefix + ldmCounts[i] + "(structIterations, A);");
                 sb.AppendLine("  ftime(&end);");
                 sb.AppendLine("  time_diff_ms = 1000 * (end.time - start.time) + (end.millitm - start.millitm);");
                 sb.AppendLine("  latency = 1e6 * (float)time_diff_ms / (float)(structIterations);");
@@ -484,16 +487,16 @@ namespace AsmGen
         static void GenerateAsmGlobalLines(StringBuilder sb, int[] branchCounts, int[] paddings, int[] robCounts, int[] rfCounts, int[] ldmCounts, int[] ldqCounts)
         {
             for (int i = 0; i < robCounts.Length; i++)
-                sb.AppendLine(".global " + GetRobFuncName(robCounts[i]));
+                sb.AppendLine(".global " + robPrefix + robCounts[i]);
 
             for (int i = 0; i < rfCounts.Length; i++)
-                sb.AppendLine(".global " + GetPrfFuncName(rfCounts[i]));
+                sb.AppendLine(".global " + prfPrefix + rfCounts[i]);
 
             for (int i = 0; i < rfCounts.Length; i++)
-                sb.AppendLine(".global " + GetFrfFuncName(rfCounts[i]));
+                sb.AppendLine(".global " + frfPrefix + rfCounts[i]);
 
             for (int i = 0; i < ldmCounts.Length; i++)
-                sb.AppendLine(".global " + GetLdmFuncName(ldmCounts[i]));
+                sb.AppendLine(".global " + ldmPrefix + ldmCounts[i]);
 
             for (int i = 0; i < ldqCounts.Length; i++)
                 sb.AppendLine(".global " + ldqPrefix + ldqCounts[i]);
