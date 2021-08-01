@@ -25,6 +25,9 @@ namespace AsmGen
             for (int i = 0; i < ldmCounts.Length; i++)
                 sb.AppendLine("global " + Program.intSchedPrefix + ldmCounts[i]);
 
+            for (int i = 0; i < ldmCounts.Length; i++)
+                sb.AppendLine("global " + Program.memSchedPrefix + ldmCounts[i]);
+
             for (int i = 0; i < ldqCounts.Length; i++)
                 sb.AppendLine("global " + Program.ldqPrefix + ldqCounts[i]);
 
@@ -151,7 +154,23 @@ namespace AsmGen
             unrolledMovs[1] = "  mov r14, [rdx]";
             unrolledMovs[2] = "  mov r13, [rdx]";
             unrolledMovs[3] = "  mov r12, [rdx]";
-            GenerateX86NasmStructureTestFuncs(sb, ldqCounts, "ldq", unrolledMovs, unrolledMovs);
+            GenerateX86NasmStructureTestFuncs(sb, ldqCounts, Program.ldqPrefix, unrolledMovs, unrolledMovs);
+        }
+
+        public static void GenerateX86NasmMemSchedFuncs(StringBuilder sb, int[] ldqCounts)
+        {
+            string[] unrolledMovs = new string[4];
+            unrolledMovs[0] = "  mov r15, [r8 + rdi * 4]";
+            unrolledMovs[1] = "  mov r14, [r8 + rdi * 4]";
+            unrolledMovs[2] = "  mov r13, [r8 + rdi * 4]";
+            unrolledMovs[3] = "  mov r12, [r8 + rdi * 4]";
+
+            string[] unrolledMovs1 = new string[4];
+            unrolledMovs1[0] = "  mov r15, [r8 + rsi * 4]";
+            unrolledMovs1[1] = "  mov r14, [r8 + rsi * 4]";
+            unrolledMovs1[2] = "  mov r13, [r8 + rsi * 4]";
+            unrolledMovs1[3] = "  mov r12, [r8 + rsi * 4]";
+            GenerateX86NasmStructureTestFuncs(sb, ldqCounts, Program.memSchedPrefix, unrolledMovs, unrolledMovs1);
         }
 
         public static void GenerateX86NasmStqFuncs(StringBuilder sb, int[] stqCounts)

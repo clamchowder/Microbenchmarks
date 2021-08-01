@@ -81,6 +81,23 @@ namespace AsmGen
             GenerateX86AsmStructureTestFuncs(sb, ldqCounts, Program.ldqPrefix, loads, loads);
         }
 
+        public static void GenerateX86AsmMemSchedFuncs(StringBuilder sb, int[] memSchedCounts)
+        {
+            // mov (%rdx,%rdi,4), %edi
+            string[] loads = new string[4];
+            loads[0] = "  mov (%r8, %rdi, 4), %r15";
+            loads[1] = "  mov (%r8, %rdi, 4), %r14";
+            loads[2] = "  mov (%r8, %rdi, 4), %r13";
+            loads[3] = "  mov (%r8, %rdi, 4), %r12";
+
+            string[] loads1 = new string[4];
+            loads1[0] = "  mov (%r8, %rsi, 4), %r15";
+            loads1[1] = "  mov (%r8, %rsi, 4), %r14";
+            loads1[2] = "  mov (%r8, %rsi, 4), %r13";
+            loads1[3] = "  mov (%r8, %rsi, 4), %r12";
+            GenerateX86AsmStructureTestFuncs(sb, memSchedCounts, Program.memSchedPrefix, loads, loads1);
+        }
+
         public static void GenerateX86AsmStqFuncs(StringBuilder sb, int[] stqCounts)
         {
             string[] loads = new string[4];

@@ -95,6 +95,18 @@ namespace AsmGen
             GenerateArmAsmStructureTestFuncs(sb, ldqCounts, Program.ldqPrefix, unrolledLoads, unrolledLoads, includePtrChasingLoads: true);
         }
 
+        public static void GenerateArmAsmMemSchedFuncs(StringBuilder sb, int[] memSchedCounts)
+        {
+            // ldr w26, [x1, w26, uxtw #2]
+            string[] unrolledLoads = new string[4];
+            unrolledLoads[0] = "  ldr w15, [x2, w26, uxtw #2]";
+            unrolledLoads[1] = "  ldr w14, [x2, w26, uxtw #2]";
+            unrolledLoads[2] = "  ldr w13, [x2, w26, uxtw #2]";
+            unrolledLoads[3] = "  ldr w12, [x2, w26, uxtw #2]";
+
+            GenerateArmAsmStructureTestFuncs(sb, memSchedCounts, Program.memSchedPrefix, unrolledLoads, unrolledLoads, includePtrChasingLoads: true);
+        }
+
         public static void GenerateArmAsmStqFuncs(StringBuilder sb, int[] stqCounts)
         {
             // program will pass &tmpsink as a third argument, which goes in x2
