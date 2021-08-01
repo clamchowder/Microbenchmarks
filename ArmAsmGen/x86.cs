@@ -107,6 +107,22 @@ namespace AsmGen
             GenerateX86AsmStructureTestFuncs(sb, ldmCounts, Program.ldmPrefix, unrolledAdds, unrolledAdds1);
         }
 
+        public static void GenerateX86AsmIntSchedFuncs(StringBuilder sb, int[] ldmCounts)
+        {
+            string[] unrolledAdds = new string[4];
+            unrolledAdds[0] = "  add %rdi, %r15";
+            unrolledAdds[1] = "  add %r15, %r14";
+            unrolledAdds[2] = "  add %r15, %r13";
+            unrolledAdds[3] = "  add %r15, %r12";
+
+            string[] unrolledAdds1 = new string[4];
+            unrolledAdds1[0] = "  add %rsi, %r15";
+            unrolledAdds1[1] = "  add %r15, %r14";
+            unrolledAdds1[2] = "  add %r15, %r13";
+            unrolledAdds1[3] = "  add %r15, %r12";
+            GenerateX86AsmStructureTestFuncs(sb, ldmCounts, Program.intSchedPrefix, unrolledAdds, unrolledAdds1);
+        }
+
         public static void GenerateX86AsmPrfFuncs(StringBuilder sb, int[] rfCounts)
         {
             string[] unrolledAdds = new string[4];

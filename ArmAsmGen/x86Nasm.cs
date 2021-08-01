@@ -22,6 +22,9 @@ namespace AsmGen
             for (int i = 0;i < ldmCounts.Length; i++)
                 sb.AppendLine("global " + Program.ldmPrefix + ldmCounts[i]);
 
+            for (int i = 0; i < ldmCounts.Length; i++)
+                sb.AppendLine("global " + Program.intSchedPrefix + ldmCounts[i]);
+
             for (int i = 0; i < ldqCounts.Length; i++)
                 sb.AppendLine("global " + Program.ldqPrefix + ldqCounts[i]);
 
@@ -90,7 +93,7 @@ namespace AsmGen
         public static void GenerateX86NasmRobFuncs(StringBuilder sb, int[] robCounts)
         {
             string[] nop = new string[] { "nop" };
-            GenerateX86NasmStructureTestFuncs(sb, robCounts, "rob", nop, nop);
+            GenerateX86NasmStructureTestFuncs(sb, robCounts, Program.robPrefix, nop, nop);
         }
 
         public static void GenerateX86NasmPrfFuncs(StringBuilder sb, int[] rfCounts)
@@ -100,7 +103,7 @@ namespace AsmGen
             unrolledAdds[1] = "  add r14, 2";
             unrolledAdds[2] = "  add r13, 3";
             unrolledAdds[3] = "  add r12, 4";
-            GenerateX86NasmStructureTestFuncs(sb, rfCounts, "prf", unrolledAdds, unrolledAdds);
+            GenerateX86NasmStructureTestFuncs(sb, rfCounts, Program.prfPrefix, unrolledAdds, unrolledAdds);
         }
 
         /// <summary>
@@ -122,7 +125,7 @@ namespace AsmGen
             unrolledAdds1[1] = "  add r14, rsi";
             unrolledAdds1[2] = "  add r13, rsi";
             unrolledAdds1[3] = "  add r12, rsi";
-            GenerateX86NasmStructureTestFuncs(sb, ldmCounts, "ldm", unrolledAdds, unrolledAdds1);
+            GenerateX86NasmStructureTestFuncs(sb, ldmCounts, Program.ldmPrefix, unrolledAdds, unrolledAdds1);
         }
 
         public static void GenerateX86NasmIntSchedFuncs(StringBuilder sb, int[] schedCounts)
@@ -138,7 +141,7 @@ namespace AsmGen
             unrolledAdds1[1] = "  add r14, r15";
             unrolledAdds1[2] = "  add r13, r15";
             unrolledAdds1[3] = "  add r12, r15";
-            GenerateX86NasmStructureTestFuncs(sb, schedCounts, "intsched", unrolledAdds, unrolledAdds1);
+            GenerateX86NasmStructureTestFuncs(sb, schedCounts, Program.intSchedPrefix, unrolledAdds, unrolledAdds1);
         }
 
         public static void GenerateX86NasmLdqFuncs(StringBuilder sb, int[] ldqCounts)
