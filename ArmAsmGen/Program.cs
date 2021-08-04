@@ -17,7 +17,7 @@ namespace AsmGen
                 2048, 3072, 4096, 5120, 6144, 7168, 8192, 10240, 16384, 32768 };
 
             int robSizeMax = 500;
-            int robSizeMin = 100;
+            int robSizeMin = 8;
             int[] robTestCounts = new int[robSizeMax - robSizeMin + 1];
             for (int i = robSizeMin; i <= robSizeMax; i++)
             {
@@ -25,7 +25,7 @@ namespace AsmGen
             }
 
             int rfSizeMax = 400;
-            int rfSizeMin = 100;
+            int rfSizeMin = 8;
             List<int> rfTestCountsList = new List<int>();
             for (int i = rfSizeMin; i < rfSizeMax; i ++)
             {
@@ -64,48 +64,21 @@ namespace AsmGen
             cSourceFile.AppendLine("  struct timeval startTv, endTv;");
             cSourceFile.AppendLine("  struct timezone startTz, endTz;");
 
-            cSourceFile.AppendLine("  if (argc == 1 || argc > 1 && strncmp(argv[1], \"rob\", 3) == 0) {");
-            cSourceFile.AppendLine("  printf(\"Testing ROB Capacity:\\n\");");
-            GenerateRobTestFunctionCalls(cSourceFile, robTestCounts);
-            cSourceFile.AppendLine("  free(A); free(B); return 0;");
-            cSourceFile.AppendLine("  }\n");
+            GenerateTestBlock(cSourceFile, robTestCounts, robPrefix, "Testing ROB capacity");
+            GenerateTestBlock(cSourceFile, rfTestCounts, prfPrefix, "Testing integer register file capacity");
+            GenerateTestBlock(cSourceFile, rfTestCounts, frfPrefix, "Testing FP/SIMD register file capacity");
+            GenerateTestBlock(cSourceFile, ldmTestCounts, ldmPrefix, "Testing adds dependent on load result (ALU scheduler capacity?)");
+            GenerateTestBlock(cSourceFile, ldqTestCounts, ldqPrefix, "Testing load queue capacity");
+            GenerateTestBlock(cSourceFile, ldmTestCounts, intSchedPrefix, "Testing integer scheduler capacity");
 
-            cSourceFile.AppendLine("  if (argc == 1 || argc > 1 && strncmp(argv[1], \"prf\", 3) == 0) {");
-            cSourceFile.AppendLine("  printf(\"Testing Register File Capacity:\\n\");");
-            GeneratePrfTestFunctionCalls(cSourceFile, rfTestCounts);
-            cSourceFile.AppendLine("  free(A); free(B); return 0;");
-            cSourceFile.AppendLine("  }\n");
-
-            cSourceFile.AppendLine("  if (argc == 1 || argc > 1 && strncmp(argv[1], \"frf\", 3) == 0) {");
-            cSourceFile.AppendLine("  printf(\"Testing FP Register File Capacity:\\n\");");
-            GenerateFrfTestFunctionCalls(cSourceFile, rfTestCounts);
-            cSourceFile.AppendLine("  free(A); free(B); return 0;");
-            cSourceFile.AppendLine("  }\n");
-
-            cSourceFile.AppendLine("  if (argc == 1 || argc > 1 && strncmp(argv[1], \"ldm\", 3) == 0) {");
-            cSourceFile.AppendLine("  printf(\"Testing LDM Capacity:\\n\");");
-            GenerateLdmTestFunctionCalls(cSourceFile, ldmTestCounts);
-            cSourceFile.AppendLine("  free(A); free(B); return 0;");
-            cSourceFile.AppendLine("  }\n");
-
-            cSourceFile.AppendLine("  if (argc == 1 || argc > 1 && strncmp(argv[1], \"ldq\", 3) == 0) {");
-            cSourceFile.AppendLine("  printf(\"Testing LDQ Capacity:\\n\");");
-            GenerateLdqTestFunctionCalls(cSourceFile, ldqTestCounts);
-            cSourceFile.AppendLine("  free(A); free(B); return 0;");
-            cSourceFile.AppendLine("  }\n");
-
+            // store queue requires a sink
             cSourceFile.AppendLine("  if (argc == 1 || argc > 1 && strncmp(argv[1], \"stq\", 3) == 0) {");
             cSourceFile.AppendLine("  printf(\"Testing STQ Capacity:\\n\");");
             GenerateStqTestFunctionCalls(cSourceFile, ldqTestCounts);
             cSourceFile.AppendLine("  free(A); free(B); return 0;");
             cSourceFile.AppendLine("  }\n");
 
-            cSourceFile.AppendLine("  if (argc == 1 || argc > 1 && strncmp(argv[1], \"intsched\", 8) == 0) {");
-            cSourceFile.AppendLine("  printf(\"Testing Integer Scheduler Capacity:\\n\");");
-            GenerateIntSchedTestFunctionCalls(cSourceFile, ldmTestCounts);
-            cSourceFile.AppendLine("  free(A); free(B); return 0;");
-            cSourceFile.AppendLine("  }\n");
-
+            // mem sched test requires second array
             cSourceFile.AppendLine("  if (argc == 1 || argc > 1 && strncmp(argv[1], \"memsched\", 8) == 0) {");
             cSourceFile.AppendLine("  printf(\"Testing Mem Scheduler Capacity:\\n\");");
             GenerateMemSchedTestFunctionCalls(cSourceFile, ldmTestCounts);
@@ -131,46 +104,16 @@ namespace AsmGen
             vsCSourceFile.AppendLine("  struct timeb start, end;");
 
             // ROB size test
-            vsCSourceFile.AppendLine("  if (argc == 1 || argc > 1 && _strnicmp(argv[1], \"rob\", 3) == 0) {");
-            vsCSourceFile.AppendLine("  printf(\"Testing ROB Capacity:\\n\");");
-            GenerateVSRobTestFunctionCalls(vsCSourceFile, robTestCounts);
-            vsCSourceFile.AppendLine("  return 0;");
-            vsCSourceFile.AppendLine("  }\n");
-
-            // PRF size test
-            vsCSourceFile.AppendLine("  if (argc == 1 || argc > 1 && _strnicmp(argv[1], \"prf\", 3) == 0) {");
-            vsCSourceFile.AppendLine("  printf(\"Testing Register File Capacity:\\n\");");
-            GenerateVSPrfTestFunctionCalls(vsCSourceFile, rfTestCounts);
-            vsCSourceFile.AppendLine("  return 0;");
-            vsCSourceFile.AppendLine("  }\n");
-
-            vsCSourceFile.AppendLine("  if (argc == 1 || argc > 1 && strncmp(argv[1], \"frf\", 3) == 0) {");
-            vsCSourceFile.AppendLine("  printf(\"Testing FP Register File Capacity:\\n\");");
-            GenerateVSFrfTestFunctionCalls(vsCSourceFile, rfTestCounts);
-            vsCSourceFile.AppendLine("  return 0;");
-            vsCSourceFile.AppendLine("  }\n");
-
-            vsCSourceFile.AppendLine("  if (argc == 1 || argc > 1 && strncmp(argv[1], \"ldm\", 3) == 0) {");
-            vsCSourceFile.AppendLine("  printf(\"Testing LDM Capacity:\\n\");");
-            GenerateVSLdmFunctionCalls(vsCSourceFile, ldmTestCounts);
-            vsCSourceFile.AppendLine("  return 0;");
-            vsCSourceFile.AppendLine("  }\n");
-
-            vsCSourceFile.AppendLine("  if (argc == 1 || argc > 1 && strncmp(argv[1], \"ldq\", 3) == 0) {");
-            vsCSourceFile.AppendLine("  printf(\"Testing LDQ Capacity:\\n\");");
-            GenerateVSLdqFunctionCalls(vsCSourceFile, ldqTestCounts);
-            vsCSourceFile.AppendLine("  return 0;");
-            vsCSourceFile.AppendLine("  }\n");
+            GenerateVsTestBlock(vsCSourceFile, robTestCounts, robPrefix, "Testing ROB capacity");
+            GenerateVsTestBlock(vsCSourceFile, rfTestCounts, prfPrefix, "Testing integer register file capacity");
+            GenerateVsTestBlock(vsCSourceFile, rfTestCounts, frfPrefix, "Testing FP/SIMD register file capacity");
+            GenerateVsTestBlock(vsCSourceFile, ldmTestCounts, ldmPrefix, "Testing adds dependent on load result (ALU scheduler capacity?)");
+            GenerateVsTestBlock(vsCSourceFile, ldqTestCounts, ldqPrefix, "Testing load queue capacity");
+            GenerateVsTestBlock(vsCSourceFile, ldmTestCounts, intSchedPrefix, "Testing integer scheduler capacity");
 
             vsCSourceFile.AppendLine("  if (argc == 1 || argc > 1 && strncmp(argv[1], \"stq\", 3) == 0) {");
             vsCSourceFile.AppendLine("  printf(\"Testing STQ Capacity:\\n\");");
             GenerateVSStqFunctionCalls(vsCSourceFile, ldqTestCounts);
-            vsCSourceFile.AppendLine("  return 0;");
-            vsCSourceFile.AppendLine("  }\n");
-
-            vsCSourceFile.AppendLine("  if (argc == 1 || argc > 1 && strncmp(argv[1], \"intsched\", 8) == 0) {");
-            vsCSourceFile.AppendLine("  printf(\"Testing Integer Scheduler Capacity:\\n\");");
-            GenerateVSIntSchedFunctionCalls(vsCSourceFile, ldmTestCounts);
             vsCSourceFile.AppendLine("  return 0;");
             vsCSourceFile.AppendLine("  }\n");
 
@@ -255,11 +198,20 @@ namespace AsmGen
             sb.AppendLine($"  uint64_t time_diff_ms, iterations = {iterations}, structIterations = {structTestIterations};");
             sb.AppendLine("  float latency; int *A = NULL, *B = NULL;");
             sb.AppendLine("  uint64_t tmpsink;");
-            sb.AppendLine($"  printf(\"Usage: [rob/prf/frf/ldm/ldq/stq/branch] [latency list size] [struct iterations = {structTestIterations}]\\n\");");
+            sb.AppendLine($"  printf(\"Usage: [rob/prf/frf/ldm/ldq/stq/intsched/memsched/branch] [latency list size] [struct iterations = {structTestIterations}]\\n\");");
             sb.AppendLine("  if (argc > 3) { structIterations = atoi(argv[3]); }");
             sb.AppendLine("  if (argc == 1 || argc > 1 && strncmp(argv[1], \"branchtest\", 9) != 0) {");
             GenerateLatencyTestArray(sb);
             sb.AppendLine("  }");
+        }
+
+        static void GenerateTestBlock(StringBuilder sb, int[] counts, string prefix, string message)
+        {
+            sb.AppendLine("  if (argc == 1 || argc > 1 && strncmp(argv[1], \"" + prefix + "\", " + prefix.Length + ") == 0) {");
+            sb.AppendLine("  printf(\"" + message + ":\\n\");");
+            GenerateTestFunctionCalls(sb, counts, prefix);
+            sb.AppendLine("  free(A); free(B); return 0;");
+            sb.AppendLine("  }\n");
         }
 
         static void GenerateFunctionDeclarations(StringBuilder sb, int[] branchCounts, int[] paddings, int[] robTestCounts, int[] rfCounts, int[] ldmCounts, int[] ldqCounts)
@@ -346,6 +298,19 @@ namespace AsmGen
 
             sb.AppendLine("  B = (int*)malloc(sizeof(int) * list_size);\n");
             sb.AppendLine("  for (int i = 0; i < list_size; i++) { B[i] = i; }\n");
+        }
+        
+        static void GenerateTestFunctionCalls(StringBuilder sb, int[] counts, string prefix)
+        {
+            for (int i = 0; i < counts.Length; i++)
+            {
+                sb.AppendLine("  gettimeofday(&startTv, &startTz);");
+                sb.AppendLine("  " + prefix + counts[i] + "(structIterations, A);");
+                sb.AppendLine("  gettimeofday(&endTv, &endTz);");
+                sb.AppendLine("  time_diff_ms = 1000 * (endTv.tv_sec - startTv.tv_sec) + ((endTv.tv_usec - startTv.tv_usec) / 1000);");
+                sb.AppendLine("  latency = 1e6 * (float)time_diff_ms / (float)(structIterations);");
+                sb.AppendLine("  printf(\"" + counts[i] + ",%f\\n\", latency);\n");
+            }
         }
 
         static void GenerateRobTestFunctionCalls(StringBuilder sb, int[] robTestCounts)
@@ -475,6 +440,28 @@ namespace AsmGen
                 sb.AppendLine("  time_diff_ms = 1000 * (end.time - start.time) + (end.millitm - start.millitm);");
                 sb.AppendLine("  latency = 1e6 * (float)time_diff_ms / (float)(structIterations);");
                 sb.AppendLine("  printf(\"" + rfTestCounts[i] + ",%f\\n\", latency);\n");
+            }
+        }
+
+        static void GenerateVsTestBlock(StringBuilder sb, int[] counts, string prefix, string message)
+        {
+            sb.AppendLine("  if (argc == 1 || argc > 1 && _strnicmp(argv[1], \"" + prefix + "\", " + prefix.Length + ") == 0) {");
+            sb.AppendLine("  printf(\"" + message + ":\\n\");");
+            GenerateVsTestFunctionCalls(sb, counts, prefix);
+            sb.AppendLine("  free(A); free(B); return 0;");
+            sb.AppendLine("  }\n");
+        }
+
+        static void GenerateVsTestFunctionCalls(StringBuilder sb, int[] counts, string prefix)
+        {
+            for (int i = 0; i < counts.Length; i++)
+            {
+                sb.AppendLine("  ftime(&start);");
+                sb.AppendLine("  " + prefix + counts[i] + "(structIterations, A);");
+                sb.AppendLine("  ftime(&end);");
+                sb.AppendLine("  time_diff_ms = 1000 * (end.time - start.time) + (end.millitm - start.millitm);");
+                sb.AppendLine("  latency = 1e6 * (float)time_diff_ms / (float)(structIterations);");
+                sb.AppendLine("  printf(\"" + counts[i] + ",%f\\n\", latency);\n");
             }
         }
 

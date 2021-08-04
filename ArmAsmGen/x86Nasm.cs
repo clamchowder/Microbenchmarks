@@ -173,6 +173,58 @@ namespace AsmGen
             GenerateX86NasmStructureTestFuncs(sb, ldqCounts, Program.memSchedPrefix, unrolledMovs, unrolledMovs1);
         }
 
+        // Version of LDQ test that makes every filler load hit a different cacheline
+        // to see if Zen 2 is doing load coalescing. Results are identical to previous LDQ test
+        // indicating there's no load coalescing
+        /*public static void GenerateX86NasmLdqFuncs(StringBuilder sb, int[] counts)
+        {
+
+            string[] unrolledMovs = new string[4];
+            unrolledMovs[0] = "  mov r15, [rdx + 0x40]";
+            unrolledMovs[1] = "  mov r14, [rdx + 0x80]";
+            unrolledMovs[2] = "  mov r13, [rdx + 0xC0]";
+            unrolledMovs[3] = "  mov r12, [rdx + 0x100]";
+            for (int i = 0; i < counts.Length; i++)
+            {
+                string funcName = Program.ldqPrefix + counts[i];
+                sb.AppendLine("\n" + funcName + ":");
+                sb.AppendLine("  push rsi");
+                sb.AppendLine("  push rdi");
+                sb.AppendLine("  push r15");
+                sb.AppendLine("  push r14");
+                sb.AppendLine("  push r13");
+                sb.AppendLine("  push r12");
+                sb.AppendLine("  xor r15, r15");
+                sb.AppendLine("  mov r14, 1");
+                sb.AppendLine("  mov r13, 2");
+                sb.AppendLine("  mov r12, 3");
+                sb.AppendLine("  xor rdi, rdi");
+                sb.AppendLine("  mov esi, 64");
+                sb.AppendLine("\n" + funcName + "start:");
+                sb.AppendLine("  mov edi, [rdx + rdi * 4]");
+                for (int nopIdx = 0, addIdx = 0; nopIdx < counts[i] - 2; nopIdx++)
+                {
+                    sb.AppendLine("  mov r15, [rdx + " + (64 * nopIdx) +"]");
+                }
+
+                sb.AppendLine("  mov esi, [rdx + rsi * 4]");
+                for (int nopIdx = 0, addIdx = 0; nopIdx < counts[i] - 2; nopIdx++)
+                {
+                    sb.AppendLine("  mov r14, [rdx + " + (64 * nopIdx) + "]");
+                }
+
+                sb.AppendLine("  dec rcx");
+                sb.AppendLine("  jne " + funcName + "start");
+                sb.AppendLine("  pop r12");
+                sb.AppendLine("  pop r13");
+                sb.AppendLine("  pop r14");
+                sb.AppendLine("  pop r15");
+                sb.AppendLine("  pop rdi");
+                sb.AppendLine("  pop rsi");
+                sb.AppendLine("  ret\n\n");
+            }
+        }*/
+
         public static void GenerateX86NasmStqFuncs(StringBuilder sb, int[] stqCounts)
         {
             string[] unrolledMovs = new string[4];

@@ -98,13 +98,19 @@ namespace AsmGen
         public static void GenerateArmAsmMemSchedFuncs(StringBuilder sb, int[] memSchedCounts)
         {
             // ldr w26, [x1, w26, uxtw #2]
-            string[] unrolledLoads = new string[4];
-            unrolledLoads[0] = "  ldr w15, [x2, w26, uxtw #2]";
-            unrolledLoads[1] = "  ldr w14, [x2, w26, uxtw #2]";
-            unrolledLoads[2] = "  ldr w13, [x2, w26, uxtw #2]";
-            unrolledLoads[3] = "  ldr w12, [x2, w26, uxtw #2]";
+            string[] loads = new string[4];
+            loads[0] = "  ldr w15, [x2, w25, uxtw #2]";
+            loads[1] = "  ldr w14, [x2, w25, uxtw #2]";
+            loads[2] = "  ldr w13, [x2, w25, uxtw #2]";
+            loads[3] = "  ldr w12, [x2, w25, uxtw #2]";
 
-            GenerateArmAsmStructureTestFuncs(sb, memSchedCounts, Program.memSchedPrefix, unrolledLoads, unrolledLoads, includePtrChasingLoads: true);
+            string[] loads1 = new string[4];
+            loads1[0] = "  ldr w15, [x2, w26, uxtw #2]";
+            loads1[1] = "  ldr w14, [x2, w26, uxtw #2]";
+            loads1[2] = "  ldr w13, [x2, w26, uxtw #2]";
+            loads1[3] = "  ldr w12, [x2, w26, uxtw #2]";
+
+            GenerateArmAsmStructureTestFuncs(sb, memSchedCounts, Program.memSchedPrefix, loads, loads1, includePtrChasingLoads: true);
         }
 
         public static void GenerateArmAsmStqFuncs(StringBuilder sb, int[] stqCounts)
