@@ -23,7 +23,7 @@ namespace AsmGen
                 sb.AppendLine("global " + Program.ldmPrefix + ldmCounts[i]);
 
             for (int i = 0; i < ldmCounts.Length; i++)
-                sb.AppendLine("global " + Program.intSchedPrefix + ldmCounts[i]);
+                sb.AppendLine("global " + Program.mulSchedPrefix + ldmCounts[i]);
 
             for (int i = 0; i < ldmCounts.Length; i++)
                 sb.AppendLine("global " + Program.memSchedPrefix + ldmCounts[i]);
@@ -144,7 +144,7 @@ namespace AsmGen
             unrolledAdds1[1] = "  add r14, r15";
             unrolledAdds1[2] = "  add r13, r15";
             unrolledAdds1[3] = "  add r12, r15";
-            GenerateX86NasmStructureTestFuncs(sb, schedCounts, Program.intSchedPrefix, unrolledAdds, unrolledAdds1);
+            GenerateX86NasmStructureTestFuncs(sb, schedCounts, Program.mulSchedPrefix, unrolledAdds, unrolledAdds1);
         }
 
         public static void GenerateX86NasmLdqFuncs(StringBuilder sb, int[] ldqCounts)

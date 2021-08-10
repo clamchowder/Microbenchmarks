@@ -64,7 +64,7 @@ namespace AsmGen
             unrolledAdds1[2] = "  add x13, x13, x15";
             unrolledAdds1[3] = "  add x12, x12, x15";
 
-            GenerateArmAsmStructureTestFuncs(sb, counts, Program.intSchedPrefix, unrolledAdds, unrolledAdds1);
+            GenerateArmAsmStructureTestFuncs(sb, counts, Program.mulSchedPrefix, unrolledAdds, unrolledAdds1);
         }
 
         public static void GenerateArmAsmLdmFuncs(StringBuilder sb, int[] ldmcounts)

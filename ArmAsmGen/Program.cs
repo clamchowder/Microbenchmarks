@@ -69,7 +69,7 @@ namespace AsmGen
             GenerateTestBlock(cSourceFile, rfTestCounts, frfPrefix, "Testing FP/SIMD register file capacity");
             GenerateTestBlock(cSourceFile, ldmTestCounts, ldmPrefix, "Testing adds dependent on load result (ALU scheduler capacity?)");
             GenerateTestBlock(cSourceFile, ldqTestCounts, ldqPrefix, "Testing load queue capacity");
-            GenerateTestBlock(cSourceFile, ldmTestCounts, intSchedPrefix, "Testing integer scheduler capacity");
+            GenerateTestBlock(cSourceFile, ldmTestCounts, mulSchedPrefix, "Testing integer (multiply) scheduler capacity");
 
             // store queue requires a sink
             cSourceFile.AppendLine("  if (argc == 1 || argc > 1 && strncmp(argv[1], \"stq\", 3) == 0) {");
@@ -109,7 +109,7 @@ namespace AsmGen
             GenerateVsTestBlock(vsCSourceFile, rfTestCounts, frfPrefix, "Testing FP/SIMD register file capacity");
             GenerateVsTestBlock(vsCSourceFile, ldmTestCounts, ldmPrefix, "Testing adds dependent on load result (ALU scheduler capacity?)");
             GenerateVsTestBlock(vsCSourceFile, ldqTestCounts, ldqPrefix, "Testing load queue capacity");
-            GenerateVsTestBlock(vsCSourceFile, ldmTestCounts, intSchedPrefix, "Testing integer scheduler capacity");
+            GenerateVsTestBlock(vsCSourceFile, ldmTestCounts, mulSchedPrefix, "Testing integer scheduler capacity");
 
             vsCSourceFile.AppendLine("  if (argc == 1 || argc > 1 && strncmp(argv[1], \"stq\", 3) == 0) {");
             vsCSourceFile.AppendLine("  printf(\"Testing STQ Capacity:\\n\");");
@@ -157,7 +157,7 @@ namespace AsmGen
             x86.GenerateX86AsmLdmFuncs(x86AsmFile, ldmTestCounts);
             x86.GenerateX86AsmLdqFuncs(x86AsmFile, ldqTestCounts);
             x86.GenerateX86AsmStqFuncs(x86AsmFile, ldqTestCounts);
-            x86.GenerateX86AsmIntSchedFuncs(x86AsmFile, ldmTestCounts);
+            x86.GenerateX86AsmMulSchedFuncs(x86AsmFile, ldmTestCounts);
             x86.GenerateX86AsmMemSchedFuncs(x86AsmFile, ldmTestCounts);
             x86.GenerateX86AsmBranchFuncs(x86AsmFile, branchCounts, paddings);
             File.WriteAllText("clammicrobench_x86.s", x86AsmFile.ToString());
@@ -189,7 +189,7 @@ namespace AsmGen
         public const string frfPrefix = "frf";
         public const string ldmPrefix = "ldm";
         public const string robPrefix = "rob";
-        public const string intSchedPrefix = "intsched";
+        public const string mulSchedPrefix = "mulsched";
         public const string memSchedPrefix = "memsched";
 
         static void AddCommonInitCode(StringBuilder sb)
@@ -198,7 +198,7 @@ namespace AsmGen
             sb.AppendLine($"  uint64_t time_diff_ms, iterations = {iterations}, structIterations = {structTestIterations};");
             sb.AppendLine("  float latency; int *A = NULL, *B = NULL;");
             sb.AppendLine("  uint64_t tmpsink;");
-            sb.AppendLine($"  printf(\"Usage: [rob/prf/frf/ldm/ldq/stq/intsched/memsched/branch] [latency list size] [struct iterations = {structTestIterations}]\\n\");");
+            sb.AppendLine($"  printf(\"Usage: [rob/prf/frf/ldm/ldq/stq/mulsched/memsched/branch] [latency list size] [struct iterations = {structTestIterations}]\\n\");");
             sb.AppendLine("  if (argc > 3) { structIterations = atoi(argv[3]); }");
             sb.AppendLine("  if (argc == 1 || argc > 1 && strncmp(argv[1], \"branchtest\", 9) != 0) {");
             GenerateLatencyTestArray(sb);
@@ -233,7 +233,7 @@ namespace AsmGen
                 sb.AppendLine("extern uint64_t " + ldmPrefix + ldmCounts[i] + "(uint64_t iterations, int *arr);");
 
             for (int i = 0; i < ldmCounts.Length; i++)
-                sb.AppendLine("extern uint64_t " + intSchedPrefix + ldmCounts[i] + "(uint64_t iterations, int *arr);");
+                sb.AppendLine("extern uint64_t " + mulSchedPrefix + ldmCounts[i] + "(uint64_t iterations, int *arr);");
 
             for (int i = 0; i < ldmCounts.Length; i++)
                 sb.AppendLine("extern uint64_t " + memSchedPrefix + ldmCounts[i] + "(uint64_t iterations, int *arr, int *arr2);");
@@ -265,7 +265,7 @@ namespace AsmGen
                 sb.AppendLine("extern \"C\" uint64_t " + ldmPrefix + ldmCounts[i] + "(uint64_t iterations, int *arr);");
 
             for (int i = 0; i < ldmCounts.Length; i++)
-                sb.AppendLine("extern \"C\" uint64_t " + intSchedPrefix + ldmCounts[i] + "(uint64_t iterations, int *arr);");
+                sb.AppendLine("extern \"C\" uint64_t " + mulSchedPrefix + ldmCounts[i] + "(uint64_t iterations, int *arr);");
 
             for (int i = 0; i < ldmCounts.Length; i++)
                 sb.AppendLine("extern \"C\" uint64_t " + memSchedPrefix + ldmCounts[i] + "(uint64_t iterations, int *arr, int *arr2);");
@@ -344,7 +344,7 @@ namespace AsmGen
             for (int i = 0; i < intSchedTestCounts.Length; i++)
             {
                 sb.AppendLine("  gettimeofday(&startTv, &startTz);");
-                sb.AppendLine("  " + intSchedPrefix + intSchedTestCounts[i] + "(structIterations, A);");
+                sb.AppendLine("  " + mulSchedPrefix + intSchedTestCounts[i] + "(structIterations, A);");
                 sb.AppendLine("  gettimeofday(&endTv, &endTz);");
                 sb.AppendLine("  time_diff_ms = 1000 * (endTv.tv_sec - startTv.tv_sec) + ((endTv.tv_usec - startTv.tv_usec) / 1000);");
                 sb.AppendLine("  latency = 1e6 * (float)time_diff_ms / (float)(structIterations);");
@@ -510,7 +510,7 @@ namespace AsmGen
             for (int i = 0; i < intSchedCounts.Length; i++)
             {
                 sb.AppendLine("  ftime(&start);");
-                sb.AppendLine("  " + intSchedPrefix + intSchedCounts[i] + "(structIterations, A);");
+                sb.AppendLine("  " + mulSchedPrefix + intSchedCounts[i] + "(structIterations, A);");
                 sb.AppendLine("  ftime(&end);");
                 sb.AppendLine("  time_diff_ms = 1000 * (end.time - start.time) + (end.millitm - start.millitm);");
                 sb.AppendLine("  latency = 1e6 * (float)time_diff_ms / (float)(structIterations);");
@@ -586,7 +586,7 @@ namespace AsmGen
                 sb.AppendLine(".global " + ldmPrefix + ldmCounts[i]);
 
             for (int i = 0; i < ldmCounts.Length; i++)
-                sb.AppendLine(".global " + intSchedPrefix + ldmCounts[i]);
+                sb.AppendLine(".global " + mulSchedPrefix + ldmCounts[i]);
 
             for (int i = 0; i < ldmCounts.Length; i++)
                 sb.AppendLine(".global " + memSchedPrefix + ldmCounts[i]);
