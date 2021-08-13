@@ -231,5 +231,58 @@ namespace AsmGen
                 }
             }
         }
+
+        public static void GenerateX86AsmBranchHistFuncs(StringBuilder sb, int[] counts)
+        {
+            sb.AppendLine(".text");
+            for (int i = 0; i < counts.Length; i++)
+                sb.AppendLine(".global " + Program.branchHistPrefix + counts[i]);
+
+            sb.AppendLine();
+            for (int i = 0;i < counts.Length; i++)
+            {
+                string functionLabel = Program.branchHistPrefix + counts[i];
+                sb.AppendLine("\n" + functionLabel + ":");
+                sb.AppendLine("  push %rbx");
+                sb.AppendLine("  push %r8");
+                sb.AppendLine("  push %r9");
+                sb.AppendLine("  xor %rbx, %rbx");
+                sb.AppendLine("  xor %r8, %r8");
+                sb.AppendLine("  xor %r9, %r9");
+
+                string loopLabel = Program.branchHistPrefix + counts[i] + "_loop";
+                sb.AppendLine("\n" + loopLabel + ":");
+                sb.AppendLine("  xor %r11, %r11"); // set index into arr of arrs to 0
+                for (int branchCount = 0; branchCount < counts[i]; branchCount++)
+                {
+                    sb.AppendLine("  mov (%rsi,%r11,8), %r10");  // load array base pointer into r10
+                    sb.AppendLine("  inc %r11");
+                    sb.AppendLine("  mov (%r10,%rbx,4), %eax "); // read element from branch history test array
+                    sb.AppendLine("  test %eax, %eax");
+
+                    // conditional branch on test array value
+                    string zeroLabel = Program.branchHistPrefix + counts[i] + "_zero" + branchCount;
+                    sb.AppendLine("  jz " + zeroLabel);
+                    sb.AppendLine("  inc %r8");
+                    sb.AppendLine(zeroLabel + ":");
+                }
+
+                // loop around in pattern history test array if necessary
+                // avoiding an extra branch to not pollute BPU history
+                sb.AppendLine("  inc %rbx");
+                sb.AppendLine("  cmp %rbx, %rdx");
+                sb.AppendLine("  cmove %r9, %rbx");
+
+                // end of main loop over iteration count
+                sb.AppendLine("  dec %rdi");
+                sb.AppendLine("  jnz " + loopLabel);
+
+                // function epilogue
+                sb.AppendLine("  pop %r9");
+                sb.AppendLine("  pop %r8");
+                sb.AppendLine("  pop %rbx");
+                sb.AppendLine("  ret");
+            }
+        }
     }
 }

@@ -49,6 +49,15 @@ namespace AsmGen
                 ldqTestCounts[i - ldqSizeMin] = i;
             }
 
+            /*int branchHistMax = 16;
+            int branchHistMin = 1;
+            int[] branchHistCounts = new int[branchHistMax - branchHistMin + 1];
+            for (int i = branchHistMin; i <= branchHistCounts.Length; i++)
+            {
+                branchHistCounts[i - branchHistMin] = i;
+            }*/
+            int[] branchHistCounts = new[] { 1, 2, 4, 8, 16, 32, 64, 128, 256, 512 };
+
             // number of 4B nops to pad. 0, 1, 3 corresponds to jump per 4B, 8B, 16B
             int[] paddings = new[] { 0, 1, 3 };
             StringBuilder cSourceFile = new StringBuilder();
@@ -56,6 +65,9 @@ namespace AsmGen
             StringBuilder armAsmFile = new StringBuilder();
             StringBuilder x86AsmFile = new StringBuilder();
             StringBuilder x86NasmFile = new StringBuilder();
+
+            StringBuilder x86branchHistFile = new StringBuilder();
+            StringBuilder branchHistHeaderFile = new StringBuilder();
 
             // Generate C file for linux
             cSourceFile.AppendLine("#include <stdio.h>\n#include<stdint.h>\n#include<sys/time.h>\n#include <stdlib.h>\n#include <string.h>\n");
@@ -178,6 +190,23 @@ namespace AsmGen
             x86Nasm.GenerateX86NasmMemSchedFuncs(x86NasmFile, ldmTestCounts);
             x86Nasm.GenerateX86NasmBranchFuncs(x86NasmFile, branchCounts, paddings);
             File.WriteAllText("clammicrobench_nasm.asm", x86NasmFile.ToString());
+
+            GenerateBranchHistHeader(branchHistHeaderFile, branchHistCounts);
+            File.WriteAllText("branchhist.h", branchHistHeaderFile.ToString());
+            x86.GenerateX86AsmBranchHistFuncs(x86branchHistFile, branchHistCounts);
+            File.WriteAllText("branchhist_x86.s", x86branchHistFile.ToString());
+
+            if (args.Length > 0 && args[0].Equals("autocopy", StringComparison.OrdinalIgnoreCase))
+            {
+                Console.WriteLine("Automatically copying files, based on default VS paths");
+                string clammicrobenchPath = @"..\..\..\..\clammicrobench";
+                string[] clammicrobenchFiles = new[] { "clammicrobench_nasm.asm", "clammicrobench.cpp" };
+                CopyFiles(clammicrobenchPath, clammicrobenchFiles);
+
+                string branchhistPath = @"..\..\..\..\BranchHistoryLength";
+                string[] branchhistFiles = new[] { "branchhist.h", "branchhist_x86.s" };
+                CopyFiles(branchhistPath, branchhistFiles);
+            }
         }
 
         public static string GetBranchFuncName(int branchCount, int padding) { return "branch" + branchCount + "pad" + padding; }
@@ -191,6 +220,22 @@ namespace AsmGen
         public const string robPrefix = "rob";
         public const string mulSchedPrefix = "mulsched";
         public const string memSchedPrefix = "memsched";
+        public const string branchHistPrefix = "branchhist";
+
+        static void CopyFiles(string targetDir, string[] fileNames)
+        {
+            foreach (string fname in fileNames)
+            {
+                string targetPath = Path.Join(targetDir, fname);
+                if (File.Exists(targetPath))
+                {
+                    File.Delete(targetPath);
+                }
+
+                File.Copy(fname, targetPath);
+                Console.WriteLine("Copied " + fname);
+            }
+        }
 
         static void AddCommonInitCode(StringBuilder sb)
         {
@@ -600,6 +645,28 @@ namespace AsmGen
             for (int i = 0; i < branchCounts.Length; i++)
                 for (int p = 0; p < paddings.Length; p++)
                     sb.AppendLine(".global " + GetBranchFuncName(branchCounts[i], paddings[p]));
+        }
+
+        static void GenerateBranchHistHeader(StringBuilder sb, int[] counts)
+        {
+            sb.AppendLine($"uint32_t maxBranchCount = {counts.Length};");
+            sb.Append($"uint32_t branchCounts[{counts.Length}] = ");
+            sb.Append("{ " + counts[0]);
+            for (int i = 1; i < counts.Length; i++) sb.Append(", " + counts[i]);
+            sb.AppendLine(" };");
+            sb.AppendLine($"uint64_t (*branchtestFuncArr[{counts.Length}])(uint64_t iterations, uint32_t **arr, uint32_t arrLen);");
+            for (int i = 0; i < counts.Length; i++)
+            {
+                sb.AppendLine("extern uint64_t " + branchHistPrefix + counts[i] + "(uint64_t iterations, uint32_t **arr, uint32_t arrLen);");
+            }
+
+            sb.AppendLine("void initializeFuncArr() {");
+            for (int i = 0; i < counts.Length; i++)
+            {
+                sb.AppendLine($"  branchtestFuncArr[{i}] = {branchHistPrefix + counts[i]};");
+            }
+
+            sb.AppendLine("}");
         }
     }
 }
