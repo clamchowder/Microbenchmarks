@@ -82,6 +82,9 @@ namespace AsmGen
             GenerateTestBlock(cSourceFile, ldmTestCounts, ldmPrefix, "Testing adds dependent on load result (ALU scheduler capacity?)");
             GenerateTestBlock(cSourceFile, ldqTestCounts, ldqPrefix, "Testing load queue capacity");
             GenerateTestBlock(cSourceFile, ldmTestCounts, mulSchedPrefix, "Testing integer (multiply) scheduler capacity");
+            GenerateTestBlock(cSourceFile, ldmTestCounts, mul16SchedPrefix, "Testing integer (16-bit multiply) scheduler capacity");
+            GenerateTestBlock(cSourceFile, ldmTestCounts, rorSchedPrefix, "Testing integer (rotate right) scheduler capacity");
+            GenerateTestBlock(cSourceFile, ldmTestCounts, cvtSchedPrefix, "Testing FP (convert int to FP) scheduler capacity");
 
             // store queue requires a sink
             cSourceFile.AppendLine("  if (argc == 1 || argc > 1 && strncmp(argv[1], \"stq\", 3) == 0) {");
@@ -90,10 +93,24 @@ namespace AsmGen
             cSourceFile.AppendLine("  free(A); free(B); return 0;");
             cSourceFile.AppendLine("  }\n");
 
+            // store/load queue also requires a sink
+            cSourceFile.AppendLine("  if (argc == 1 || argc > 1 && strncmp(argv[1], \"mixldqstq\", 9) == 0) {");
+            cSourceFile.AppendLine("  printf(\"Testing mixed LDQ+STQ Capacity:\\n\");");
+            GenerateLdqStqTestFunctionCalls(cSourceFile, ldqTestCounts);
+            cSourceFile.AppendLine("  free(A); free(B); return 0;");
+            cSourceFile.AppendLine("  }\n");
+
             // mem sched test requires second array
             cSourceFile.AppendLine("  if (argc == 1 || argc > 1 && strncmp(argv[1], \"memsched\", 8) == 0) {");
             cSourceFile.AppendLine("  printf(\"Testing Mem Scheduler Capacity:\\n\");");
             GenerateMemSchedTestFunctionCalls(cSourceFile, ldmTestCounts);
+            cSourceFile.AppendLine("  free(A); free(B); return 0;");
+            cSourceFile.AppendLine("  }\n");
+
+            // same with store scheduler test
+            cSourceFile.AppendLine("  if (argc == 1 || argc > 1 && strncmp(argv[1], \"storesched\", 10) == 0) {");
+            cSourceFile.AppendLine("  printf(\"Testing Store Scheduler Capacity:\\n\");");
+            GenerateStoreSchedTestFunctionCalls(cSourceFile, ldmTestCounts);
             cSourceFile.AppendLine("  free(A); free(B); return 0;");
             cSourceFile.AppendLine("  }\n");
 
@@ -169,8 +186,13 @@ namespace AsmGen
             x86.GenerateX86AsmLdmFuncs(x86AsmFile, ldmTestCounts);
             x86.GenerateX86AsmLdqFuncs(x86AsmFile, ldqTestCounts);
             x86.GenerateX86AsmStqFuncs(x86AsmFile, ldqTestCounts);
+            x86.GenerateX86AsmLdqStqFuncs(x86AsmFile, ldqTestCounts);
             x86.GenerateX86AsmMulSchedFuncs(x86AsmFile, ldmTestCounts);
             x86.GenerateX86AsmMemSchedFuncs(x86AsmFile, ldmTestCounts);
+            x86.GenerateX86AsmMul16SchedFuncs(x86AsmFile, ldmTestCounts);
+            x86.GenerateX86AsmRorSchedFuncs(x86AsmFile, ldmTestCounts);
+            x86.GenerateX86AsmCvtSchedFuncs(x86AsmFile, ldmTestCounts);
+            x86.GenerateX86AsmStoreSchedFuncs(x86AsmFile, ldmTestCounts);
             x86.GenerateX86AsmBranchFuncs(x86AsmFile, branchCounts, paddings);
             File.WriteAllText("clammicrobench_x86.s", x86AsmFile.ToString());
 
@@ -214,12 +236,17 @@ namespace AsmGen
 
         public const string ldqPrefix = "ldq";
         public const string stqPrefix = "stq";
+        public const string ldqStqPrefix = "mixldqstq";
         public const string prfPrefix = "prf";
         public const string frfPrefix = "frf";
         public const string ldmPrefix = "ldm";
         public const string robPrefix = "rob";
-        public const string mulSchedPrefix = "mulsched";
+        public const string mulSchedPrefix = "mulsched"; // specifically for VIA Nano because it goes to MA
         public const string memSchedPrefix = "memsched";
+        public const string storeSchedPrefix = "storesched";
+        public const string mul16SchedPrefix = "mul16sched"; // specifically for VIA because it goes to I2
+        public const string rorSchedPrefix = "rorsched"; // specifically for VIA Nano because it goes to I1
+        public const string cvtSchedPrefix = "cvtsched"; // specifically for VIA Nano because it goes to MB
         public const string branchHistPrefix = "branchhist";
 
         static void CopyFiles(string targetDir, string[] fileNames)
@@ -236,6 +263,7 @@ namespace AsmGen
                 Console.WriteLine("Copied " + fname);
             }
         }
+
 
         static void AddCommonInitCode(StringBuilder sb)
         {
@@ -283,11 +311,26 @@ namespace AsmGen
             for (int i = 0; i < ldmCounts.Length; i++)
                 sb.AppendLine("extern uint64_t " + memSchedPrefix + ldmCounts[i] + "(uint64_t iterations, int *arr, int *arr2);");
 
+            for (int i = 0; i < ldmCounts.Length; i++)
+                sb.AppendLine("extern uint64_t " + rorSchedPrefix + ldmCounts[i] + "(uint64_t iterations, int *arr);");
+
+            for (int i = 0; i < ldmCounts.Length; i++)
+                sb.AppendLine("extern uint64_t " + mul16SchedPrefix + ldmCounts[i] + "(uint64_t iterations, int *arr);");
+
+            for (int i = 0; i < ldmCounts.Length; i++)
+                sb.AppendLine("extern uint64_t " + cvtSchedPrefix + ldmCounts[i] + "(uint64_t iterations, int *arr);");
+
+            for (int i = 0; i < ldmCounts.Length; i++)
+                sb.AppendLine("extern uint64_t " + storeSchedPrefix + ldmCounts[i] + "(uint64_t iterations, int *arr, int *arr2);");
+
             for (int i = 0; i < ldqCounts.Length; i++)
                 sb.AppendLine("extern uint64_t " + ldqPrefix + ldqCounts[i] + "(uint64_t iterations, int *arr);");
 
             for (int i = 0; i < ldqCounts.Length; i++)
                 sb.AppendLine("extern uint64_t " + stqPrefix + ldqCounts[i] + "(uint64_t iterations, int *arr, uint64_t *sink);");
+
+            for (int i = 0; i < ldqCounts.Length; i++)
+                sb.AppendLine("extern uint64_t " + ldqStqPrefix + ldqCounts[i] + "(uint64_t iterations, int *arr, uint64_t *sink);");
         }
 
         static void GenerateVsFunctionDeclarations(StringBuilder sb, int[] branchCounts, int[] paddings, int[] robTestCounts, int[] rfCounts, int[] ldmCounts, int[] ldqCounts)
@@ -358,45 +401,6 @@ namespace AsmGen
             }
         }
 
-        static void GenerateRobTestFunctionCalls(StringBuilder sb, int[] robTestCounts)
-        {
-            for (int i = 0; i < robTestCounts.Length; i++)
-            {
-                sb.AppendLine("  gettimeofday(&startTv, &startTz);");
-                sb.AppendLine("  " + robPrefix + robTestCounts[i] + "(structIterations, A);");
-                sb.AppendLine("  gettimeofday(&endTv, &endTz);");
-                sb.AppendLine("  time_diff_ms = 1000 * (endTv.tv_sec - startTv.tv_sec) + ((endTv.tv_usec - startTv.tv_usec) / 1000);");
-                sb.AppendLine("  latency = 1e6 * (float)time_diff_ms / (float)(structIterations);");
-                sb.AppendLine("  printf(\"" + robTestCounts[i] + ",%f\\n\", latency);\n");
-            }
-        }
-
-        static void GenerateLdmTestFunctionCalls(StringBuilder sb, int[] ldmTestCounts)
-        {
-            for (int i = 0; i < ldmTestCounts.Length; i++)
-            {
-                sb.AppendLine("  gettimeofday(&startTv, &startTz);");
-                sb.AppendLine("  " + ldmPrefix + ldmTestCounts[i] + "(structIterations, A);");
-                sb.AppendLine("  gettimeofday(&endTv, &endTz);");
-                sb.AppendLine("  time_diff_ms = 1000 * (endTv.tv_sec - startTv.tv_sec) + ((endTv.tv_usec - startTv.tv_usec) / 1000);");
-                sb.AppendLine("  latency = 1e6 * (float)time_diff_ms / (float)(structIterations);");
-                sb.AppendLine("  printf(\"" + ldmTestCounts[i] + ",%f\\n\", latency);\n");
-            }
-        }
-
-        static void GenerateIntSchedTestFunctionCalls(StringBuilder sb, int[] intSchedTestCounts)
-        {
-            for (int i = 0; i < intSchedTestCounts.Length; i++)
-            {
-                sb.AppendLine("  gettimeofday(&startTv, &startTz);");
-                sb.AppendLine("  " + mulSchedPrefix + intSchedTestCounts[i] + "(structIterations, A);");
-                sb.AppendLine("  gettimeofday(&endTv, &endTz);");
-                sb.AppendLine("  time_diff_ms = 1000 * (endTv.tv_sec - startTv.tv_sec) + ((endTv.tv_usec - startTv.tv_usec) / 1000);");
-                sb.AppendLine("  latency = 1e6 * (float)time_diff_ms / (float)(structIterations);");
-                sb.AppendLine("  printf(\"" + intSchedTestCounts[i] + ",%f\\n\", latency);\n");
-            }
-        }
-
         static void GenerateMemSchedTestFunctionCalls(StringBuilder sb, int[] schedTestCounts)
         {
             for (int i = 0; i < schedTestCounts.Length; i++)
@@ -410,16 +414,16 @@ namespace AsmGen
             }
         }
 
-        static void GenerateLdqTestFunctionCalls(StringBuilder sb, int[] ldqTestCounts)
+        static void GenerateStoreSchedTestFunctionCalls(StringBuilder sb, int[] schedTestCounts)
         {
-            for (int i = 0; i < ldqTestCounts.Length; i++)
+            for (int i = 0; i < schedTestCounts.Length; i++)
             {
                 sb.AppendLine("  gettimeofday(&startTv, &startTz);");
-                sb.AppendLine("  " + ldqPrefix + ldqTestCounts[i] + "(structIterations, A);");
+                sb.AppendLine("  " + storeSchedPrefix + schedTestCounts[i] + "(structIterations, A, B);");
                 sb.AppendLine("  gettimeofday(&endTv, &endTz);");
                 sb.AppendLine("  time_diff_ms = 1000 * (endTv.tv_sec - startTv.tv_sec) + ((endTv.tv_usec - startTv.tv_usec) / 1000);");
                 sb.AppendLine("  latency = 1e6 * (float)time_diff_ms / (float)(structIterations);");
-                sb.AppendLine("  printf(\"" + ldqTestCounts[i] + ",%f\\n\", latency);\n");
+                sb.AppendLine("  printf(\"" + schedTestCounts[i] + ",%f\\n\", latency);\n");
             }
         }
 
@@ -436,55 +440,16 @@ namespace AsmGen
             }
         }
 
-        static void GeneratePrfTestFunctionCalls(StringBuilder sb, int[] rfTestCounts)
+        static void GenerateLdqStqTestFunctionCalls(StringBuilder sb, int[] ldqTestCounts)
         {
-            for (int i = 0; i < rfTestCounts.Length; i++)
+            for (int i = 0; i < ldqTestCounts.Length; i++)
             {
                 sb.AppendLine("  gettimeofday(&startTv, &startTz);");
-                sb.AppendLine("  " + prfPrefix + rfTestCounts[i] + "(structIterations, A);");
+                sb.AppendLine("  " + ldqStqPrefix + ldqTestCounts[i] + "(structIterations, A, &tmpsink);");
                 sb.AppendLine("  gettimeofday(&endTv, &endTz);");
                 sb.AppendLine("  time_diff_ms = 1000 * (endTv.tv_sec - startTv.tv_sec) + ((endTv.tv_usec - startTv.tv_usec) / 1000);");
                 sb.AppendLine("  latency = 1e6 * (float)time_diff_ms / (float)(structIterations);");
-                sb.AppendLine("  printf(\"" + rfTestCounts[i] + ",%f\\n\", latency);\n");
-            }
-        }
-
-        static void GenerateFrfTestFunctionCalls(StringBuilder sb, int[] rfTestCounts)
-        {
-            for (int i = 0; i < rfTestCounts.Length; i++)
-            {
-                sb.AppendLine("  gettimeofday(&startTv, &startTz);");
-                sb.AppendLine("  " + frfPrefix + rfTestCounts[i] + "(structIterations, A);");
-                sb.AppendLine("  gettimeofday(&endTv, &endTz);");
-                sb.AppendLine("  time_diff_ms = 1000 * (endTv.tv_sec - startTv.tv_sec) + ((endTv.tv_usec - startTv.tv_usec) / 1000);");
-                sb.AppendLine("  latency = 1e6 * (float)time_diff_ms / (float)(structIterations);");
-                sb.AppendLine("  printf(\"" + rfTestCounts[i] + ",%f\\n\", latency);\n");
-            }
-        }
-
-        static void GenerateVSPrfTestFunctionCalls(StringBuilder sb, int[] rfTestCounts)
-        {
-            for (int i = 0; i < rfTestCounts.Length; i++)
-            {
-                sb.AppendLine("  ftime(&start);");
-                sb.AppendLine("  " + prfPrefix + rfTestCounts[i] + "(structIterations, A);");
-                sb.AppendLine("  ftime(&end);");
-                sb.AppendLine("  time_diff_ms = 1000 * (end.time - start.time) + (end.millitm - start.millitm);");
-                sb.AppendLine("  latency = 1e6 * (float)time_diff_ms / (float)(structIterations);");
-                sb.AppendLine("  printf(\"" + rfTestCounts[i] + ",%f\\n\", latency);\n");
-            }
-        }
-
-        static void GenerateVSFrfTestFunctionCalls(StringBuilder sb, int[] rfTestCounts)
-        {
-            for (int i = 0; i < rfTestCounts.Length; i++)
-            {
-                sb.AppendLine("  ftime(&start);");
-                sb.AppendLine("  " + frfPrefix + rfTestCounts[i] + "(structIterations, A);");
-                sb.AppendLine("  ftime(&end);");
-                sb.AppendLine("  time_diff_ms = 1000 * (end.time - start.time) + (end.millitm - start.millitm);");
-                sb.AppendLine("  latency = 1e6 * (float)time_diff_ms / (float)(structIterations);");
-                sb.AppendLine("  printf(\"" + rfTestCounts[i] + ",%f\\n\", latency);\n");
+                sb.AppendLine("  printf(\"" + ldqTestCounts[i] + ",%f\\n\", latency);\n");
             }
         }
 
@@ -510,19 +475,6 @@ namespace AsmGen
             }
         }
 
-        static void GenerateVSRobTestFunctionCalls(StringBuilder sb, int[] robTestCounts)
-        {
-            for (int i = 0; i < robTestCounts.Length; i++)
-            {
-                sb.AppendLine("  ftime(&start);");
-                sb.AppendLine("  " + robPrefix + robTestCounts[i] + "(structIterations, A);");
-                sb.AppendLine("  ftime(&end);");
-                sb.AppendLine("  time_diff_ms = 1000 * (end.time - start.time) + (end.millitm - start.millitm);");
-                sb.AppendLine("  latency = 1e6 * (float)time_diff_ms / (float)(structIterations);");
-                sb.AppendLine("  printf(\"" + robTestCounts[i] + ",%f\\n\", latency);\n");
-            }
-        }
-
         static void GenerateBranchFunctionCalls(StringBuilder sb, int[] branchCounts, int padding)
         {
             sb.AppendLine("  iterations = " + iterations + ";");
@@ -537,32 +489,6 @@ namespace AsmGen
             }
         }
 
-        static void GenerateVSLdmFunctionCalls(StringBuilder sb, int[] ldmCounts)
-        {
-            for (int i = 0; i < ldmCounts.Length; i++)
-            {
-                sb.AppendLine("  ftime(&start);");
-                sb.AppendLine("  " + ldmPrefix + ldmCounts[i] + "(structIterations, A);");
-                sb.AppendLine("  ftime(&end);");
-                sb.AppendLine("  time_diff_ms = 1000 * (end.time - start.time) + (end.millitm - start.millitm);");
-                sb.AppendLine("  latency = 1e6 * (float)time_diff_ms / (float)(structIterations);");
-                sb.AppendLine("  printf(\"" + ldmCounts[i] + ",%f\\n\", latency);\n");
-            }
-        }
-
-        static void GenerateVSIntSchedFunctionCalls(StringBuilder sb, int[] intSchedCounts)
-        {
-            for (int i = 0; i < intSchedCounts.Length; i++)
-            {
-                sb.AppendLine("  ftime(&start);");
-                sb.AppendLine("  " + mulSchedPrefix + intSchedCounts[i] + "(structIterations, A);");
-                sb.AppendLine("  ftime(&end);");
-                sb.AppendLine("  time_diff_ms = 1000 * (end.time - start.time) + (end.millitm - start.millitm);");
-                sb.AppendLine("  latency = 1e6 * (float)time_diff_ms / (float)(structIterations);");
-                sb.AppendLine("  printf(\"" + intSchedCounts[i] + ",%f\\n\", latency);\n");
-            }
-        }
-
         static void GenerateVSMemSchedFunctionCalls(StringBuilder sb, int[] schedCounts)
         {
             for (int i = 0; i < schedCounts.Length; i++)
@@ -573,19 +499,6 @@ namespace AsmGen
                 sb.AppendLine("  time_diff_ms = 1000 * (end.time - start.time) + (end.millitm - start.millitm);");
                 sb.AppendLine("  latency = 1e6 * (float)time_diff_ms / (float)(structIterations);");
                 sb.AppendLine("  printf(\"" + schedCounts[i] + ",%f\\n\", latency);\n");
-            }
-        }
-
-        static void GenerateVSLdqFunctionCalls(StringBuilder sb, int[] ldqCounts)
-        {
-            for (int i = 0; i < ldqCounts.Length; i++)
-            {
-                sb.AppendLine("  ftime(&start);");
-                sb.AppendLine("  " + ldqPrefix + ldqCounts[i] + "(structIterations, A);");
-                sb.AppendLine("  ftime(&end);");
-                sb.AppendLine("  time_diff_ms = 1000 * (end.time - start.time) + (end.millitm - start.millitm);");
-                sb.AppendLine("  latency = 1e6 * (float)time_diff_ms / (float)(structIterations);");
-                sb.AppendLine("  printf(\"" + ldqCounts[i] + ",%f\\n\", latency);\n");
             }
         }
 
@@ -634,13 +547,28 @@ namespace AsmGen
                 sb.AppendLine(".global " + mulSchedPrefix + ldmCounts[i]);
 
             for (int i = 0; i < ldmCounts.Length; i++)
+                sb.AppendLine(".global " + mul16SchedPrefix + ldmCounts[i]);
+
+            for (int i = 0; i < ldmCounts.Length; i++)
+                sb.AppendLine(".global " + rorSchedPrefix + ldmCounts[i]);
+
+            for (int i = 0; i < ldmCounts.Length; i++)
                 sb.AppendLine(".global " + memSchedPrefix + ldmCounts[i]);
+
+            for (int i = 0; i < ldmCounts.Length; i++)
+                sb.AppendLine(".global " + cvtSchedPrefix + ldmCounts[i]);
+
+            for (int i = 0; i < ldmCounts.Length; i++)
+                sb.AppendLine(".global " + storeSchedPrefix + ldmCounts[i]);
 
             for (int i = 0; i < ldqCounts.Length; i++)
                 sb.AppendLine(".global " + ldqPrefix + ldqCounts[i]);
 
             for (int i = 0; i < ldqCounts.Length; i++)
                 sb.AppendLine(".global " + stqPrefix + ldqCounts[i]);
+
+            for (int i = 0; i < ldqCounts.Length; i++)
+                sb.AppendLine(".global " + ldqStqPrefix + ldqCounts[i]);
 
             for (int i = 0; i < branchCounts.Length; i++)
                 for (int p = 0; p < paddings.Length; p++)
