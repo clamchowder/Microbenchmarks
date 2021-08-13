@@ -8,9 +8,7 @@
 #include <CL/cl.h>
 #define MAX_SOURCE_SIZE (0x100000)
 
-int default_test_sizes[28] = { 2, 4, 8, 16, 24, 32, 48, 64, 128, 256, 512, 600, 768, 1024, 
-                               1536, 2048, 3072, 4096, 5120, 6144, 8192, 16384, 32768, 65536, 
-                               131072, 262144, 524288, 1048576 };
+int default_test_sizes[27] = { 2, 4, 8, 16, 24, 32, 48, 64, 128, 256, 512, 600, 768, 1024, 1536, 2048, 3072, 4096, 5120, 6144, 8192, 16384, 32768, 65536, 131072, 262144, 1048576 };
 
 cl_device_id selected_device_id;
 cl_platform_id selected_platform_id;
@@ -28,6 +26,15 @@ float latency_bw_test(cl_context context,
     uint32_t thread_count,
     uint32_t local_size,
     uint32_t chase_iterations);
+float int_exec_latency_test(cl_context context,
+    cl_command_queue command_queue,
+    cl_kernel kernel,
+    uint32_t iterations);
+float int_atomic_latency_test(cl_context context,
+    cl_command_queue command_queue,
+    cl_kernel kernel,
+    uint32_t iterations,
+    bool local);
 cl_ulong get_max_buffer_size();
 cl_ulong get_max_constant_buffer_size();
 
@@ -107,6 +114,9 @@ int main(int argc, char *argv[]) {
     cl_kernel kernel = clCreateKernel(program, "unrolled_latency_test", &ret);
     cl_kernel parallel_kernel = clCreateKernel(program, "parallel_latency_test", &ret);
     cl_kernel constant_kernel = clCreateKernel(program, "constant_unrolled_latency_test", &ret);
+    cl_kernel int_exec_latency_test_kernel = clCreateKernel(program, "int_exec_latency_test", &ret);
+    cl_kernel atomic_latency_test_kernel = clCreateKernel(program, "atomic_exec_latency_test", &ret);
+    cl_kernel local_atomic_latency_test_kernel = clCreateKernel(program, "local_atomic_latency_test", &ret);
 #pragma endregion opencl_overhead
 
     cl_ulong max_global_test_size = get_max_buffer_size();
@@ -131,6 +141,15 @@ int main(int argc, char *argv[]) {
             break;
         }
     }*/
+
+    
+
+    //latency = int_exec_latency_test(context, command_queue, int_exec_latency_test_kernel, chase_iterations);
+    //printf("int latency: %f\n", latency);
+    latency = int_atomic_latency_test(context, command_queue, atomic_latency_test_kernel, chase_iterations, false);
+    printf("global atomic latency: %f\n", latency);
+    latency = int_atomic_latency_test(context, command_queue, local_atomic_latency_test_kernel, chase_iterations, true);
+    printf("local atomic latency: %f\n", latency);
 
     printf("\nSattolo, global memory latency (up to %lld K) unroll:\n", max_global_test_size / 1024);
 
@@ -163,7 +182,7 @@ int main(int argc, char *argv[]) {
         }
     }
 
-    printf("If you didn't run this through cmd, now you can copy the results. And press enter to close");
+    printf("If you didn't run this through cmd, now you can copy the results. And press ctrl+c to close");
     scanf("\n");
 
     // Clean up
@@ -176,6 +195,103 @@ int main(int argc, char *argv[]) {
     ret = clReleaseContext(context);
     free(source_str);
     return 0;
+}
+
+float int_atomic_latency_test(cl_context context,
+    cl_command_queue command_queue,
+    cl_kernel kernel,
+    uint32_t iterations,
+    bool local)
+{
+    struct timeb start, end;
+    cl_int ret;
+    cl_int result = 0;
+    size_t global_item_size = 2;
+    size_t local_item_size = 1;
+    float latency;
+    uint32_t time_diff_ms;
+    uint32_t A = 0;
+
+    if (local)
+    {
+        local_item_size = 2;
+    }
+
+    cl_mem a_mem_obj = clCreateBuffer(context, CL_MEM_READ_ONLY, sizeof(uint32_t), NULL, &ret);
+    cl_mem result_obj = clCreateBuffer(context, CL_MEM_READ_WRITE, sizeof(cl_int), NULL, &result);
+    ret = clEnqueueWriteBuffer(command_queue, a_mem_obj, CL_TRUE, 0, sizeof(uint32_t), &A, 0, NULL, NULL);
+    ret = clEnqueueWriteBuffer(command_queue, result_obj, CL_TRUE, 0, sizeof(cl_int), &result, 0, NULL, NULL);
+    clFinish(command_queue);
+    clSetKernelArg(kernel, 0, sizeof(cl_mem), (void*)&a_mem_obj);
+    clSetKernelArg(kernel, 1, sizeof(cl_int), (void*)&iterations);
+    clSetKernelArg(kernel, 2, sizeof(cl_mem), (void*)&result_obj);
+
+    ftime(&start);
+    ret = clEnqueueNDRangeKernel(command_queue, kernel, 1, NULL, &global_item_size, &local_item_size, 0, NULL, NULL);
+    if (ret != CL_SUCCESS)
+    {
+        fprintf(stderr, "Failed to submit kernel to command queue. clEnqueueNDRangeKernel returned %d\n", ret);
+        latency = 0;
+        goto cleanup;
+    }
+    clFinish(command_queue);
+    ftime(&end);
+    time_diff_ms = 1000 * (end.time - start.time) + (end.millitm - start.millitm);
+    latency = (1e6 * (float)time_diff_ms / (float)(iterations)) / 2;
+
+cleanup:
+    clFlush(command_queue);
+    clFinish(command_queue);
+    clReleaseMemObject(a_mem_obj);
+    clReleaseMemObject(result_obj);
+    return latency;
+}
+
+#define INT_EXEC_INPUT_SIZE 16
+float int_exec_latency_test(cl_context context,
+    cl_command_queue command_queue,
+    cl_kernel kernel,
+    uint32_t iterations)
+{
+    struct timeb start, end;
+    cl_int ret;
+    cl_int result = 0;
+    size_t global_item_size = 1;
+    size_t local_item_size = 1;
+    float latency;
+    uint32_t time_diff_ms;
+    uint32_t A[INT_EXEC_INPUT_SIZE];
+    
+    for (int i = 0; i < INT_EXEC_INPUT_SIZE; i++) A[i] = i;
+
+    cl_mem a_mem_obj = clCreateBuffer(context, CL_MEM_READ_ONLY, INT_EXEC_INPUT_SIZE * sizeof(uint32_t), NULL, &ret);
+    cl_mem result_obj = clCreateBuffer(context, CL_MEM_READ_WRITE, sizeof(cl_int), NULL, &result);
+    ret = clEnqueueWriteBuffer(command_queue, a_mem_obj, CL_TRUE, 0, INT_EXEC_INPUT_SIZE * sizeof(uint32_t), A, 0, NULL, NULL);
+    ret = clEnqueueWriteBuffer(command_queue, result_obj, CL_TRUE, 0, sizeof(cl_int), &result, 0, NULL, NULL);
+    clFinish(command_queue);
+    clSetKernelArg(kernel, 0, sizeof(cl_mem), (void*)&a_mem_obj);
+    clSetKernelArg(kernel, 1, sizeof(cl_int), (void*)&iterations);
+    clSetKernelArg(kernel, 2, sizeof(cl_mem), (void*)&result_obj);
+
+    ftime(&start);
+    ret = clEnqueueNDRangeKernel(command_queue, kernel, 1, NULL, &global_item_size, &local_item_size, 0, NULL, NULL);
+    if (ret != CL_SUCCESS)
+    {
+        fprintf(stderr, "Failed to submit kernel to command queue. clEnqueueNDRangeKernel returned %d\n", ret);
+        latency = 0;
+        goto cleanup;
+    }
+    clFinish(command_queue);
+    ftime(&end);
+    time_diff_ms = 1000 * (end.time - start.time) + (end.millitm - start.millitm);
+    latency = 1e6 * (float)time_diff_ms / (float)(iterations * 12);
+
+cleanup:
+    clFlush(command_queue);
+    clFinish(command_queue);
+    clReleaseMemObject(a_mem_obj);
+    clReleaseMemObject(result_obj);
+    return latency;
 }
 
 float latency_bw_test(cl_context context,
@@ -310,6 +426,7 @@ float latency_test(cl_context context,
 
     cl_mem result_obj = clCreateBuffer(context, CL_MEM_READ_WRITE, sizeof(uint32_t), NULL, &ret);
     clEnqueueWriteBuffer(command_queue, result_obj, CL_TRUE, 0, sizeof(uint32_t), &result, 0, NULL, NULL);
+    clFinish(command_queue);
     
     // Set kernel arguments
     ret = clSetKernelArg(kernel, 0, sizeof(cl_mem), (void*)&a_mem_obj);
