@@ -16,10 +16,17 @@ namespace AsmGen
 
                 // args in x0, x1
                 sb.AppendLine("\n" + funcName + ":");
+                sb.AppendLine("  sub sp, sp, #0x50");
                 sb.AppendLine("  stp x14, x15, [sp, #0x10]");
                 sb.AppendLine("  stp x12, x13, [sp, #0x20]");
                 sb.AppendLine("  stp x10, x11, [sp, #0x30]");
                 sb.AppendLine("  stp x25, x26, [sp, #0x40]");
+                sb.AppendLine("  mov x15, 1");
+                sb.AppendLine("  mov x14, 2");
+                sb.AppendLine("  mov x13, 3");
+                sb.AppendLine("  mov x12, 4");
+                sb.AppendLine("  mov x11, 5");
+                sb.AppendLine("  mov x10, 6");
                 sb.AppendLine("  mov w25, 0x0");
                 sb.AppendLine("  mov w26, 0x40");
                 sb.AppendLine("\n" + funcName + "start:");
@@ -45,26 +52,89 @@ namespace AsmGen
                 sb.AppendLine("  ldp x10, x11, [sp, #0x30]");
                 sb.AppendLine("  ldp x12, x13, [sp, #0x20]");
                 sb.AppendLine("  ldp x14, x15, [sp, #0x10]");
+                sb.AppendLine("  add sp, sp, #0x50");
                 sb.AppendLine("  ret\n\n");
             }
         }
 
-        public static void GenerateArmAsmIntSchedFuncs(StringBuilder sb, int[] counts)
+        public static void GenerateArmAsmFpSchedTestFuncs(StringBuilder sb, int[] counts, string funcNamePrefix, string[] fillerInstrs1, string[] fillerInstrs2)
         {
-            // like ldm but fewer adds are directly dependent on load result
-            string[] unrolledAdds = new string[4];
-            unrolledAdds[0] = "  add x15, x15, x10";
-            unrolledAdds[1] = "  add x14, x14, x15";
-            unrolledAdds[2] = "  add x13, x13, x15";
-            unrolledAdds[3] = "  add x12, x12, x15";
+            for (int i = 0; i < counts.Length; i++)
+            {
+                string funcName = funcNamePrefix + counts[i];
 
-            string[] unrolledAdds1 = new string[4];
-            unrolledAdds1[0] = "  add x15, x15, x11";
-            unrolledAdds1[1] = "  add x14, x14, x15";
-            unrolledAdds1[2] = "  add x13, x13, x15";
-            unrolledAdds1[3] = "  add x12, x12, x15";
+                // x0 = iteration count, x1 = ptr chasing arr, x2 = fp array
+                sb.AppendLine("\n" + funcName + ":");
+                sb.AppendLine("  sub sp, sp, #0x50");
+                sb.AppendLine("  stp x14, x15, [sp, #0x10]");
+                sb.AppendLine("  stp x12, x13, [sp, #0x20]");
+                sb.AppendLine("  stp x10, x11, [sp, #0x30]");
+                sb.AppendLine("  stp x25, x26, [sp, #0x40]");;
+                sb.AppendLine("  ldr s17, [x2]");
+                sb.AppendLine("  ldr s18, [x2, 4]");
+                sb.AppendLine("  ldr s19, [x2, 8]");
+                sb.AppendLine("  ldr s20, [x2, 12]");
+                sb.AppendLine("  ldr s21, [x2, 16]");
+                sb.AppendLine("  mov w25, 0x0");
+                sb.AppendLine("  mov w26, 0x40");
+                sb.AppendLine("\n" + funcName + "start:");
+                sb.AppendLine("  ldr w25, [x1, w25, uxtw #2]"); // current = A[current]
+                // x2 = ptr to FP array. do a FP load dependent on that
+                sb.AppendLine("  ldr s16, [x2, w25, uxtw #2]");
 
-            GenerateArmAsmStructureTestFuncs(sb, counts, Program.mulSchedPrefix, unrolledAdds, unrolledAdds1);
+                int fillerInstrCount = counts[i];
+                for (int nopIdx = 0, addIdx = 0; nopIdx < fillerInstrCount; nopIdx++)
+                {
+                    sb.AppendLine(fillerInstrs1[addIdx]);
+                    addIdx = (addIdx + 1) % fillerInstrs1.Length;
+                }
+
+                sb.AppendLine("  ldr w26, [x1, w26, uxtw #2]");
+                sb.AppendLine("  ldr s16, [x2, w26, uxtw #2]");
+                for (int nopIdx = 0, addIdx = 0; nopIdx < fillerInstrCount; nopIdx++)
+                {
+                    sb.AppendLine(fillerInstrs2[addIdx]);
+                    addIdx = (addIdx + 1) % fillerInstrs2.Length;
+                }
+
+                sb.AppendLine("  sub x0, x0, 1");
+                sb.AppendLine("  cbnz x0, " + funcName + "start");
+                sb.AppendLine("  ldp x25, x26, [sp, #0x40]");
+                sb.AppendLine("  ldp x10, x11, [sp, #0x30]");
+                sb.AppendLine("  ldp x12, x13, [sp, #0x20]");
+                sb.AppendLine("  ldp x14, x15, [sp, #0x10]");
+                sb.AppendLine("  add sp, sp, #0x50");
+                sb.AppendLine("  ret\n\n");
+            }
+        }
+
+        public static void GenerateArmAsmMulSchedFuncs(StringBuilder sb, int[] counts)
+        {
+            string[] unrolledMuls = new string[4];
+            unrolledMuls[0] = "  mul w15, w15, w25";
+            unrolledMuls[1] = "  mul w14, w14, w25";
+            unrolledMuls[2] = "  mul w13, w13, w25";
+            unrolledMuls[3] = "  mul w12, w12, w25";
+
+            string[] unrolledMuls1 = new string[4];
+            unrolledMuls1[0] = "  mul w15, w15, w26";
+            unrolledMuls1[1] = "  mul w14, w14, w26";
+            unrolledMuls1[2] = "  mul w13, w13, w26";
+            unrolledMuls1[3] = "  mul w12, w12, w26";
+
+            GenerateArmAsmStructureTestFuncs(sb, counts, Program.mulSchedPrefix, unrolledMuls, unrolledMuls);
+        }
+
+        public static void GenerateArmAsmFAddSchedFuncs(StringBuilder sb, int[] counts)
+        {
+            // x0 = iteration count, x1 = ptr chasing arr, x2 = fp arr
+            string[] unrolledFadds = new string[4];
+            unrolledFadds[0] = "  fadd s17, s17, s16";
+            unrolledFadds[1] = "  fadd s18, s18, s16";
+            unrolledFadds[2] = "  fadd s19, s19, s16";
+            unrolledFadds[3] = "  fadd s20, s20, s16";
+
+            GenerateArmAsmFpSchedTestFuncs(sb, counts, Program.faddSchedPrefix, unrolledFadds, unrolledFadds);
         }
 
         public static void GenerateArmAsmLdmFuncs(StringBuilder sb, int[] ldmcounts)
@@ -95,6 +165,18 @@ namespace AsmGen
             GenerateArmAsmStructureTestFuncs(sb, ldqCounts, Program.ldqPrefix, unrolledLoads, unrolledLoads, includePtrChasingLoads: true);
         }
 
+        public static void GenerateArmAsmLdqStqFuncs(StringBuilder sb, int[] ldqCounts)
+        {
+            // x1 = load arr, x2 = sink
+            string[] unrolledLoads = new string[4];
+            unrolledLoads[0] = "  ldr x15, [x1]";
+            unrolledLoads[1] = "  str x14, [x2]";
+            unrolledLoads[2] = "  ldr x13, [x1]";
+            unrolledLoads[3] = "  str x12, [x2]";
+
+            GenerateArmAsmStructureTestFuncs(sb, ldqCounts, Program.ldqStqPrefix, unrolledLoads, unrolledLoads, includePtrChasingLoads: true);
+        }
+
         public static void GenerateArmAsmMemSchedFuncs(StringBuilder sb, int[] memSchedCounts)
         {
             // ldr w26, [x1, w26, uxtw #2]
@@ -111,6 +193,24 @@ namespace AsmGen
             loads1[3] = "  ldr w12, [x2, w26, uxtw #2]";
 
             GenerateArmAsmStructureTestFuncs(sb, memSchedCounts, Program.memSchedPrefix, loads, loads1, includePtrChasingLoads: true);
+        }
+
+        public static void GenerateArmAsmStoreSchedFuncs(StringBuilder sb, int[] memSchedCounts)
+        {
+            // ldr w26, [x1, w26, uxtw #2]
+            string[] loads = new string[4];
+            loads[0] = "  str w15, [x2, w25, uxtw #2]";
+            loads[1] = "  str w14, [x2, w25, uxtw #2]";
+            loads[2] = "  str w13, [x2, w25, uxtw #2]";
+            loads[3] = "  str w12, [x2, w25, uxtw #2]";
+
+            string[] loads1 = new string[4];
+            loads1[0] = "  str w15, [x2, w26, uxtw #2]";
+            loads1[1] = "  str w14, [x2, w26, uxtw #2]";
+            loads1[2] = "  str w13, [x2, w26, uxtw #2]";
+            loads1[3] = "  str w12, [x2, w26, uxtw #2]";
+
+            GenerateArmAsmStructureTestFuncs(sb, memSchedCounts, Program.storeSchedPrefix, loads, loads1, includePtrChasingLoads: false);
         }
 
         public static void GenerateArmAsmStqFuncs(StringBuilder sb, int[] stqCounts)
