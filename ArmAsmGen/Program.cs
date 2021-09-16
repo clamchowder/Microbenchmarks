@@ -33,6 +33,7 @@ namespace AsmGen
             tests.Add(new StoreSchedTest(4, 128, 1));
             tests.Add(new LdqTest(4, 128, 1));
             tests.Add(new StqTest(4, 128, 1));
+            tests.Add(new ReturnStackTest(2, 64, 1));
 
             StringBuilder cSourceFile = new StringBuilder();
             StringBuilder vsCSourceFile = new StringBuilder();
@@ -183,100 +184,6 @@ namespace AsmGen
             sb.AppendLine("  for (int i = 0; i < list_size; i++) { B[i] = i; }\n");
             sb.AppendLine("  fpArr = (float*)malloc(sizeof(float) * list_size);\n");
             sb.AppendLine("  for (int i = 0;i < list_size; i++) { fpArr[i] = i + .1; }\n");
-        }
-
-        static void GenerateTestBlock(StringBuilder sb, int[] counts, string prefix, string message)
-        {
-            sb.AppendLine("  if (argc == 1 || argc > 1 && strncmp(argv[1], \"" + prefix + "\", " + prefix.Length + ") == 0) {");
-            sb.AppendLine("  printf(\"" + message + ":\\n\");");
-            GenerateTestFunctionCalls(sb, counts, prefix);
-            sb.AppendLine("  free(A); free(B); return 0;");
-            sb.AppendLine("  }\n");
-        }
-
-        static void GenerateFpSchedTestBlock(StringBuilder sb, int[] counts, string prefix, string message)
-        {
-            sb.AppendLine("  if (argc == 1 || argc > 1 && strncmp(argv[1], \"" + prefix + "\", " + prefix.Length + ") == 0) {");
-            sb.AppendLine("  printf(\"" + message + ":\\n\");");
-            GenerateFpSchedTestFunctionCalls(sb, counts, prefix);
-            sb.AppendLine("  free(A); free(B); return 0;");
-            sb.AppendLine("  }\n");
-        }
-
-        static void GenerateTestFunctionCalls(StringBuilder sb, int[] counts, string prefix)
-        {
-            for (int i = 0; i < counts.Length; i++)
-            {
-                sb.AppendLine("  gettimeofday(&startTv, &startTz);");
-                sb.AppendLine("  " + prefix + counts[i] + "(structIterations, A);");
-                sb.AppendLine("  gettimeofday(&endTv, &endTz);");
-                sb.AppendLine("  time_diff_ms = 1000 * (endTv.tv_sec - startTv.tv_sec) + ((endTv.tv_usec - startTv.tv_usec) / 1000);");
-                sb.AppendLine("  latency = 1e6 * (float)time_diff_ms / (float)(structIterations);");
-                sb.AppendLine("  printf(\"" + counts[i] + ",%f\\n\", latency);\n");
-            }
-        }
-
-        static void GenerateFpSchedTestFunctionCalls(StringBuilder sb, int[] counts, string prefix)
-        {
-            for (int i = 0; i < counts.Length; i++)
-            {
-                sb.AppendLine("  gettimeofday(&startTv, &startTz);");
-                sb.AppendLine("  " + prefix + counts[i] + "(structIterations, A, fpArr);");
-                sb.AppendLine("  gettimeofday(&endTv, &endTz);");
-                sb.AppendLine("  time_diff_ms = 1000 * (endTv.tv_sec - startTv.tv_sec) + ((endTv.tv_usec - startTv.tv_usec) / 1000);");
-                sb.AppendLine("  latency = 1e6 * (float)time_diff_ms / (float)(structIterations);");
-                sb.AppendLine("  printf(\"" + counts[i] + ",%f\\n\", latency);\n");
-            }
-        }
-
-        static void GenerateVsTestBlock(StringBuilder sb, int[] counts, string prefix, string message)
-        {
-            sb.AppendLine("  if (argc == 1 || argc > 1 && _strnicmp(argv[1], \"" + prefix + "\", " + prefix.Length + ") == 0) {");
-            sb.AppendLine("  printf(\"" + message + ":\\n\");");
-            GenerateVsTestFunctionCalls(sb, counts, prefix);
-            sb.AppendLine("  free(A); free(B); free(fpArr); return 0;");
-            sb.AppendLine("  }\n");
-        }
-
-        static void GenerateVsTestFunctionCalls(StringBuilder sb, int[] counts, string prefix)
-        {
-            for (int i = 0; i < counts.Length; i++)
-            {
-                sb.AppendLine("  ftime(&start);");
-                sb.AppendLine("  " + prefix + counts[i] + "(structIterations, A);");
-                sb.AppendLine("  ftime(&end);");
-                sb.AppendLine("  time_diff_ms = 1000 * (end.time - start.time) + (end.millitm - start.millitm);");
-                sb.AppendLine("  latency = 1e6 * (float)time_diff_ms / (float)(structIterations);");
-                sb.AppendLine("  printf(\"" + counts[i] + ",%f\\n\", latency);\n");
-            }
-        }
-
-        static void GenerateBranchFunctionCalls(StringBuilder sb, int[] branchCounts, int padding)
-        {
-            sb.AppendLine("  iterations = " + iterations + ";");
-            for (int i = 0; i < branchCounts.Length; i++)
-            {
-                sb.AppendLine("  gettimeofday(&startTv, &startTz);");
-                sb.AppendLine("  " + GetBranchFuncName(branchCounts[i], padding) + "(" + iterations + "/" + branchCounts[i] + ");");
-                sb.AppendLine("  gettimeofday(&endTv, &endTz);");
-                sb.AppendLine("  time_diff_ms = 1000 * (endTv.tv_sec - startTv.tv_sec) + ((endTv.tv_usec - startTv.tv_usec) / 1000);");
-                sb.AppendLine("  latency = 1e6 * (float)time_diff_ms / (float)(iterations);");
-                sb.AppendLine("  printf(\"" + branchCounts[i] + ",%f\\n\", latency);\n");
-            }
-        }
-
-        static void GenerateVSBranchFunctionCalls(StringBuilder sb, int[] branchCounts, int padding)
-        {
-            sb.AppendLine("  iterations = " + iterations + ";");
-            for (int i = 0; i < branchCounts.Length; i++)
-            {
-                sb.AppendLine("  ftime(&start);");
-                sb.AppendLine("  " + GetBranchFuncName(branchCounts[i], padding) + "(" + iterations + "/" + branchCounts[i] + ");");
-                sb.AppendLine("  ftime(&end);");
-                sb.AppendLine("  time_diff_ms = 1000 * (end.time - start.time) + (end.millitm - start.millitm);");
-                sb.AppendLine("  latency = 1e6 * (float)time_diff_ms / (float)(iterations);");
-                sb.AppendLine("  printf(\"" + branchCounts[i] + ",%f\\n\", latency);\n");
-            }
         }
 
         static void GenerateBranchHistHeader(StringBuilder sb, int[] counts)

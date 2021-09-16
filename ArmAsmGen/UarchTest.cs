@@ -10,6 +10,7 @@ namespace AsmGen
         public int[] Counts { get; }
         public string FunctionDefinitionParameters { get; }
         public string GetFunctionCallParameters { get; }
+        public bool DivideTimeByCount { get; }
         public void GenerateX86GccAsm(StringBuilder sb);
         public void GenerateX86NasmAsm(StringBuilder sb);
         public void GenerateArmAsm(StringBuilder sb);

@@ -60,6 +60,8 @@ namespace AsmGen
                 sb.AppendLine("    gettimeofday(&endTv, &endTz);");
                 sb.AppendLine("    time_diff_ms = 1000 * (endTv.tv_sec - startTv.tv_sec) + ((endTv.tv_usec - startTv.tv_usec) / 1000);");
                 sb.AppendLine("    latency = 1e6 * (float)time_diff_ms / (float)(structIterations);");
+                if (test.DivideTimeByCount)
+                    sb.AppendLine("    latency = latency / " + counts[i] + ";");
                 sb.AppendLine("    printf(\"" + counts[i] + ",%f\\n\", latency);\n");
             }
 
@@ -79,6 +81,8 @@ namespace AsmGen
                 sb.AppendLine("  ftime(&end);");
                 sb.AppendLine("  time_diff_ms = 1000 * (end.time - start.time) + (end.millitm - start.millitm);");
                 sb.AppendLine("  latency = 1e6 * (float)time_diff_ms / (float)(structIterations);");
+                if (test.DivideTimeByCount)
+                    sb.AppendLine("    latency = latency / " + counts[i] + ";");
                 sb.AppendLine("  printf(\"" + counts[i] + ",%f\\n\", latency);\n");
             }
 

@@ -10,6 +10,7 @@ namespace AsmGen
         public string GetFunctionCallParameters { get => "structIterations, A, B"; }
 
         public int[] Counts { get; private set; }
+        public bool DivideTimeByCount => false;
 
         public LdqTest(int low, int high, int step)
         {
