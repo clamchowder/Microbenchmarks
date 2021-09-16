@@ -1,0 +1,8 @@
+{
+  "profiles": {
+    "AsmGen": {
+      "commandName": "Project",
+      "commandLineArgs": "autocopy"
+    }
+  }
+}
