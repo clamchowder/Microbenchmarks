@@ -4,21 +4,17 @@ namespace AsmGen
 {
     public class VecRfTest : UarchTest
     {
-        public string Prefix { get => "vec128rf"; }
-        public string Description { get => "Vector (128-bit packed int) RF Test"; }
-        public string FunctionDefinitionParameters { get => "uint64_t iterations, int *arr"; }
-        public string GetFunctionCallParameters { get => "structIterations, A"; }
-
-        public int[] Counts { get; private set; }
-        public bool DivideTimeByCount => false;
-
-
         public VecRfTest(int low, int high, int step)
         {
             this.Counts = UarchTestHelpers.GenerateCountArray(low, high, step);
+            this.Prefix = "vec128rf";
+            this.Description = "Vector (128-bit packed int) RF Test";
+            this.FunctionDefinitionParameters = "uint64_t iterations, int *arr";
+            this.GetFunctionCallParameters = "structIterations, A";
+            this.DivideTimeByCount = false;
         }
 
-        public void GenerateX86GccAsm(StringBuilder sb)
+        public override void GenerateX86GccAsm(StringBuilder sb)
         {
             // it's ok, the ptr chasing arr should be way bigger than this
             string initInstrs = "  movdqu (%rdx), %xmm1\n" +
@@ -35,7 +31,7 @@ namespace AsmGen
             UarchTestHelpers.GenerateX86AsmStructureTestFuncs(sb, this.Counts, this.Prefix, unrolledAdds, unrolledAdds, false, initInstrs);
         }
 
-        public void GenerateX86NasmAsm(StringBuilder sb)
+        public override void GenerateX86NasmAsm(StringBuilder sb)
         {
             string initInstrs = "  movdqu xmm1, [rdx]\n" +
                 "  movdqu xmm2, [rdx + 16]\n" +
@@ -51,7 +47,7 @@ namespace AsmGen
             UarchTestHelpers.GenerateX86NasmStructureTestFuncs(sb, this.Counts, this.Prefix, unrolledAdds, unrolledAdds, false, initInstrs);
         }
 
-        public void GenerateArmAsm(StringBuilder sb)
+        public override void GenerateArmAsm(StringBuilder sb)
         {
             string initInstrs = "  ldr q0, [x1]\n" +
                 "  ldr q1, [x1, #0x10]\n" +

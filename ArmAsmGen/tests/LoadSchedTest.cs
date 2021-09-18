@@ -4,20 +4,17 @@ namespace AsmGen
 {
     public class LoadSchedTest : UarchTest
     {
-        public string Prefix { get => "loadsched"; }
-        public string Description { get => "Load Scheduler Capacity Test"; }
-        public string FunctionDefinitionParameters { get => "uint64_t iterations, int *arr, int *arr2"; }
-        public string GetFunctionCallParameters { get => "structIterations, A, B"; }
-
-        public int[] Counts { get; private set; }
-        public bool DivideTimeByCount => false;
-
         public LoadSchedTest(int low, int high, int step)
         {
             this.Counts = UarchTestHelpers.GenerateCountArray(low, high, step);
+            this.Prefix = "loadsched";
+            this.Description = "Load scheduler capacity test";
+            this.FunctionDefinitionParameters = "uint64_t iterations, int *arr, int *arr2";
+            this.GetFunctionCallParameters = "structIterations, A, B";
+            this.DivideTimeByCount = false;
         }
 
-        public void GenerateX86GccAsm(StringBuilder sb)
+        public override void GenerateX86GccAsm(StringBuilder sb)
         {
             string[] dependentLoads = new string[4];
             dependentLoads[0] = "  mov (%r8, %rdi, 4), %r15";
@@ -33,7 +30,7 @@ namespace AsmGen
             UarchTestHelpers.GenerateX86AsmStructureTestFuncs(sb, this.Counts, this.Prefix, dependentLoads, dependentLoads1, false);
         }
 
-        public void GenerateX86NasmAsm(StringBuilder sb)
+        public override void GenerateX86NasmAsm(StringBuilder sb)
         {
             string[] dependentLoads = new string[4];
             dependentLoads[0] = "  mov r15, [r8 + rdi * 4]";
@@ -49,7 +46,7 @@ namespace AsmGen
             UarchTestHelpers.GenerateX86NasmStructureTestFuncs(sb, this.Counts, this.Prefix, dependentLoads, dependentLoads1, false);
         }
 
-        public void GenerateArmAsm(StringBuilder sb)
+        public override void GenerateArmAsm(StringBuilder sb)
         {
             string[] dependentLoads = new string[4];
             dependentLoads[0] = "  ldr w15, [x2, w25, uxtw #2]";

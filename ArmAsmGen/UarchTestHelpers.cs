@@ -55,14 +55,28 @@ namespace AsmGen
             int[] counts = test.Counts;
             for (int i = 0; i < counts.Length; i++)
             {
+                // use more iterations (iterations = structIterations * 100) and divide iteration count by tested-thing count
+                // for certain tests like call stack depth
+                if (test.DivideTimeByCount)
+                {
+                    sb.AppendLine("    tmp = structIterations;");
+                    sb.AppendLine("    structIterations = iterations / " + counts[i] + ";");
+                }
+                
                 sb.AppendLine("    gettimeofday(&startTv, &startTz);");
                 sb.AppendLine("    " + test.Prefix + counts[i] + $"({test.GetFunctionCallParameters});");
                 sb.AppendLine("    gettimeofday(&endTv, &endTz);");
                 sb.AppendLine("    time_diff_ms = 1000 * (endTv.tv_sec - startTv.tv_sec) + ((endTv.tv_usec - startTv.tv_usec) / 1000);");
-                sb.AppendLine("    latency = 1e6 * (float)time_diff_ms / (float)(structIterations);");
                 if (test.DivideTimeByCount)
-                    sb.AppendLine("    latency = latency / " + counts[i] + ";");
+                    sb.AppendLine("    latency = 1e6 * (float)time_diff_ms / (float)(iterations);");
+                else
+                    sb.AppendLine("    latency = 1e6 * (float)time_diff_ms / (float)(structIterations);");
                 sb.AppendLine("    printf(\"" + counts[i] + ",%f\\n\", latency);\n");
+
+                if (test.DivideTimeByCount)
+                {
+                    sb.AppendLine("    structIterations = tmp;");
+                }
             }
 
             sb.AppendLine("  }\n");
@@ -76,22 +90,33 @@ namespace AsmGen
             int[] counts = test.Counts;
             for (int i = 0; i < counts.Length; i++)
             {
+                if (test.DivideTimeByCount)
+                {
+                    sb.AppendLine("    tmp = structIterations;");
+                    sb.AppendLine("    structIterations = iterations / " + counts[i] + ";");
+                }
+
                 sb.AppendLine("  ftime(&start);");
                 sb.AppendLine("  " + test.Prefix + counts[i] + $"({test.GetFunctionCallParameters});");
                 sb.AppendLine("  ftime(&end);");
                 sb.AppendLine("  time_diff_ms = 1000 * (end.time - start.time) + (end.millitm - start.millitm);");
-                sb.AppendLine("  latency = 1e6 * (float)time_diff_ms / (float)(structIterations);");
                 if (test.DivideTimeByCount)
-                    sb.AppendLine("    latency = latency / " + counts[i] + ";");
+                    sb.AppendLine("    latency = 1e6 * (float)time_diff_ms / (float)(iterations);");
+                else
+                    sb.AppendLine("    latency = 1e6 * (float)time_diff_ms / (float)(structIterations);");
                 sb.AppendLine("  printf(\"" + counts[i] + ",%f\\n\", latency);\n");
+
+                if (test.DivideTimeByCount)
+                {
+                    sb.AppendLine("    structIterations = tmp;");
+                }
             }
 
             sb.AppendLine("  }\n");
         }
 
         /// <summary>
-        /// Generates test functions in assembly, with filler instructions between two pointer chasing loads
-        /// Pointer chasing loads use rdi and rsi. R15-R11 can be used for integer stuff
+        /// Generates test functions in assembly, with filler instructions between two divs
         /// Args are put into rcx, rdx, r8 (in that order) to match Windows calling convention
         /// </summary>
         /// <param name="sb">StringBuilder to append to</param>
@@ -102,7 +127,116 @@ namespace AsmGen
         /// <param name="includePtrChasingLoads">If true, count pointer chasing loads as consuming the tested resource 
         /// (i.e. ptr chasing loads consume a ROB and integer RF slot) </param>
         /// <param name="initInstrs">Any extra initialization instructions</param>
-        public static void GenerateX86AsmStructureTestFuncs(StringBuilder sb, int[] counts, string funcNamePrefix, string[] fillerInstrs1, string[] fillerInstrs2, bool includePtrChasingLoads = true, string initInstrs = null)
+        public static void GenerateX86AsmDivStructureTestFuncs(StringBuilder sb, int[] counts, string funcNamePrefix, string[] fillerInstrs1, string[] fillerInstrs2, bool includePtrChasingLoads = true, string initInstrs = null)
+        {
+            for (int i = 0; i < counts.Length; i++)
+            {
+                string funcName = funcNamePrefix + counts[i];
+                sb.AppendLine("\n" + funcName + ":");
+                sb.AppendLine("  push %rsi");
+                sb.AppendLine("  push %rdi");
+                sb.AppendLine("  push %r15");
+                sb.AppendLine("  push %r14");
+                sb.AppendLine("  push %r13");
+                sb.AppendLine("  push %r12");
+                sb.AppendLine("  push %r11");
+                sb.AppendLine("  push %r8");
+                sb.AppendLine("  push %rcx");
+                sb.AppendLine("  push %rdx");
+
+                // arguments are in RDI, RSI, RDX, RCX, R8, and R9
+                // move them into familiar windows argument regs (rcx, rdx, r8)
+                sb.AppendLine("  mov %rdx, %r8"); // r8 <- rdx
+                sb.AppendLine("  mov %rsi, %rdx"); // rdx <- rsi
+                sb.AppendLine("  mov %rdi, %rcx"); // rcx <- rdi
+
+                sb.AppendLine("  xor %r15, %r15");
+                sb.AppendLine("  mov $0x10, %r14");
+                sb.AppendLine("  mov $0x20, %r13");
+                sb.AppendLine("  mov $0x30, %r12");
+                sb.AppendLine("  mov $0x40, %r11");
+
+                if (initInstrs != null) sb.AppendLine(initInstrs);
+
+                sb.AppendLine("  mov %rdx, %rdi");
+                sb.AppendLine("  mov %rdx, %rsi");
+                sb.AppendLine("\n" + funcName + "start:");
+                sb.AppendLine("  xor %rdx, %rdx");
+                sb.AppendLine("  mov %rdi, %rax");
+                sb.AppendLine("  idiv %rsi");
+                sb.AppendLine("  xor %rdx, %rdx");
+                sb.AppendLine("  idiv %rsi");
+                sb.AppendLine("  xor %rdx, %rdx");
+                sb.AppendLine("  idiv %rsi");
+                sb.AppendLine("  xor %rdx, %rdx");
+                sb.AppendLine("  idiv %rsi");
+                sb.AppendLine("  xor %rdx, %rdx");
+                sb.AppendLine("  idiv %rsi");
+                sb.AppendLine("  xor %rdx, %rdx");
+                sb.AppendLine("  idiv %rsi");
+                sb.AppendLine("  xor %rdx, %rdx");
+                sb.AppendLine("  idiv %rsi");
+                sb.AppendLine("  xor %rdx, %rdx");
+                sb.AppendLine("  idiv %rsi");
+                sb.AppendLine("  xor %rdx, %rdx");
+                sb.AppendLine("  idiv %rsi");
+                sb.AppendLine("  xor %rdx, %rdx");
+                sb.AppendLine("  idiv %rsi");
+                sb.AppendLine("  sub %rax, %rsi");
+                sb.AppendLine("  inc %rsi");
+                int fillerInstrCount = includePtrChasingLoads ? counts[i] - 2 : counts[i];
+                for (int fillerIdx = 0, instrIdx = 0; fillerIdx < fillerInstrCount; fillerIdx++)
+                {
+                    sb.AppendLine(fillerInstrs1[instrIdx]);
+                    instrIdx = (instrIdx + 1) % fillerInstrs1.Length;
+                }
+
+                sb.AppendLine("  xor %rdx, %rdx");
+                sb.AppendLine("  mov %rsi, %rax");
+                sb.AppendLine("  idiv %rdi");
+                sb.AppendLine("  xor %rdx, %rdx");
+                sb.AppendLine("  idiv %rdi");
+                sb.AppendLine("  xor %rdx, %rdx");
+                sb.AppendLine("  idiv %rdi");
+                sb.AppendLine("  xor %rdx, %rdx");
+                sb.AppendLine("  idiv %rdi");
+                sb.AppendLine("  xor %rdx, %rdx");
+                sb.AppendLine("  idiv %rdi");
+                sb.AppendLine("  xor %rdx, %rdx");
+                sb.AppendLine("  idiv %rdi");
+                sb.AppendLine("  xor %rdx, %rdx");
+                sb.AppendLine("  idiv %rdi");
+                sb.AppendLine("  xor %rdx, %rdx");
+                sb.AppendLine("  idiv %rdi");
+                sb.AppendLine("  xor %rdx, %rdx");
+                sb.AppendLine("  idiv %rdi");
+                sb.AppendLine("  xor %rdx, %rdx");
+                sb.AppendLine("  idiv %rdi");
+                sb.AppendLine("  sub %rax, %rdi");
+                sb.AppendLine("  inc %rdi");
+                for (int fillerIdx = 0, instrIdx = 0; fillerIdx < fillerInstrCount; fillerIdx++)
+                {
+                    sb.AppendLine(fillerInstrs2[instrIdx]);
+                    instrIdx = (instrIdx + 1) % fillerInstrs2.Length;
+                }
+
+                sb.AppendLine("  dec %rcx");
+                sb.AppendLine("  jne " + funcName + "start");
+                sb.AppendLine("  pop %rdx");
+                sb.AppendLine("  pop %rcx");
+                sb.AppendLine("  pop %r8");
+                sb.AppendLine("  pop %r11");
+                sb.AppendLine("  pop %r12");
+                sb.AppendLine("  pop %r13");
+                sb.AppendLine("  pop %r14");
+                sb.AppendLine("  pop %r15");
+                sb.AppendLine("  pop %rdi");
+                sb.AppendLine("  pop %rsi");
+                sb.AppendLine("  ret\n\n");
+            }
+        }
+
+        public static void GenerateX86AsmStructureTestFuncs(StringBuilder sb, int[] counts, string funcNamePrefix, string[] fillerInstrs1, string[] fillerInstrs2, bool divs = true, string initInstrs = null)
         {
             for (int i = 0; i < counts.Length; i++)
             {
@@ -135,9 +269,11 @@ namespace AsmGen
 
                 sb.AppendLine("  xor %rdi, %rdi");
                 sb.AppendLine("  mov $0x40, %esi");
+                sb.AppendLine("  mov (%rdx,%rdi,4), %edi");
+                sb.AppendLine("  mov (%rdx,%rsi,4), %esi");
                 sb.AppendLine("\n" + funcName + "start:");
                 sb.AppendLine("  mov (%rdx,%rdi,4), %edi");
-                int fillerInstrCount = includePtrChasingLoads ? counts[i] - 2 : counts[i];
+                int fillerInstrCount = divs ? counts[i] - 2 : counts[i];
                 for (int fillerIdx = 0, instrIdx = 0; fillerIdx < fillerInstrCount; fillerIdx++)
                 {
                     sb.AppendLine(fillerInstrs1[instrIdx]);
@@ -313,6 +449,118 @@ namespace AsmGen
                 sb.AppendLine("  pop %r15");
                 sb.AppendLine("  pop %rdi");
                 sb.AppendLine("  pop %rsi");
+                sb.AppendLine("  ret\n\n");
+            }
+        }
+
+        /// <summary>
+        /// Generates test functions in assembly, with filler instructions between two divs
+        /// Args are put into rcx, rdx, r8 (in that order) to match Windows calling convention
+        /// </summary>
+        /// <param name="sb">StringBuilder to append to</param>
+        /// <param name="counts">Sizes to test the structure at</param>
+        /// <param name="funcNamePrefix">Function name prefix</param>
+        /// <param name="fillerInstrs1">Filler instructions after first ptr chasing load</param>
+        /// <param name="fillerInstrs2">Filler instructions after second ptr chasing load</param>
+        /// <param name="includePtrChasingLoads">If true, count pointer chasing loads as consuming the tested resource 
+        /// (i.e. ptr chasing loads consume a ROB and integer RF slot) </param>
+        /// <param name="initInstrs">Any extra initialization instructions</param>
+        public static void GenerateX86NasmDivStructureTestFuncs(StringBuilder sb, int[] counts, string funcNamePrefix, string[] fillerInstrs1, string[] fillerInstrs2, bool includePtrChasingLoads = true, string initInstrs = null)
+        {
+            for (int i = 0; i < counts.Length; i++)
+            {
+                string funcName = funcNamePrefix + counts[i];
+                sb.AppendLine("\n" + funcName + ":");
+                sb.AppendLine("  push rsi");
+                sb.AppendLine("  push rdi");
+                sb.AppendLine("  push r15");
+                sb.AppendLine("  push r14");
+                sb.AppendLine("  push r13");
+                sb.AppendLine("  push r12");
+                sb.AppendLine("  push r11");
+
+                sb.AppendLine("  xor r15, r15");
+                sb.AppendLine("  mov r14, 0x10");
+                sb.AppendLine("  mov r13, 0x20");
+                sb.AppendLine("  mov r12, 0x30");
+                sb.AppendLine("  mov r11, 0x40");
+
+                if (initInstrs != null) sb.AppendLine(initInstrs);
+
+                sb.AppendLine("  mov rdi, rdx");
+                sb.AppendLine("  mov rsi, rdx");
+                sb.AppendLine("\n" + funcName + "start:");
+                sb.AppendLine("  xor rdx, rdx");
+                sb.AppendLine("  mov rax, rdi");
+                sb.AppendLine("  idiv rsi");
+                sb.AppendLine("  xor rdx, rdx");
+                sb.AppendLine("  idiv rsi");
+                sb.AppendLine("  xor rdx, rdx");
+                sb.AppendLine("  idiv rsi");
+                sb.AppendLine("  xor rdx, rdx");
+                sb.AppendLine("  idiv rsi");
+                sb.AppendLine("  xor rdx, rdx");
+                sb.AppendLine("  idiv rsi");
+                sb.AppendLine("  xor rdx, rdx");
+                sb.AppendLine("  idiv rsi");
+                sb.AppendLine("  xor rdx, rdx");
+                sb.AppendLine("  idiv rsi");
+                sb.AppendLine("  xor rdx, rdx");
+                sb.AppendLine("  idiv rsi");
+                sb.AppendLine("  xor rdx, rdx");
+                sb.AppendLine("  idiv rsi");
+                sb.AppendLine("  xor rdx, rdx");
+                sb.AppendLine("  idiv rsi");
+                sb.AppendLine("  sub rsi, rax");
+                sb.AppendLine("  inc rsi");
+                int fillerInstrCount = includePtrChasingLoads ? counts[i] - 2 : counts[i];
+                for (int fillerIdx = 0, instrIdx = 0; fillerIdx < fillerInstrCount; fillerIdx++)
+                {
+                    sb.AppendLine(fillerInstrs1[instrIdx]);
+                    instrIdx = (instrIdx + 1) % fillerInstrs1.Length;
+                }
+
+                sb.AppendLine("  xor rdx,%rdx");
+                sb.AppendLine("  mov rax, rsi");
+                sb.AppendLine("  idiv rdi");
+                sb.AppendLine("  xor rdx, rdx");
+                sb.AppendLine("  idiv rdi");
+                sb.AppendLine("  xor rdx, rdx");
+                sb.AppendLine("  idiv rdi");
+                sb.AppendLine("  xor rdx, rdx");
+                sb.AppendLine("  idiv rdi");
+                sb.AppendLine("  xor rdx, rdx");
+                sb.AppendLine("  idiv rdi");
+                sb.AppendLine("  xor rdx, rdx");
+                sb.AppendLine("  idiv rdi");
+                sb.AppendLine("  xor rdx, rdx");
+                sb.AppendLine("  idiv rdi");
+                sb.AppendLine("  xor rdx, rdx");
+                sb.AppendLine("  idiv rdi");
+                sb.AppendLine("  xor rdx, rdx");
+                sb.AppendLine("  idiv rdi");
+                sb.AppendLine("  xor rdx, rdx");
+                sb.AppendLine("  idiv rdi");
+                sb.AppendLine("  sub rdi, rax");
+                sb.AppendLine("  inc rdi");
+                for (int fillerIdx = 0, instrIdx = 0; fillerIdx < fillerInstrCount; fillerIdx++)
+                {
+                    sb.AppendLine(fillerInstrs2[instrIdx]);
+                    instrIdx = (instrIdx + 1) % fillerInstrs2.Length;
+                }
+
+                sb.AppendLine("  dec rcx");
+                sb.AppendLine("  jne " + funcName + "start");
+                sb.AppendLine("  pop rdx");
+                sb.AppendLine("  pop rcx");
+                sb.AppendLine("  pop r8");
+                sb.AppendLine("  pop r11");
+                sb.AppendLine("  pop r12");
+                sb.AppendLine("  pop r13");
+                sb.AppendLine("  pop r14");
+                sb.AppendLine("  pop r15");
+                sb.AppendLine("  pop rdi");
+                sb.AppendLine("  pop rsi");
                 sb.AppendLine("  ret\n\n");
             }
         }

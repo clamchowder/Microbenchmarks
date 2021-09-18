@@ -4,20 +4,17 @@ namespace AsmGen
 {
     public class AddSchedTest : UarchTest
     {
-        public string Prefix { get => "addsched"; }
-        public string Description { get => "Integer (add) Scheduler Capacity Test"; }
-        public string FunctionDefinitionParameters { get => "uint64_t iterations, int *arr"; }
-        public string GetFunctionCallParameters { get => "structIterations, A"; }
-
-        public int[] Counts { get; private set; }
-        public bool DivideTimeByCount => false;
-
         public AddSchedTest(int low, int high, int step)
         {
             this.Counts = UarchTestHelpers.GenerateCountArray(low, high, step);
+            this.Prefix = "addsched";
+            this.Description = "Integer (add) Scheduler Capacity Test";
+            this.FunctionDefinitionParameters = "uint64_t iterations, int *arr";
+            this.GetFunctionCallParameters = "structIterations, A";
+            this.DivideTimeByCount = false;
         }
 
-        public void GenerateX86GccAsm(StringBuilder sb)
+        public override void GenerateX86GccAsm(StringBuilder sb)
         {
             string[] unrolledAdds = new string[4];
             unrolledAdds[0] = "  add %rdi, %r15";
@@ -33,7 +30,7 @@ namespace AsmGen
             UarchTestHelpers.GenerateX86AsmStructureTestFuncs(sb, this.Counts, this.Prefix, unrolledAdds, unrolledAdds1, false);
         }
 
-        public void GenerateX86NasmAsm(StringBuilder sb)
+        public override void GenerateX86NasmAsm(StringBuilder sb)
         {
             string[] unrolledAdds = new string[4];
             unrolledAdds[0] = "  add r15, rdi";
@@ -49,7 +46,7 @@ namespace AsmGen
             UarchTestHelpers.GenerateX86NasmStructureTestFuncs(sb, this.Counts, this.Prefix, unrolledAdds, unrolledAdds1, false);
         }
 
-        public void GenerateArmAsm(StringBuilder sb)
+        public override void GenerateArmAsm(StringBuilder sb)
         {
             string[] unrolledAdds = new string[4];
             unrolledAdds[0] = "  add x15, x15, x25";

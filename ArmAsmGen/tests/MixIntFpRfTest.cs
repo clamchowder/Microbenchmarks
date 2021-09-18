@@ -4,20 +4,17 @@ namespace AsmGen
 {
     public class MixIntFpRfTest : UarchTest
     {
-        public string Prefix { get => "mixintfprf"; }
-        public string Description { get => "Mix of integer and FP register file"; }
-        public string FunctionDefinitionParameters { get => "uint64_t iterations, int *arr, float *floatArr"; }
-        public string GetFunctionCallParameters { get => "structIterations, A, fpArr"; }
-
-        public int[] Counts { get; private set; }
-        public bool DivideTimeByCount => false;
-
         public MixIntFpRfTest(int low, int high, int step)
         {
             this.Counts = UarchTestHelpers.GenerateCountArray(low, high, step);
+            this.Prefix = "mixintfprf";
+            this.Description = "Mix of integer and FP register file";
+            this.FunctionDefinitionParameters = "uint64_t iterations, int *arr, float *floatArr";
+            this.GetFunctionCallParameters = "structIterations, A, fpArr";
+            this.DivideTimeByCount = false;
         }
 
-        public void GenerateX86GccAsm(StringBuilder sb)
+        public override void GenerateX86GccAsm(StringBuilder sb)
         {
             string initInstrs = "  movss (%r8), %xmm1\n" +
                 "  movss 4(%r8), %xmm2\n" +
@@ -37,7 +34,7 @@ namespace AsmGen
             UarchTestHelpers.GenerateX86AsmStructureTestFuncs(sb, this.Counts, this.Prefix, instrs, instrs, true, initInstrs);
         }
 
-        public void GenerateX86NasmAsm(StringBuilder sb)
+        public override void GenerateX86NasmAsm(StringBuilder sb)
         {
             string initInstrs = "  movss xmm1, [r8]\n" +
                 "  movss xmm2, [r8 + 4]\n" +
@@ -57,7 +54,7 @@ namespace AsmGen
             UarchTestHelpers.GenerateX86NasmStructureTestFuncs(sb, this.Counts, this.Prefix, instrs, instrs, true, initInstrs);
         }
 
-        public void GenerateArmAsm(StringBuilder sb)
+        public override void GenerateArmAsm(StringBuilder sb)
         {
             string initInstrs = "  ldr s17, [x2]\n" +
                 "  ldr s18, [x2, 4]\n" +

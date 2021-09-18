@@ -4,20 +4,17 @@ namespace AsmGen
 {
     public class JumpSchedTest : UarchTest
     {
-        public string Prefix { get => "jmpsched"; }
-        public string Description { get => "Not-taken Jump Scheduler Capacity Test"; }
-        public string FunctionDefinitionParameters { get => "uint64_t iterations, int *arr"; }
-        public string GetFunctionCallParameters { get => "structIterations, A"; }
-
-        public int[] Counts { get; private set; }
-        public bool DivideTimeByCount => false;
-
         public JumpSchedTest(int low, int high, int step)
         {
             this.Counts = UarchTestHelpers.GenerateCountArray(low, high, step);
+            this.Prefix = "jmpsched";
+            this.Description = "Not-taken Jump Scheduler Capacity Test";
+            this.FunctionDefinitionParameters = "uint64_t iterations, int *arr";
+            this.GetFunctionCallParameters = "structIterations, A";
+            this.DivideTimeByCount = false;
         }
 
-        public void GenerateX86GccAsm(StringBuilder sb)
+        public override void GenerateX86GccAsm(StringBuilder sb)
         {
             string[] unrolledJumps = new string[1];
             unrolledJumps[0] = $"  cmp %rdi, %rsi\n  je jumpsched_reallybadthing";
@@ -28,7 +25,7 @@ namespace AsmGen
             sb.AppendLine("  int3");
         }
 
-        public void GenerateX86NasmAsm(StringBuilder sb)
+        public override void GenerateX86NasmAsm(StringBuilder sb)
         {
             string[] unrolledJumps = new string[1];
             unrolledJumps[0] = "  cmp rdi, rsi\n  je jumpsched_reallybadthing";
@@ -38,7 +35,7 @@ namespace AsmGen
             sb.AppendLine("  int3");
         }
 
-        public void GenerateArmAsm(StringBuilder sb)
+        public override void GenerateArmAsm(StringBuilder sb)
         {
             string[] unrolledJumps = new string[1];
             unrolledJumps[0] = "  cmp x25, x26\n  b.eq jumpsched_reallybadthing";

@@ -4,21 +4,17 @@ namespace AsmGen
 {
     public class ReturnStackTest : UarchTest
     {
-        public string Prefix { get => "returnstack"; }
-        public string Description { get => "Return Stack Depth Test"; }
-        public string FunctionDefinitionParameters { get => "uint64_t iterations"; }
-        public string GetFunctionCallParameters { get => "structIterations"; }
-
-        public int[] Counts { get; private set; }
-
-        public bool DivideTimeByCount => true;
-
         public ReturnStackTest(int low, int high, int step)
         {
             this.Counts = UarchTestHelpers.GenerateCountArray(low, high, step);
+            this.Prefix = "returnstack";
+            this.Description = "Return Stack Depth Test";
+            this.FunctionDefinitionParameters = "uint64_t iterations";
+            this.GetFunctionCallParameters = "structIterations";
+            this.DivideTimeByCount = true;
         }
 
-        public void GenerateX86GccAsm(StringBuilder sb)
+        public override void GenerateX86GccAsm(StringBuilder sb)
         {
             for (int countIdx = 0; countIdx < this.Counts.Length; countIdx++)
             {
@@ -50,7 +46,7 @@ namespace AsmGen
             }
         }
 
-        public void GenerateX86NasmAsm(StringBuilder sb)
+        public override void GenerateX86NasmAsm(StringBuilder sb)
         {
             for (int countIdx = 0; countIdx < this.Counts.Length; countIdx++)
             {
@@ -80,18 +76,22 @@ namespace AsmGen
             }
         }
 
-        public void GenerateArmAsm(StringBuilder sb)
+        public override void GenerateArmAsm(StringBuilder sb)
         {
             for (int countIdx = 0; countIdx < this.Counts.Length; countIdx++)
             {
                 int callDepth = this.Counts[countIdx];
                 string topLevelFunctionLabel = this.Prefix + callDepth;
                 sb.AppendLine($"{topLevelFunctionLabel}:");
+                sb.AppendLine("  sub sp, sp, #0x20");
+                sb.AppendLine("  stp x29, x30, [sp, #0x10]");
                 sb.AppendLine("  eor x3, x3, x3");
                 sb.AppendLine($"{topLevelFunctionLabel}_loop:");
                 sb.AppendLine($"  bl " + GetFunctionName(callDepth, 0));
                 sb.AppendLine("  sub x0, x0, 1");
                 sb.AppendLine($"  cbnz x0, {topLevelFunctionLabel}_loop");
+                sb.AppendLine("  ldp x29, x30, [sp, #0x10]");
+                sb.AppendLine("  add sp, sp, #0x20");
                 sb.AppendLine("  ret");
 
                 for (int callIdx = 0; callIdx < callDepth; callIdx++)

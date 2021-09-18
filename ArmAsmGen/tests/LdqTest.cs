@@ -4,20 +4,17 @@ namespace AsmGen
 {
     public class LdqTest : UarchTest
     {
-        public string Prefix { get => "ldq"; }
-        public string Description { get => "Load Queue Test (loads pending retire)"; }
-        public string FunctionDefinitionParameters { get => "uint64_t iterations, int *arr, int *arr1"; }
-        public string GetFunctionCallParameters { get => "structIterations, A, B"; }
-
-        public int[] Counts { get; private set; }
-        public bool DivideTimeByCount => false;
-
         public LdqTest(int low, int high, int step)
         {
             this.Counts = UarchTestHelpers.GenerateCountArray(low, high, step);
+            this.Prefix = "ldq";
+            this.Description = "Load Queue Test (loads pending retire)";
+            this.FunctionDefinitionParameters = "uint64_t iterations, int *arr, int *arr1";
+            this.GetFunctionCallParameters = "structIterations, A, B";
+            this.DivideTimeByCount = false;
         }
 
-        public void GenerateX86GccAsm(StringBuilder sb)
+        public override void GenerateX86GccAsm(StringBuilder sb)
         {
             string[] unrolledLoads = new string[4];
             unrolledLoads[0] = "  mov (%r8), %r15";
@@ -27,7 +24,7 @@ namespace AsmGen
             UarchTestHelpers.GenerateX86AsmStructureTestFuncs(sb, this.Counts, this.Prefix, unrolledLoads, unrolledLoads, true);
         }
 
-        public void GenerateX86NasmAsm(StringBuilder sb)
+        public override void GenerateX86NasmAsm(StringBuilder sb)
         {
             string[] unrolledLoads = new string[4];
             unrolledLoads[0] = "  mov r15, [r8]";
@@ -37,7 +34,7 @@ namespace AsmGen
             UarchTestHelpers.GenerateX86NasmStructureTestFuncs(sb, this.Counts, this.Prefix, unrolledLoads, unrolledLoads, true);
         }
 
-        public void GenerateArmAsm(StringBuilder sb)
+        public override void GenerateArmAsm(StringBuilder sb)
         {
             string[] unrolledLoads = new string[4];
             unrolledLoads[0] = "  ldr x15, [x2]";

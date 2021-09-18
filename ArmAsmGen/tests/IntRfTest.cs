@@ -4,20 +4,17 @@ namespace AsmGen
 {
     public class IntRfTest : UarchTest
     {
-        public string Prefix { get => "intrf"; }
-        public string Description { get => "Integer RF Test"; }
-        public string FunctionDefinitionParameters { get => "uint64_t iterations, int *arr"; }
-        public string GetFunctionCallParameters { get => "structIterations, A"; }
-
-        public int[] Counts { get; private set; }
-        public bool DivideTimeByCount => false;
-
         public IntRfTest(int low, int high, int step)
         {
             this.Counts = UarchTestHelpers.GenerateCountArray(low, high, step);
+            this.Prefix = "intrf";
+            this.Description = "Integer RF Test";
+            this.FunctionDefinitionParameters = "uint64_t iterations, int *arr";
+            this.GetFunctionCallParameters = "structIterations, A";
+            this.DivideTimeByCount = false;
         }
 
-        public void GenerateX86GccAsm(StringBuilder sb)
+        public override void GenerateX86GccAsm(StringBuilder sb)
         {
             string[] unrolledAdds = new string[4];
             unrolledAdds[0] = "  add %r11, %r15";
@@ -27,7 +24,7 @@ namespace AsmGen
             UarchTestHelpers.GenerateX86AsmStructureTestFuncs(sb, this.Counts, this.Prefix, unrolledAdds, unrolledAdds, true);
         }
 
-        public void GenerateX86NasmAsm(StringBuilder sb)
+        public override void GenerateX86NasmAsm(StringBuilder sb)
         {
             string[] unrolledAdds = new string[4];
             unrolledAdds[0] = "  add r15, r11";
@@ -37,7 +34,7 @@ namespace AsmGen
             UarchTestHelpers.GenerateX86NasmStructureTestFuncs(sb, this.Counts, this.Prefix, unrolledAdds, unrolledAdds, true);
         }
 
-        public void GenerateArmAsm(StringBuilder sb)
+        public override void GenerateArmAsm(StringBuilder sb)
         {
             string[] unrolledAdds = new string[4];
             unrolledAdds[0] = "  add x15, x15, x11";

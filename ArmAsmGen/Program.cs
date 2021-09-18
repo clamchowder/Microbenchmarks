@@ -7,8 +7,8 @@ namespace AsmGen
 {
     class Program
     {
-        static int iterations = 1000000000 / 2;
         static int structTestIterations = 5000000;
+        static int iterations = 100 * structTestIterations;
         static int latencyListSize = 131072 * 1024 / 4; // 128 MB
 
         static void Main(string[] args)
@@ -22,18 +22,20 @@ namespace AsmGen
             tests.Add(new AddSchedTest(4, 160, 1));
             tests.Add(new MulSchedTest(4, 128, 1));
             tests.Add(new Mul16SchedTest(4, 128, 1));
-            tests.Add(new FaddSchedTest(2, 128, 1));
-            tests.Add(new FmulSchedTest(2, 128, 1));
-            tests.Add(new Fadd256SchedTest(2, 128, 1));
+            tests.Add(new FaddSchedTest(1, 128, 1));
+            tests.Add(new FmulSchedTest(1, 128, 1));
+            tests.Add(new Fadd256SchedTest(1, 128, 1));
             tests.Add(new MixFaddFmulSchedTest(2, 128, 1));
             tests.Add(new JumpSchedTest(4, 128, 1));
             tests.Add(new RobTest1(4, 512, 1));
             tests.Add(new MixIntFpRfTest(4, 256, 1));
             tests.Add(new LoadSchedTest(4, 128, 1));
             tests.Add(new StoreSchedTest(4, 128, 1));
+            tests.Add(new StoreDataSchedTest(2, 48, 1));
             tests.Add(new LdqTest(4, 128, 1));
             tests.Add(new StqTest(4, 128, 1));
-            tests.Add(new ReturnStackTest(2, 64, 1));
+            tests.Add(new ReturnStackTest(1, 64, 1));
+            tests.Add(new MshrsTest(1, 12, 1));
 
             StringBuilder cSourceFile = new StringBuilder();
             StringBuilder vsCSourceFile = new StringBuilder();
@@ -77,13 +79,13 @@ namespace AsmGen
 
             armAsmFile.AppendLine(".arch armv8-a\n.text\n");
             armAsmFile.AppendLine(".global reallybadthing");
-            foreach (UarchTest test in tests) UarchTestHelpers.GenerateAsmGlobalLines(armAsmFile, test);
+            foreach (UarchTest test in tests) test.GenerateAsmGlobalLines(armAsmFile);
             foreach (UarchTest test in tests) test.GenerateArmAsm(armAsmFile);
             File.WriteAllText("clammicrobench_arm.s", armAsmFile.ToString());
 
             x86AsmFile.AppendLine(".text\n");
 
-            foreach (UarchTest test in tests) UarchTestHelpers.GenerateAsmGlobalLines(x86AsmFile, test);
+            foreach (UarchTest test in tests) test.GenerateAsmGlobalLines(x86AsmFile);
             foreach (UarchTest test in tests) test.GenerateX86GccAsm(x86AsmFile);
             x86AsmFile.AppendLine("reallybadthing:");
 
@@ -95,7 +97,7 @@ namespace AsmGen
             x86NasmFile.AppendLine("%define nop4 db 0x0F, 0x1F, 0x40, 0x00\n");
             x86NasmFile.AppendLine("%define nop12 db 0x66, 0x66, 0x66, 0x66, 0x0F, 0x1F, 0x84, 0x00, 0x00, 0x00, 0x00, 0x00\n\n");
             x86NasmFile.AppendLine("global reallybadthing");
-            foreach (UarchTest test in tests) UarchTestHelpers.GenerateNasmGlobalLines(x86NasmFile, test);
+            foreach (UarchTest test in tests) test.GenerateNasmGlobalLines(x86NasmFile);
             foreach (UarchTest test in tests) test.GenerateX86NasmAsm(x86NasmFile);
             x86NasmFile.AppendLine("reallybadthing:");
             x86NasmFile.AppendLine("  int3");
@@ -145,9 +147,10 @@ namespace AsmGen
         static void AddCommonInitCode(StringBuilder sb, List<UarchTest> tests)
         {
             sb.AppendLine("int main(int argc, char *argv[]) {");
-            sb.AppendLine($"  uint64_t time_diff_ms, iterations = {iterations}, structIterations = {structTestIterations};");
+            sb.AppendLine($"  uint64_t time_diff_ms, iterations = {iterations}, structIterations = {structTestIterations}, tmp;");
             sb.AppendLine("  float latency; int *A = NULL, *B = NULL; float *fpArr = NULL;");
             sb.AppendLine("  uint64_t tmpsink;");
+            sb.AppendLine("  uint32_t list_size = " + latencyListSize + ";");
 
             // print a help message based on tests available
             sb.AppendLine($"  printf(\"Usage: [test name] [latency list size = {latencyListSize}] [struct iterations = {structTestIterations}]\\n\");");
@@ -155,7 +158,7 @@ namespace AsmGen
             sb.AppendLine("    printf(\"List of tests:\\n\");");
             foreach (UarchTest test in tests) sb.AppendLine($"    printf(\"  {test.Prefix} - {test.Description}\\n\");");
             sb.AppendLine("  }");
-            sb.AppendLine("  if (argc > 3) { structIterations = atoi(argv[3]); }");
+            sb.AppendLine("  if (argc > 3) { structIterations = atoi(argv[3]); iterations = 100 * structIterations; }");
             sb.AppendLine("  if (argc == 1 || argc > 1 && strncmp(argv[1], \"branchtest\", 9) != 0) {");
             GenerateLatencyTestArray(sb);
             sb.AppendLine("  }");
@@ -164,8 +167,6 @@ namespace AsmGen
         static void GenerateLatencyTestArray(StringBuilder sb)
         {
             // Fill list to create random access pattern
-            sb.AppendLine("  uint32_t list_size = " + latencyListSize + ";");
-
             sb.AppendLine("  if (argc > 2) list_size = atoi(argv[2]);");
 
             sb.AppendLine("  A = (int*)malloc(sizeof(int) * list_size);");

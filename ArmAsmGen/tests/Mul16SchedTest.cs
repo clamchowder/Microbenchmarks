@@ -4,20 +4,17 @@ namespace AsmGen
 {
     public class Mul16SchedTest : UarchTest
     {
-        public string Prefix { get => "mul16sched"; }
-        public string Description { get => "Integer (16-bit mul) Scheduler Capacity Test"; }
-        public string FunctionDefinitionParameters { get => "uint64_t iterations, int *arr"; }
-        public string GetFunctionCallParameters { get => "structIterations, A"; }
-
-        public int[] Counts { get; private set; }
-        public bool DivideTimeByCount => false;
-
         public Mul16SchedTest(int low, int high, int step)
         {
             this.Counts = UarchTestHelpers.GenerateCountArray(low, high, step);
+            this.Prefix = "mul16sched";
+            this.Description = "Integer (16-bit mul) Scheduler Capacity Test";
+            this.FunctionDefinitionParameters = "uint64_t iterations, int *arr";
+            this.GetFunctionCallParameters = "structIterations, A";
+            this.DivideTimeByCount = false;
         }
 
-        public void GenerateX86GccAsm(StringBuilder sb)
+        public override void GenerateX86GccAsm(StringBuilder sb)
         {
             string[] unrolledMuls = new string[4];
             unrolledMuls[0] = "  imul %di, %r15w";
@@ -33,7 +30,7 @@ namespace AsmGen
             UarchTestHelpers.GenerateX86AsmStructureTestFuncs(sb, this.Counts, this.Prefix, unrolledMuls, unrolledMuls1, false);
         }
 
-        public void GenerateX86NasmAsm(StringBuilder sb)
+        public override void GenerateX86NasmAsm(StringBuilder sb)
         {
             string[] unrolledMuls = new string[4];
             unrolledMuls[0] = "  imul r15w, di";
@@ -49,7 +46,7 @@ namespace AsmGen
             UarchTestHelpers.GenerateX86NasmStructureTestFuncs(sb, this.Counts, this.Prefix, unrolledMuls, unrolledMuls, false);
         }
 
-        public void GenerateArmAsm(StringBuilder sb)
+        public override void GenerateArmAsm(StringBuilder sb)
         {
             string[] unrolledMuls = new string[4];
             unrolledMuls[0] = "  mul w15, w15, w25";

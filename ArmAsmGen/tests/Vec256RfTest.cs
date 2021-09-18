@@ -4,20 +4,17 @@ namespace AsmGen
 {
     public class Vec256RfTest : UarchTest
     {
-        public string Prefix { get => "vec256rf"; }
-        public string Description { get => "Vector (256-bit packed fp) RF Test - x86 only"; }
-        public string FunctionDefinitionParameters { get => "uint64_t iterations, int *arr, float *floatArr"; }
-        public string GetFunctionCallParameters { get => "structIterations, A, fpArr"; }
-
-        public int[] Counts { get; private set; }
-        public bool DivideTimeByCount => false;
-
         public Vec256RfTest(int low, int high, int step)
         {
             this.Counts = UarchTestHelpers.GenerateCountArray(low, high, step);
+            this.Prefix = "vec256rf";
+            this.Description = "Vector (256-bit packed fp) RF Test - x86 only";
+            this.FunctionDefinitionParameters = "uint64_t iterations, int *arr, float *floatArr";
+            this.GetFunctionCallParameters = "structIterations, A, fpArr";
+            this.DivideTimeByCount = false;
         }
 
-        public void GenerateX86GccAsm(StringBuilder sb)
+        public override void GenerateX86GccAsm(StringBuilder sb)
         {
             // it's ok, the ptr chasing arr should be way bigger than this
             string initInstrs = "  vmovups (%r8), %ymm1\n" +
@@ -34,7 +31,7 @@ namespace AsmGen
             UarchTestHelpers.GenerateX86AsmStructureTestFuncs(sb, this.Counts, this.Prefix, unrolledAdds, unrolledAdds, false, initInstrs);
         }
 
-        public void GenerateX86NasmAsm(StringBuilder sb)
+        public override void GenerateX86NasmAsm(StringBuilder sb)
         {
             string initInstrs = "  vmovups ymm1, [r8]\n" +
                 "  vmovups ymm2, [r8 + 32]\n" +
@@ -50,7 +47,7 @@ namespace AsmGen
             UarchTestHelpers.GenerateX86NasmStructureTestFuncs(sb, this.Counts, this.Prefix, unrolledAdds, unrolledAdds, false, initInstrs);
         }
 
-        public void GenerateArmAsm(StringBuilder sb)
+        public override void GenerateArmAsm(StringBuilder sb)
         {
             string initInstrs = "  ldr q0, [x1]\n" +
                 "  ldr q1, [x1, #0x10]\n" +

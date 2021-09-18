@@ -4,36 +4,33 @@ namespace AsmGen
 {
     public class StoreSchedTest : UarchTest
     {
-        public string Prefix { get => "storesched"; }
-        public string Description { get => "Store Scheduler Capacity Test"; }
-        public string FunctionDefinitionParameters { get => "uint64_t iterations, int *arr, int *arr2"; }
-        public string GetFunctionCallParameters { get => "structIterations, A, B"; }
-
-        public int[] Counts { get; private set; }
-        public bool DivideTimeByCount => false;
-
         public StoreSchedTest(int low, int high, int step)
         {
             this.Counts = UarchTestHelpers.GenerateCountArray(low, high, step);
+            this.Prefix = "storesched";
+            this.Description = "Store Scheduler Capacity Test";
+            this.FunctionDefinitionParameters = "uint64_t iterations, int count, int *arr2";
+            this.GetFunctionCallParameters = "structIterations, list_size, B";
+            this.DivideTimeByCount = false;
         }
 
-        public void GenerateX86GccAsm(StringBuilder sb)
+        public override void GenerateX86GccAsm(StringBuilder sb)
         {
             string[] dependentStores = new string[4];
-            dependentStores[0] = "  mov %rdi, (%r8, %rdi, 4)";
-            dependentStores[1] = "  mov %rdi, (%r8, %rdi, 4)";
-            dependentStores[2] = "  mov %rdi, (%r8, %rdi, 4)";
-            dependentStores[3] = "  mov %rdi, (%r8, %rdi, 4)";
+            dependentStores[0] = "  mov %rax, (%r8, %rdx, 4)";
+            dependentStores[1] = "  mov %rax, (%r8, %rdx, 4)";
+            dependentStores[2] = "  mov %rax, (%r8, %rdx, 4)";
+            dependentStores[3] = "  mov %rax, (%r8, %rdx, 4)";
 
             string[] dependentStores1 = new string[4];
-            dependentStores1[0] = "  mov %rsi, (%r8, %rsi, 4)";
-            dependentStores1[1] = "  mov %rsi, (%r8, %rsi, 4)";
-            dependentStores1[2] = "  mov %rsi, (%r8, %rsi, 4)";
-            dependentStores1[3] = "  mov %rsi, (%r8, %rsi, 4)";
-            UarchTestHelpers.GenerateX86AsmStructureTestFuncs(sb, this.Counts, this.Prefix, dependentStores, dependentStores1, false);
+            dependentStores1[0] = "  mov %rax, (%r8, %rdx, 4)";
+            dependentStores1[1] = "  mov %rax, (%r8, %rdx, 4)";
+            dependentStores1[2] = "  mov %rax, (%r8, %rdx, 4)";
+            dependentStores1[3] = "  mov %rax, (%r8, %rdx, 4)";
+            UarchTestHelpers.GenerateX86AsmDivStructureTestFuncs(sb, this.Counts, this.Prefix, dependentStores, dependentStores1, false);
         }
 
-        public void GenerateX86NasmAsm(StringBuilder sb)
+        public override void GenerateX86NasmAsm(StringBuilder sb)
         {
             string[] dependentStores = new string[4];
             dependentStores[0] = "  mov [r8 + rdi * 4], rdi";
@@ -49,7 +46,7 @@ namespace AsmGen
             UarchTestHelpers.GenerateX86NasmStructureTestFuncs(sb, this.Counts, this.Prefix, dependentStores, dependentStores1, false);
         }
 
-        public void GenerateArmAsm(StringBuilder sb)
+        public override void GenerateArmAsm(StringBuilder sb)
         {
             string[] dependentStores = new string[4];
             dependentStores[0] = "  str w25, [x2, w25, uxtw #2]";

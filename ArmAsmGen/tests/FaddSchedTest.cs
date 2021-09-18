@@ -4,20 +4,17 @@ namespace AsmGen
 {
     public class FaddSchedTest : UarchTest
     {
-        public string Prefix { get => "faddsched"; }
-        public string Description { get => "FP (32-bit add) Scheduler Capacity Test"; }
-        public string FunctionDefinitionParameters { get => "uint64_t iterations, int *arr, float *floatArr"; }
-        public string GetFunctionCallParameters { get => "structIterations, A, fpArr"; }
-
-        public int[] Counts { get; private set; }
-        public bool DivideTimeByCount => false;
-
         public FaddSchedTest(int low, int high, int step)
         {
             this.Counts = UarchTestHelpers.GenerateCountArray(low, high, step);
+            this.Prefix = "faddsched";
+            this.Description = "FP (32-bit add) Scheduler Capacity Test";
+            this.FunctionDefinitionParameters = "uint64_t iterations, int *arr, float *floatArr";
+            this.GetFunctionCallParameters = "structIterations, A, fpArr";
+            this.DivideTimeByCount = false;
         }
 
-        public void GenerateX86GccAsm(StringBuilder sb)
+        public override void GenerateX86GccAsm(StringBuilder sb)
         {
             // xmm0 is dependent on ptr chasing load
             string[] unrolledAdds = new string[4];
@@ -29,7 +26,7 @@ namespace AsmGen
             UarchTestHelpers.GenerateX86AsmFpSchedTestFuncs(sb, this.Counts, this.Prefix, unrolledAdds, unrolledAdds);
         }
 
-        public void GenerateX86NasmAsm(StringBuilder sb)
+        public override void GenerateX86NasmAsm(StringBuilder sb)
         {
             string[] unrolledAdds = new string[4];
             unrolledAdds[0] = "  addss xmm1, xmm0";
@@ -39,7 +36,7 @@ namespace AsmGen
             UarchTestHelpers.GenerateX86NasmFpSchedTestFuncs(sb, this.Counts, this.Prefix, unrolledAdds, unrolledAdds);
         }
 
-        public void GenerateArmAsm(StringBuilder sb)
+        public override void GenerateArmAsm(StringBuilder sb)
         {
             string[] unrolledAdds = new string[4];
             unrolledAdds[0] = "  fadd s17, s17, s16";
