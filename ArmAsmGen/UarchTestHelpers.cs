@@ -485,6 +485,7 @@ namespace AsmGen
                 sb.AppendLine("  mov r12, 0x30");
                 sb.AppendLine("  mov r11, 0x40");
 
+
                 if (initInstrs != null) sb.AppendLine(initInstrs);
 
                 sb.AppendLine("  mov rdi, rdx");
@@ -520,7 +521,7 @@ namespace AsmGen
                     instrIdx = (instrIdx + 1) % fillerInstrs1.Length;
                 }
 
-                sb.AppendLine("  xor rdx,%rdx");
+                sb.AppendLine("  xor rdx, rdx");
                 sb.AppendLine("  mov rax, rsi");
                 sb.AppendLine("  idiv rdi");
                 sb.AppendLine("  xor rdx, rdx");
@@ -551,9 +552,6 @@ namespace AsmGen
 
                 sb.AppendLine("  dec rcx");
                 sb.AppendLine("  jne " + funcName + "start");
-                sb.AppendLine("  pop rdx");
-                sb.AppendLine("  pop rcx");
-                sb.AppendLine("  pop r8");
                 sb.AppendLine("  pop r11");
                 sb.AppendLine("  pop r12");
                 sb.AppendLine("  pop r13");

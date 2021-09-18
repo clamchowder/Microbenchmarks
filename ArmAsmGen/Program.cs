@@ -31,7 +31,7 @@ namespace AsmGen
             tests.Add(new MixIntFpRfTest(4, 256, 1));
             tests.Add(new LoadSchedTest(4, 128, 1));
             tests.Add(new StoreSchedTest(4, 128, 1));
-            tests.Add(new StoreDataSchedTest(2, 48, 1));
+            tests.Add(new StoreDataSchedTest(2, 128, 1));
             tests.Add(new LdqTest(4, 128, 1));
             tests.Add(new StqTest(4, 128, 1));
             tests.Add(new ReturnStackTest(1, 64, 1));
@@ -49,7 +49,7 @@ namespace AsmGen
             // Generate C file for linux
             cSourceFile.AppendLine("#include <stdio.h>\n#include<stdint.h>\n#include<sys/time.h>\n#include <stdlib.h>\n#include <string.h>\n");
 
-            foreach (UarchTest test in tests) UarchTestHelpers.GenerateExternLines(cSourceFile, test);
+            foreach (UarchTest test in tests) test.GenerateExternLines(cSourceFile);
 
             AddCommonInitCode(cSourceFile, tests);
             cSourceFile.AppendLine("  struct timeval startTv, endTv;");
@@ -64,7 +64,7 @@ namespace AsmGen
             vsCSourceFile.AppendLine("#include <stdio.h>\n#include<stdint.h>\n#include<sys\\timeb.h>\n#include <stdlib.h>\n");
             vsCSourceFile.AppendLine("#include <string.h>\n");
 
-            foreach (UarchTest test in tests) UarchTestHelpers.GenerateVsExternLines(vsCSourceFile, test);
+            foreach (UarchTest test in tests) test.GenerateVsExternLines(vsCSourceFile);
             AddCommonInitCode(vsCSourceFile, tests);
             vsCSourceFile.AppendLine("  struct timeb start, end;");
 

@@ -16,34 +16,35 @@ namespace AsmGen
 
         public override void GenerateX86GccAsm(StringBuilder sb)
         {
+            // stores are dependent on rdi and rsi, which are results from pointer chasing loads
             string[] dependentStores = new string[4];
-            dependentStores[0] = "  mov %rdi, (%r8, %r15, 4)";
-            dependentStores[1] = "  mov %rdi, (%r8, %r15, 4)";
-            dependentStores[2] = "  mov %rdi, (%r8, %r15, 4)";
-            dependentStores[3] = "  mov %rdi, (%r8, %r15, 4)";
+            dependentStores[0] = "  mov %rdx, (%r8, %r15, 4)";
+            dependentStores[1] = "  mov %rdx, (%r8, %r15, 4)";
+            dependentStores[2] = "  mov %rdx, (%r8, %r15, 4)";
+            dependentStores[3] = "  mov %rdx, (%r8, %r15, 4)";
 
             string[] dependentStores1 = new string[4];
-            dependentStores1[0] = "  mov %rsi, (%r8, %r11, 4)";
-            dependentStores1[1] = "  mov %rsi, (%r8, %r11, 4)";
-            dependentStores1[2] = "  mov %rsi, (%r8, %r11, 4)";
-            dependentStores1[3] = "  mov %rsi, (%r8, %r11, 4)";
+            dependentStores1[0] = "  mov %rdx, (%r8, %r11, 4)";
+            dependentStores1[1] = "  mov %rdx, (%r8, %r11, 4)";
+            dependentStores1[2] = "  mov %rdx, (%r8, %r11, 4)";
+            dependentStores1[3] = "  mov %rdx, (%r8, %r11, 4)";
             UarchTestHelpers.GenerateX86AsmDivStructureTestFuncs(sb, this.Counts, this.Prefix, dependentStores, dependentStores1, false);
         }
 
         public override void GenerateX86NasmAsm(StringBuilder sb)
         {
             string[] dependentStores = new string[4];
-            dependentStores[0] = "  mov [r8 + rdi * 4], rdi";
-            dependentStores[1] = "  mov [r8 + rdi * 4], rdi";
-            dependentStores[2] = "  mov [r8 + rdi * 4], rdi";
-            dependentStores[3] = "  mov [r8 + rdi * 4], rdi";
+            dependentStores[0] = "  mov [r8 + r15 * 4], rdx";
+            dependentStores[1] = "  mov [r8 + r15 * 4], rdx";
+            dependentStores[2] = "  mov [r8 + r15 * 4], rdx";
+            dependentStores[3] = "  mov [r8 + r15 * 4], rdx";
 
             string[] dependentStores1 = new string[4];
-            dependentStores1[0] = "  mov [r8 + rsi * 4], rsi";
-            dependentStores1[1] = "  mov [r8 + rsi * 4], rsi";
-            dependentStores1[2] = "  mov [r8 + rsi * 4], rsi";
-            dependentStores1[3] = "  mov [r8 + rsi * 4], rsi";
-            UarchTestHelpers.GenerateX86NasmStructureTestFuncs(sb, this.Counts, this.Prefix, dependentStores, dependentStores1, false);
+            dependentStores1[0] = "  mov [r8 + r11 * 4], rdx";
+            dependentStores1[1] = "  mov [r8 + r11 * 4], rdx";
+            dependentStores1[2] = "  mov [r8 + r11 * 4], rdx";
+            dependentStores1[3] = "  mov [r8 + r11 * 4], rdx";
+            UarchTestHelpers.GenerateX86NasmDivStructureTestFuncs(sb, this.Counts, this.Prefix, dependentStores, dependentStores1, false);
         }
 
         public override void GenerateArmAsm(StringBuilder sb)
