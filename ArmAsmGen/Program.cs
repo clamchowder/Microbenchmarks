@@ -34,8 +34,10 @@ namespace AsmGen
             tests.Add(new StoreDataSchedTest(2, 128, 1));
             tests.Add(new LdqTest(4, 128, 1));
             tests.Add(new StqTest(4, 128, 1));
+            tests.Add(new LdqStqTest(4, 128, 1));
             tests.Add(new ReturnStackTest(1, 64, 1));
             tests.Add(new MshrsTest(1, 12, 1));
+            tests.Add(new CvtSchedTest(1, 128, 1));
 
             StringBuilder cSourceFile = new StringBuilder();
             StringBuilder vsCSourceFile = new StringBuilder();
