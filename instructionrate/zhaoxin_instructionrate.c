@@ -31,11 +31,14 @@ extern uint64_t add256fp(uint64_t iterations);
 extern uint64_t latmul64(uint64_t iterations);
 extern uint64_t latmul16(uint64_t iterations);
 extern uint64_t mul16(uint64_t iterations);
+extern uint64_t mul64(uint64_t iterations);
 extern uint64_t load128(uint64_t iterations, int *arr);
 extern uint64_t load256(uint64_t iterations, float *arr);
 extern uint64_t store128(uint64_t iterations, int *arr, int *sink);
 extern uint64_t store256(uint64_t iterations, float *arr, float *sink);
 extern uint64_t mixaddmul128int(uint64_t iterations);
+extern uint64_t mixmul16mul64(uint64_t iterations); 
+extern uint64_t mixmul16mul64_21(uint64_t iterations); 
 
 float fpTestArr[8] __attribute__ ((aligned (64))) = { 0.2, 1.5, 2.7, 3.14, 5.16, 6.3, 7.7, 9.45 };
 float fpSinkArr[8] __attribute__ ((aligned (64))) = { 2.1, 3.2, 4.3, 5.4, 6.2, 7.8, 8.3, 9.4 };
@@ -74,6 +77,8 @@ int main(int argc, char *argv[]) {
   } else clockSpeedGhz = 1.0f;
   
   printf("Estimated clock speed: %.2f GHz\n", clockSpeedGhz);
+
+  // throughput
   if (argc == 1 || argc > 1 && strncmp(argv[1], "1bnop", 5) == 0) 
     printf("1-byte nops per clk: %.2f\n", measureFunction(iterationsHigh, clockSpeedGhz, noptest1b));
   if (argc == 1 || argc > 1 && strncmp(argv[1], "2bnop", 5) == 0) 
@@ -83,6 +88,8 @@ int main(int argc, char *argv[]) {
   if (argc == 1 || argc > 1 && strncmp(argv[1], "miximuladd", 10) == 0) 
     printf("4:1 adds/imul per clk: %.2f\n", measureFunction(iterationsHigh, clockSpeedGhz, addtest));
   if (argc == 1 || argc > 1 && strncmp(argv[1], "avx256int", 9) == 0) 
+
+  // vector and FP
     printf("256-bit avx integer add per clk: %.2f\n", measureFunction(iterationsHigh, clockSpeedGhz, add256int));
   if (argc == 1 || argc > 1 && strncmp(argv[1], "mixavx256int", 12) == 0) 
     printf("2:1 scalar add/256-bit avx integer add per clk: %.2f\n", measureFunction(iterationsHigh, clockSpeedGhz, mixadd256int));
@@ -106,18 +113,30 @@ int main(int argc, char *argv[]) {
     printf("128-bit sse fadd latency: %.2f clocks\n", 1 / measureFunction(iterations, clockSpeedGhz, latadd128fp));
   if (argc == 1 || argc > 1 && strncmp(argv[1], "latmul128fp", 11) == 0) 
     printf("128-bit sse fmul latency: %.2f clocks\n", 1 / measureFunction(iterations, clockSpeedGhz, latmul128fp));
-  if (argc == 1 || argc > 1 && strncmp(argv[1], "fma256", 6) == 0) 
-    printf("256-bit FMA per clk: %.2f\n", measureFunction(iterations, clockSpeedGhz, fma256));
+  // zhaoxin does not support FMA
+  /*if (argc == 1 || argc > 1 && strncmp(argv[1], "fma256", 6) == 0) 
+    printf("256-bit FMA per clk: %.2f\n", measureFunction(iterations, clockSpeedGhz, fma256));*/
   if (argc == 1 || argc > 1 && strncmp(argv[1], "fadd256", 6) == 0) 
     printf("256-bit FADD per clk: %.2f\n", measureFunction(iterations, clockSpeedGhz, add256fp));
   if (argc == 1 || argc > 1 && strncmp(argv[1], "fmul256", 6) == 0) 
     printf("256-bit FMUL per clk: %.2f\n", measureFunction(iterations, clockSpeedGhz, mul256fp));
+
+  // integer multiply. zhaoxin appears to handle 16-bit and 64-bit multiplies differntly
+  // unlike Intel/AMD CPUs that behave similarly regardless of register width
+  if (argc == 1 || argc > 1 && strncmp(argv[1], "latmul16", 8) == 0) 
+    printf("16-bit imul latency: %.2f clocks\n", 1 / measureFunction(iterations, clockSpeedGhz, latmul16)); 
   if (argc == 1 || argc > 1 && strncmp(argv[1], "latmul64", 8) == 0) 
     printf("64-bit imul latency: %.2f clocks\n", 1 / measureFunction(iterations, clockSpeedGhz, latmul64));
-  if (argc == 1 || argc > 1 && strncmp(argv[1], "latmul16", 8) == 0) 
-    printf("16-bit imul latency: %.2f clocks\n", 1 / measureFunction(iterations, clockSpeedGhz, latmul16));
   if (argc == 1 || argc > 1 && strncmp(argv[1], "mul16", 5) == 0) 
     printf("16-bit imul per clk: %.2f\n", measureFunction(iterations, clockSpeedGhz, mul16));
+  if (argc == 1 || argc > 1 && strncmp(argv[1], "mul64", 5) == 0) 
+    printf("64-bit imul per clk: %.2f\n", measureFunction(iterations, clockSpeedGhz, mul64));
+  if (argc == 1 || argc > 1 && strncmp(argv[1], "mixmul16mul64", 5) == 0) 
+    printf("1:1 mixed 16-bit/64-bit imul per clk: %.2f\n", measureFunction(iterations, clockSpeedGhz, mixmul16mul64));
+  if (argc == 1 || argc > 1 && strncmp(argv[1], "mix21mul16mul64", 5) == 0) 
+    printf("2:1 mixed 16-bit/64-bit imul per clk: %.2f\n", measureFunction(iterations, clockSpeedGhz, mixmul16mul64_21));
+
+  // load/store
   if (argc == 1 || argc > 1 && strncmp(argv[1], "load128", 7) == 0) 
     printf("128-bit loads per clk: %.2f\n", measureFunction(iterations, clockSpeedGhz, load128wrapper));
   if (argc == 1 || argc > 1 && strncmp(argv[1], "load256", 7) == 0) 

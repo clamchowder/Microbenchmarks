@@ -24,11 +24,14 @@
 .global latmul64
 .global latmul16
 .global mul16
+.global mul64
 .global load128
 .global load256
 .global store128
 .global store256
 .global mixaddmul128int
+.global mixmul16mul64
+.global mixmul16mul64_21
 
 /*
   %rdi = arg0 = iteration count
@@ -1134,6 +1137,191 @@ mul16_loop:
   pop %rcx
   pop %rbx
   ret 
+
+mul64:
+  push %rbx
+  push %rcx
+  push %rsi
+  push %r8
+  push %r9
+  push %r10
+  push %r11
+  push %r12
+  push %r13
+  push %r14
+  push %r15
+  mov $1, %r8
+  mov $20, %r9
+  mov %r8, %rbx 
+  mov %r8, %rcx
+  mov %r8, %r10
+  mov %r8, %r11
+  mov %r8, %r12
+  mov %r8, %r13
+  mov %r8, %r14
+  mov %r9, %r15
+mul64_loop:
+  imul %r9, %r15
+  imul %r9, %r14
+  imul %r9, %r13
+  imul %r9, %r12
+  imul %r9, %r11
+  imul %r9, %r10
+  imul %r9, %r8
+  imul %r9, %rbx
+  imul %r9, %rcx
+  imul %r9, %rsi
+  imul %r9, %r15
+  imul %r9, %r14
+  imul %r9, %r13
+  imul %r9, %r12
+  imul %r9, %r11
+  imul %r9, %r10
+  imul %r9, %r8
+  imul %r9, %rbx
+  imul %r9, %rcx
+  imul %r9, %rsi 
+  sub %r9, %rdi
+  jnz mul64_loop
+  pop %r15
+  pop %r14
+  pop %r13
+  pop %r12
+  pop %r11
+  pop %r10
+  pop %r9
+  pop %r8 
+  pop %rsi
+  pop %rcx
+  pop %rbx
+  ret  
+
+mixmul16mul64:
+  push %rbx
+  push %rcx
+  push %rsi
+  push %r8
+  push %r9
+  push %r10
+  push %r11
+  push %r12
+  push %r13
+  push %r14
+  push %r15
+  mov $1, %r8
+  mov $20, %r9
+  mov %r8, %rbx 
+  mov %r8, %rcx
+  mov %r8, %r10
+  mov %r8, %r11
+  mov %r8, %r12
+  mov %r8, %r13
+  mov %r8, %r14
+  mov %r9, %r15
+mixmul16mul64_loop:
+  imul %r9, %r15
+  imul %r9w, %r14w
+  imul %r9, %r13
+  imul %r9w, %r12w
+  imul %r9, %r11
+  imul %r9w, %r10w
+  imul %r9, %r8
+  imul %r9w, %bx
+  imul %r9, %rcx
+  imul %r9w, %si
+  imul %r9, %r15
+  imul %r9w, %r14w
+  imul %r9, %r13
+  imul %r9w, %r12w
+  imul %r9, %r11
+  imul %r9w, %r10w
+  imul %r9, %r8
+  imul %r9w, %bx
+  imul %r9, %rcx
+  imul %r9w, %si 
+  sub %r9, %rdi
+  jnz mixmul16mul64_loop
+  pop %r15
+  pop %r14
+  pop %r13
+  pop %r12
+  pop %r11
+  pop %r10
+  pop %r9
+  pop %r8 
+  pop %rsi
+  pop %rcx
+  pop %rbx
+  ret   
+
+mixmul16mul64_21:
+  push %rbx
+  push %rcx
+  push %rdx
+  push %rsi
+  push %r8
+  push %r9
+  push %r10
+  push %r11
+  push %r12
+  push %r13
+  push %r14
+  push %r15
+  mov $1, %r8
+  mov $24, %r9
+  mov %r8, %rbx 
+  mov %r8, %rcx
+  mov %r8, %rsi
+  mov %r8, %r10
+  mov %r8, %r11
+  mov %r8, %r12
+  mov %r8, %r13
+  mov %r8, %r14
+  mov %r9, %r15
+mixmul16mul64_21_loop:
+  imul %r9, %r15
+  imul %r9w, %r14w
+  imul %r9w, %r13w
+  imul %r9, %r12
+  imul %r9w, %r11w
+  imul %r9w, %r10w
+
+  imul %r9, %r8
+  imul %r9w, %r14w
+  imul %r9w, %r13w
+  imul %r9, %rcx
+  imul %r9w, %r11w
+  imul %r9w, %r10w 
+
+  imul %r9, %rbx
+  imul %r9w, %r14w
+  imul %r9w, %r13w
+  imul %r9, %rax
+  imul %r9w, %r11w
+  imul %r9w, %r10w 
+
+  imul %r9, %rsi
+  imul %r9w, %r14w
+  imul %r9w, %r13w
+  imul %r9, %rdx
+  imul %r9w, %r11w
+  imul %r9w, %r10w  
+
+  sub %r9, %rdi
+  jge mixmul16mul64_21_loop
+  pop %r15
+  pop %r14
+  pop %r13
+  pop %r12
+  pop %r11
+  pop %r10
+  pop %r9
+  pop %r8 
+  pop %rsi
+  pop %rdx
+  pop %rcx
+  pop %rbx
+  ret    
 
 load128:
   push %rbx
