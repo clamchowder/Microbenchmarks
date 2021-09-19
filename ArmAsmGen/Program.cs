@@ -22,6 +22,7 @@ namespace AsmGen
             tests.Add(new AddSchedTest(4, 160, 1));
             tests.Add(new MulSchedTest(4, 128, 1));
             tests.Add(new Mul16SchedTest(4, 128, 1));
+            tests.Add(new Mul32SchedTest(4, 48, 1));
             tests.Add(new FaddSchedTest(1, 128, 1));
             tests.Add(new FmulSchedTest(1, 128, 1));
             tests.Add(new Fadd256SchedTest(1, 128, 1));
@@ -38,6 +39,10 @@ namespace AsmGen
             tests.Add(new ReturnStackTest(1, 64, 1));
             tests.Add(new MshrsTest(1, 12, 1));
             tests.Add(new CvtSchedTest(1, 128, 1));
+            tests.Add(new RorSchedTest(1, 48, 1));
+            tests.Add(new MixMulSchedTest(1, 48, 1));
+            tests.Add(new TakenBranchBufferTest(1, 256, 1));
+            tests.Add(new BranchBufferTest(1, 356, 1));
 
             StringBuilder cSourceFile = new StringBuilder();
             StringBuilder vsCSourceFile = new StringBuilder();

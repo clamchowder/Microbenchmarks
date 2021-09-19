@@ -2,13 +2,13 @@
 
 namespace AsmGen
 {
-    public class Mul16SchedTest : UarchTest
+    public class Mul32SchedTest : UarchTest
     {
-        public Mul16SchedTest(int low, int high, int step)
+        public Mul32SchedTest(int low, int high, int step)
         {
             this.Counts = UarchTestHelpers.GenerateCountArray(low, high, step);
-            this.Prefix = "mul16sched";
-            this.Description = "Integer (16-bit mul) Scheduler Capacity Test";
+            this.Prefix = "mul32sched";
+            this.Description = "Integer (32-bit mul) Scheduler Capacity Test";
             this.FunctionDefinitionParameters = "uint64_t iterations, int *arr";
             this.GetFunctionCallParameters = "structIterations, A";
             this.DivideTimeByCount = false;
@@ -16,35 +16,33 @@ namespace AsmGen
 
         public override void GenerateX86GccAsm(StringBuilder sb)
         {
-            // trying to unsuccessfully counter some weird behavior on zhaoxin
-            string resetMulsInstr = "mov $11, %r15\n  mov $13, %r14\n  mov $15, %r13\n  mov $17, %r12\n";
             string[] unrolledMuls = new string[4];
-            unrolledMuls[0] = "  imul %di, %r15w";
-            unrolledMuls[1] = "  imul %di, %r14w";
-            unrolledMuls[2] = "  imul %di, %r13w";
-            unrolledMuls[3] = "  imul %di, %r12w";
+            unrolledMuls[0] = "  imul %edi, %r15d";
+            unrolledMuls[1] = "  imul %edi, %r14d";
+            unrolledMuls[2] = "  imul %edi, %r13d";
+            unrolledMuls[3] = "  imul %edi, %r12d";
 
             string[] unrolledMuls1 = new string[4];
-            unrolledMuls1[0] = "  imul %si, %r15w";
-            unrolledMuls1[1] = "  imul %si, %r14w";
-            unrolledMuls1[2] = "  imul %si, %r13w";
-            unrolledMuls1[3] = "  imul %si, %r12w";
-            UarchTestHelpers.GenerateX86AsmStructureTestFuncs(sb, this.Counts, this.Prefix, unrolledMuls, unrolledMuls1, false, postLoadInstrs1: resetMulsInstr, postLoadInstrs2: resetMulsInstr);
+            unrolledMuls1[0] = "  imul %esi, %r15d";
+            unrolledMuls1[1] = "  imul %esi, %r14d";
+            unrolledMuls1[2] = "  imul %esi, %r13d";
+            unrolledMuls1[3] = "  imul %esi, %r12d";
+            UarchTestHelpers.GenerateX86AsmStructureTestFuncs(sb, this.Counts, this.Prefix, unrolledMuls, unrolledMuls1, false);
         }
 
         public override void GenerateX86NasmAsm(StringBuilder sb)
         {
             string[] unrolledMuls = new string[4];
-            unrolledMuls[0] = "  imul r15w, di";
-            unrolledMuls[1] = "  imul r14w, di";
-            unrolledMuls[2] = "  imul r13w, di";
-            unrolledMuls[3] = "  imul r12w, di";
+            unrolledMuls[0] = "  imul r15d, edi";
+            unrolledMuls[1] = "  imul r14d, edi";
+            unrolledMuls[2] = "  imul r13d, edi";
+            unrolledMuls[3] = "  imul r12d, edi";
 
             string[] unrolledMuls1 = new string[4];
-            unrolledMuls1[0] = "  imul r15w, si";
-            unrolledMuls1[1] = "  imul r14w, si";
-            unrolledMuls1[2] = "  imul r13w, si";
-            unrolledMuls1[3] = "  imul r12w, si";
+            unrolledMuls1[0] = "  imul r15d, esi";
+            unrolledMuls1[1] = "  imul r14d, esi";
+            unrolledMuls1[2] = "  imul r13d, esi";
+            unrolledMuls1[3] = "  imul r12d, esi";
             UarchTestHelpers.GenerateX86NasmStructureTestFuncs(sb, this.Counts, this.Prefix, unrolledMuls, unrolledMuls, false);
         }
 
