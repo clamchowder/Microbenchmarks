@@ -15,8 +15,10 @@ extern uint64_t addtest(uint64_t iterations);
 extern uint64_t addmultest(uint64_t iterations); 
 extern uint64_t add256int(uint64_t iterations); 
 extern uint64_t mixadd256int(uint64_t iterations); 
+extern uint64_t mixadd256int11(uint64_t iterations); 
 extern uint64_t mixadd256fpint(uint64_t iterations); 
 extern uint64_t mix256fp(uint64_t iterations); 
+extern uint64_t mix256fp11(uint64_t iterations); 
 extern uint64_t latadd256int(uint64_t iterations); 
 extern uint64_t latadd128int(uint64_t iterations); 
 extern uint64_t latadd256fp(uint64_t iterations); 
@@ -33,6 +35,7 @@ extern uint64_t latmul16(uint64_t iterations);
 extern uint64_t mul16(uint64_t iterations);
 extern uint64_t mul64(uint64_t iterations);
 extern uint64_t load128(uint64_t iterations, int *arr);
+extern uint64_t spacedload128(uint64_t iterations, int *arr);
 extern uint64_t load256(uint64_t iterations, float *arr);
 extern uint64_t store128(uint64_t iterations, int *arr, int *sink);
 extern uint64_t store256(uint64_t iterations, float *arr, float *sink);
@@ -42,7 +45,7 @@ extern uint64_t mixmul16mul64_21(uint64_t iterations);
 
 float fpTestArr[8] __attribute__ ((aligned (64))) = { 0.2, 1.5, 2.7, 3.14, 5.16, 6.3, 7.7, 9.45 };
 float fpSinkArr[8] __attribute__ ((aligned (64))) = { 2.1, 3.2, 4.3, 5.4, 6.2, 7.8, 8.3, 9.4 };
-int intTestArr[8] __attribute__ ((aligned (64))) = { 1, 2, 3, 4, 5, 6, 7, 8 };
+int *intTestArr;
 int intSinkArr[8] __attribute__ ((aligned (64))) = { 2, 3, 4, 5, 6, 7, 8, 9 };
 
 uint64_t load128wrapper(uint64_t iterations);
@@ -59,6 +62,12 @@ int main(int argc, char *argv[]) {
   uint64_t iterationsHigh = iterations * 5;
   uint64_t time_diff_ms;
   float latency, opsPerNs, clockSpeedGhz;
+  uint64_t intTestArrLength = 1024;
+
+  intTestArr = aligned_alloc(64, sizeof(int) * intTestArrLength);
+  for (uint64_t i = 0; i < intTestArrLength; i++) {
+    intTestArr[i] = i;
+  }
 
   if (argc > 2) {
     iterationsHigh =  1500000000 * (uint64_t)atol(argv[2]);
@@ -93,6 +102,8 @@ int main(int argc, char *argv[]) {
     printf("256-bit avx integer add per clk: %.2f\n", measureFunction(iterationsHigh, clockSpeedGhz, add256int));
   if (argc == 1 || argc > 1 && strncmp(argv[1], "mixavx256int", 12) == 0) 
     printf("2:1 scalar add/256-bit avx integer add per clk: %.2f\n", measureFunction(iterationsHigh, clockSpeedGhz, mixadd256int));
+  if (argc == 1 || argc > 1 && strncmp(argv[1], "mix11avx256int", 14) == 0) 
+    printf("1:1 scalar add/256-bit avx integer add per clk: %.2f\n", measureFunction(iterationsHigh, clockSpeedGhz, mixadd256int11));
   if (argc == 1 || argc > 1 && strncmp(argv[1], "mixavx256fpint", 14) == 0) 
     printf("1:1 256-bit avx int add/avx fadd per clk: %.2f\n", measureFunction(iterationsHigh, clockSpeedGhz, mixadd256fpint));
   if (argc == 1 || argc > 1 && strncmp(argv[1], "mix256fp", 8) == 0) 
@@ -139,6 +150,8 @@ int main(int argc, char *argv[]) {
   // load/store
   if (argc == 1 || argc > 1 && strncmp(argv[1], "load128", 7) == 0) 
     printf("128-bit loads per clk: %.2f\n", measureFunction(iterations, clockSpeedGhz, load128wrapper));
+  if (argc == 1 || argc > 1 && strncmp(argv[1], "spacedload128", 13) == 0) 
+    printf("128-bit loads (spaced) per clk: %.2f\n", measureFunction(iterations, clockSpeedGhz, load128wrapper)); 
   if (argc == 1 || argc > 1 && strncmp(argv[1], "load256", 7) == 0) 
     printf("256-bit loads per clk: %.2f\n", measureFunction(iterations, clockSpeedGhz, load256wrapper));
   if (argc == 1 || argc > 1 && strncmp(argv[1], "store128", 7) == 0) 
@@ -171,6 +184,10 @@ float measureFunction(uint64_t iterations, float clockSpeedGhz, uint64_t (*testf
 uint64_t load128wrapper(uint64_t iterations) {
   return load128(iterations, intTestArr);
 }
+
+uint64_t spacedload128wrapper(uint64_t iterations) {
+  return spacedload128(iterations, intTestArr);
+} 
 
 uint64_t load256wrapper(uint64_t iterations) {
   return load256(iterations, fpTestArr);

@@ -7,6 +7,7 @@
 .global noptest1b
 .global add256int
 .global mixadd256int
+.global mixadd256int11
 .global mixadd256fpint
 .global mix256fp
 .global latadd256int
@@ -26,6 +27,7 @@
 .global mul16
 .global mul64
 .global load128
+.global spacedload128
 .global load256
 .global store128
 .global store256
@@ -478,6 +480,62 @@ mixadd256int_loop:
   pop %r8
   pop %r9
   ret 
+
+mixadd256int11:
+  push %r9
+  push %r8
+  push %r15
+  push %r14
+  push %r13
+  push %r12
+  push %r11
+  mov $20, %r9
+  movq %r9, %xmm1
+  vpbroadcastq %xmm1, %ymm0
+  vmovdqu %ymm0, %ymm1
+  vmovdqu %ymm0, %ymm2
+  vmovdqu %ymm0, %ymm3
+  vmovdqu %ymm0, %ymm4
+  vmovdqu %ymm0, %ymm5
+  mov %r9, %r15
+  mov %r9, %r14
+  mov %r9, %r13
+  mov %r9, %r12
+  mov %r9, %r11
+  mov %r9, %r8
+mixadd256int11_loop:
+  add %r8, %r11
+  add %r8, %r12
+  add %r8, %r13
+  add %r8, %r14
+  add %r8, %r15 
+  vpaddq %ymm0, %ymm1, %ymm1
+  vpaddq %ymm0, %ymm2, %ymm2
+  vpaddq %ymm0, %ymm3, %ymm3
+  vpaddq %ymm0, %ymm4, %ymm4
+  vpaddq %ymm0, %ymm5, %ymm5
+  add %r8, %r11
+  add %r8, %r12
+  add %r8, %r13
+  add %r8, %r14
+  add %r8, %r15 
+  vpaddq %ymm0, %ymm1, %ymm1
+  vpaddq %ymm0, %ymm2, %ymm2
+  vpaddq %ymm0, %ymm3, %ymm3
+  vpaddq %ymm0, %ymm4, %ymm4
+  vpaddq %ymm0, %ymm5, %ymm5 
+  sub %r9, %rdi
+  jnz mixadd256int11_loop
+  movq %xmm1, %rax
+  vzeroupper
+  pop %r11
+  pop %r12
+  pop %r13
+  pop %r14
+  pop %r15
+  pop %r8
+  pop %r9
+  ret  
 
 latadd256int:
   push %r9
@@ -1323,6 +1381,42 @@ mixmul16mul64_21_loop:
   pop %rbx
   ret    
 
+spacedload128:
+  push %rbx
+  push %rcx
+  push %r8
+  push %r9
+  vzeroupper
+  mov $20, %r9
+spacedload128_loop:
+  movdqa (%rsi), %xmm10
+  movdqa 64(%rsi), %xmm11
+  movdqa 128(%rsi), %xmm12
+  movdqa 192(%rsi), %xmm13
+  movdqa 256(%rsi), %xmm14
+  movdqa 320(%rsi), %xmm10
+  movdqa 384(%rsi), %xmm11
+  movdqa 448(%rsi), %xmm12
+  movdqa 512(%rsi), %xmm13
+  movdqa 576(%rsi), %xmm14 
+  movdqa 640(%rsi), %xmm10
+  movdqa 704(%rsi), %xmm11
+  movdqa 768(%rsi), %xmm12
+  movdqa 832(%rsi), %xmm13
+  movdqa 896(%rsi), %xmm14    
+  movdqa 960(%rsi), %xmm10
+  movdqa 1024(%rsi), %xmm11
+  movdqa 1088(%rsi), %xmm12
+  movdqa 1152(%rsi), %xmm13
+  movdqa 1216(%rsi), %xmm14  
+  sub %r9, %rdi
+  jnz spacedload128_loop
+  pop %r9
+  pop %r8 
+  pop %rcx
+  pop %rbx
+  ret
+
 load128:
   push %rbx
   push %rcx
@@ -1357,7 +1451,7 @@ load128_loop:
   pop %r8 
   pop %rcx
   pop %rbx
-  ret
+  ret 
 
 load256:
   push %rbx

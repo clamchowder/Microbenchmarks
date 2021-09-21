@@ -16,6 +16,8 @@ namespace AsmGen
 
         public override void GenerateX86GccAsm(StringBuilder sb)
         {
+            // trying to unsuccessfully counter some weird behavior on zhaoxin
+            string resetMulsInstr = "mov $11, %r15\n  mov $13, %r14\n  mov $15, %r13\n  mov $17, %r12\n";
             string[] unrolledMuls = new string[4];
             unrolledMuls[0] = "  imul %edi, %r15d";
             unrolledMuls[1] = "  imul %edi, %r14d";
@@ -27,7 +29,7 @@ namespace AsmGen
             unrolledMuls1[1] = "  imul %esi, %r14d";
             unrolledMuls1[2] = "  imul %esi, %r13d";
             unrolledMuls1[3] = "  imul %esi, %r12d";
-            UarchTestHelpers.GenerateX86AsmStructureTestFuncs(sb, this.Counts, this.Prefix, unrolledMuls, unrolledMuls1, false);
+            UarchTestHelpers.GenerateX86AsmStructureTestFuncs(sb, this.Counts, this.Prefix, unrolledMuls, unrolledMuls1, false, postLoadInstrs1: resetMulsInstr, postLoadInstrs2: resetMulsInstr);
         }
 
         public override void GenerateX86NasmAsm(StringBuilder sb)

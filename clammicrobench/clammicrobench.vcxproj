@@ -149,8 +149,19 @@
       <Message Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Running NASM</Message>
       <Outputs Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">clammicrobench_nasm.obj</Outputs>
       <Command Condition="'$(Configuration)|$(Platform)'=='Release|x64'">nasm -f win64 clammicrobench_nasm.asm</Command>
-      <Message Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Running NASM</Message>
+      <Message Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Running NASM for first asm file</Message>
       <Outputs Condition="'$(Configuration)|$(Platform)'=='Release|x64'">clammicrobench_nasm.obj</Outputs>
+      <BuildInParallel Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</BuildInParallel>
+    </CustomBuild>
+  </ItemGroup>
+  <ItemGroup>
+    <CustomBuild Include="clammicrobench1_nasm.asm">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">false</ExcludedFromBuild>
+      <FileType>Document</FileType>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Release|x64'">nasm -f win64 clammicrobench1_nasm.asm</Command>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Release|x64'">clammicrobench1_nasm.obj</Outputs>
+      <BuildInParallel Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</BuildInParallel>
+      <Message Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Running NASM for second assembly file</Message>
     </CustomBuild>
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />

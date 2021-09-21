@@ -23,5 +23,8 @@
     <CustomBuild Include="clammicrobench_nasm.asm">
       <Filter>Source Files</Filter>
     </CustomBuild>
+    <CustomBuild Include="clammicrobench1_nasm.asm">
+      <Filter>Source Files</Filter>
+    </CustomBuild>
   </ItemGroup>
 </Project>

@@ -441,7 +441,7 @@ namespace AsmGen
                 sb.AppendLine("  mov $0x40, %esi");
                 sb.AppendLine("\n" + funcName + "start:");
                 sb.AppendLine("  mov (%rdx,%rdi,4), %edi");
-                sb.AppendLine("  movss (%r8,%rdi,4), %xmm0");
+                sb.AppendLine("  cvtsi2ss %rdi, %xmm0");
                 int fillerInstrCount = counts[i];
                 for (int fillerIdx = 0, instrIdx = 0; fillerIdx < fillerInstrCount; fillerIdx++)
                 {
@@ -450,7 +450,7 @@ namespace AsmGen
                 }
 
                 sb.AppendLine("  mov (%rdx,%rsi,4), %esi");
-                sb.AppendLine("  movss (%r8,%rsi,4), %xmm0");
+                sb.AppendLine("  cvtsi2ss %rsi, %xmm0");
                 for (int fillerIdx = 0, instrIdx = 0; fillerIdx < fillerInstrCount; fillerIdx++)
                 {
                     sb.AppendLine(fillerInstrs2[instrIdx]);
@@ -682,7 +682,7 @@ namespace AsmGen
                 sb.AppendLine("  mov esi, 64");
                 sb.AppendLine("\n" + funcName + "start:");
                 sb.AppendLine("  mov edi, [rdx + rdi * 4]");
-                sb.AppendLine("  movss xmm0, [r8 + rdi * 4]");
+                sb.AppendLine("  cvtsi2ss xmm0, rdi");
                 int fillerInstrCount = counts[i];
                 for (int nopIdx = 0, addIdx = 0; nopIdx < fillerInstrCount; nopIdx++)
                 {
@@ -691,7 +691,7 @@ namespace AsmGen
                 }
 
                 sb.AppendLine("  mov esi, [rdx + rsi * 4]");
-                sb.AppendLine("  movss xmm0, [r8 + rsi * 4]");
+                sb.AppendLine("  cvtsi2ss xmm0, rsi");
                 for (int nopIdx = 0, addIdx = 0; nopIdx < fillerInstrCount; nopIdx++)
                 {
                     sb.AppendLine(fillerInstrs2[addIdx]);
@@ -768,7 +768,7 @@ namespace AsmGen
             }
         }
 
-        public static void GenerateX86NasmStructureTestFuncs(StringBuilder sb, int[] counts, string funcNamePrefix, string[] fillerInstrs1, string[] fillerInstrs2, bool includePtrChasingLoads = true, string initInstrs = null)
+        public static void GenerateX86NasmStructureTestFuncs(StringBuilder sb, int[] counts, string funcNamePrefix, string[] fillerInstrs1, string[] fillerInstrs2, bool includePtrChasingLoads = true, string initInstrs = null, string postLoadInstrs1 = null, string postLoadInstrs2 = null)
         {
             for (int i = 0; i < counts.Length; i++)
             {
@@ -791,6 +791,7 @@ namespace AsmGen
                 sb.AppendLine("  mov esi, 64");
                 sb.AppendLine("\n" + funcName + "start:");
                 sb.AppendLine("  mov edi, [rdx + rdi * 4]");
+                if (postLoadInstrs1 != null) sb.AppendLine(postLoadInstrs1);
                 int fillerInstrCount = includePtrChasingLoads ? counts[i] - 2 : counts[i];
                 for (int nopIdx = 0, addIdx = 0; nopIdx < fillerInstrCount; nopIdx++)
                 {
@@ -799,6 +800,7 @@ namespace AsmGen
                 }
 
                 sb.AppendLine("  mov esi, [rdx + rsi * 4]");
+                if (postLoadInstrs2 != null) sb.AppendLine(postLoadInstrs2);
                 for (int nopIdx = 0, addIdx = 0; nopIdx < fillerInstrCount; nopIdx++)
                 {
                     sb.AppendLine(fillerInstrs2[addIdx]);
@@ -881,7 +883,15 @@ namespace AsmGen
         /// <param name="fillerInstrs1"></param>
         /// <param name="fillerInstrs2"></param>
         /// <param name="includePtrChasingLoads"></param>
-        public static void GenerateArmAsmStructureTestFuncs(StringBuilder sb, int[] counts, string funcNamePrefix, string[] fillerInstrs1, string[] fillerInstrs2, bool includePtrChasingLoads = false, string initInstrs = null)
+        public static void GenerateArmAsmStructureTestFuncs(StringBuilder sb, 
+            int[] counts, 
+            string funcNamePrefix, 
+            string[] fillerInstrs1, 
+            string[] fillerInstrs2, 
+            bool includePtrChasingLoads = false, 
+            string initInstrs = null, 
+            string postLoadInstrs1 = null, 
+            string postLoadInstrs2 = null)
         {
             for (int i = 0; i < counts.Length; i++)
             {
@@ -905,7 +915,7 @@ namespace AsmGen
                 sb.AppendLine("  mov w26, 0x40");
                 sb.AppendLine("\n" + funcName + "start:");
                 sb.AppendLine("  ldr w25, [x1, w25, uxtw #2]"); // current = A[current]
-
+                if (postLoadInstrs1 != null) sb.AppendLine(postLoadInstrs1);
                 int fillerInstrCount = includePtrChasingLoads ? counts[i] - 2 : counts[i];
                 for (int nopIdx = 0, addIdx = 0; nopIdx < fillerInstrCount; nopIdx++)
                 {
@@ -914,6 +924,7 @@ namespace AsmGen
                 }
 
                 sb.AppendLine("  ldr w26, [x1, w26, uxtw #2]");
+                if (postLoadInstrs2 != null) sb.AppendLine(postLoadInstrs2);
                 for (int nopIdx = 0, addIdx = 0; nopIdx < fillerInstrCount; nopIdx++)
                 {
                     sb.AppendLine(fillerInstrs2[addIdx]);

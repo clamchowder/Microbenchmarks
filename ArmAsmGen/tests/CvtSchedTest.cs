@@ -45,20 +45,19 @@ namespace AsmGen
             UarchTestHelpers.GenerateX86NasmStructureTestFuncs(sb, this.Counts, this.Prefix, unrolledInstrs, unrolledInstrs1, false);
         }
 
-        // todo: do this for arm
         public override void GenerateArmAsm(StringBuilder sb)
         {
             string[] unrolledInstrs = new string[4];
-            unrolledInstrs[0] = "  add x15, x15, x25";
-            unrolledInstrs[1] = "  add x14, x14, x25";
-            unrolledInstrs[2] = "  add x13, x13, x25";
-            unrolledInstrs[3] = "  add x12, x12, x25";
+            unrolledInstrs[0] = "  scvtf s0, w25";
+            unrolledInstrs[1] = "  scvtf s0, w25";
+            unrolledInstrs[2] = "  scvtf s0, w25";
+            unrolledInstrs[3] = "  scvtf s0, w25";
 
             string[] unrolledInstrs1 = new string[4];
-            unrolledInstrs1[0] = "  add x15, x15, x26";
-            unrolledInstrs1[1] = "  add x14, x14, x26";
-            unrolledInstrs1[2] = "  add x13, x13, x26";
-            unrolledInstrs1[3] = "  add x12, x12, x26";
+            unrolledInstrs1[0] = "  scvtf s0, w26";
+            unrolledInstrs1[1] = "  scvtf s0, w26";
+            unrolledInstrs1[2] = "  scvtf s0, w26";
+            unrolledInstrs1[3] = "  scvtf s0, w26";
             UarchTestHelpers.GenerateArmAsmStructureTestFuncs(sb, this.Counts, this.Prefix, unrolledInstrs, unrolledInstrs1, false);
         }
     }

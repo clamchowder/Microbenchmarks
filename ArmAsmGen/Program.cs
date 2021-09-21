@@ -43,12 +43,16 @@ namespace AsmGen
             tests.Add(new MixMulSchedTest(1, 48, 1));
             tests.Add(new TakenBranchBufferTest(1, 256, 1));
             tests.Add(new BranchBufferTest(1, 356, 1));
+            tests.Add(new YmmStateIntRfTest(1, 64, 1));
+            tests.Add(new Add256RfTest(1, 256, 1));
+            tests.Add(new Add256SchedTest(1, 256, 1));
 
             StringBuilder cSourceFile = new StringBuilder();
             StringBuilder vsCSourceFile = new StringBuilder();
             StringBuilder armAsmFile = new StringBuilder();
             StringBuilder x86AsmFile = new StringBuilder();
             StringBuilder x86NasmFile = new StringBuilder();
+            StringBuilder x86NasmFile1 = new StringBuilder();
 
             StringBuilder x86branchHistFile = new StringBuilder();
             StringBuilder branchHistHeaderFile = new StringBuilder();
@@ -85,7 +89,6 @@ namespace AsmGen
             File.WriteAllText("clammicrobench.cpp", vsCSourceFile.ToString());
 
             armAsmFile.AppendLine(".arch armv8-a\n.text\n");
-            armAsmFile.AppendLine(".global reallybadthing");
             foreach (UarchTest test in tests) test.GenerateAsmGlobalLines(armAsmFile);
             foreach (UarchTest test in tests) test.GenerateArmAsm(armAsmFile);
             File.WriteAllText("clammicrobench_arm.s", armAsmFile.ToString());
@@ -94,7 +97,6 @@ namespace AsmGen
 
             foreach (UarchTest test in tests) test.GenerateAsmGlobalLines(x86AsmFile);
             foreach (UarchTest test in tests) test.GenerateX86GccAsm(x86AsmFile);
-            x86AsmFile.AppendLine("reallybadthing:");
 
             File.WriteAllText("clammicrobench_x86.s", x86AsmFile.ToString());
 
@@ -103,12 +105,27 @@ namespace AsmGen
             x86NasmFile.AppendLine("%define nop2 db 0x66, 0x90\n");
             x86NasmFile.AppendLine("%define nop4 db 0x0F, 0x1F, 0x40, 0x00\n");
             x86NasmFile.AppendLine("%define nop12 db 0x66, 0x66, 0x66, 0x66, 0x0F, 0x1F, 0x84, 0x00, 0x00, 0x00, 0x00, 0x00\n\n");
-            x86NasmFile.AppendLine("global reallybadthing");
-            foreach (UarchTest test in tests) test.GenerateNasmGlobalLines(x86NasmFile);
-            foreach (UarchTest test in tests) test.GenerateX86NasmAsm(x86NasmFile);
-            x86NasmFile.AppendLine("reallybadthing:");
-            x86NasmFile.AppendLine("  int3");
+
+            // stupidly parallelize build a bit, since it's taking too long
+            x86NasmFile1.Append(x86NasmFile.ToString());
+            int testIdx = 0;
+            foreach (UarchTest test in tests)
+            {
+                if (testIdx < tests.Count / 2) 
+                {
+                    test.GenerateNasmGlobalLines(x86NasmFile);
+                    test.GenerateX86NasmAsm(x86NasmFile);
+                }
+                else 
+                {
+                    test.GenerateNasmGlobalLines(x86NasmFile1);
+                    test.GenerateX86NasmAsm(x86NasmFile1);
+                }
+                
+                testIdx++;
+            }
             File.WriteAllText("clammicrobench_nasm.asm", x86NasmFile.ToString());
+            File.WriteAllText("clammicrobench1_nasm.asm", x86NasmFile1.ToString());
 
             // redo this later
             /*int[] branchHistCounts = new[] { 1, 2, 4, 8, 16, 32, 64, 128, 256, 512 };
@@ -121,7 +138,7 @@ namespace AsmGen
             {
                 Console.WriteLine("Automatically copying files, based on default VS paths");
                 string clammicrobenchPath = @"..\..\..\..\clammicrobench";
-                string[] clammicrobenchFiles = new[] { "clammicrobench_nasm.asm", "clammicrobench.cpp" };
+                string[] clammicrobenchFiles = new[] { "clammicrobench_nasm.asm", "clammicrobench1_nasm.asm", "clammicrobench.cpp" };
                 CopyFiles(clammicrobenchPath, clammicrobenchFiles);
 
                 /*string branchhistPath = @"..\..\..\..\BranchHistoryLength";
