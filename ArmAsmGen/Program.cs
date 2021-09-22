@@ -46,6 +46,9 @@ namespace AsmGen
             tests.Add(new YmmStateIntRfTest(1, 64, 1));
             tests.Add(new Add256RfTest(1, 256, 1));
             tests.Add(new Add256SchedTest(1, 256, 1));
+            tests.Add(new BtbTest(4));
+            tests.Add(new BtbTest(8));
+            tests.Add(new BtbTest(16));
 
             StringBuilder cSourceFile = new StringBuilder();
             StringBuilder vsCSourceFile = new StringBuilder();
@@ -102,9 +105,6 @@ namespace AsmGen
 
             x86NasmFile.AppendLine("section .text\n");
             x86NasmFile.AppendLine("bits 64\n\n");
-            x86NasmFile.AppendLine("%define nop2 db 0x66, 0x90\n");
-            x86NasmFile.AppendLine("%define nop4 db 0x0F, 0x1F, 0x40, 0x00\n");
-            x86NasmFile.AppendLine("%define nop12 db 0x66, 0x66, 0x66, 0x66, 0x0F, 0x1F, 0x84, 0x00, 0x00, 0x00, 0x00, 0x00\n\n");
 
             // stupidly parallelize build a bit, since it's taking too long
             x86NasmFile1.Append(x86NasmFile.ToString());
@@ -147,7 +147,6 @@ namespace AsmGen
             }
         }
 
-        public static string GetBranchFuncName(int branchCount, int padding) { return "branch" + branchCount + "pad" + padding; }
         public static string GetLabelName(string funcName, int part) { return funcName + "part" + part; }
 
         public const string branchHistPrefix = "branchhist";

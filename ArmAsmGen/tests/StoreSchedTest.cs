@@ -46,6 +46,7 @@ namespace AsmGen
             UarchTestHelpers.GenerateX86NasmDivStructureTestFuncs(sb, this.Counts, this.Prefix, dependentStores, dependentStores1, false);
         }
 
+        // todo: change ARM to use div too
         public override void GenerateArmAsm(StringBuilder sb)
         {
             string[] dependentStores = new string[4];
