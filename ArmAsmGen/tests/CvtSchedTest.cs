@@ -8,7 +8,7 @@ namespace AsmGen
         {
             this.Counts = UarchTestHelpers.GenerateCountArray(low, high, step);
             this.Prefix = "cvtsched";
-            this.Description = "I2F (cvtsi2ss) Scheduler Capacity Test - x86 only";
+            this.Description = "I2F (cvtsi2ss) Scheduler Capacity Test";
             this.FunctionDefinitionParameters = "uint64_t iterations, int *arr";
             this.GetFunctionCallParameters = "structIterations, A";
         }

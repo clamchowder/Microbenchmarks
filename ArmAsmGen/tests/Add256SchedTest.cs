@@ -8,7 +8,7 @@ namespace AsmGen
         {
             this.Counts = UarchTestHelpers.GenerateCountArray(low, high, step);
             this.Prefix = "add256sched";
-            this.Description = "256-bit Integer Add Scheduler Capacity Test - x86 only";
+            this.Description = "256-bit Integer Add Scheduler Capacity Test (128-bit on ARM)";
             this.FunctionDefinitionParameters = "uint64_t iterations, int *arr, int *arr2";
             this.GetFunctionCallParameters = "structIterations, A, B";
             this.DivideTimeByCount = false;
@@ -43,12 +43,15 @@ namespace AsmGen
 
         public override void GenerateArmAsm(StringBuilder sb)
         {
+            string initInstrs = "  ldr q18, [x1]\n  ldr q18, [x1]\n  ldr q19, [x2]\n  ldr q20, [x2]\n  ldr q21, [x2]\n";
+            string postLoadInstr1 = "  mov v17.s[0], w25\n";
+            string postLoadInstr2 = "  mov v17.s[0], w26\n";
             string[] unrolledAdds = new string[4];
-            unrolledAdds[0] = "  fadd s17, s17, s16";
-            unrolledAdds[1] = "  fadd s18, s18, s16";
-            unrolledAdds[2] = "  fadd s19, s19, s16";
-            unrolledAdds[3] = "  fadd s20, s20, s16";
-            UarchTestHelpers.GenerateArmAsmFpSchedTestFuncs(sb, this.Counts, this.Prefix, unrolledAdds, unrolledAdds);
+            unrolledAdds[0] = "  add v18.4s, v18.4s, v17.4s";
+            unrolledAdds[1] = "  add v19.4s, v19.4s, v17.4s";
+            unrolledAdds[2] = "  add v20.4s, v20.4s, v17.4s";
+            unrolledAdds[3] = "  add v21.4s, v21.4s, v17.4s";
+            UarchTestHelpers.GenerateArmAsmStructureTestFuncs(sb, this.Counts, this.Prefix, unrolledAdds, unrolledAdds, false, initInstrs, postLoadInstr1, postLoadInstr2);
         }
     }
 }

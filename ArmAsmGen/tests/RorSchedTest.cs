@@ -8,7 +8,7 @@ namespace AsmGen
         {
             this.Counts = UarchTestHelpers.GenerateCountArray(low, high, step);
             this.Prefix = "rorsched";
-            this.Description = "Rotate Scheduler Capacity Test - x86 only";
+            this.Description = "Rotate Scheduler Capacity Test";
             this.FunctionDefinitionParameters = "uint64_t iterations, int *arr";
             this.GetFunctionCallParameters = "structIterations, A";
             this.DivideTimeByCount = false;

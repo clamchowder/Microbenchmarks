@@ -2,6 +2,7 @@
 
 namespace AsmGen
 {
+    // only applicable to Zhaoxin Lujiazui
     public class MixMulSchedTest : UarchTest
     {
         public MixMulSchedTest(int low, int high, int step)

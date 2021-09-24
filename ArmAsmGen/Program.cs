@@ -13,7 +13,7 @@ namespace AsmGen
 
         static void Main(string[] args)
         {
-            List<UarchTest> tests = new List<UarchTest>();
+            List<IUarchTest> tests = new List<IUarchTest>();
             tests.Add(new RobTest(4, 512, 1));
             tests.Add(new IntRfTest(4, 256, 1));
             tests.Add(new FpRfTest(4, 256, 1));
@@ -49,6 +49,9 @@ namespace AsmGen
             tests.Add(new BtbTest(4));
             tests.Add(new BtbTest(8));
             tests.Add(new BtbTest(16));
+            tests.Add(new MixJmpMulSchedTest(2, 128, 1));
+            tests.Add(new MixMulRorSchedTest(2, 128, 1));
+            tests.Add(new BranchHistoryTest());
 
             StringBuilder cSourceFile = new StringBuilder();
             StringBuilder vsCSourceFile = new StringBuilder();
@@ -57,32 +60,37 @@ namespace AsmGen
             StringBuilder x86NasmFile = new StringBuilder();
             StringBuilder x86NasmFile1 = new StringBuilder();
 
-            StringBuilder x86branchHistFile = new StringBuilder();
-            StringBuilder branchHistHeaderFile = new StringBuilder();
+            string commonFunctions = File.ReadAllText("CFiles\\CommonFunctions.c");
+            string vsFunctions = File.ReadAllText("CFiles\\VsFunctions.c");
+            string gccFunctions = File.ReadAllText("CFiles\\GccFunctions.c");
 
             // Generate C file for linux
-            cSourceFile.AppendLine("#include <stdio.h>\n#include<stdint.h>\n#include<sys/time.h>\n#include <stdlib.h>\n#include <string.h>\n");
+            cSourceFile.AppendLine("#include <stdio.h>\n#include<stdint.h>\n#include<sys/time.h>\n#include <stdlib.h>\n#include <string.h>\n#include <time.h>\n");
 
-            foreach (UarchTest test in tests) test.GenerateExternLines(cSourceFile);
+            foreach (IUarchTest test in tests) test.GenerateExternLines(cSourceFile);
 
+            cSourceFile.AppendLine(commonFunctions);
+            cSourceFile.AppendLine(gccFunctions);
             AddCommonInitCode(cSourceFile, tests);
             cSourceFile.AppendLine("  struct timeval startTv, endTv;");
             cSourceFile.AppendLine("  struct timezone startTz, endTz;");
 
-            foreach (UarchTest test in tests) UarchTestHelpers.GenerateTestBlock(cSourceFile, test);
+            foreach (IUarchTest test in tests) test.GenerateTestBlock(cSourceFile);
             cSourceFile.AppendLine("  free(A); free(B); free(fpArr);");
             cSourceFile.AppendLine("  return 0; }");
             File.WriteAllText("clammicrobench.c", cSourceFile.ToString());
 
             // Generate C file for VS
             vsCSourceFile.AppendLine("#include <stdio.h>\n#include<stdint.h>\n#include<sys\\timeb.h>\n#include <stdlib.h>\n");
-            vsCSourceFile.AppendLine("#include <string.h>\n");
+            vsCSourceFile.AppendLine("#include <string.h>\n#include <time.h>\n");
 
-            foreach (UarchTest test in tests) test.GenerateVsExternLines(vsCSourceFile);
+            foreach (IUarchTest test in tests) test.GenerateVsExternLines(vsCSourceFile);
+            vsCSourceFile.AppendLine(commonFunctions);
+            vsCSourceFile.AppendLine(vsFunctions);
             AddCommonInitCode(vsCSourceFile, tests);
             vsCSourceFile.AppendLine("  struct timeb start, end;");
 
-            foreach (UarchTest test in tests) UarchTestHelpers.GenerateVsTestBlock(vsCSourceFile, test);
+            foreach (IUarchTest test in tests) test.GenerateVsTestBlock(vsCSourceFile);
 
             // after structure size tests we don't care about this array
             vsCSourceFile.AppendLine("  free(A); free(B); free(fpArr);");
@@ -92,14 +100,14 @@ namespace AsmGen
             File.WriteAllText("clammicrobench.cpp", vsCSourceFile.ToString());
 
             armAsmFile.AppendLine(".arch armv8-a\n.text\n");
-            foreach (UarchTest test in tests) test.GenerateAsmGlobalLines(armAsmFile);
-            foreach (UarchTest test in tests) test.GenerateArmAsm(armAsmFile);
+            foreach (IUarchTest test in tests) test.GenerateAsmGlobalLines(armAsmFile);
+            foreach (IUarchTest test in tests) test.GenerateArmAsm(armAsmFile);
             File.WriteAllText("clammicrobench_arm.s", armAsmFile.ToString());
 
             x86AsmFile.AppendLine(".text\n");
 
-            foreach (UarchTest test in tests) test.GenerateAsmGlobalLines(x86AsmFile);
-            foreach (UarchTest test in tests) test.GenerateX86GccAsm(x86AsmFile);
+            foreach (IUarchTest test in tests) test.GenerateAsmGlobalLines(x86AsmFile);
+            foreach (IUarchTest test in tests) test.GenerateX86GccAsm(x86AsmFile);
 
             File.WriteAllText("clammicrobench_x86.s", x86AsmFile.ToString());
 
@@ -109,7 +117,7 @@ namespace AsmGen
             // stupidly parallelize build a bit, since it's taking too long
             x86NasmFile1.Append(x86NasmFile.ToString());
             int testIdx = 0;
-            foreach (UarchTest test in tests)
+            foreach (IUarchTest test in tests)
             {
                 if (testIdx < tests.Count / 2) 
                 {
@@ -167,7 +175,7 @@ namespace AsmGen
         }
 
 
-        static void AddCommonInitCode(StringBuilder sb, List<UarchTest> tests)
+        static void AddCommonInitCode(StringBuilder sb, List<IUarchTest> tests)
         {
             sb.AppendLine("int main(int argc, char *argv[]) {");
             sb.AppendLine($"  uint64_t time_diff_ms, iterations = {iterations}, structIterations = {structTestIterations}, tmp;");
@@ -179,7 +187,7 @@ namespace AsmGen
             sb.AppendLine($"  printf(\"Usage: [test name] [latency list size = {latencyListSize}] [struct iterations = {structTestIterations}]\\n\");");
             sb.AppendLine("  if (argc < 2) {");
             sb.AppendLine("    printf(\"List of tests:\\n\");");
-            foreach (UarchTest test in tests) sb.AppendLine($"    printf(\"  {test.Prefix} - {test.Description}\\n\");");
+            foreach (IUarchTest test in tests) sb.AppendLine($"    printf(\"  {test.Prefix} - {test.Description}\\n\");");
             sb.AppendLine("  }");
             sb.AppendLine("  if (argc > 3) { structIterations = atoi(argv[3]); iterations = 100 * structIterations; }");
             sb.AppendLine("  if (argc == 1 || argc > 1 && strncmp(argv[1], \"branchtest\", 9) != 0) {");

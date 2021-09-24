@@ -16,7 +16,6 @@ namespace AsmGen
 
         public override void GenerateX86GccAsm(StringBuilder sb)
         {
-            // stores are dependent on rdi and rsi, which are results from pointer chasing loads
             string[] dependentStores = new string[4];
             dependentStores[0] = "  mov %rdx, (%r8, %r15, 4)";
             dependentStores[1] = "  mov %rdx, (%r8, %r15, 4)";
@@ -50,17 +49,17 @@ namespace AsmGen
         public override void GenerateArmAsm(StringBuilder sb)
         {
             string[] dependentStores = new string[4];
-            dependentStores[0] = "  str w25, [x2, w25, uxtw #2]";
-            dependentStores[1] = "  str w25, [x2, w25, uxtw #2]";
-            dependentStores[2] = "  str w25, [x2, w25, uxtw #2]";
-            dependentStores[3] = "  str w25, [x2, w25, uxtw #2]";
+            dependentStores[0] = "  str w25, [x2, w15, uxtw #2]";
+            dependentStores[1] = "  str w25, [x2, w15, uxtw #2]";
+            dependentStores[2] = "  str w25, [x2, w15, uxtw #2]";
+            dependentStores[3] = "  str w25, [x2, w15, uxtw #2]";
 
             string[] dependentStores1 = new string[4];
-            dependentStores1[0] = "  str w26, [x2, w26, uxtw #2]";
-            dependentStores1[1] = "  str w26, [x2, w26, uxtw #2]";
-            dependentStores1[2] = "  str w26, [x2, w26, uxtw #2]";
-            dependentStores1[3] = "  str w26, [x2, w26, uxtw #2]";
-            UarchTestHelpers.GenerateArmAsmStructureTestFuncs(sb, this.Counts, this.Prefix, dependentStores, dependentStores1, false);
+            dependentStores1[0] = "  str w26, [x2, w15, uxtw #2]";
+            dependentStores1[1] = "  str w26, [x2, w15, uxtw #2]";
+            dependentStores1[2] = "  str w26, [x2, w15, uxtw #2]";
+            dependentStores1[3] = "  str w26, [x2, w15, uxtw #2]";
+            UarchTestHelpers.GenerateArmAsmDivStructureTestFuncs(sb, this.Counts, this.Prefix, dependentStores, dependentStores1, false);
         }
     }
 }

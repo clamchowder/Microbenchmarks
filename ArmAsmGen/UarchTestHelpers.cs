@@ -161,16 +161,10 @@ namespace AsmGen
                 sb.AppendLine("  mov %rdx, %rdi");
                 sb.AppendLine("  mov %rdx, %rsi");
                 sb.AppendLine("\n" + funcName + "start:");
+
+                // keep dividing list size by itself
                 sb.AppendLine("  xor %rdx, %rdx");
                 sb.AppendLine("  mov %rdi, %rax");
-                sb.AppendLine("  idiv %rsi");
-                sb.AppendLine("  xor %rdx, %rdx");
-                sb.AppendLine("  idiv %rsi");
-                sb.AppendLine("  xor %rdx, %rdx");
-                sb.AppendLine("  idiv %rsi");
-                sb.AppendLine("  xor %rdx, %rdx");
-                sb.AppendLine("  idiv %rsi");
-                sb.AppendLine("  xor %rdx, %rdx");
                 sb.AppendLine("  idiv %rsi");
                 sb.AppendLine("  xor %rdx, %rdx");
                 sb.AppendLine("  idiv %rsi");
@@ -193,14 +187,6 @@ namespace AsmGen
 
                 sb.AppendLine("  xor %rdx, %rdx");
                 sb.AppendLine("  mov %rsi, %rax");
-                sb.AppendLine("  idiv %rdi");
-                sb.AppendLine("  xor %rdx, %rdx");
-                sb.AppendLine("  idiv %rdi");
-                sb.AppendLine("  xor %rdx, %rdx");
-                sb.AppendLine("  idiv %rdi");
-                sb.AppendLine("  xor %rdx, %rdx");
-                sb.AppendLine("  idiv %rdi");
-                sb.AppendLine("  xor %rdx, %rdx");
                 sb.AppendLine("  idiv %rdi");
                 sb.AppendLine("  xor %rdx, %rdx");
                 sb.AppendLine("  idiv %rdi");
@@ -594,14 +580,6 @@ namespace AsmGen
                 sb.AppendLine("  idiv rsi");
                 sb.AppendLine("  xor rdx, rdx");
                 sb.AppendLine("  idiv rsi");
-                sb.AppendLine("  xor rdx, rdx");
-                sb.AppendLine("  idiv rsi");
-                sb.AppendLine("  xor rdx, rdx");
-                sb.AppendLine("  idiv rsi");
-                sb.AppendLine("  xor rdx, rdx");
-                sb.AppendLine("  idiv rsi");
-                sb.AppendLine("  xor rdx, rdx");
-                sb.AppendLine("  idiv rsi");
                 sb.AppendLine("  sub rsi, rax");
                 sb.AppendLine("  inc rsi");
                 int fillerInstrCount = includePtrChasingLoads ? counts[i] - 2 : counts[i];
@@ -613,14 +591,6 @@ namespace AsmGen
 
                 sb.AppendLine("  xor rdx, rdx");
                 sb.AppendLine("  mov rax, rsi");
-                sb.AppendLine("  idiv rdi");
-                sb.AppendLine("  xor rdx, rdx");
-                sb.AppendLine("  idiv rdi");
-                sb.AppendLine("  xor rdx, rdx");
-                sb.AppendLine("  idiv rdi");
-                sb.AppendLine("  xor rdx, rdx");
-                sb.AppendLine("  idiv rdi");
-                sb.AppendLine("  xor rdx, rdx");
                 sb.AppendLine("  idiv rdi");
                 sb.AppendLine("  xor rdx, rdx");
                 sb.AppendLine("  idiv rdi");
@@ -942,89 +912,68 @@ namespace AsmGen
             }
         }
 
-        public static void GenerateArmAsmFpStructureTestFuncs(StringBuilder sb, int[] counts, string funcNamePrefix, string[] fillerInstrs1, string[] fillerInstrs2)
-        {
-            for (int i = 0; i < counts.Length; i++)
-            {
-                string funcName = funcNamePrefix + counts[i];
-
-                // x0 = iteration count, x1 = ptr chasing arr, x2 = fp array
-                sb.AppendLine("\n" + funcName + ":");
-                sb.AppendLine("  sub sp, sp, #0x50");
-                sb.AppendLine("  stp x14, x15, [sp, #0x10]");
-                sb.AppendLine("  stp x12, x13, [sp, #0x20]");
-                sb.AppendLine("  stp x10, x11, [sp, #0x30]");
-                sb.AppendLine("  stp x25, x26, [sp, #0x40]"); ;
-                sb.AppendLine("  ldr s17, [x2]");
-                sb.AppendLine("  ldr s18, [x2, 4]");
-                sb.AppendLine("  ldr s19, [x2, 8]");
-                sb.AppendLine("  ldr s20, [x2, 12]");
-                sb.AppendLine("  ldr s21, [x2, 16]");
-                sb.AppendLine("  mov w25, 0x0");
-                sb.AppendLine("  mov w26, 0x40");
-                sb.AppendLine("\n" + funcName + "start:");
-                sb.AppendLine("  ldr w25, [x1, w25, uxtw #2]"); // current = A[current]
-
-                int fillerInstrCount = counts[i];
-                for (int nopIdx = 0, addIdx = 0; nopIdx < fillerInstrCount; nopIdx++)
-                {
-                    sb.AppendLine(fillerInstrs1[addIdx]);
-                    addIdx = (addIdx + 1) % fillerInstrs1.Length;
-                }
-
-                sb.AppendLine("  ldr w26, [x1, w26, uxtw #2]");
-                for (int nopIdx = 0, addIdx = 0; nopIdx < fillerInstrCount; nopIdx++)
-                {
-                    sb.AppendLine(fillerInstrs2[addIdx]);
-                    addIdx = (addIdx + 1) % fillerInstrs2.Length;
-                }
-
-                sb.AppendLine("  sub x0, x0, 1");
-                sb.AppendLine("  cbnz x0, " + funcName + "start");
-                sb.AppendLine("  ldp x25, x26, [sp, #0x40]");
-                sb.AppendLine("  ldp x10, x11, [sp, #0x30]");
-                sb.AppendLine("  ldp x12, x13, [sp, #0x20]");
-                sb.AppendLine("  ldp x14, x15, [sp, #0x10]");
-                sb.AppendLine("  add sp, sp, #0x50");
-                sb.AppendLine("  ret\n\n");
-            }
-        }
-
         public static void GenerateArmAsmFpSchedTestFuncs(StringBuilder sb, int[] counts, string funcNamePrefix, string[] fillerInstrs1, string[] fillerInstrs2)
         {
+            GenerateArmAsmStructureTestFuncs(sb, 
+                counts, 
+                funcNamePrefix, 
+                fillerInstrs1, 
+                fillerInstrs2, 
+                false, 
+                null,
+                "  ldr s16, [x2, w25, uxtw #2]", 
+                "  ldr s16, [x2, w26, uxtw #2]");
+        }
+
+        public static void GenerateArmAsmDivStructureTestFuncs(StringBuilder sb,
+            int[] counts,
+            string funcNamePrefix,
+            string[] fillerInstrs1,
+            string[] fillerInstrs2,
+            bool includePtrChasingLoads = false,
+            string initInstrs = null)
+        {
             for (int i = 0; i < counts.Length; i++)
             {
                 string funcName = funcNamePrefix + counts[i];
 
-                // x0 = iteration count, x1 = ptr chasing arr, x2 = fp array
+                // args in x0 = iterations, x1 = list size, x2 = list (sink)
                 sb.AppendLine("\n" + funcName + ":");
                 sb.AppendLine("  sub sp, sp, #0x50");
                 sb.AppendLine("  stp x14, x15, [sp, #0x10]");
                 sb.AppendLine("  stp x12, x13, [sp, #0x20]");
                 sb.AppendLine("  stp x10, x11, [sp, #0x30]");
-                sb.AppendLine("  stp x25, x26, [sp, #0x40]"); ;
-                sb.AppendLine("  ldr s17, [x2]");
-                sb.AppendLine("  ldr s18, [x2, 4]");
-                sb.AppendLine("  ldr s19, [x2, 8]");
-                sb.AppendLine("  ldr s20, [x2, 12]");
-                sb.AppendLine("  ldr s21, [x2, 16]");
+                sb.AppendLine("  stp x25, x26, [sp, #0x40]");
+                sb.AppendLine("  mov x15, 1");
+                sb.AppendLine("  mov x14, 2");
+                sb.AppendLine("  mov x13, 3");
+                sb.AppendLine("  mov x12, 4");
+                sb.AppendLine("  mov x11, 5");
+                if (initInstrs != null) sb.AppendLine(initInstrs);
                 sb.AppendLine("  mov w25, 0x0");
                 sb.AppendLine("  mov w26, 0x40");
                 sb.AppendLine("\n" + funcName + "start:");
-                sb.AppendLine("  ldr w25, [x1, w25, uxtw #2]"); // current = A[current]
-                // x2 = ptr to FP array. do a FP load dependent on that
-                sb.AppendLine("  ldr s16, [x2, w25, uxtw #2]");
-
-                int fillerInstrCount = counts[i];
-                for (int nopIdx = 0, addIdx = 0; nopIdx < fillerInstrCount; nopIdx++)
+                sb.AppendLine("  mov w25, w1");
+                sb.AppendLine("  udiv w25, w25, w13");
+                sb.AppendLine("  udiv w25, w25, w13");
+                sb.AppendLine("  udiv w25, w25, w13");
+                sb.AppendLine("  udiv w25, w25, w13");
+                sb.AppendLine("  udiv w25, w25, w13");
+                int fillerInstrCount = includePtrChasingLoads ? counts[i] - 2 : counts[i];
+                for (int instrIdx = 0, addIdx = 0; instrIdx < fillerInstrCount; instrIdx++)
                 {
                     sb.AppendLine(fillerInstrs1[addIdx]);
                     addIdx = (addIdx + 1) % fillerInstrs1.Length;
                 }
 
-                sb.AppendLine("  ldr w26, [x1, w26, uxtw #2]");
-                sb.AppendLine("  ldr s16, [x2, w26, uxtw #2]");
-                for (int nopIdx = 0, addIdx = 0; nopIdx < fillerInstrCount; nopIdx++)
+                sb.AppendLine("  mov w26, w1");
+                sb.AppendLine("  udiv w26, w26, w13");
+                sb.AppendLine("  udiv w26, w26, w13");
+                sb.AppendLine("  udiv w26, w26, w13");
+                sb.AppendLine("  udiv w26, w26, w13");
+                sb.AppendLine("  udiv w26, w26, w13");
+
+                for (int instrIdx = 0, addIdx = 0; instrIdx < fillerInstrCount; instrIdx++)
                 {
                     sb.AppendLine(fillerInstrs2[addIdx]);
                     addIdx = (addIdx + 1) % fillerInstrs2.Length;

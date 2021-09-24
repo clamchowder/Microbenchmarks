@@ -49,13 +49,13 @@ namespace AsmGen
         public override void GenerateArmAsm(StringBuilder sb)
         {
             string[] unrolledAdds = new string[4];
-            unrolledAdds[0] = "  mul x15, x15, x25";
+            unrolledAdds[0] = "  mul x10, x10, x25";
             unrolledAdds[1] = "  mul x14, x14, x25";
             unrolledAdds[2] = "  mul x13, x13, x25";
             unrolledAdds[3] = "  mul x12, x12, x25";
 
             string[] unrolledAdds1 = new string[4];
-            unrolledAdds1[0] = "  mul x15, x15, x26";
+            unrolledAdds1[0] = "  mul x10, x10, x26";
             unrolledAdds1[1] = "  mul x14, x14, x26";
             unrolledAdds1[2] = "  mul x13, x13, x26";
             unrolledAdds1[3] = "  mul x12, x12, x26";

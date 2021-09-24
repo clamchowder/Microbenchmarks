@@ -27,6 +27,10 @@ namespace AsmGen
             dependentStores1[1] = "  mov %r11, (%r8, %rdx, 4)";
             dependentStores1[2] = "  mov %r11, (%r8, %rdx, 4)";
             dependentStores1[3] = "  mov %r11, (%r8, %rdx, 4)";
+
+            // instead of using pointer chasing loads, use a nasty block of chained integer divisions to block retirement
+            // some older/less capable architectures will not reorder loads ahead of stores with unknown addresses,
+            // which breaks the usual technique
             UarchTestHelpers.GenerateX86AsmDivStructureTestFuncs(sb, this.Counts, this.Prefix, dependentStores, dependentStores1, false);
         }
 
@@ -50,17 +54,17 @@ namespace AsmGen
         public override void GenerateArmAsm(StringBuilder sb)
         {
             string[] dependentStores = new string[4];
-            dependentStores[0] = "  str w25, [x2, w25, uxtw #2]";
-            dependentStores[1] = "  str w25, [x2, w25, uxtw #2]";
-            dependentStores[2] = "  str w25, [x2, w25, uxtw #2]";
-            dependentStores[3] = "  str w25, [x2, w25, uxtw #2]";
+            dependentStores[0] = "  str w15, [x2, w25, uxtw #2]";
+            dependentStores[1] = "  str w15, [x2, w25, uxtw #2]";
+            dependentStores[2] = "  str w15, [x2, w25, uxtw #2]";
+            dependentStores[3] = "  str w15, [x2, w25, uxtw #2]";
 
             string[] dependentStores1 = new string[4];
-            dependentStores1[0] = "  str w26, [x2, w26, uxtw #2]";
-            dependentStores1[1] = "  str w26, [x2, w26, uxtw #2]";
-            dependentStores1[2] = "  str w26, [x2, w26, uxtw #2]";
-            dependentStores1[3] = "  str w26, [x2, w26, uxtw #2]";
-            UarchTestHelpers.GenerateArmAsmStructureTestFuncs(sb, this.Counts, this.Prefix, dependentStores, dependentStores1, false);
+            dependentStores1[0] = "  str w15, [x2, w26, uxtw #2]";
+            dependentStores1[1] = "  str w15, [x2, w26, uxtw #2]";
+            dependentStores1[2] = "  str w15, [x2, w26, uxtw #2]";
+            dependentStores1[3] = "  str w15, [x2, w26, uxtw #2]";
+            UarchTestHelpers.GenerateArmAsmDivStructureTestFuncs(sb, this.Counts, this.Prefix, dependentStores, dependentStores1, false);
         }
     }
 }
