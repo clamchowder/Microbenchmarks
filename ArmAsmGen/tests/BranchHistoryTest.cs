@@ -24,6 +24,7 @@ namespace AsmGen
         public BranchHistoryTest()
         {
             Prefix = "branchhist";
+            Description = "Branch predictor pattern recognition";
             FunctionDefinitionParameters = "uint64_t iterations, uint32_t **arr, uint32_t arrLen";
             GetFunctionCallParameters = "structIterations";
             DivideTimeByCount = true;
