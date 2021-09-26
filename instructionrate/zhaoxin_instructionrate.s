@@ -3,6 +3,7 @@
 .global clktest
 .global addtest
 .global addmultest
+.global jmpmultest
 .global noptest
 .global noptest1b
 .global add256int
@@ -34,6 +35,9 @@
 .global mixaddmul128int
 .global mixmul16mul64
 .global mixmul16mul64_21
+
+.global pdeptest
+.global pexttest
 
 /*
   %rdi = arg0 = iteration count
@@ -188,6 +192,93 @@ addtest_loop:
   pop %rcx
   pop %rbx
   ret
+
+jmpmultest:
+  push %rsi
+  push %rbx
+  push %rcx
+  push %rdx
+  push %r8
+  push %r9
+  push %r10
+  push %r11
+  push %r12
+  push %r13
+  push %r14
+  push %r15
+  mov $1, %r8
+  mov $40, %r9
+  xor %rbx, %rbx 
+  xor %rcx, %rcx
+  xor %r10, %r10
+  xor %r11, %r11
+  xor %r12, %r12
+  xor %r13, %r13
+  xor %r14, %r14
+  xor %r15, %r15
+  xor %rsi, %rsi
+  mov %r8, %r10
+  mov %r8, %r11
+  mov %r8, %rsi
+  mov %r8, %rax
+  mov %r8, %rdx
+jmpmultest_loop:
+  cmp %r8, %r9
+  je jmpmultest_jellydonut
+  imul %r8d, %r10d
+
+  cmp %r8, %r9
+  je jmpmultest_jellydonut  
+  imul %r8d, %esi
+
+  cmp %r8, %r9
+  je jmpmultest_jellydonut    
+  imul %r8d, %ebx
+
+  cmp %r8, %r9
+  je jmpmultest_jellydonut      
+  imul %r8d, %edx 
+  
+  cmp %r8, %r9
+  je jmpmultest_jellydonut       
+  imul %r8d, %r10d
+  
+  cmp %r8, %r9
+  je jmpmultest_jellydonut        
+  imul %r8d, %esi
+  
+  cmp %r8, %r9
+  je jmpmultest_jellydonut         
+  imul %r8d, %ebx
+
+  cmp %r8, %r9
+  je jmpmultest_jellydonut           
+  imul %r8d, %edx  
+
+  cmp %r8, %r9
+  je jmpmultest_jellydonut            
+  imul %r8d, %r15d  
+
+  cmp %r8, %r9
+  je jmpmultest_jellydonut             
+  imul %r8d, %r14d  
+  
+  sub %r9, %rdi
+  jnz addmultest_loop
+jmpmultest_jellydonut:
+  pop %r15
+  pop %r14
+  pop %r13
+  pop %r12
+  pop %r11
+  pop %r10
+  pop %r9
+  pop %r8 
+  pop %rdx
+  pop %rcx
+  pop %rbx
+  pop %rsi
+  ret 
 
 addmultest:
   push %rsi
@@ -1568,3 +1659,116 @@ store256_loop:
   pop %rcx
   pop %rbx
   ret  
+
+pdeptest:
+  push %rbx
+  push %rcx
+  push %r8
+  push %r9
+  push %r10
+  push %r11
+  push %r12
+  push %r13
+  push %r14
+  push %r15
+  mov $1, %r8
+  mov $20, %r9
+  xor %rbx, %rbx 
+  xor %rcx, %rcx
+  xor %r10, %r10
+  xor %r11, %r11
+  xor %r12, %r12
+  xor %r13, %r13
+  xor %r14, %r14
+  xor %r15, %r15
+pdeptest_loop:
+  pdep %r8, %r15, %r15
+  pdep %r8, %r14, %r14
+  pdep %r8, %r13, %r13
+  pdep %r8, %r12, %r12
+  pdep %r8, %r11, %r11
+  pdep %r8, %r10, %r10
+  pdep %r8, %rcx, %rcx
+  pdep %r8, %rbx, %rbx
+  pdep %r8, %r15, %r15
+  pdep %r8, %r14, %r14
+  pdep %r8, %r13, %r13
+  pdep %r8, %r12, %r12
+  pdep %r8, %r11, %r11
+  pdep %r8, %r10, %r10
+  pdep %r8, %rcx, %rcx
+  pdep %r8, %rbx, %rbx 
+  pdep %r8, %r15, %r15
+  pdep %r8, %r14, %r14
+  pdep %r8, %r13, %r13
+  pdep %r8, %r12, %r12
+  sub %r9, %rdi
+  jnz pdeptest_loop
+  pop %r15
+  pop %r14
+  pop %r13
+  pop %r12
+  pop %r11
+  pop %r10
+  pop %r9
+  pop %r8 
+  pop %rcx
+  pop %rbx
+  ret
+
+
+pexttest:
+  push %rbx
+  push %rcx
+  push %r8
+  push %r9
+  push %r10
+  push %r11
+  push %r12
+  push %r13
+  push %r14
+  push %r15
+  mov $1, %r8
+  mov $20, %r9
+  xor %rbx, %rbx 
+  xor %rcx, %rcx
+  xor %r10, %r10
+  xor %r11, %r11
+  xor %r12, %r12
+  xor %r13, %r13
+  xor %r14, %r14
+  xor %r15, %r15
+pexttest_loop:
+  pext %r8, %r15, %r15
+  pext %r8, %r14, %r14
+  pext %r8, %r13, %r13
+  pext %r8, %r12, %r12
+  pext %r8, %r11, %r11
+  pext %r8, %r10, %r10
+  pext %r8, %rcx, %rcx
+  pext %r8, %rbx, %rbx
+  pext %r8, %r15, %r15
+  pext %r8, %r14, %r14
+  pext %r8, %r13, %r13
+  pext %r8, %r12, %r12
+  pext %r8, %r11, %r11
+  pext %r8, %r10, %r10
+  pext %r8, %rcx, %rcx
+  pext %r8, %rbx, %rbx 
+  pext %r8, %r15, %r15
+  pext %r8, %r14, %r14
+  pext %r8, %r13, %r13
+  pext %r8, %r12, %r12
+  sub %r9, %rdi
+  jnz pexttest_loop
+  pop %r15
+  pop %r14
+  pop %r13
+  pop %r12
+  pop %r11
+  pop %r10
+  pop %r9
+  pop %r8 
+  pop %rcx
+  pop %rbx
+  ret

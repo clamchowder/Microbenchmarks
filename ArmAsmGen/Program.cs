@@ -52,6 +52,7 @@ namespace AsmGen
             tests.Add(new MixJmpMulSchedTest(2, 128, 1));
             tests.Add(new MixMulRorSchedTest(2, 128, 1));
             tests.Add(new BranchHistoryTest());
+            tests.Add(new IndirectBranchTest());
 
             StringBuilder cSourceFile = new StringBuilder();
             StringBuilder vsCSourceFile = new StringBuilder();
@@ -169,8 +170,8 @@ namespace AsmGen
                     File.Delete(targetPath);
                 }
 
-                File.Copy(fname, targetPath);
-                Console.WriteLine("Copied " + fname);
+                File.Move(fname, targetPath);
+                Console.WriteLine("Moved " + fname);
             }
         }
 

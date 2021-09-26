@@ -6,6 +6,9 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <None Update="CFiles\IndirectBranchTestBlock.c">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
     <None Update="CFiles\BranchhistTestBlock.c">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>

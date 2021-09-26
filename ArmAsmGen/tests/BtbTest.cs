@@ -53,6 +53,9 @@ namespace AsmGen
                 sb.AppendLine("  dec %rdi");
                 sb.AppendLine("  jne " + funcName);
                 sb.AppendLine("  ret\n\n");
+
+                // don't let it get too close to the next branch
+                sb.AppendLine(paddingAlign);
             }
         }
 
@@ -94,9 +97,13 @@ namespace AsmGen
                     sb.AppendLine(labelName + ":");
                 }
 
+                sb.AppendLine(paddingAlign);
                 sb.AppendLine("  dec rcx");
                 sb.AppendLine("  jne " + funcName);
                 sb.AppendLine("  ret\n\n");
+
+                // don't let it get too close to the next branch
+                sb.AppendLine(paddingAlign);
             }
         }
 
@@ -130,9 +137,13 @@ namespace AsmGen
                     sb.AppendLine(labelName + ":");
                 }
 
+                sb.AppendLine(paddingAlign);
                 sb.AppendLine("  sub x0, x0, 1");
                 sb.AppendLine("  cbnz x0, " + funcName);
                 sb.AppendLine("  ret\n\n");
+
+                // don't let it get too close to the next branch
+                sb.AppendLine(paddingAlign);
             }
         }
     }

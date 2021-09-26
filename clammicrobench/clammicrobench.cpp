@@ -4,6 +4,7 @@
 #include <stdlib.h>
 
 #include <string.h>
+#include <time.h>
 
 extern "C" uint64_t rob4(uint64_t iterations, int *arr);
 extern "C" uint64_t rob5(uint64_t iterations, int *arr);
@@ -5616,6 +5617,679 @@ extern "C" uint64_t add256sched253(uint64_t iterations, int *arr, int *arr2);
 extern "C" uint64_t add256sched254(uint64_t iterations, int *arr, int *arr2);
 extern "C" uint64_t add256sched255(uint64_t iterations, int *arr, int *arr2);
 extern "C" uint64_t add256sched256(uint64_t iterations, int *arr, int *arr2);
+extern "C" uint64_t btb4n1(uint64_t iterations);
+extern "C" uint64_t btb4n2(uint64_t iterations);
+extern "C" uint64_t btb4n4(uint64_t iterations);
+extern "C" uint64_t btb4n8(uint64_t iterations);
+extern "C" uint64_t btb4n16(uint64_t iterations);
+extern "C" uint64_t btb4n32(uint64_t iterations);
+extern "C" uint64_t btb4n64(uint64_t iterations);
+extern "C" uint64_t btb4n128(uint64_t iterations);
+extern "C" uint64_t btb4n256(uint64_t iterations);
+extern "C" uint64_t btb4n512(uint64_t iterations);
+extern "C" uint64_t btb4n1024(uint64_t iterations);
+extern "C" uint64_t btb4n1536(uint64_t iterations);
+extern "C" uint64_t btb4n2048(uint64_t iterations);
+extern "C" uint64_t btb4n3072(uint64_t iterations);
+extern "C" uint64_t btb4n4096(uint64_t iterations);
+extern "C" uint64_t btb4n5120(uint64_t iterations);
+extern "C" uint64_t btb4n6144(uint64_t iterations);
+extern "C" uint64_t btb4n7168(uint64_t iterations);
+extern "C" uint64_t btb4n8192(uint64_t iterations);
+extern "C" uint64_t btb4n10240(uint64_t iterations);
+extern "C" uint64_t btb4n16384(uint64_t iterations);
+extern "C" uint64_t btb4n32768(uint64_t iterations);
+extern "C" uint64_t btb8n1(uint64_t iterations);
+extern "C" uint64_t btb8n2(uint64_t iterations);
+extern "C" uint64_t btb8n4(uint64_t iterations);
+extern "C" uint64_t btb8n8(uint64_t iterations);
+extern "C" uint64_t btb8n16(uint64_t iterations);
+extern "C" uint64_t btb8n32(uint64_t iterations);
+extern "C" uint64_t btb8n64(uint64_t iterations);
+extern "C" uint64_t btb8n128(uint64_t iterations);
+extern "C" uint64_t btb8n256(uint64_t iterations);
+extern "C" uint64_t btb8n512(uint64_t iterations);
+extern "C" uint64_t btb8n1024(uint64_t iterations);
+extern "C" uint64_t btb8n1536(uint64_t iterations);
+extern "C" uint64_t btb8n2048(uint64_t iterations);
+extern "C" uint64_t btb8n3072(uint64_t iterations);
+extern "C" uint64_t btb8n4096(uint64_t iterations);
+extern "C" uint64_t btb8n5120(uint64_t iterations);
+extern "C" uint64_t btb8n6144(uint64_t iterations);
+extern "C" uint64_t btb8n7168(uint64_t iterations);
+extern "C" uint64_t btb8n8192(uint64_t iterations);
+extern "C" uint64_t btb8n10240(uint64_t iterations);
+extern "C" uint64_t btb8n16384(uint64_t iterations);
+extern "C" uint64_t btb8n32768(uint64_t iterations);
+extern "C" uint64_t btb16n1(uint64_t iterations);
+extern "C" uint64_t btb16n2(uint64_t iterations);
+extern "C" uint64_t btb16n4(uint64_t iterations);
+extern "C" uint64_t btb16n8(uint64_t iterations);
+extern "C" uint64_t btb16n16(uint64_t iterations);
+extern "C" uint64_t btb16n32(uint64_t iterations);
+extern "C" uint64_t btb16n64(uint64_t iterations);
+extern "C" uint64_t btb16n128(uint64_t iterations);
+extern "C" uint64_t btb16n256(uint64_t iterations);
+extern "C" uint64_t btb16n512(uint64_t iterations);
+extern "C" uint64_t btb16n1024(uint64_t iterations);
+extern "C" uint64_t btb16n1536(uint64_t iterations);
+extern "C" uint64_t btb16n2048(uint64_t iterations);
+extern "C" uint64_t btb16n3072(uint64_t iterations);
+extern "C" uint64_t btb16n4096(uint64_t iterations);
+extern "C" uint64_t btb16n5120(uint64_t iterations);
+extern "C" uint64_t btb16n6144(uint64_t iterations);
+extern "C" uint64_t btb16n7168(uint64_t iterations);
+extern "C" uint64_t btb16n8192(uint64_t iterations);
+extern "C" uint64_t btb16n10240(uint64_t iterations);
+extern "C" uint64_t btb16n16384(uint64_t iterations);
+extern "C" uint64_t btb16n32768(uint64_t iterations);
+extern "C" uint64_t mixmuljmpsched2(uint64_t iterations, int *arr);
+extern "C" uint64_t mixmuljmpsched3(uint64_t iterations, int *arr);
+extern "C" uint64_t mixmuljmpsched4(uint64_t iterations, int *arr);
+extern "C" uint64_t mixmuljmpsched5(uint64_t iterations, int *arr);
+extern "C" uint64_t mixmuljmpsched6(uint64_t iterations, int *arr);
+extern "C" uint64_t mixmuljmpsched7(uint64_t iterations, int *arr);
+extern "C" uint64_t mixmuljmpsched8(uint64_t iterations, int *arr);
+extern "C" uint64_t mixmuljmpsched9(uint64_t iterations, int *arr);
+extern "C" uint64_t mixmuljmpsched10(uint64_t iterations, int *arr);
+extern "C" uint64_t mixmuljmpsched11(uint64_t iterations, int *arr);
+extern "C" uint64_t mixmuljmpsched12(uint64_t iterations, int *arr);
+extern "C" uint64_t mixmuljmpsched13(uint64_t iterations, int *arr);
+extern "C" uint64_t mixmuljmpsched14(uint64_t iterations, int *arr);
+extern "C" uint64_t mixmuljmpsched15(uint64_t iterations, int *arr);
+extern "C" uint64_t mixmuljmpsched16(uint64_t iterations, int *arr);
+extern "C" uint64_t mixmuljmpsched17(uint64_t iterations, int *arr);
+extern "C" uint64_t mixmuljmpsched18(uint64_t iterations, int *arr);
+extern "C" uint64_t mixmuljmpsched19(uint64_t iterations, int *arr);
+extern "C" uint64_t mixmuljmpsched20(uint64_t iterations, int *arr);
+extern "C" uint64_t mixmuljmpsched21(uint64_t iterations, int *arr);
+extern "C" uint64_t mixmuljmpsched22(uint64_t iterations, int *arr);
+extern "C" uint64_t mixmuljmpsched23(uint64_t iterations, int *arr);
+extern "C" uint64_t mixmuljmpsched24(uint64_t iterations, int *arr);
+extern "C" uint64_t mixmuljmpsched25(uint64_t iterations, int *arr);
+extern "C" uint64_t mixmuljmpsched26(uint64_t iterations, int *arr);
+extern "C" uint64_t mixmuljmpsched27(uint64_t iterations, int *arr);
+extern "C" uint64_t mixmuljmpsched28(uint64_t iterations, int *arr);
+extern "C" uint64_t mixmuljmpsched29(uint64_t iterations, int *arr);
+extern "C" uint64_t mixmuljmpsched30(uint64_t iterations, int *arr);
+extern "C" uint64_t mixmuljmpsched31(uint64_t iterations, int *arr);
+extern "C" uint64_t mixmuljmpsched32(uint64_t iterations, int *arr);
+extern "C" uint64_t mixmuljmpsched33(uint64_t iterations, int *arr);
+extern "C" uint64_t mixmuljmpsched34(uint64_t iterations, int *arr);
+extern "C" uint64_t mixmuljmpsched35(uint64_t iterations, int *arr);
+extern "C" uint64_t mixmuljmpsched36(uint64_t iterations, int *arr);
+extern "C" uint64_t mixmuljmpsched37(uint64_t iterations, int *arr);
+extern "C" uint64_t mixmuljmpsched38(uint64_t iterations, int *arr);
+extern "C" uint64_t mixmuljmpsched39(uint64_t iterations, int *arr);
+extern "C" uint64_t mixmuljmpsched40(uint64_t iterations, int *arr);
+extern "C" uint64_t mixmuljmpsched41(uint64_t iterations, int *arr);
+extern "C" uint64_t mixmuljmpsched42(uint64_t iterations, int *arr);
+extern "C" uint64_t mixmuljmpsched43(uint64_t iterations, int *arr);
+extern "C" uint64_t mixmuljmpsched44(uint64_t iterations, int *arr);
+extern "C" uint64_t mixmuljmpsched45(uint64_t iterations, int *arr);
+extern "C" uint64_t mixmuljmpsched46(uint64_t iterations, int *arr);
+extern "C" uint64_t mixmuljmpsched47(uint64_t iterations, int *arr);
+extern "C" uint64_t mixmuljmpsched48(uint64_t iterations, int *arr);
+extern "C" uint64_t mixmuljmpsched49(uint64_t iterations, int *arr);
+extern "C" uint64_t mixmuljmpsched50(uint64_t iterations, int *arr);
+extern "C" uint64_t mixmuljmpsched51(uint64_t iterations, int *arr);
+extern "C" uint64_t mixmuljmpsched52(uint64_t iterations, int *arr);
+extern "C" uint64_t mixmuljmpsched53(uint64_t iterations, int *arr);
+extern "C" uint64_t mixmuljmpsched54(uint64_t iterations, int *arr);
+extern "C" uint64_t mixmuljmpsched55(uint64_t iterations, int *arr);
+extern "C" uint64_t mixmuljmpsched56(uint64_t iterations, int *arr);
+extern "C" uint64_t mixmuljmpsched57(uint64_t iterations, int *arr);
+extern "C" uint64_t mixmuljmpsched58(uint64_t iterations, int *arr);
+extern "C" uint64_t mixmuljmpsched59(uint64_t iterations, int *arr);
+extern "C" uint64_t mixmuljmpsched60(uint64_t iterations, int *arr);
+extern "C" uint64_t mixmuljmpsched61(uint64_t iterations, int *arr);
+extern "C" uint64_t mixmuljmpsched62(uint64_t iterations, int *arr);
+extern "C" uint64_t mixmuljmpsched63(uint64_t iterations, int *arr);
+extern "C" uint64_t mixmuljmpsched64(uint64_t iterations, int *arr);
+extern "C" uint64_t mixmuljmpsched65(uint64_t iterations, int *arr);
+extern "C" uint64_t mixmuljmpsched66(uint64_t iterations, int *arr);
+extern "C" uint64_t mixmuljmpsched67(uint64_t iterations, int *arr);
+extern "C" uint64_t mixmuljmpsched68(uint64_t iterations, int *arr);
+extern "C" uint64_t mixmuljmpsched69(uint64_t iterations, int *arr);
+extern "C" uint64_t mixmuljmpsched70(uint64_t iterations, int *arr);
+extern "C" uint64_t mixmuljmpsched71(uint64_t iterations, int *arr);
+extern "C" uint64_t mixmuljmpsched72(uint64_t iterations, int *arr);
+extern "C" uint64_t mixmuljmpsched73(uint64_t iterations, int *arr);
+extern "C" uint64_t mixmuljmpsched74(uint64_t iterations, int *arr);
+extern "C" uint64_t mixmuljmpsched75(uint64_t iterations, int *arr);
+extern "C" uint64_t mixmuljmpsched76(uint64_t iterations, int *arr);
+extern "C" uint64_t mixmuljmpsched77(uint64_t iterations, int *arr);
+extern "C" uint64_t mixmuljmpsched78(uint64_t iterations, int *arr);
+extern "C" uint64_t mixmuljmpsched79(uint64_t iterations, int *arr);
+extern "C" uint64_t mixmuljmpsched80(uint64_t iterations, int *arr);
+extern "C" uint64_t mixmuljmpsched81(uint64_t iterations, int *arr);
+extern "C" uint64_t mixmuljmpsched82(uint64_t iterations, int *arr);
+extern "C" uint64_t mixmuljmpsched83(uint64_t iterations, int *arr);
+extern "C" uint64_t mixmuljmpsched84(uint64_t iterations, int *arr);
+extern "C" uint64_t mixmuljmpsched85(uint64_t iterations, int *arr);
+extern "C" uint64_t mixmuljmpsched86(uint64_t iterations, int *arr);
+extern "C" uint64_t mixmuljmpsched87(uint64_t iterations, int *arr);
+extern "C" uint64_t mixmuljmpsched88(uint64_t iterations, int *arr);
+extern "C" uint64_t mixmuljmpsched89(uint64_t iterations, int *arr);
+extern "C" uint64_t mixmuljmpsched90(uint64_t iterations, int *arr);
+extern "C" uint64_t mixmuljmpsched91(uint64_t iterations, int *arr);
+extern "C" uint64_t mixmuljmpsched92(uint64_t iterations, int *arr);
+extern "C" uint64_t mixmuljmpsched93(uint64_t iterations, int *arr);
+extern "C" uint64_t mixmuljmpsched94(uint64_t iterations, int *arr);
+extern "C" uint64_t mixmuljmpsched95(uint64_t iterations, int *arr);
+extern "C" uint64_t mixmuljmpsched96(uint64_t iterations, int *arr);
+extern "C" uint64_t mixmuljmpsched97(uint64_t iterations, int *arr);
+extern "C" uint64_t mixmuljmpsched98(uint64_t iterations, int *arr);
+extern "C" uint64_t mixmuljmpsched99(uint64_t iterations, int *arr);
+extern "C" uint64_t mixmuljmpsched100(uint64_t iterations, int *arr);
+extern "C" uint64_t mixmuljmpsched101(uint64_t iterations, int *arr);
+extern "C" uint64_t mixmuljmpsched102(uint64_t iterations, int *arr);
+extern "C" uint64_t mixmuljmpsched103(uint64_t iterations, int *arr);
+extern "C" uint64_t mixmuljmpsched104(uint64_t iterations, int *arr);
+extern "C" uint64_t mixmuljmpsched105(uint64_t iterations, int *arr);
+extern "C" uint64_t mixmuljmpsched106(uint64_t iterations, int *arr);
+extern "C" uint64_t mixmuljmpsched107(uint64_t iterations, int *arr);
+extern "C" uint64_t mixmuljmpsched108(uint64_t iterations, int *arr);
+extern "C" uint64_t mixmuljmpsched109(uint64_t iterations, int *arr);
+extern "C" uint64_t mixmuljmpsched110(uint64_t iterations, int *arr);
+extern "C" uint64_t mixmuljmpsched111(uint64_t iterations, int *arr);
+extern "C" uint64_t mixmuljmpsched112(uint64_t iterations, int *arr);
+extern "C" uint64_t mixmuljmpsched113(uint64_t iterations, int *arr);
+extern "C" uint64_t mixmuljmpsched114(uint64_t iterations, int *arr);
+extern "C" uint64_t mixmuljmpsched115(uint64_t iterations, int *arr);
+extern "C" uint64_t mixmuljmpsched116(uint64_t iterations, int *arr);
+extern "C" uint64_t mixmuljmpsched117(uint64_t iterations, int *arr);
+extern "C" uint64_t mixmuljmpsched118(uint64_t iterations, int *arr);
+extern "C" uint64_t mixmuljmpsched119(uint64_t iterations, int *arr);
+extern "C" uint64_t mixmuljmpsched120(uint64_t iterations, int *arr);
+extern "C" uint64_t mixmuljmpsched121(uint64_t iterations, int *arr);
+extern "C" uint64_t mixmuljmpsched122(uint64_t iterations, int *arr);
+extern "C" uint64_t mixmuljmpsched123(uint64_t iterations, int *arr);
+extern "C" uint64_t mixmuljmpsched124(uint64_t iterations, int *arr);
+extern "C" uint64_t mixmuljmpsched125(uint64_t iterations, int *arr);
+extern "C" uint64_t mixmuljmpsched126(uint64_t iterations, int *arr);
+extern "C" uint64_t mixmuljmpsched127(uint64_t iterations, int *arr);
+extern "C" uint64_t mixmuljmpsched128(uint64_t iterations, int *arr);
+extern "C" uint64_t mixmulrorsched2(uint64_t iterations, int *arr);
+extern "C" uint64_t mixmulrorsched3(uint64_t iterations, int *arr);
+extern "C" uint64_t mixmulrorsched4(uint64_t iterations, int *arr);
+extern "C" uint64_t mixmulrorsched5(uint64_t iterations, int *arr);
+extern "C" uint64_t mixmulrorsched6(uint64_t iterations, int *arr);
+extern "C" uint64_t mixmulrorsched7(uint64_t iterations, int *arr);
+extern "C" uint64_t mixmulrorsched8(uint64_t iterations, int *arr);
+extern "C" uint64_t mixmulrorsched9(uint64_t iterations, int *arr);
+extern "C" uint64_t mixmulrorsched10(uint64_t iterations, int *arr);
+extern "C" uint64_t mixmulrorsched11(uint64_t iterations, int *arr);
+extern "C" uint64_t mixmulrorsched12(uint64_t iterations, int *arr);
+extern "C" uint64_t mixmulrorsched13(uint64_t iterations, int *arr);
+extern "C" uint64_t mixmulrorsched14(uint64_t iterations, int *arr);
+extern "C" uint64_t mixmulrorsched15(uint64_t iterations, int *arr);
+extern "C" uint64_t mixmulrorsched16(uint64_t iterations, int *arr);
+extern "C" uint64_t mixmulrorsched17(uint64_t iterations, int *arr);
+extern "C" uint64_t mixmulrorsched18(uint64_t iterations, int *arr);
+extern "C" uint64_t mixmulrorsched19(uint64_t iterations, int *arr);
+extern "C" uint64_t mixmulrorsched20(uint64_t iterations, int *arr);
+extern "C" uint64_t mixmulrorsched21(uint64_t iterations, int *arr);
+extern "C" uint64_t mixmulrorsched22(uint64_t iterations, int *arr);
+extern "C" uint64_t mixmulrorsched23(uint64_t iterations, int *arr);
+extern "C" uint64_t mixmulrorsched24(uint64_t iterations, int *arr);
+extern "C" uint64_t mixmulrorsched25(uint64_t iterations, int *arr);
+extern "C" uint64_t mixmulrorsched26(uint64_t iterations, int *arr);
+extern "C" uint64_t mixmulrorsched27(uint64_t iterations, int *arr);
+extern "C" uint64_t mixmulrorsched28(uint64_t iterations, int *arr);
+extern "C" uint64_t mixmulrorsched29(uint64_t iterations, int *arr);
+extern "C" uint64_t mixmulrorsched30(uint64_t iterations, int *arr);
+extern "C" uint64_t mixmulrorsched31(uint64_t iterations, int *arr);
+extern "C" uint64_t mixmulrorsched32(uint64_t iterations, int *arr);
+extern "C" uint64_t mixmulrorsched33(uint64_t iterations, int *arr);
+extern "C" uint64_t mixmulrorsched34(uint64_t iterations, int *arr);
+extern "C" uint64_t mixmulrorsched35(uint64_t iterations, int *arr);
+extern "C" uint64_t mixmulrorsched36(uint64_t iterations, int *arr);
+extern "C" uint64_t mixmulrorsched37(uint64_t iterations, int *arr);
+extern "C" uint64_t mixmulrorsched38(uint64_t iterations, int *arr);
+extern "C" uint64_t mixmulrorsched39(uint64_t iterations, int *arr);
+extern "C" uint64_t mixmulrorsched40(uint64_t iterations, int *arr);
+extern "C" uint64_t mixmulrorsched41(uint64_t iterations, int *arr);
+extern "C" uint64_t mixmulrorsched42(uint64_t iterations, int *arr);
+extern "C" uint64_t mixmulrorsched43(uint64_t iterations, int *arr);
+extern "C" uint64_t mixmulrorsched44(uint64_t iterations, int *arr);
+extern "C" uint64_t mixmulrorsched45(uint64_t iterations, int *arr);
+extern "C" uint64_t mixmulrorsched46(uint64_t iterations, int *arr);
+extern "C" uint64_t mixmulrorsched47(uint64_t iterations, int *arr);
+extern "C" uint64_t mixmulrorsched48(uint64_t iterations, int *arr);
+extern "C" uint64_t mixmulrorsched49(uint64_t iterations, int *arr);
+extern "C" uint64_t mixmulrorsched50(uint64_t iterations, int *arr);
+extern "C" uint64_t mixmulrorsched51(uint64_t iterations, int *arr);
+extern "C" uint64_t mixmulrorsched52(uint64_t iterations, int *arr);
+extern "C" uint64_t mixmulrorsched53(uint64_t iterations, int *arr);
+extern "C" uint64_t mixmulrorsched54(uint64_t iterations, int *arr);
+extern "C" uint64_t mixmulrorsched55(uint64_t iterations, int *arr);
+extern "C" uint64_t mixmulrorsched56(uint64_t iterations, int *arr);
+extern "C" uint64_t mixmulrorsched57(uint64_t iterations, int *arr);
+extern "C" uint64_t mixmulrorsched58(uint64_t iterations, int *arr);
+extern "C" uint64_t mixmulrorsched59(uint64_t iterations, int *arr);
+extern "C" uint64_t mixmulrorsched60(uint64_t iterations, int *arr);
+extern "C" uint64_t mixmulrorsched61(uint64_t iterations, int *arr);
+extern "C" uint64_t mixmulrorsched62(uint64_t iterations, int *arr);
+extern "C" uint64_t mixmulrorsched63(uint64_t iterations, int *arr);
+extern "C" uint64_t mixmulrorsched64(uint64_t iterations, int *arr);
+extern "C" uint64_t mixmulrorsched65(uint64_t iterations, int *arr);
+extern "C" uint64_t mixmulrorsched66(uint64_t iterations, int *arr);
+extern "C" uint64_t mixmulrorsched67(uint64_t iterations, int *arr);
+extern "C" uint64_t mixmulrorsched68(uint64_t iterations, int *arr);
+extern "C" uint64_t mixmulrorsched69(uint64_t iterations, int *arr);
+extern "C" uint64_t mixmulrorsched70(uint64_t iterations, int *arr);
+extern "C" uint64_t mixmulrorsched71(uint64_t iterations, int *arr);
+extern "C" uint64_t mixmulrorsched72(uint64_t iterations, int *arr);
+extern "C" uint64_t mixmulrorsched73(uint64_t iterations, int *arr);
+extern "C" uint64_t mixmulrorsched74(uint64_t iterations, int *arr);
+extern "C" uint64_t mixmulrorsched75(uint64_t iterations, int *arr);
+extern "C" uint64_t mixmulrorsched76(uint64_t iterations, int *arr);
+extern "C" uint64_t mixmulrorsched77(uint64_t iterations, int *arr);
+extern "C" uint64_t mixmulrorsched78(uint64_t iterations, int *arr);
+extern "C" uint64_t mixmulrorsched79(uint64_t iterations, int *arr);
+extern "C" uint64_t mixmulrorsched80(uint64_t iterations, int *arr);
+extern "C" uint64_t mixmulrorsched81(uint64_t iterations, int *arr);
+extern "C" uint64_t mixmulrorsched82(uint64_t iterations, int *arr);
+extern "C" uint64_t mixmulrorsched83(uint64_t iterations, int *arr);
+extern "C" uint64_t mixmulrorsched84(uint64_t iterations, int *arr);
+extern "C" uint64_t mixmulrorsched85(uint64_t iterations, int *arr);
+extern "C" uint64_t mixmulrorsched86(uint64_t iterations, int *arr);
+extern "C" uint64_t mixmulrorsched87(uint64_t iterations, int *arr);
+extern "C" uint64_t mixmulrorsched88(uint64_t iterations, int *arr);
+extern "C" uint64_t mixmulrorsched89(uint64_t iterations, int *arr);
+extern "C" uint64_t mixmulrorsched90(uint64_t iterations, int *arr);
+extern "C" uint64_t mixmulrorsched91(uint64_t iterations, int *arr);
+extern "C" uint64_t mixmulrorsched92(uint64_t iterations, int *arr);
+extern "C" uint64_t mixmulrorsched93(uint64_t iterations, int *arr);
+extern "C" uint64_t mixmulrorsched94(uint64_t iterations, int *arr);
+extern "C" uint64_t mixmulrorsched95(uint64_t iterations, int *arr);
+extern "C" uint64_t mixmulrorsched96(uint64_t iterations, int *arr);
+extern "C" uint64_t mixmulrorsched97(uint64_t iterations, int *arr);
+extern "C" uint64_t mixmulrorsched98(uint64_t iterations, int *arr);
+extern "C" uint64_t mixmulrorsched99(uint64_t iterations, int *arr);
+extern "C" uint64_t mixmulrorsched100(uint64_t iterations, int *arr);
+extern "C" uint64_t mixmulrorsched101(uint64_t iterations, int *arr);
+extern "C" uint64_t mixmulrorsched102(uint64_t iterations, int *arr);
+extern "C" uint64_t mixmulrorsched103(uint64_t iterations, int *arr);
+extern "C" uint64_t mixmulrorsched104(uint64_t iterations, int *arr);
+extern "C" uint64_t mixmulrorsched105(uint64_t iterations, int *arr);
+extern "C" uint64_t mixmulrorsched106(uint64_t iterations, int *arr);
+extern "C" uint64_t mixmulrorsched107(uint64_t iterations, int *arr);
+extern "C" uint64_t mixmulrorsched108(uint64_t iterations, int *arr);
+extern "C" uint64_t mixmulrorsched109(uint64_t iterations, int *arr);
+extern "C" uint64_t mixmulrorsched110(uint64_t iterations, int *arr);
+extern "C" uint64_t mixmulrorsched111(uint64_t iterations, int *arr);
+extern "C" uint64_t mixmulrorsched112(uint64_t iterations, int *arr);
+extern "C" uint64_t mixmulrorsched113(uint64_t iterations, int *arr);
+extern "C" uint64_t mixmulrorsched114(uint64_t iterations, int *arr);
+extern "C" uint64_t mixmulrorsched115(uint64_t iterations, int *arr);
+extern "C" uint64_t mixmulrorsched116(uint64_t iterations, int *arr);
+extern "C" uint64_t mixmulrorsched117(uint64_t iterations, int *arr);
+extern "C" uint64_t mixmulrorsched118(uint64_t iterations, int *arr);
+extern "C" uint64_t mixmulrorsched119(uint64_t iterations, int *arr);
+extern "C" uint64_t mixmulrorsched120(uint64_t iterations, int *arr);
+extern "C" uint64_t mixmulrorsched121(uint64_t iterations, int *arr);
+extern "C" uint64_t mixmulrorsched122(uint64_t iterations, int *arr);
+extern "C" uint64_t mixmulrorsched123(uint64_t iterations, int *arr);
+extern "C" uint64_t mixmulrorsched124(uint64_t iterations, int *arr);
+extern "C" uint64_t mixmulrorsched125(uint64_t iterations, int *arr);
+extern "C" uint64_t mixmulrorsched126(uint64_t iterations, int *arr);
+extern "C" uint64_t mixmulrorsched127(uint64_t iterations, int *arr);
+extern "C" uint64_t mixmulrorsched128(uint64_t iterations, int *arr);
+extern "C" uint64_t branchhist1(uint64_t iterations, uint32_t **arr, uint32_t arrLen);
+extern "C" uint64_t branchhist2(uint64_t iterations, uint32_t **arr, uint32_t arrLen);
+extern "C" uint64_t branchhist4(uint64_t iterations, uint32_t **arr, uint32_t arrLen);
+extern "C" uint64_t branchhist8(uint64_t iterations, uint32_t **arr, uint32_t arrLen);
+extern "C" uint64_t branchhist16(uint64_t iterations, uint32_t **arr, uint32_t arrLen);
+extern "C" uint64_t branchhist32(uint64_t iterations, uint32_t **arr, uint32_t arrLen);
+extern "C" uint64_t branchhist64(uint64_t iterations, uint32_t **arr, uint32_t arrLen);
+extern "C" uint64_t branchhist128(uint64_t iterations, uint32_t **arr, uint32_t arrLen);
+extern "C" uint64_t branchhist256(uint64_t iterations, uint32_t **arr, uint32_t arrLen);
+extern "C" uint64_t branchhist512(uint64_t iterations, uint32_t **arr, uint32_t arrLen);
+uint32_t maxBranchCount = 10;
+uint32_t branchCounts[10] = {  1, 2, 4, 8, 16, 32, 64, 128, 256, 512 };
+uint32_t branchHistoryLengths[30] = {  2, 4, 8, 12, 16, 24, 32, 48, 64, 96, 128, 192, 256, 512, 600, 768, 1024, 1536, 2048, 3072, 4096, 5120, 6144, 8192, 10240, 12288, 16384, 24567, 32768, 65536 };
+uint64_t (*branchtestFuncArr[10])(uint64_t iterations, uint32_t **arr, uint32_t arrLen);
+void initializeBranchHistFuncArr() {
+  branchtestFuncArr[0] = branchhist1;
+  branchtestFuncArr[1] = branchhist2;
+  branchtestFuncArr[2] = branchhist4;
+  branchtestFuncArr[3] = branchhist8;
+  branchtestFuncArr[4] = branchhist16;
+  branchtestFuncArr[5] = branchhist32;
+  branchtestFuncArr[6] = branchhist64;
+  branchtestFuncArr[7] = branchhist128;
+  branchtestFuncArr[8] = branchhist256;
+  branchtestFuncArr[9] = branchhist512;
+}
+extern "C" uint64_t indirectbranch1targets2(uint64_t iterations, uint32_t **arr, uint32_t arrLen, uint64_t **scratch);
+extern "C" uint64_t indirectbranch1targets4(uint64_t iterations, uint32_t **arr, uint32_t arrLen, uint64_t **scratch);
+extern "C" uint64_t indirectbranch1targets8(uint64_t iterations, uint32_t **arr, uint32_t arrLen, uint64_t **scratch);
+extern "C" uint64_t indirectbranch1targets12(uint64_t iterations, uint32_t **arr, uint32_t arrLen, uint64_t **scratch);
+extern "C" uint64_t indirectbranch1targets16(uint64_t iterations, uint32_t **arr, uint32_t arrLen, uint64_t **scratch);
+extern "C" uint64_t indirectbranch1targets24(uint64_t iterations, uint32_t **arr, uint32_t arrLen, uint64_t **scratch);
+extern "C" uint64_t indirectbranch1targets32(uint64_t iterations, uint32_t **arr, uint32_t arrLen, uint64_t **scratch);
+extern "C" uint64_t indirectbranch1targets48(uint64_t iterations, uint32_t **arr, uint32_t arrLen, uint64_t **scratch);
+extern "C" uint64_t indirectbranch1targets64(uint64_t iterations, uint32_t **arr, uint32_t arrLen, uint64_t **scratch);
+extern "C" uint64_t indirectbranch1targets96(uint64_t iterations, uint32_t **arr, uint32_t arrLen, uint64_t **scratch);
+extern "C" uint64_t indirectbranch1targets128(uint64_t iterations, uint32_t **arr, uint32_t arrLen, uint64_t **scratch);
+extern "C" uint64_t indirectbranch2targets2(uint64_t iterations, uint32_t **arr, uint32_t arrLen, uint64_t **scratch);
+extern "C" uint64_t indirectbranch2targets4(uint64_t iterations, uint32_t **arr, uint32_t arrLen, uint64_t **scratch);
+extern "C" uint64_t indirectbranch2targets8(uint64_t iterations, uint32_t **arr, uint32_t arrLen, uint64_t **scratch);
+extern "C" uint64_t indirectbranch2targets12(uint64_t iterations, uint32_t **arr, uint32_t arrLen, uint64_t **scratch);
+extern "C" uint64_t indirectbranch2targets16(uint64_t iterations, uint32_t **arr, uint32_t arrLen, uint64_t **scratch);
+extern "C" uint64_t indirectbranch2targets24(uint64_t iterations, uint32_t **arr, uint32_t arrLen, uint64_t **scratch);
+extern "C" uint64_t indirectbranch2targets32(uint64_t iterations, uint32_t **arr, uint32_t arrLen, uint64_t **scratch);
+extern "C" uint64_t indirectbranch2targets48(uint64_t iterations, uint32_t **arr, uint32_t arrLen, uint64_t **scratch);
+extern "C" uint64_t indirectbranch2targets64(uint64_t iterations, uint32_t **arr, uint32_t arrLen, uint64_t **scratch);
+extern "C" uint64_t indirectbranch2targets96(uint64_t iterations, uint32_t **arr, uint32_t arrLen, uint64_t **scratch);
+extern "C" uint64_t indirectbranch2targets128(uint64_t iterations, uint32_t **arr, uint32_t arrLen, uint64_t **scratch);
+extern "C" uint64_t indirectbranch4targets2(uint64_t iterations, uint32_t **arr, uint32_t arrLen, uint64_t **scratch);
+extern "C" uint64_t indirectbranch4targets4(uint64_t iterations, uint32_t **arr, uint32_t arrLen, uint64_t **scratch);
+extern "C" uint64_t indirectbranch4targets8(uint64_t iterations, uint32_t **arr, uint32_t arrLen, uint64_t **scratch);
+extern "C" uint64_t indirectbranch4targets12(uint64_t iterations, uint32_t **arr, uint32_t arrLen, uint64_t **scratch);
+extern "C" uint64_t indirectbranch4targets16(uint64_t iterations, uint32_t **arr, uint32_t arrLen, uint64_t **scratch);
+extern "C" uint64_t indirectbranch4targets24(uint64_t iterations, uint32_t **arr, uint32_t arrLen, uint64_t **scratch);
+extern "C" uint64_t indirectbranch4targets32(uint64_t iterations, uint32_t **arr, uint32_t arrLen, uint64_t **scratch);
+extern "C" uint64_t indirectbranch4targets48(uint64_t iterations, uint32_t **arr, uint32_t arrLen, uint64_t **scratch);
+extern "C" uint64_t indirectbranch4targets64(uint64_t iterations, uint32_t **arr, uint32_t arrLen, uint64_t **scratch);
+extern "C" uint64_t indirectbranch4targets96(uint64_t iterations, uint32_t **arr, uint32_t arrLen, uint64_t **scratch);
+extern "C" uint64_t indirectbranch4targets128(uint64_t iterations, uint32_t **arr, uint32_t arrLen, uint64_t **scratch);
+extern "C" uint64_t indirectbranch8targets2(uint64_t iterations, uint32_t **arr, uint32_t arrLen, uint64_t **scratch);
+extern "C" uint64_t indirectbranch8targets4(uint64_t iterations, uint32_t **arr, uint32_t arrLen, uint64_t **scratch);
+extern "C" uint64_t indirectbranch8targets8(uint64_t iterations, uint32_t **arr, uint32_t arrLen, uint64_t **scratch);
+extern "C" uint64_t indirectbranch8targets12(uint64_t iterations, uint32_t **arr, uint32_t arrLen, uint64_t **scratch);
+extern "C" uint64_t indirectbranch8targets16(uint64_t iterations, uint32_t **arr, uint32_t arrLen, uint64_t **scratch);
+extern "C" uint64_t indirectbranch8targets24(uint64_t iterations, uint32_t **arr, uint32_t arrLen, uint64_t **scratch);
+extern "C" uint64_t indirectbranch8targets32(uint64_t iterations, uint32_t **arr, uint32_t arrLen, uint64_t **scratch);
+extern "C" uint64_t indirectbranch8targets48(uint64_t iterations, uint32_t **arr, uint32_t arrLen, uint64_t **scratch);
+extern "C" uint64_t indirectbranch8targets64(uint64_t iterations, uint32_t **arr, uint32_t arrLen, uint64_t **scratch);
+extern "C" uint64_t indirectbranch8targets96(uint64_t iterations, uint32_t **arr, uint32_t arrLen, uint64_t **scratch);
+extern "C" uint64_t indirectbranch8targets128(uint64_t iterations, uint32_t **arr, uint32_t arrLen, uint64_t **scratch);
+extern "C" uint64_t indirectbranch16targets2(uint64_t iterations, uint32_t **arr, uint32_t arrLen, uint64_t **scratch);
+extern "C" uint64_t indirectbranch16targets4(uint64_t iterations, uint32_t **arr, uint32_t arrLen, uint64_t **scratch);
+extern "C" uint64_t indirectbranch16targets8(uint64_t iterations, uint32_t **arr, uint32_t arrLen, uint64_t **scratch);
+extern "C" uint64_t indirectbranch16targets12(uint64_t iterations, uint32_t **arr, uint32_t arrLen, uint64_t **scratch);
+extern "C" uint64_t indirectbranch16targets16(uint64_t iterations, uint32_t **arr, uint32_t arrLen, uint64_t **scratch);
+extern "C" uint64_t indirectbranch16targets24(uint64_t iterations, uint32_t **arr, uint32_t arrLen, uint64_t **scratch);
+extern "C" uint64_t indirectbranch16targets32(uint64_t iterations, uint32_t **arr, uint32_t arrLen, uint64_t **scratch);
+extern "C" uint64_t indirectbranch16targets48(uint64_t iterations, uint32_t **arr, uint32_t arrLen, uint64_t **scratch);
+extern "C" uint64_t indirectbranch16targets64(uint64_t iterations, uint32_t **arr, uint32_t arrLen, uint64_t **scratch);
+extern "C" uint64_t indirectbranch16targets96(uint64_t iterations, uint32_t **arr, uint32_t arrLen, uint64_t **scratch);
+extern "C" uint64_t indirectbranch16targets128(uint64_t iterations, uint32_t **arr, uint32_t arrLen, uint64_t **scratch);
+extern "C" uint64_t indirectbranch32targets2(uint64_t iterations, uint32_t **arr, uint32_t arrLen, uint64_t **scratch);
+extern "C" uint64_t indirectbranch32targets4(uint64_t iterations, uint32_t **arr, uint32_t arrLen, uint64_t **scratch);
+extern "C" uint64_t indirectbranch32targets8(uint64_t iterations, uint32_t **arr, uint32_t arrLen, uint64_t **scratch);
+extern "C" uint64_t indirectbranch32targets12(uint64_t iterations, uint32_t **arr, uint32_t arrLen, uint64_t **scratch);
+extern "C" uint64_t indirectbranch32targets16(uint64_t iterations, uint32_t **arr, uint32_t arrLen, uint64_t **scratch);
+extern "C" uint64_t indirectbranch32targets24(uint64_t iterations, uint32_t **arr, uint32_t arrLen, uint64_t **scratch);
+extern "C" uint64_t indirectbranch32targets32(uint64_t iterations, uint32_t **arr, uint32_t arrLen, uint64_t **scratch);
+extern "C" uint64_t indirectbranch32targets48(uint64_t iterations, uint32_t **arr, uint32_t arrLen, uint64_t **scratch);
+extern "C" uint64_t indirectbranch32targets64(uint64_t iterations, uint32_t **arr, uint32_t arrLen, uint64_t **scratch);
+extern "C" uint64_t indirectbranch32targets96(uint64_t iterations, uint32_t **arr, uint32_t arrLen, uint64_t **scratch);
+extern "C" uint64_t indirectbranch32targets128(uint64_t iterations, uint32_t **arr, uint32_t arrLen, uint64_t **scratch);
+extern "C" uint64_t indirectbranch64targets2(uint64_t iterations, uint32_t **arr, uint32_t arrLen, uint64_t **scratch);
+extern "C" uint64_t indirectbranch64targets4(uint64_t iterations, uint32_t **arr, uint32_t arrLen, uint64_t **scratch);
+extern "C" uint64_t indirectbranch64targets8(uint64_t iterations, uint32_t **arr, uint32_t arrLen, uint64_t **scratch);
+extern "C" uint64_t indirectbranch64targets12(uint64_t iterations, uint32_t **arr, uint32_t arrLen, uint64_t **scratch);
+extern "C" uint64_t indirectbranch64targets16(uint64_t iterations, uint32_t **arr, uint32_t arrLen, uint64_t **scratch);
+extern "C" uint64_t indirectbranch64targets24(uint64_t iterations, uint32_t **arr, uint32_t arrLen, uint64_t **scratch);
+extern "C" uint64_t indirectbranch64targets32(uint64_t iterations, uint32_t **arr, uint32_t arrLen, uint64_t **scratch);
+extern "C" uint64_t indirectbranch64targets48(uint64_t iterations, uint32_t **arr, uint32_t arrLen, uint64_t **scratch);
+extern "C" uint64_t indirectbranch64targets64(uint64_t iterations, uint32_t **arr, uint32_t arrLen, uint64_t **scratch);
+extern "C" uint64_t indirectbranch64targets96(uint64_t iterations, uint32_t **arr, uint32_t arrLen, uint64_t **scratch);
+extern "C" uint64_t indirectbranch64targets128(uint64_t iterations, uint32_t **arr, uint32_t arrLen, uint64_t **scratch);
+extern "C" uint64_t indirectbranch128targets2(uint64_t iterations, uint32_t **arr, uint32_t arrLen, uint64_t **scratch);
+extern "C" uint64_t indirectbranch128targets4(uint64_t iterations, uint32_t **arr, uint32_t arrLen, uint64_t **scratch);
+extern "C" uint64_t indirectbranch128targets8(uint64_t iterations, uint32_t **arr, uint32_t arrLen, uint64_t **scratch);
+extern "C" uint64_t indirectbranch128targets12(uint64_t iterations, uint32_t **arr, uint32_t arrLen, uint64_t **scratch);
+extern "C" uint64_t indirectbranch128targets16(uint64_t iterations, uint32_t **arr, uint32_t arrLen, uint64_t **scratch);
+extern "C" uint64_t indirectbranch128targets24(uint64_t iterations, uint32_t **arr, uint32_t arrLen, uint64_t **scratch);
+extern "C" uint64_t indirectbranch128targets32(uint64_t iterations, uint32_t **arr, uint32_t arrLen, uint64_t **scratch);
+extern "C" uint64_t indirectbranch128targets48(uint64_t iterations, uint32_t **arr, uint32_t arrLen, uint64_t **scratch);
+extern "C" uint64_t indirectbranch128targets64(uint64_t iterations, uint32_t **arr, uint32_t arrLen, uint64_t **scratch);
+extern "C" uint64_t indirectbranch128targets96(uint64_t iterations, uint32_t **arr, uint32_t arrLen, uint64_t **scratch);
+extern "C" uint64_t indirectbranch128targets128(uint64_t iterations, uint32_t **arr, uint32_t arrLen, uint64_t **scratch);
+extern "C" uint64_t indirectbranch256targets2(uint64_t iterations, uint32_t **arr, uint32_t arrLen, uint64_t **scratch);
+extern "C" uint64_t indirectbranch256targets4(uint64_t iterations, uint32_t **arr, uint32_t arrLen, uint64_t **scratch);
+extern "C" uint64_t indirectbranch256targets8(uint64_t iterations, uint32_t **arr, uint32_t arrLen, uint64_t **scratch);
+extern "C" uint64_t indirectbranch256targets12(uint64_t iterations, uint32_t **arr, uint32_t arrLen, uint64_t **scratch);
+extern "C" uint64_t indirectbranch256targets16(uint64_t iterations, uint32_t **arr, uint32_t arrLen, uint64_t **scratch);
+extern "C" uint64_t indirectbranch256targets24(uint64_t iterations, uint32_t **arr, uint32_t arrLen, uint64_t **scratch);
+extern "C" uint64_t indirectbranch256targets32(uint64_t iterations, uint32_t **arr, uint32_t arrLen, uint64_t **scratch);
+extern "C" uint64_t indirectbranch256targets48(uint64_t iterations, uint32_t **arr, uint32_t arrLen, uint64_t **scratch);
+extern "C" uint64_t indirectbranch256targets64(uint64_t iterations, uint32_t **arr, uint32_t arrLen, uint64_t **scratch);
+extern "C" uint64_t indirectbranch256targets96(uint64_t iterations, uint32_t **arr, uint32_t arrLen, uint64_t **scratch);
+extern "C" uint64_t indirectbranch256targets128(uint64_t iterations, uint32_t **arr, uint32_t arrLen, uint64_t **scratch);
+extern "C" uint64_t indirectbranch512targets2(uint64_t iterations, uint32_t **arr, uint32_t arrLen, uint64_t **scratch);
+extern "C" uint64_t indirectbranch512targets4(uint64_t iterations, uint32_t **arr, uint32_t arrLen, uint64_t **scratch);
+extern "C" uint64_t indirectbranch512targets8(uint64_t iterations, uint32_t **arr, uint32_t arrLen, uint64_t **scratch);
+extern "C" uint64_t indirectbranch512targets12(uint64_t iterations, uint32_t **arr, uint32_t arrLen, uint64_t **scratch);
+extern "C" uint64_t indirectbranch512targets16(uint64_t iterations, uint32_t **arr, uint32_t arrLen, uint64_t **scratch);
+extern "C" uint64_t indirectbranch512targets24(uint64_t iterations, uint32_t **arr, uint32_t arrLen, uint64_t **scratch);
+extern "C" uint64_t indirectbranch512targets32(uint64_t iterations, uint32_t **arr, uint32_t arrLen, uint64_t **scratch);
+extern "C" uint64_t indirectbranch512targets48(uint64_t iterations, uint32_t **arr, uint32_t arrLen, uint64_t **scratch);
+extern "C" uint64_t indirectbranch512targets64(uint64_t iterations, uint32_t **arr, uint32_t arrLen, uint64_t **scratch);
+extern "C" uint64_t indirectbranch512targets96(uint64_t iterations, uint32_t **arr, uint32_t arrLen, uint64_t **scratch);
+extern "C" uint64_t indirectbranch512targets128(uint64_t iterations, uint32_t **arr, uint32_t arrLen, uint64_t **scratch);
+uint32_t maxIndirectBranchCount = 10;
+uint32_t indirectBranchCounts[10] = {  1, 2, 4, 8, 16, 32, 64, 128, 256, 512 };
+uint32_t indirectBranchTargetCounts[11] = {  2, 4, 8, 12, 16, 24, 32, 48, 64, 96, 128 };
+uint64_t (*indirectBranchTestFuncArr[10][11])(uint64_t iterations, uint32_t **arr, uint32_t arrLen, uint64_t **scratch);
+void initializeIndirectBranchFuncArr() {
+  indirectBranchTestFuncArr[0][0] = indirectbranch1targets2;
+  indirectBranchTestFuncArr[0][1] = indirectbranch1targets4;
+  indirectBranchTestFuncArr[0][2] = indirectbranch1targets8;
+  indirectBranchTestFuncArr[0][3] = indirectbranch1targets12;
+  indirectBranchTestFuncArr[0][4] = indirectbranch1targets16;
+  indirectBranchTestFuncArr[0][5] = indirectbranch1targets24;
+  indirectBranchTestFuncArr[0][6] = indirectbranch1targets32;
+  indirectBranchTestFuncArr[0][7] = indirectbranch1targets48;
+  indirectBranchTestFuncArr[0][8] = indirectbranch1targets64;
+  indirectBranchTestFuncArr[0][9] = indirectbranch1targets96;
+  indirectBranchTestFuncArr[0][10] = indirectbranch1targets128;
+  indirectBranchTestFuncArr[1][0] = indirectbranch2targets2;
+  indirectBranchTestFuncArr[1][1] = indirectbranch2targets4;
+  indirectBranchTestFuncArr[1][2] = indirectbranch2targets8;
+  indirectBranchTestFuncArr[1][3] = indirectbranch2targets12;
+  indirectBranchTestFuncArr[1][4] = indirectbranch2targets16;
+  indirectBranchTestFuncArr[1][5] = indirectbranch2targets24;
+  indirectBranchTestFuncArr[1][6] = indirectbranch2targets32;
+  indirectBranchTestFuncArr[1][7] = indirectbranch2targets48;
+  indirectBranchTestFuncArr[1][8] = indirectbranch2targets64;
+  indirectBranchTestFuncArr[1][9] = indirectbranch2targets96;
+  indirectBranchTestFuncArr[1][10] = indirectbranch2targets128;
+  indirectBranchTestFuncArr[2][0] = indirectbranch4targets2;
+  indirectBranchTestFuncArr[2][1] = indirectbranch4targets4;
+  indirectBranchTestFuncArr[2][2] = indirectbranch4targets8;
+  indirectBranchTestFuncArr[2][3] = indirectbranch4targets12;
+  indirectBranchTestFuncArr[2][4] = indirectbranch4targets16;
+  indirectBranchTestFuncArr[2][5] = indirectbranch4targets24;
+  indirectBranchTestFuncArr[2][6] = indirectbranch4targets32;
+  indirectBranchTestFuncArr[2][7] = indirectbranch4targets48;
+  indirectBranchTestFuncArr[2][8] = indirectbranch4targets64;
+  indirectBranchTestFuncArr[2][9] = indirectbranch4targets96;
+  indirectBranchTestFuncArr[2][10] = indirectbranch4targets128;
+  indirectBranchTestFuncArr[3][0] = indirectbranch8targets2;
+  indirectBranchTestFuncArr[3][1] = indirectbranch8targets4;
+  indirectBranchTestFuncArr[3][2] = indirectbranch8targets8;
+  indirectBranchTestFuncArr[3][3] = indirectbranch8targets12;
+  indirectBranchTestFuncArr[3][4] = indirectbranch8targets16;
+  indirectBranchTestFuncArr[3][5] = indirectbranch8targets24;
+  indirectBranchTestFuncArr[3][6] = indirectbranch8targets32;
+  indirectBranchTestFuncArr[3][7] = indirectbranch8targets48;
+  indirectBranchTestFuncArr[3][8] = indirectbranch8targets64;
+  indirectBranchTestFuncArr[3][9] = indirectbranch8targets96;
+  indirectBranchTestFuncArr[3][10] = indirectbranch8targets128;
+  indirectBranchTestFuncArr[4][0] = indirectbranch16targets2;
+  indirectBranchTestFuncArr[4][1] = indirectbranch16targets4;
+  indirectBranchTestFuncArr[4][2] = indirectbranch16targets8;
+  indirectBranchTestFuncArr[4][3] = indirectbranch16targets12;
+  indirectBranchTestFuncArr[4][4] = indirectbranch16targets16;
+  indirectBranchTestFuncArr[4][5] = indirectbranch16targets24;
+  indirectBranchTestFuncArr[4][6] = indirectbranch16targets32;
+  indirectBranchTestFuncArr[4][7] = indirectbranch16targets48;
+  indirectBranchTestFuncArr[4][8] = indirectbranch16targets64;
+  indirectBranchTestFuncArr[4][9] = indirectbranch16targets96;
+  indirectBranchTestFuncArr[4][10] = indirectbranch16targets128;
+  indirectBranchTestFuncArr[5][0] = indirectbranch32targets2;
+  indirectBranchTestFuncArr[5][1] = indirectbranch32targets4;
+  indirectBranchTestFuncArr[5][2] = indirectbranch32targets8;
+  indirectBranchTestFuncArr[5][3] = indirectbranch32targets12;
+  indirectBranchTestFuncArr[5][4] = indirectbranch32targets16;
+  indirectBranchTestFuncArr[5][5] = indirectbranch32targets24;
+  indirectBranchTestFuncArr[5][6] = indirectbranch32targets32;
+  indirectBranchTestFuncArr[5][7] = indirectbranch32targets48;
+  indirectBranchTestFuncArr[5][8] = indirectbranch32targets64;
+  indirectBranchTestFuncArr[5][9] = indirectbranch32targets96;
+  indirectBranchTestFuncArr[5][10] = indirectbranch32targets128;
+  indirectBranchTestFuncArr[6][0] = indirectbranch64targets2;
+  indirectBranchTestFuncArr[6][1] = indirectbranch64targets4;
+  indirectBranchTestFuncArr[6][2] = indirectbranch64targets8;
+  indirectBranchTestFuncArr[6][3] = indirectbranch64targets12;
+  indirectBranchTestFuncArr[6][4] = indirectbranch64targets16;
+  indirectBranchTestFuncArr[6][5] = indirectbranch64targets24;
+  indirectBranchTestFuncArr[6][6] = indirectbranch64targets32;
+  indirectBranchTestFuncArr[6][7] = indirectbranch64targets48;
+  indirectBranchTestFuncArr[6][8] = indirectbranch64targets64;
+  indirectBranchTestFuncArr[6][9] = indirectbranch64targets96;
+  indirectBranchTestFuncArr[6][10] = indirectbranch64targets128;
+  indirectBranchTestFuncArr[7][0] = indirectbranch128targets2;
+  indirectBranchTestFuncArr[7][1] = indirectbranch128targets4;
+  indirectBranchTestFuncArr[7][2] = indirectbranch128targets8;
+  indirectBranchTestFuncArr[7][3] = indirectbranch128targets12;
+  indirectBranchTestFuncArr[7][4] = indirectbranch128targets16;
+  indirectBranchTestFuncArr[7][5] = indirectbranch128targets24;
+  indirectBranchTestFuncArr[7][6] = indirectbranch128targets32;
+  indirectBranchTestFuncArr[7][7] = indirectbranch128targets48;
+  indirectBranchTestFuncArr[7][8] = indirectbranch128targets64;
+  indirectBranchTestFuncArr[7][9] = indirectbranch128targets96;
+  indirectBranchTestFuncArr[7][10] = indirectbranch128targets128;
+  indirectBranchTestFuncArr[8][0] = indirectbranch256targets2;
+  indirectBranchTestFuncArr[8][1] = indirectbranch256targets4;
+  indirectBranchTestFuncArr[8][2] = indirectbranch256targets8;
+  indirectBranchTestFuncArr[8][3] = indirectbranch256targets12;
+  indirectBranchTestFuncArr[8][4] = indirectbranch256targets16;
+  indirectBranchTestFuncArr[8][5] = indirectbranch256targets24;
+  indirectBranchTestFuncArr[8][6] = indirectbranch256targets32;
+  indirectBranchTestFuncArr[8][7] = indirectbranch256targets48;
+  indirectBranchTestFuncArr[8][8] = indirectbranch256targets64;
+  indirectBranchTestFuncArr[8][9] = indirectbranch256targets96;
+  indirectBranchTestFuncArr[8][10] = indirectbranch256targets128;
+  indirectBranchTestFuncArr[9][0] = indirectbranch512targets2;
+  indirectBranchTestFuncArr[9][1] = indirectbranch512targets4;
+  indirectBranchTestFuncArr[9][2] = indirectbranch512targets8;
+  indirectBranchTestFuncArr[9][3] = indirectbranch512targets12;
+  indirectBranchTestFuncArr[9][4] = indirectbranch512targets16;
+  indirectBranchTestFuncArr[9][5] = indirectbranch512targets24;
+  indirectBranchTestFuncArr[9][6] = indirectbranch512targets32;
+  indirectBranchTestFuncArr[9][7] = indirectbranch512targets48;
+  indirectBranchTestFuncArr[9][8] = indirectbranch512targets64;
+  indirectBranchTestFuncArr[9][9] = indirectbranch512targets96;
+  indirectBranchTestFuncArr[9][10] = indirectbranch512targets128;
+}
+// this is a partial C file that's appended into generated code
+// stuff here is generic enough to work for both windows/vs and gcc
+
+void printCsvHeader(uint32_t* xCounts, uint32_t xLen) {
+    printf("x");
+    for (uint32_t testSizeIdx = 0; testSizeIdx < xLen; testSizeIdx++) {
+        printf(", %d", xCounts[testSizeIdx]);
+    }
+
+    printf("\n");
+}
+
+// print results in format that excel can take
+void printResultFloatArr(float* arr, uint32_t *xCounts, uint32_t xLen, uint32_t *yCounts, uint32_t yLen) {
+    uint32_t testSizeCount = xLen;
+    printCsvHeader(xCounts, xLen);
+    for (uint32_t branchCountIdx = 0; branchCountIdx < yLen; branchCountIdx++) {
+        // row header
+        printf("%d", yCounts[branchCountIdx]);
+        for (uint32_t testSizeIdx = 0; testSizeIdx < testSizeCount; testSizeIdx++) {
+            printf(",%f", arr[branchCountIdx * testSizeCount + testSizeIdx]);
+        }
+
+        printf("\n");
+    }
+}
+
+
+// partial C file that gets appended into generated code
+
+float runBranchHistTest(uint32_t historyLen, uint32_t branchCountIdx, int random) {
+    struct timeb start, end;
+    uint32_t branchCount = branchCounts[branchCountIdx];
+    uint64_t iterations = 80000000 / branchCount;
+    uint64_t(*branchtestFunc)(uint64_t, uint32_t**, uint32_t) = branchtestFuncArr[branchCountIdx];
+
+    uint32_t** testArrToArr = (uint32_t**)malloc(sizeof(uint32_t*) * branchCount);
+    for (int testArrIdx = 0; testArrIdx < branchCount; testArrIdx++) {
+        uint32_t* testArr = (uint32_t*)malloc(sizeof(uint32_t) * historyLen);
+        for (uint32_t i = 0; i < historyLen; i++) testArr[i] = random ? rand() % 2 : 0;
+        testArrToArr[testArrIdx] = testArr;
+    }
+
+    ftime(&start);
+    branchtestFunc(iterations, testArrToArr, historyLen);
+    ftime(&end);
+    uint64_t time_diff_ms = 1000 * (end.time - start.time) + (end.millitm - start.millitm);
+    float latency = 1e6 * (float)time_diff_ms / (float)iterations;
+
+    // give result in latency per branch
+    latency = latency / branchCount;
+
+    for (int testArrIdx = 0; testArrIdx < branchCount; testArrIdx++) free(testArrToArr[testArrIdx]);
+    free(testArrToArr);
+    return latency;
+}
+
+// similar but for indirect branch test
+// needs indirectBranchTestFuncArr generated
+float runIndirectBranchTest(uint32_t branchCountIdx, uint32_t targetCountIdx, uint32_t random) {
+    struct timeb start, end;
+    uint32_t branchCount = indirectBranchCounts[branchCountIdx];
+    uint32_t targetCount = indirectBranchTargetCounts[targetCountIdx];
+    uint64_t iterations = 80000000 / branchCount;
+    uint64_t(*branchtestFunc)(uint64_t, uint32_t**, uint32_t, uint64_t**) = indirectBranchTestFuncArr[branchCountIdx][targetCountIdx];
+
+    // generate an array containing jump target indexes for every branch
+    uint32_t** testArrToArr = (uint32_t**)malloc(sizeof(uint32_t*) * branchCount);
+    for (int testArrIdx = 0; testArrIdx < branchCount; testArrIdx++) {
+        uint32_t* testArr = (uint32_t*)malloc(sizeof(uint32_t) * targetCount);
+        if (random)
+            for (uint32_t i = 0; i < targetCount; i++) testArr[i] = rand() % targetCount;
+        else
+            for (uint32_t i = 0; i < targetCount; i++) testArr[i] = i;
+        testArrToArr[testArrIdx] = testArr;
+    }
+
+    // each branch needs a jump table
+    uint64_t** jumpTables = (uint64_t**)malloc(sizeof(uint64_t*) * branchCount);
+    for (int jumpTableIdx = 0; jumpTableIdx < branchCount; jumpTableIdx++)
+    {
+        uint64_t* jumpTable = (uint64_t*)malloc(sizeof(uint64_t) * targetCount);
+        jumpTables[jumpTableIdx] = jumpTable;
+    }
+
+    ftime(&start);
+    // uint64_t iterations, uint32_t **arr, uint32_t arrLen, uint64_t **scratch
+    branchtestFunc(iterations, testArrToArr, targetCount, jumpTables);
+    ftime(&end);
+    uint64_t time_diff_ms = 1000 * (end.time - start.time) + (end.millitm - start.millitm);
+    float latency = 1e6 * (float)time_diff_ms / (float)iterations;
+
+    // give result in latency per branch
+    latency = latency / branchCount;
+
+    for (int testArrIdx = 0; testArrIdx < branchCount; testArrIdx++) free(testArrToArr[testArrIdx]);
+    free(testArrToArr);
+    for (int jumpTableIdx = 0; jumpTableIdx < branchCount; jumpTableIdx++) free(jumpTables[jumpTableIdx]);
+    free(jumpTables);
+    return latency;
+}
 int main(int argc, char *argv[]) {
   uint64_t time_diff_ms, iterations = 500000000, structIterations = 5000000, tmp;
   float latency; int *A = NULL, *B = NULL; float *fpArr = NULL;
@@ -5648,14 +6322,21 @@ int main(int argc, char *argv[]) {
     printf("  mixldqstq - Mixed Load/Store Queue Test (mem ops pending retire)\n");
     printf("  returnstack - Return Stack Depth Test\n");
     printf("  mshrs - Miss Status Handling Registers Capacity Test\n");
-    printf("  cvtsched - I2F (cvtsi2ss) Scheduler Capacity Test - x86 only\n");
-    printf("  rorsched - Rotate Scheduler Capacity Test - x86 only\n");
+    printf("  cvtsched - I2F (cvtsi2ss) Scheduler Capacity Test\n");
+    printf("  rorsched - Rotate Scheduler Capacity Test\n");
     printf("  mixmulschedtest - Mixed Integer (64/16-bit mul) Scheduler Capacity Test\n");
     printf("  tbb - Taken Branch Buffer Test (taken branches pending retire)\n");
     printf("  bob - Branch Order Buffer Test (not-taken branches pending retire)\n");
     printf("  ymmstateintrf - 10:1 Integer/FP RF Test with YMM (AVX) state - x86 only\n");
     printf("  add256rf - 256-bit Integer Add RF Capacity Test - x86 only\n");
-    printf("  add256sched - 256-bit Integer Add Scheduler Capacity Test - x86 only\n");
+    printf("  add256sched - 256-bit Integer Add Scheduler Capacity Test (128-bit on ARM)\n");
+    printf("  btb4n - Branch Target Buffer, branch every 4 bytes\n");
+    printf("  btb8n - Branch Target Buffer, branch every 8 bytes\n");
+    printf("  btb16n - Branch Target Buffer, branch every 16 bytes\n");
+    printf("  mixmuljmpsched - Mixed integer multiply and not-taken Jump Scheduler Capacity Test\n");
+    printf("  mixmulrorsched - Mixed Multiply/Rotate Scheduler Capacity Test\n");
+    printf("  branchhist - Branch predictor pattern recognition\n");
+    printf("  indirectbranch - Indirect branch prediction\n");
   }
   if (argc > 3) { structIterations = atoi(argv[3]); iterations = 100 * structIterations; }
   if (argc == 1 || argc > 1 && strncmp(argv[1], "branchtest", 9) != 0) {
@@ -35364,7 +36045,7 @@ int main(int argc, char *argv[]) {
   }
 
   if (argc > 1 && _strnicmp(argv[1], "cvtsched", 8) == 0) {
-  printf("I2F (cvtsi2ss) Scheduler Capacity Test - x86 only:\n");
+  printf("I2F (cvtsi2ss) Scheduler Capacity Test:\n");
   ftime(&start);
   cvtsched1(structIterations, A);
   ftime(&end);
@@ -36264,7 +36945,7 @@ int main(int argc, char *argv[]) {
   }
 
   if (argc > 1 && _strnicmp(argv[1], "rorsched", 8) == 0) {
-  printf("Rotate Scheduler Capacity Test - x86 only:\n");
+  printf("Rotate Scheduler Capacity Test:\n");
   ftime(&start);
   rorsched1(structIterations, A);
   ftime(&end);
@@ -43484,7 +44165,7 @@ int main(int argc, char *argv[]) {
   }
 
   if (argc > 1 && _strnicmp(argv[1], "add256sched", 11) == 0) {
-  printf("256-bit Integer Add Scheduler Capacity Test - x86 only:\n");
+  printf("256-bit Integer Add Scheduler Capacity Test (128-bit on ARM):\n");
   ftime(&start);
   add256sched1(structIterations, A, B);
   ftime(&end);
@@ -45277,6 +45958,2525 @@ int main(int argc, char *argv[]) {
     latency = 1e6 * (float)time_diff_ms / (float)(structIterations);
   printf("256,%f\n", latency);
 
+  }
+
+  if (argc > 1 && _strnicmp(argv[1], "btb4n", 5) == 0) {
+  printf("Branch Target Buffer, branch every 4 bytes:\n");
+    tmp = structIterations;
+    structIterations = iterations / 1;
+  ftime(&start);
+  btb4n1(structIterations);
+  ftime(&end);
+  time_diff_ms = 1000 * (end.time - start.time) + (end.millitm - start.millitm);
+    latency = 1e6 * (float)time_diff_ms / (float)(iterations);
+  printf("1,%f\n", latency);
+
+    structIterations = tmp;
+    tmp = structIterations;
+    structIterations = iterations / 2;
+  ftime(&start);
+  btb4n2(structIterations);
+  ftime(&end);
+  time_diff_ms = 1000 * (end.time - start.time) + (end.millitm - start.millitm);
+    latency = 1e6 * (float)time_diff_ms / (float)(iterations);
+  printf("2,%f\n", latency);
+
+    structIterations = tmp;
+    tmp = structIterations;
+    structIterations = iterations / 4;
+  ftime(&start);
+  btb4n4(structIterations);
+  ftime(&end);
+  time_diff_ms = 1000 * (end.time - start.time) + (end.millitm - start.millitm);
+    latency = 1e6 * (float)time_diff_ms / (float)(iterations);
+  printf("4,%f\n", latency);
+
+    structIterations = tmp;
+    tmp = structIterations;
+    structIterations = iterations / 8;
+  ftime(&start);
+  btb4n8(structIterations);
+  ftime(&end);
+  time_diff_ms = 1000 * (end.time - start.time) + (end.millitm - start.millitm);
+    latency = 1e6 * (float)time_diff_ms / (float)(iterations);
+  printf("8,%f\n", latency);
+
+    structIterations = tmp;
+    tmp = structIterations;
+    structIterations = iterations / 16;
+  ftime(&start);
+  btb4n16(structIterations);
+  ftime(&end);
+  time_diff_ms = 1000 * (end.time - start.time) + (end.millitm - start.millitm);
+    latency = 1e6 * (float)time_diff_ms / (float)(iterations);
+  printf("16,%f\n", latency);
+
+    structIterations = tmp;
+    tmp = structIterations;
+    structIterations = iterations / 32;
+  ftime(&start);
+  btb4n32(structIterations);
+  ftime(&end);
+  time_diff_ms = 1000 * (end.time - start.time) + (end.millitm - start.millitm);
+    latency = 1e6 * (float)time_diff_ms / (float)(iterations);
+  printf("32,%f\n", latency);
+
+    structIterations = tmp;
+    tmp = structIterations;
+    structIterations = iterations / 64;
+  ftime(&start);
+  btb4n64(structIterations);
+  ftime(&end);
+  time_diff_ms = 1000 * (end.time - start.time) + (end.millitm - start.millitm);
+    latency = 1e6 * (float)time_diff_ms / (float)(iterations);
+  printf("64,%f\n", latency);
+
+    structIterations = tmp;
+    tmp = structIterations;
+    structIterations = iterations / 128;
+  ftime(&start);
+  btb4n128(structIterations);
+  ftime(&end);
+  time_diff_ms = 1000 * (end.time - start.time) + (end.millitm - start.millitm);
+    latency = 1e6 * (float)time_diff_ms / (float)(iterations);
+  printf("128,%f\n", latency);
+
+    structIterations = tmp;
+    tmp = structIterations;
+    structIterations = iterations / 256;
+  ftime(&start);
+  btb4n256(structIterations);
+  ftime(&end);
+  time_diff_ms = 1000 * (end.time - start.time) + (end.millitm - start.millitm);
+    latency = 1e6 * (float)time_diff_ms / (float)(iterations);
+  printf("256,%f\n", latency);
+
+    structIterations = tmp;
+    tmp = structIterations;
+    structIterations = iterations / 512;
+  ftime(&start);
+  btb4n512(structIterations);
+  ftime(&end);
+  time_diff_ms = 1000 * (end.time - start.time) + (end.millitm - start.millitm);
+    latency = 1e6 * (float)time_diff_ms / (float)(iterations);
+  printf("512,%f\n", latency);
+
+    structIterations = tmp;
+    tmp = structIterations;
+    structIterations = iterations / 1024;
+  ftime(&start);
+  btb4n1024(structIterations);
+  ftime(&end);
+  time_diff_ms = 1000 * (end.time - start.time) + (end.millitm - start.millitm);
+    latency = 1e6 * (float)time_diff_ms / (float)(iterations);
+  printf("1024,%f\n", latency);
+
+    structIterations = tmp;
+    tmp = structIterations;
+    structIterations = iterations / 1536;
+  ftime(&start);
+  btb4n1536(structIterations);
+  ftime(&end);
+  time_diff_ms = 1000 * (end.time - start.time) + (end.millitm - start.millitm);
+    latency = 1e6 * (float)time_diff_ms / (float)(iterations);
+  printf("1536,%f\n", latency);
+
+    structIterations = tmp;
+    tmp = structIterations;
+    structIterations = iterations / 2048;
+  ftime(&start);
+  btb4n2048(structIterations);
+  ftime(&end);
+  time_diff_ms = 1000 * (end.time - start.time) + (end.millitm - start.millitm);
+    latency = 1e6 * (float)time_diff_ms / (float)(iterations);
+  printf("2048,%f\n", latency);
+
+    structIterations = tmp;
+    tmp = structIterations;
+    structIterations = iterations / 3072;
+  ftime(&start);
+  btb4n3072(structIterations);
+  ftime(&end);
+  time_diff_ms = 1000 * (end.time - start.time) + (end.millitm - start.millitm);
+    latency = 1e6 * (float)time_diff_ms / (float)(iterations);
+  printf("3072,%f\n", latency);
+
+    structIterations = tmp;
+    tmp = structIterations;
+    structIterations = iterations / 4096;
+  ftime(&start);
+  btb4n4096(structIterations);
+  ftime(&end);
+  time_diff_ms = 1000 * (end.time - start.time) + (end.millitm - start.millitm);
+    latency = 1e6 * (float)time_diff_ms / (float)(iterations);
+  printf("4096,%f\n", latency);
+
+    structIterations = tmp;
+    tmp = structIterations;
+    structIterations = iterations / 5120;
+  ftime(&start);
+  btb4n5120(structIterations);
+  ftime(&end);
+  time_diff_ms = 1000 * (end.time - start.time) + (end.millitm - start.millitm);
+    latency = 1e6 * (float)time_diff_ms / (float)(iterations);
+  printf("5120,%f\n", latency);
+
+    structIterations = tmp;
+    tmp = structIterations;
+    structIterations = iterations / 6144;
+  ftime(&start);
+  btb4n6144(structIterations);
+  ftime(&end);
+  time_diff_ms = 1000 * (end.time - start.time) + (end.millitm - start.millitm);
+    latency = 1e6 * (float)time_diff_ms / (float)(iterations);
+  printf("6144,%f\n", latency);
+
+    structIterations = tmp;
+    tmp = structIterations;
+    structIterations = iterations / 7168;
+  ftime(&start);
+  btb4n7168(structIterations);
+  ftime(&end);
+  time_diff_ms = 1000 * (end.time - start.time) + (end.millitm - start.millitm);
+    latency = 1e6 * (float)time_diff_ms / (float)(iterations);
+  printf("7168,%f\n", latency);
+
+    structIterations = tmp;
+    tmp = structIterations;
+    structIterations = iterations / 8192;
+  ftime(&start);
+  btb4n8192(structIterations);
+  ftime(&end);
+  time_diff_ms = 1000 * (end.time - start.time) + (end.millitm - start.millitm);
+    latency = 1e6 * (float)time_diff_ms / (float)(iterations);
+  printf("8192,%f\n", latency);
+
+    structIterations = tmp;
+    tmp = structIterations;
+    structIterations = iterations / 10240;
+  ftime(&start);
+  btb4n10240(structIterations);
+  ftime(&end);
+  time_diff_ms = 1000 * (end.time - start.time) + (end.millitm - start.millitm);
+    latency = 1e6 * (float)time_diff_ms / (float)(iterations);
+  printf("10240,%f\n", latency);
+
+    structIterations = tmp;
+    tmp = structIterations;
+    structIterations = iterations / 16384;
+  ftime(&start);
+  btb4n16384(structIterations);
+  ftime(&end);
+  time_diff_ms = 1000 * (end.time - start.time) + (end.millitm - start.millitm);
+    latency = 1e6 * (float)time_diff_ms / (float)(iterations);
+  printf("16384,%f\n", latency);
+
+    structIterations = tmp;
+    tmp = structIterations;
+    structIterations = iterations / 32768;
+  ftime(&start);
+  btb4n32768(structIterations);
+  ftime(&end);
+  time_diff_ms = 1000 * (end.time - start.time) + (end.millitm - start.millitm);
+    latency = 1e6 * (float)time_diff_ms / (float)(iterations);
+  printf("32768,%f\n", latency);
+
+    structIterations = tmp;
+  }
+
+  if (argc > 1 && _strnicmp(argv[1], "btb8n", 5) == 0) {
+  printf("Branch Target Buffer, branch every 8 bytes:\n");
+    tmp = structIterations;
+    structIterations = iterations / 1;
+  ftime(&start);
+  btb8n1(structIterations);
+  ftime(&end);
+  time_diff_ms = 1000 * (end.time - start.time) + (end.millitm - start.millitm);
+    latency = 1e6 * (float)time_diff_ms / (float)(iterations);
+  printf("1,%f\n", latency);
+
+    structIterations = tmp;
+    tmp = structIterations;
+    structIterations = iterations / 2;
+  ftime(&start);
+  btb8n2(structIterations);
+  ftime(&end);
+  time_diff_ms = 1000 * (end.time - start.time) + (end.millitm - start.millitm);
+    latency = 1e6 * (float)time_diff_ms / (float)(iterations);
+  printf("2,%f\n", latency);
+
+    structIterations = tmp;
+    tmp = structIterations;
+    structIterations = iterations / 4;
+  ftime(&start);
+  btb8n4(structIterations);
+  ftime(&end);
+  time_diff_ms = 1000 * (end.time - start.time) + (end.millitm - start.millitm);
+    latency = 1e6 * (float)time_diff_ms / (float)(iterations);
+  printf("4,%f\n", latency);
+
+    structIterations = tmp;
+    tmp = structIterations;
+    structIterations = iterations / 8;
+  ftime(&start);
+  btb8n8(structIterations);
+  ftime(&end);
+  time_diff_ms = 1000 * (end.time - start.time) + (end.millitm - start.millitm);
+    latency = 1e6 * (float)time_diff_ms / (float)(iterations);
+  printf("8,%f\n", latency);
+
+    structIterations = tmp;
+    tmp = structIterations;
+    structIterations = iterations / 16;
+  ftime(&start);
+  btb8n16(structIterations);
+  ftime(&end);
+  time_diff_ms = 1000 * (end.time - start.time) + (end.millitm - start.millitm);
+    latency = 1e6 * (float)time_diff_ms / (float)(iterations);
+  printf("16,%f\n", latency);
+
+    structIterations = tmp;
+    tmp = structIterations;
+    structIterations = iterations / 32;
+  ftime(&start);
+  btb8n32(structIterations);
+  ftime(&end);
+  time_diff_ms = 1000 * (end.time - start.time) + (end.millitm - start.millitm);
+    latency = 1e6 * (float)time_diff_ms / (float)(iterations);
+  printf("32,%f\n", latency);
+
+    structIterations = tmp;
+    tmp = structIterations;
+    structIterations = iterations / 64;
+  ftime(&start);
+  btb8n64(structIterations);
+  ftime(&end);
+  time_diff_ms = 1000 * (end.time - start.time) + (end.millitm - start.millitm);
+    latency = 1e6 * (float)time_diff_ms / (float)(iterations);
+  printf("64,%f\n", latency);
+
+    structIterations = tmp;
+    tmp = structIterations;
+    structIterations = iterations / 128;
+  ftime(&start);
+  btb8n128(structIterations);
+  ftime(&end);
+  time_diff_ms = 1000 * (end.time - start.time) + (end.millitm - start.millitm);
+    latency = 1e6 * (float)time_diff_ms / (float)(iterations);
+  printf("128,%f\n", latency);
+
+    structIterations = tmp;
+    tmp = structIterations;
+    structIterations = iterations / 256;
+  ftime(&start);
+  btb8n256(structIterations);
+  ftime(&end);
+  time_diff_ms = 1000 * (end.time - start.time) + (end.millitm - start.millitm);
+    latency = 1e6 * (float)time_diff_ms / (float)(iterations);
+  printf("256,%f\n", latency);
+
+    structIterations = tmp;
+    tmp = structIterations;
+    structIterations = iterations / 512;
+  ftime(&start);
+  btb8n512(structIterations);
+  ftime(&end);
+  time_diff_ms = 1000 * (end.time - start.time) + (end.millitm - start.millitm);
+    latency = 1e6 * (float)time_diff_ms / (float)(iterations);
+  printf("512,%f\n", latency);
+
+    structIterations = tmp;
+    tmp = structIterations;
+    structIterations = iterations / 1024;
+  ftime(&start);
+  btb8n1024(structIterations);
+  ftime(&end);
+  time_diff_ms = 1000 * (end.time - start.time) + (end.millitm - start.millitm);
+    latency = 1e6 * (float)time_diff_ms / (float)(iterations);
+  printf("1024,%f\n", latency);
+
+    structIterations = tmp;
+    tmp = structIterations;
+    structIterations = iterations / 1536;
+  ftime(&start);
+  btb8n1536(structIterations);
+  ftime(&end);
+  time_diff_ms = 1000 * (end.time - start.time) + (end.millitm - start.millitm);
+    latency = 1e6 * (float)time_diff_ms / (float)(iterations);
+  printf("1536,%f\n", latency);
+
+    structIterations = tmp;
+    tmp = structIterations;
+    structIterations = iterations / 2048;
+  ftime(&start);
+  btb8n2048(structIterations);
+  ftime(&end);
+  time_diff_ms = 1000 * (end.time - start.time) + (end.millitm - start.millitm);
+    latency = 1e6 * (float)time_diff_ms / (float)(iterations);
+  printf("2048,%f\n", latency);
+
+    structIterations = tmp;
+    tmp = structIterations;
+    structIterations = iterations / 3072;
+  ftime(&start);
+  btb8n3072(structIterations);
+  ftime(&end);
+  time_diff_ms = 1000 * (end.time - start.time) + (end.millitm - start.millitm);
+    latency = 1e6 * (float)time_diff_ms / (float)(iterations);
+  printf("3072,%f\n", latency);
+
+    structIterations = tmp;
+    tmp = structIterations;
+    structIterations = iterations / 4096;
+  ftime(&start);
+  btb8n4096(structIterations);
+  ftime(&end);
+  time_diff_ms = 1000 * (end.time - start.time) + (end.millitm - start.millitm);
+    latency = 1e6 * (float)time_diff_ms / (float)(iterations);
+  printf("4096,%f\n", latency);
+
+    structIterations = tmp;
+    tmp = structIterations;
+    structIterations = iterations / 5120;
+  ftime(&start);
+  btb8n5120(structIterations);
+  ftime(&end);
+  time_diff_ms = 1000 * (end.time - start.time) + (end.millitm - start.millitm);
+    latency = 1e6 * (float)time_diff_ms / (float)(iterations);
+  printf("5120,%f\n", latency);
+
+    structIterations = tmp;
+    tmp = structIterations;
+    structIterations = iterations / 6144;
+  ftime(&start);
+  btb8n6144(structIterations);
+  ftime(&end);
+  time_diff_ms = 1000 * (end.time - start.time) + (end.millitm - start.millitm);
+    latency = 1e6 * (float)time_diff_ms / (float)(iterations);
+  printf("6144,%f\n", latency);
+
+    structIterations = tmp;
+    tmp = structIterations;
+    structIterations = iterations / 7168;
+  ftime(&start);
+  btb8n7168(structIterations);
+  ftime(&end);
+  time_diff_ms = 1000 * (end.time - start.time) + (end.millitm - start.millitm);
+    latency = 1e6 * (float)time_diff_ms / (float)(iterations);
+  printf("7168,%f\n", latency);
+
+    structIterations = tmp;
+    tmp = structIterations;
+    structIterations = iterations / 8192;
+  ftime(&start);
+  btb8n8192(structIterations);
+  ftime(&end);
+  time_diff_ms = 1000 * (end.time - start.time) + (end.millitm - start.millitm);
+    latency = 1e6 * (float)time_diff_ms / (float)(iterations);
+  printf("8192,%f\n", latency);
+
+    structIterations = tmp;
+    tmp = structIterations;
+    structIterations = iterations / 10240;
+  ftime(&start);
+  btb8n10240(structIterations);
+  ftime(&end);
+  time_diff_ms = 1000 * (end.time - start.time) + (end.millitm - start.millitm);
+    latency = 1e6 * (float)time_diff_ms / (float)(iterations);
+  printf("10240,%f\n", latency);
+
+    structIterations = tmp;
+    tmp = structIterations;
+    structIterations = iterations / 16384;
+  ftime(&start);
+  btb8n16384(structIterations);
+  ftime(&end);
+  time_diff_ms = 1000 * (end.time - start.time) + (end.millitm - start.millitm);
+    latency = 1e6 * (float)time_diff_ms / (float)(iterations);
+  printf("16384,%f\n", latency);
+
+    structIterations = tmp;
+    tmp = structIterations;
+    structIterations = iterations / 32768;
+  ftime(&start);
+  btb8n32768(structIterations);
+  ftime(&end);
+  time_diff_ms = 1000 * (end.time - start.time) + (end.millitm - start.millitm);
+    latency = 1e6 * (float)time_diff_ms / (float)(iterations);
+  printf("32768,%f\n", latency);
+
+    structIterations = tmp;
+  }
+
+  if (argc > 1 && _strnicmp(argv[1], "btb16n", 6) == 0) {
+  printf("Branch Target Buffer, branch every 16 bytes:\n");
+    tmp = structIterations;
+    structIterations = iterations / 1;
+  ftime(&start);
+  btb16n1(structIterations);
+  ftime(&end);
+  time_diff_ms = 1000 * (end.time - start.time) + (end.millitm - start.millitm);
+    latency = 1e6 * (float)time_diff_ms / (float)(iterations);
+  printf("1,%f\n", latency);
+
+    structIterations = tmp;
+    tmp = structIterations;
+    structIterations = iterations / 2;
+  ftime(&start);
+  btb16n2(structIterations);
+  ftime(&end);
+  time_diff_ms = 1000 * (end.time - start.time) + (end.millitm - start.millitm);
+    latency = 1e6 * (float)time_diff_ms / (float)(iterations);
+  printf("2,%f\n", latency);
+
+    structIterations = tmp;
+    tmp = structIterations;
+    structIterations = iterations / 4;
+  ftime(&start);
+  btb16n4(structIterations);
+  ftime(&end);
+  time_diff_ms = 1000 * (end.time - start.time) + (end.millitm - start.millitm);
+    latency = 1e6 * (float)time_diff_ms / (float)(iterations);
+  printf("4,%f\n", latency);
+
+    structIterations = tmp;
+    tmp = structIterations;
+    structIterations = iterations / 8;
+  ftime(&start);
+  btb16n8(structIterations);
+  ftime(&end);
+  time_diff_ms = 1000 * (end.time - start.time) + (end.millitm - start.millitm);
+    latency = 1e6 * (float)time_diff_ms / (float)(iterations);
+  printf("8,%f\n", latency);
+
+    structIterations = tmp;
+    tmp = structIterations;
+    structIterations = iterations / 16;
+  ftime(&start);
+  btb16n16(structIterations);
+  ftime(&end);
+  time_diff_ms = 1000 * (end.time - start.time) + (end.millitm - start.millitm);
+    latency = 1e6 * (float)time_diff_ms / (float)(iterations);
+  printf("16,%f\n", latency);
+
+    structIterations = tmp;
+    tmp = structIterations;
+    structIterations = iterations / 32;
+  ftime(&start);
+  btb16n32(structIterations);
+  ftime(&end);
+  time_diff_ms = 1000 * (end.time - start.time) + (end.millitm - start.millitm);
+    latency = 1e6 * (float)time_diff_ms / (float)(iterations);
+  printf("32,%f\n", latency);
+
+    structIterations = tmp;
+    tmp = structIterations;
+    structIterations = iterations / 64;
+  ftime(&start);
+  btb16n64(structIterations);
+  ftime(&end);
+  time_diff_ms = 1000 * (end.time - start.time) + (end.millitm - start.millitm);
+    latency = 1e6 * (float)time_diff_ms / (float)(iterations);
+  printf("64,%f\n", latency);
+
+    structIterations = tmp;
+    tmp = structIterations;
+    structIterations = iterations / 128;
+  ftime(&start);
+  btb16n128(structIterations);
+  ftime(&end);
+  time_diff_ms = 1000 * (end.time - start.time) + (end.millitm - start.millitm);
+    latency = 1e6 * (float)time_diff_ms / (float)(iterations);
+  printf("128,%f\n", latency);
+
+    structIterations = tmp;
+    tmp = structIterations;
+    structIterations = iterations / 256;
+  ftime(&start);
+  btb16n256(structIterations);
+  ftime(&end);
+  time_diff_ms = 1000 * (end.time - start.time) + (end.millitm - start.millitm);
+    latency = 1e6 * (float)time_diff_ms / (float)(iterations);
+  printf("256,%f\n", latency);
+
+    structIterations = tmp;
+    tmp = structIterations;
+    structIterations = iterations / 512;
+  ftime(&start);
+  btb16n512(structIterations);
+  ftime(&end);
+  time_diff_ms = 1000 * (end.time - start.time) + (end.millitm - start.millitm);
+    latency = 1e6 * (float)time_diff_ms / (float)(iterations);
+  printf("512,%f\n", latency);
+
+    structIterations = tmp;
+    tmp = structIterations;
+    structIterations = iterations / 1024;
+  ftime(&start);
+  btb16n1024(structIterations);
+  ftime(&end);
+  time_diff_ms = 1000 * (end.time - start.time) + (end.millitm - start.millitm);
+    latency = 1e6 * (float)time_diff_ms / (float)(iterations);
+  printf("1024,%f\n", latency);
+
+    structIterations = tmp;
+    tmp = structIterations;
+    structIterations = iterations / 1536;
+  ftime(&start);
+  btb16n1536(structIterations);
+  ftime(&end);
+  time_diff_ms = 1000 * (end.time - start.time) + (end.millitm - start.millitm);
+    latency = 1e6 * (float)time_diff_ms / (float)(iterations);
+  printf("1536,%f\n", latency);
+
+    structIterations = tmp;
+    tmp = structIterations;
+    structIterations = iterations / 2048;
+  ftime(&start);
+  btb16n2048(structIterations);
+  ftime(&end);
+  time_diff_ms = 1000 * (end.time - start.time) + (end.millitm - start.millitm);
+    latency = 1e6 * (float)time_diff_ms / (float)(iterations);
+  printf("2048,%f\n", latency);
+
+    structIterations = tmp;
+    tmp = structIterations;
+    structIterations = iterations / 3072;
+  ftime(&start);
+  btb16n3072(structIterations);
+  ftime(&end);
+  time_diff_ms = 1000 * (end.time - start.time) + (end.millitm - start.millitm);
+    latency = 1e6 * (float)time_diff_ms / (float)(iterations);
+  printf("3072,%f\n", latency);
+
+    structIterations = tmp;
+    tmp = structIterations;
+    structIterations = iterations / 4096;
+  ftime(&start);
+  btb16n4096(structIterations);
+  ftime(&end);
+  time_diff_ms = 1000 * (end.time - start.time) + (end.millitm - start.millitm);
+    latency = 1e6 * (float)time_diff_ms / (float)(iterations);
+  printf("4096,%f\n", latency);
+
+    structIterations = tmp;
+    tmp = structIterations;
+    structIterations = iterations / 5120;
+  ftime(&start);
+  btb16n5120(structIterations);
+  ftime(&end);
+  time_diff_ms = 1000 * (end.time - start.time) + (end.millitm - start.millitm);
+    latency = 1e6 * (float)time_diff_ms / (float)(iterations);
+  printf("5120,%f\n", latency);
+
+    structIterations = tmp;
+    tmp = structIterations;
+    structIterations = iterations / 6144;
+  ftime(&start);
+  btb16n6144(structIterations);
+  ftime(&end);
+  time_diff_ms = 1000 * (end.time - start.time) + (end.millitm - start.millitm);
+    latency = 1e6 * (float)time_diff_ms / (float)(iterations);
+  printf("6144,%f\n", latency);
+
+    structIterations = tmp;
+    tmp = structIterations;
+    structIterations = iterations / 7168;
+  ftime(&start);
+  btb16n7168(structIterations);
+  ftime(&end);
+  time_diff_ms = 1000 * (end.time - start.time) + (end.millitm - start.millitm);
+    latency = 1e6 * (float)time_diff_ms / (float)(iterations);
+  printf("7168,%f\n", latency);
+
+    structIterations = tmp;
+    tmp = structIterations;
+    structIterations = iterations / 8192;
+  ftime(&start);
+  btb16n8192(structIterations);
+  ftime(&end);
+  time_diff_ms = 1000 * (end.time - start.time) + (end.millitm - start.millitm);
+    latency = 1e6 * (float)time_diff_ms / (float)(iterations);
+  printf("8192,%f\n", latency);
+
+    structIterations = tmp;
+    tmp = structIterations;
+    structIterations = iterations / 10240;
+  ftime(&start);
+  btb16n10240(structIterations);
+  ftime(&end);
+  time_diff_ms = 1000 * (end.time - start.time) + (end.millitm - start.millitm);
+    latency = 1e6 * (float)time_diff_ms / (float)(iterations);
+  printf("10240,%f\n", latency);
+
+    structIterations = tmp;
+    tmp = structIterations;
+    structIterations = iterations / 16384;
+  ftime(&start);
+  btb16n16384(structIterations);
+  ftime(&end);
+  time_diff_ms = 1000 * (end.time - start.time) + (end.millitm - start.millitm);
+    latency = 1e6 * (float)time_diff_ms / (float)(iterations);
+  printf("16384,%f\n", latency);
+
+    structIterations = tmp;
+    tmp = structIterations;
+    structIterations = iterations / 32768;
+  ftime(&start);
+  btb16n32768(structIterations);
+  ftime(&end);
+  time_diff_ms = 1000 * (end.time - start.time) + (end.millitm - start.millitm);
+    latency = 1e6 * (float)time_diff_ms / (float)(iterations);
+  printf("32768,%f\n", latency);
+
+    structIterations = tmp;
+  }
+
+  if (argc > 1 && _strnicmp(argv[1], "mixmuljmpsched", 14) == 0) {
+  printf("Mixed integer multiply and not-taken Jump Scheduler Capacity Test:\n");
+  ftime(&start);
+  mixmuljmpsched2(structIterations, A);
+  ftime(&end);
+  time_diff_ms = 1000 * (end.time - start.time) + (end.millitm - start.millitm);
+    latency = 1e6 * (float)time_diff_ms / (float)(structIterations);
+  printf("2,%f\n", latency);
+
+  ftime(&start);
+  mixmuljmpsched3(structIterations, A);
+  ftime(&end);
+  time_diff_ms = 1000 * (end.time - start.time) + (end.millitm - start.millitm);
+    latency = 1e6 * (float)time_diff_ms / (float)(structIterations);
+  printf("3,%f\n", latency);
+
+  ftime(&start);
+  mixmuljmpsched4(structIterations, A);
+  ftime(&end);
+  time_diff_ms = 1000 * (end.time - start.time) + (end.millitm - start.millitm);
+    latency = 1e6 * (float)time_diff_ms / (float)(structIterations);
+  printf("4,%f\n", latency);
+
+  ftime(&start);
+  mixmuljmpsched5(structIterations, A);
+  ftime(&end);
+  time_diff_ms = 1000 * (end.time - start.time) + (end.millitm - start.millitm);
+    latency = 1e6 * (float)time_diff_ms / (float)(structIterations);
+  printf("5,%f\n", latency);
+
+  ftime(&start);
+  mixmuljmpsched6(structIterations, A);
+  ftime(&end);
+  time_diff_ms = 1000 * (end.time - start.time) + (end.millitm - start.millitm);
+    latency = 1e6 * (float)time_diff_ms / (float)(structIterations);
+  printf("6,%f\n", latency);
+
+  ftime(&start);
+  mixmuljmpsched7(structIterations, A);
+  ftime(&end);
+  time_diff_ms = 1000 * (end.time - start.time) + (end.millitm - start.millitm);
+    latency = 1e6 * (float)time_diff_ms / (float)(structIterations);
+  printf("7,%f\n", latency);
+
+  ftime(&start);
+  mixmuljmpsched8(structIterations, A);
+  ftime(&end);
+  time_diff_ms = 1000 * (end.time - start.time) + (end.millitm - start.millitm);
+    latency = 1e6 * (float)time_diff_ms / (float)(structIterations);
+  printf("8,%f\n", latency);
+
+  ftime(&start);
+  mixmuljmpsched9(structIterations, A);
+  ftime(&end);
+  time_diff_ms = 1000 * (end.time - start.time) + (end.millitm - start.millitm);
+    latency = 1e6 * (float)time_diff_ms / (float)(structIterations);
+  printf("9,%f\n", latency);
+
+  ftime(&start);
+  mixmuljmpsched10(structIterations, A);
+  ftime(&end);
+  time_diff_ms = 1000 * (end.time - start.time) + (end.millitm - start.millitm);
+    latency = 1e6 * (float)time_diff_ms / (float)(structIterations);
+  printf("10,%f\n", latency);
+
+  ftime(&start);
+  mixmuljmpsched11(structIterations, A);
+  ftime(&end);
+  time_diff_ms = 1000 * (end.time - start.time) + (end.millitm - start.millitm);
+    latency = 1e6 * (float)time_diff_ms / (float)(structIterations);
+  printf("11,%f\n", latency);
+
+  ftime(&start);
+  mixmuljmpsched12(structIterations, A);
+  ftime(&end);
+  time_diff_ms = 1000 * (end.time - start.time) + (end.millitm - start.millitm);
+    latency = 1e6 * (float)time_diff_ms / (float)(structIterations);
+  printf("12,%f\n", latency);
+
+  ftime(&start);
+  mixmuljmpsched13(structIterations, A);
+  ftime(&end);
+  time_diff_ms = 1000 * (end.time - start.time) + (end.millitm - start.millitm);
+    latency = 1e6 * (float)time_diff_ms / (float)(structIterations);
+  printf("13,%f\n", latency);
+
+  ftime(&start);
+  mixmuljmpsched14(structIterations, A);
+  ftime(&end);
+  time_diff_ms = 1000 * (end.time - start.time) + (end.millitm - start.millitm);
+    latency = 1e6 * (float)time_diff_ms / (float)(structIterations);
+  printf("14,%f\n", latency);
+
+  ftime(&start);
+  mixmuljmpsched15(structIterations, A);
+  ftime(&end);
+  time_diff_ms = 1000 * (end.time - start.time) + (end.millitm - start.millitm);
+    latency = 1e6 * (float)time_diff_ms / (float)(structIterations);
+  printf("15,%f\n", latency);
+
+  ftime(&start);
+  mixmuljmpsched16(structIterations, A);
+  ftime(&end);
+  time_diff_ms = 1000 * (end.time - start.time) + (end.millitm - start.millitm);
+    latency = 1e6 * (float)time_diff_ms / (float)(structIterations);
+  printf("16,%f\n", latency);
+
+  ftime(&start);
+  mixmuljmpsched17(structIterations, A);
+  ftime(&end);
+  time_diff_ms = 1000 * (end.time - start.time) + (end.millitm - start.millitm);
+    latency = 1e6 * (float)time_diff_ms / (float)(structIterations);
+  printf("17,%f\n", latency);
+
+  ftime(&start);
+  mixmuljmpsched18(structIterations, A);
+  ftime(&end);
+  time_diff_ms = 1000 * (end.time - start.time) + (end.millitm - start.millitm);
+    latency = 1e6 * (float)time_diff_ms / (float)(structIterations);
+  printf("18,%f\n", latency);
+
+  ftime(&start);
+  mixmuljmpsched19(structIterations, A);
+  ftime(&end);
+  time_diff_ms = 1000 * (end.time - start.time) + (end.millitm - start.millitm);
+    latency = 1e6 * (float)time_diff_ms / (float)(structIterations);
+  printf("19,%f\n", latency);
+
+  ftime(&start);
+  mixmuljmpsched20(structIterations, A);
+  ftime(&end);
+  time_diff_ms = 1000 * (end.time - start.time) + (end.millitm - start.millitm);
+    latency = 1e6 * (float)time_diff_ms / (float)(structIterations);
+  printf("20,%f\n", latency);
+
+  ftime(&start);
+  mixmuljmpsched21(structIterations, A);
+  ftime(&end);
+  time_diff_ms = 1000 * (end.time - start.time) + (end.millitm - start.millitm);
+    latency = 1e6 * (float)time_diff_ms / (float)(structIterations);
+  printf("21,%f\n", latency);
+
+  ftime(&start);
+  mixmuljmpsched22(structIterations, A);
+  ftime(&end);
+  time_diff_ms = 1000 * (end.time - start.time) + (end.millitm - start.millitm);
+    latency = 1e6 * (float)time_diff_ms / (float)(structIterations);
+  printf("22,%f\n", latency);
+
+  ftime(&start);
+  mixmuljmpsched23(structIterations, A);
+  ftime(&end);
+  time_diff_ms = 1000 * (end.time - start.time) + (end.millitm - start.millitm);
+    latency = 1e6 * (float)time_diff_ms / (float)(structIterations);
+  printf("23,%f\n", latency);
+
+  ftime(&start);
+  mixmuljmpsched24(structIterations, A);
+  ftime(&end);
+  time_diff_ms = 1000 * (end.time - start.time) + (end.millitm - start.millitm);
+    latency = 1e6 * (float)time_diff_ms / (float)(structIterations);
+  printf("24,%f\n", latency);
+
+  ftime(&start);
+  mixmuljmpsched25(structIterations, A);
+  ftime(&end);
+  time_diff_ms = 1000 * (end.time - start.time) + (end.millitm - start.millitm);
+    latency = 1e6 * (float)time_diff_ms / (float)(structIterations);
+  printf("25,%f\n", latency);
+
+  ftime(&start);
+  mixmuljmpsched26(structIterations, A);
+  ftime(&end);
+  time_diff_ms = 1000 * (end.time - start.time) + (end.millitm - start.millitm);
+    latency = 1e6 * (float)time_diff_ms / (float)(structIterations);
+  printf("26,%f\n", latency);
+
+  ftime(&start);
+  mixmuljmpsched27(structIterations, A);
+  ftime(&end);
+  time_diff_ms = 1000 * (end.time - start.time) + (end.millitm - start.millitm);
+    latency = 1e6 * (float)time_diff_ms / (float)(structIterations);
+  printf("27,%f\n", latency);
+
+  ftime(&start);
+  mixmuljmpsched28(structIterations, A);
+  ftime(&end);
+  time_diff_ms = 1000 * (end.time - start.time) + (end.millitm - start.millitm);
+    latency = 1e6 * (float)time_diff_ms / (float)(structIterations);
+  printf("28,%f\n", latency);
+
+  ftime(&start);
+  mixmuljmpsched29(structIterations, A);
+  ftime(&end);
+  time_diff_ms = 1000 * (end.time - start.time) + (end.millitm - start.millitm);
+    latency = 1e6 * (float)time_diff_ms / (float)(structIterations);
+  printf("29,%f\n", latency);
+
+  ftime(&start);
+  mixmuljmpsched30(structIterations, A);
+  ftime(&end);
+  time_diff_ms = 1000 * (end.time - start.time) + (end.millitm - start.millitm);
+    latency = 1e6 * (float)time_diff_ms / (float)(structIterations);
+  printf("30,%f\n", latency);
+
+  ftime(&start);
+  mixmuljmpsched31(structIterations, A);
+  ftime(&end);
+  time_diff_ms = 1000 * (end.time - start.time) + (end.millitm - start.millitm);
+    latency = 1e6 * (float)time_diff_ms / (float)(structIterations);
+  printf("31,%f\n", latency);
+
+  ftime(&start);
+  mixmuljmpsched32(structIterations, A);
+  ftime(&end);
+  time_diff_ms = 1000 * (end.time - start.time) + (end.millitm - start.millitm);
+    latency = 1e6 * (float)time_diff_ms / (float)(structIterations);
+  printf("32,%f\n", latency);
+
+  ftime(&start);
+  mixmuljmpsched33(structIterations, A);
+  ftime(&end);
+  time_diff_ms = 1000 * (end.time - start.time) + (end.millitm - start.millitm);
+    latency = 1e6 * (float)time_diff_ms / (float)(structIterations);
+  printf("33,%f\n", latency);
+
+  ftime(&start);
+  mixmuljmpsched34(structIterations, A);
+  ftime(&end);
+  time_diff_ms = 1000 * (end.time - start.time) + (end.millitm - start.millitm);
+    latency = 1e6 * (float)time_diff_ms / (float)(structIterations);
+  printf("34,%f\n", latency);
+
+  ftime(&start);
+  mixmuljmpsched35(structIterations, A);
+  ftime(&end);
+  time_diff_ms = 1000 * (end.time - start.time) + (end.millitm - start.millitm);
+    latency = 1e6 * (float)time_diff_ms / (float)(structIterations);
+  printf("35,%f\n", latency);
+
+  ftime(&start);
+  mixmuljmpsched36(structIterations, A);
+  ftime(&end);
+  time_diff_ms = 1000 * (end.time - start.time) + (end.millitm - start.millitm);
+    latency = 1e6 * (float)time_diff_ms / (float)(structIterations);
+  printf("36,%f\n", latency);
+
+  ftime(&start);
+  mixmuljmpsched37(structIterations, A);
+  ftime(&end);
+  time_diff_ms = 1000 * (end.time - start.time) + (end.millitm - start.millitm);
+    latency = 1e6 * (float)time_diff_ms / (float)(structIterations);
+  printf("37,%f\n", latency);
+
+  ftime(&start);
+  mixmuljmpsched38(structIterations, A);
+  ftime(&end);
+  time_diff_ms = 1000 * (end.time - start.time) + (end.millitm - start.millitm);
+    latency = 1e6 * (float)time_diff_ms / (float)(structIterations);
+  printf("38,%f\n", latency);
+
+  ftime(&start);
+  mixmuljmpsched39(structIterations, A);
+  ftime(&end);
+  time_diff_ms = 1000 * (end.time - start.time) + (end.millitm - start.millitm);
+    latency = 1e6 * (float)time_diff_ms / (float)(structIterations);
+  printf("39,%f\n", latency);
+
+  ftime(&start);
+  mixmuljmpsched40(structIterations, A);
+  ftime(&end);
+  time_diff_ms = 1000 * (end.time - start.time) + (end.millitm - start.millitm);
+    latency = 1e6 * (float)time_diff_ms / (float)(structIterations);
+  printf("40,%f\n", latency);
+
+  ftime(&start);
+  mixmuljmpsched41(structIterations, A);
+  ftime(&end);
+  time_diff_ms = 1000 * (end.time - start.time) + (end.millitm - start.millitm);
+    latency = 1e6 * (float)time_diff_ms / (float)(structIterations);
+  printf("41,%f\n", latency);
+
+  ftime(&start);
+  mixmuljmpsched42(structIterations, A);
+  ftime(&end);
+  time_diff_ms = 1000 * (end.time - start.time) + (end.millitm - start.millitm);
+    latency = 1e6 * (float)time_diff_ms / (float)(structIterations);
+  printf("42,%f\n", latency);
+
+  ftime(&start);
+  mixmuljmpsched43(structIterations, A);
+  ftime(&end);
+  time_diff_ms = 1000 * (end.time - start.time) + (end.millitm - start.millitm);
+    latency = 1e6 * (float)time_diff_ms / (float)(structIterations);
+  printf("43,%f\n", latency);
+
+  ftime(&start);
+  mixmuljmpsched44(structIterations, A);
+  ftime(&end);
+  time_diff_ms = 1000 * (end.time - start.time) + (end.millitm - start.millitm);
+    latency = 1e6 * (float)time_diff_ms / (float)(structIterations);
+  printf("44,%f\n", latency);
+
+  ftime(&start);
+  mixmuljmpsched45(structIterations, A);
+  ftime(&end);
+  time_diff_ms = 1000 * (end.time - start.time) + (end.millitm - start.millitm);
+    latency = 1e6 * (float)time_diff_ms / (float)(structIterations);
+  printf("45,%f\n", latency);
+
+  ftime(&start);
+  mixmuljmpsched46(structIterations, A);
+  ftime(&end);
+  time_diff_ms = 1000 * (end.time - start.time) + (end.millitm - start.millitm);
+    latency = 1e6 * (float)time_diff_ms / (float)(structIterations);
+  printf("46,%f\n", latency);
+
+  ftime(&start);
+  mixmuljmpsched47(structIterations, A);
+  ftime(&end);
+  time_diff_ms = 1000 * (end.time - start.time) + (end.millitm - start.millitm);
+    latency = 1e6 * (float)time_diff_ms / (float)(structIterations);
+  printf("47,%f\n", latency);
+
+  ftime(&start);
+  mixmuljmpsched48(structIterations, A);
+  ftime(&end);
+  time_diff_ms = 1000 * (end.time - start.time) + (end.millitm - start.millitm);
+    latency = 1e6 * (float)time_diff_ms / (float)(structIterations);
+  printf("48,%f\n", latency);
+
+  ftime(&start);
+  mixmuljmpsched49(structIterations, A);
+  ftime(&end);
+  time_diff_ms = 1000 * (end.time - start.time) + (end.millitm - start.millitm);
+    latency = 1e6 * (float)time_diff_ms / (float)(structIterations);
+  printf("49,%f\n", latency);
+
+  ftime(&start);
+  mixmuljmpsched50(structIterations, A);
+  ftime(&end);
+  time_diff_ms = 1000 * (end.time - start.time) + (end.millitm - start.millitm);
+    latency = 1e6 * (float)time_diff_ms / (float)(structIterations);
+  printf("50,%f\n", latency);
+
+  ftime(&start);
+  mixmuljmpsched51(structIterations, A);
+  ftime(&end);
+  time_diff_ms = 1000 * (end.time - start.time) + (end.millitm - start.millitm);
+    latency = 1e6 * (float)time_diff_ms / (float)(structIterations);
+  printf("51,%f\n", latency);
+
+  ftime(&start);
+  mixmuljmpsched52(structIterations, A);
+  ftime(&end);
+  time_diff_ms = 1000 * (end.time - start.time) + (end.millitm - start.millitm);
+    latency = 1e6 * (float)time_diff_ms / (float)(structIterations);
+  printf("52,%f\n", latency);
+
+  ftime(&start);
+  mixmuljmpsched53(structIterations, A);
+  ftime(&end);
+  time_diff_ms = 1000 * (end.time - start.time) + (end.millitm - start.millitm);
+    latency = 1e6 * (float)time_diff_ms / (float)(structIterations);
+  printf("53,%f\n", latency);
+
+  ftime(&start);
+  mixmuljmpsched54(structIterations, A);
+  ftime(&end);
+  time_diff_ms = 1000 * (end.time - start.time) + (end.millitm - start.millitm);
+    latency = 1e6 * (float)time_diff_ms / (float)(structIterations);
+  printf("54,%f\n", latency);
+
+  ftime(&start);
+  mixmuljmpsched55(structIterations, A);
+  ftime(&end);
+  time_diff_ms = 1000 * (end.time - start.time) + (end.millitm - start.millitm);
+    latency = 1e6 * (float)time_diff_ms / (float)(structIterations);
+  printf("55,%f\n", latency);
+
+  ftime(&start);
+  mixmuljmpsched56(structIterations, A);
+  ftime(&end);
+  time_diff_ms = 1000 * (end.time - start.time) + (end.millitm - start.millitm);
+    latency = 1e6 * (float)time_diff_ms / (float)(structIterations);
+  printf("56,%f\n", latency);
+
+  ftime(&start);
+  mixmuljmpsched57(structIterations, A);
+  ftime(&end);
+  time_diff_ms = 1000 * (end.time - start.time) + (end.millitm - start.millitm);
+    latency = 1e6 * (float)time_diff_ms / (float)(structIterations);
+  printf("57,%f\n", latency);
+
+  ftime(&start);
+  mixmuljmpsched58(structIterations, A);
+  ftime(&end);
+  time_diff_ms = 1000 * (end.time - start.time) + (end.millitm - start.millitm);
+    latency = 1e6 * (float)time_diff_ms / (float)(structIterations);
+  printf("58,%f\n", latency);
+
+  ftime(&start);
+  mixmuljmpsched59(structIterations, A);
+  ftime(&end);
+  time_diff_ms = 1000 * (end.time - start.time) + (end.millitm - start.millitm);
+    latency = 1e6 * (float)time_diff_ms / (float)(structIterations);
+  printf("59,%f\n", latency);
+
+  ftime(&start);
+  mixmuljmpsched60(structIterations, A);
+  ftime(&end);
+  time_diff_ms = 1000 * (end.time - start.time) + (end.millitm - start.millitm);
+    latency = 1e6 * (float)time_diff_ms / (float)(structIterations);
+  printf("60,%f\n", latency);
+
+  ftime(&start);
+  mixmuljmpsched61(structIterations, A);
+  ftime(&end);
+  time_diff_ms = 1000 * (end.time - start.time) + (end.millitm - start.millitm);
+    latency = 1e6 * (float)time_diff_ms / (float)(structIterations);
+  printf("61,%f\n", latency);
+
+  ftime(&start);
+  mixmuljmpsched62(structIterations, A);
+  ftime(&end);
+  time_diff_ms = 1000 * (end.time - start.time) + (end.millitm - start.millitm);
+    latency = 1e6 * (float)time_diff_ms / (float)(structIterations);
+  printf("62,%f\n", latency);
+
+  ftime(&start);
+  mixmuljmpsched63(structIterations, A);
+  ftime(&end);
+  time_diff_ms = 1000 * (end.time - start.time) + (end.millitm - start.millitm);
+    latency = 1e6 * (float)time_diff_ms / (float)(structIterations);
+  printf("63,%f\n", latency);
+
+  ftime(&start);
+  mixmuljmpsched64(structIterations, A);
+  ftime(&end);
+  time_diff_ms = 1000 * (end.time - start.time) + (end.millitm - start.millitm);
+    latency = 1e6 * (float)time_diff_ms / (float)(structIterations);
+  printf("64,%f\n", latency);
+
+  ftime(&start);
+  mixmuljmpsched65(structIterations, A);
+  ftime(&end);
+  time_diff_ms = 1000 * (end.time - start.time) + (end.millitm - start.millitm);
+    latency = 1e6 * (float)time_diff_ms / (float)(structIterations);
+  printf("65,%f\n", latency);
+
+  ftime(&start);
+  mixmuljmpsched66(structIterations, A);
+  ftime(&end);
+  time_diff_ms = 1000 * (end.time - start.time) + (end.millitm - start.millitm);
+    latency = 1e6 * (float)time_diff_ms / (float)(structIterations);
+  printf("66,%f\n", latency);
+
+  ftime(&start);
+  mixmuljmpsched67(structIterations, A);
+  ftime(&end);
+  time_diff_ms = 1000 * (end.time - start.time) + (end.millitm - start.millitm);
+    latency = 1e6 * (float)time_diff_ms / (float)(structIterations);
+  printf("67,%f\n", latency);
+
+  ftime(&start);
+  mixmuljmpsched68(structIterations, A);
+  ftime(&end);
+  time_diff_ms = 1000 * (end.time - start.time) + (end.millitm - start.millitm);
+    latency = 1e6 * (float)time_diff_ms / (float)(structIterations);
+  printf("68,%f\n", latency);
+
+  ftime(&start);
+  mixmuljmpsched69(structIterations, A);
+  ftime(&end);
+  time_diff_ms = 1000 * (end.time - start.time) + (end.millitm - start.millitm);
+    latency = 1e6 * (float)time_diff_ms / (float)(structIterations);
+  printf("69,%f\n", latency);
+
+  ftime(&start);
+  mixmuljmpsched70(structIterations, A);
+  ftime(&end);
+  time_diff_ms = 1000 * (end.time - start.time) + (end.millitm - start.millitm);
+    latency = 1e6 * (float)time_diff_ms / (float)(structIterations);
+  printf("70,%f\n", latency);
+
+  ftime(&start);
+  mixmuljmpsched71(structIterations, A);
+  ftime(&end);
+  time_diff_ms = 1000 * (end.time - start.time) + (end.millitm - start.millitm);
+    latency = 1e6 * (float)time_diff_ms / (float)(structIterations);
+  printf("71,%f\n", latency);
+
+  ftime(&start);
+  mixmuljmpsched72(structIterations, A);
+  ftime(&end);
+  time_diff_ms = 1000 * (end.time - start.time) + (end.millitm - start.millitm);
+    latency = 1e6 * (float)time_diff_ms / (float)(structIterations);
+  printf("72,%f\n", latency);
+
+  ftime(&start);
+  mixmuljmpsched73(structIterations, A);
+  ftime(&end);
+  time_diff_ms = 1000 * (end.time - start.time) + (end.millitm - start.millitm);
+    latency = 1e6 * (float)time_diff_ms / (float)(structIterations);
+  printf("73,%f\n", latency);
+
+  ftime(&start);
+  mixmuljmpsched74(structIterations, A);
+  ftime(&end);
+  time_diff_ms = 1000 * (end.time - start.time) + (end.millitm - start.millitm);
+    latency = 1e6 * (float)time_diff_ms / (float)(structIterations);
+  printf("74,%f\n", latency);
+
+  ftime(&start);
+  mixmuljmpsched75(structIterations, A);
+  ftime(&end);
+  time_diff_ms = 1000 * (end.time - start.time) + (end.millitm - start.millitm);
+    latency = 1e6 * (float)time_diff_ms / (float)(structIterations);
+  printf("75,%f\n", latency);
+
+  ftime(&start);
+  mixmuljmpsched76(structIterations, A);
+  ftime(&end);
+  time_diff_ms = 1000 * (end.time - start.time) + (end.millitm - start.millitm);
+    latency = 1e6 * (float)time_diff_ms / (float)(structIterations);
+  printf("76,%f\n", latency);
+
+  ftime(&start);
+  mixmuljmpsched77(structIterations, A);
+  ftime(&end);
+  time_diff_ms = 1000 * (end.time - start.time) + (end.millitm - start.millitm);
+    latency = 1e6 * (float)time_diff_ms / (float)(structIterations);
+  printf("77,%f\n", latency);
+
+  ftime(&start);
+  mixmuljmpsched78(structIterations, A);
+  ftime(&end);
+  time_diff_ms = 1000 * (end.time - start.time) + (end.millitm - start.millitm);
+    latency = 1e6 * (float)time_diff_ms / (float)(structIterations);
+  printf("78,%f\n", latency);
+
+  ftime(&start);
+  mixmuljmpsched79(structIterations, A);
+  ftime(&end);
+  time_diff_ms = 1000 * (end.time - start.time) + (end.millitm - start.millitm);
+    latency = 1e6 * (float)time_diff_ms / (float)(structIterations);
+  printf("79,%f\n", latency);
+
+  ftime(&start);
+  mixmuljmpsched80(structIterations, A);
+  ftime(&end);
+  time_diff_ms = 1000 * (end.time - start.time) + (end.millitm - start.millitm);
+    latency = 1e6 * (float)time_diff_ms / (float)(structIterations);
+  printf("80,%f\n", latency);
+
+  ftime(&start);
+  mixmuljmpsched81(structIterations, A);
+  ftime(&end);
+  time_diff_ms = 1000 * (end.time - start.time) + (end.millitm - start.millitm);
+    latency = 1e6 * (float)time_diff_ms / (float)(structIterations);
+  printf("81,%f\n", latency);
+
+  ftime(&start);
+  mixmuljmpsched82(structIterations, A);
+  ftime(&end);
+  time_diff_ms = 1000 * (end.time - start.time) + (end.millitm - start.millitm);
+    latency = 1e6 * (float)time_diff_ms / (float)(structIterations);
+  printf("82,%f\n", latency);
+
+  ftime(&start);
+  mixmuljmpsched83(structIterations, A);
+  ftime(&end);
+  time_diff_ms = 1000 * (end.time - start.time) + (end.millitm - start.millitm);
+    latency = 1e6 * (float)time_diff_ms / (float)(structIterations);
+  printf("83,%f\n", latency);
+
+  ftime(&start);
+  mixmuljmpsched84(structIterations, A);
+  ftime(&end);
+  time_diff_ms = 1000 * (end.time - start.time) + (end.millitm - start.millitm);
+    latency = 1e6 * (float)time_diff_ms / (float)(structIterations);
+  printf("84,%f\n", latency);
+
+  ftime(&start);
+  mixmuljmpsched85(structIterations, A);
+  ftime(&end);
+  time_diff_ms = 1000 * (end.time - start.time) + (end.millitm - start.millitm);
+    latency = 1e6 * (float)time_diff_ms / (float)(structIterations);
+  printf("85,%f\n", latency);
+
+  ftime(&start);
+  mixmuljmpsched86(structIterations, A);
+  ftime(&end);
+  time_diff_ms = 1000 * (end.time - start.time) + (end.millitm - start.millitm);
+    latency = 1e6 * (float)time_diff_ms / (float)(structIterations);
+  printf("86,%f\n", latency);
+
+  ftime(&start);
+  mixmuljmpsched87(structIterations, A);
+  ftime(&end);
+  time_diff_ms = 1000 * (end.time - start.time) + (end.millitm - start.millitm);
+    latency = 1e6 * (float)time_diff_ms / (float)(structIterations);
+  printf("87,%f\n", latency);
+
+  ftime(&start);
+  mixmuljmpsched88(structIterations, A);
+  ftime(&end);
+  time_diff_ms = 1000 * (end.time - start.time) + (end.millitm - start.millitm);
+    latency = 1e6 * (float)time_diff_ms / (float)(structIterations);
+  printf("88,%f\n", latency);
+
+  ftime(&start);
+  mixmuljmpsched89(structIterations, A);
+  ftime(&end);
+  time_diff_ms = 1000 * (end.time - start.time) + (end.millitm - start.millitm);
+    latency = 1e6 * (float)time_diff_ms / (float)(structIterations);
+  printf("89,%f\n", latency);
+
+  ftime(&start);
+  mixmuljmpsched90(structIterations, A);
+  ftime(&end);
+  time_diff_ms = 1000 * (end.time - start.time) + (end.millitm - start.millitm);
+    latency = 1e6 * (float)time_diff_ms / (float)(structIterations);
+  printf("90,%f\n", latency);
+
+  ftime(&start);
+  mixmuljmpsched91(structIterations, A);
+  ftime(&end);
+  time_diff_ms = 1000 * (end.time - start.time) + (end.millitm - start.millitm);
+    latency = 1e6 * (float)time_diff_ms / (float)(structIterations);
+  printf("91,%f\n", latency);
+
+  ftime(&start);
+  mixmuljmpsched92(structIterations, A);
+  ftime(&end);
+  time_diff_ms = 1000 * (end.time - start.time) + (end.millitm - start.millitm);
+    latency = 1e6 * (float)time_diff_ms / (float)(structIterations);
+  printf("92,%f\n", latency);
+
+  ftime(&start);
+  mixmuljmpsched93(structIterations, A);
+  ftime(&end);
+  time_diff_ms = 1000 * (end.time - start.time) + (end.millitm - start.millitm);
+    latency = 1e6 * (float)time_diff_ms / (float)(structIterations);
+  printf("93,%f\n", latency);
+
+  ftime(&start);
+  mixmuljmpsched94(structIterations, A);
+  ftime(&end);
+  time_diff_ms = 1000 * (end.time - start.time) + (end.millitm - start.millitm);
+    latency = 1e6 * (float)time_diff_ms / (float)(structIterations);
+  printf("94,%f\n", latency);
+
+  ftime(&start);
+  mixmuljmpsched95(structIterations, A);
+  ftime(&end);
+  time_diff_ms = 1000 * (end.time - start.time) + (end.millitm - start.millitm);
+    latency = 1e6 * (float)time_diff_ms / (float)(structIterations);
+  printf("95,%f\n", latency);
+
+  ftime(&start);
+  mixmuljmpsched96(structIterations, A);
+  ftime(&end);
+  time_diff_ms = 1000 * (end.time - start.time) + (end.millitm - start.millitm);
+    latency = 1e6 * (float)time_diff_ms / (float)(structIterations);
+  printf("96,%f\n", latency);
+
+  ftime(&start);
+  mixmuljmpsched97(structIterations, A);
+  ftime(&end);
+  time_diff_ms = 1000 * (end.time - start.time) + (end.millitm - start.millitm);
+    latency = 1e6 * (float)time_diff_ms / (float)(structIterations);
+  printf("97,%f\n", latency);
+
+  ftime(&start);
+  mixmuljmpsched98(structIterations, A);
+  ftime(&end);
+  time_diff_ms = 1000 * (end.time - start.time) + (end.millitm - start.millitm);
+    latency = 1e6 * (float)time_diff_ms / (float)(structIterations);
+  printf("98,%f\n", latency);
+
+  ftime(&start);
+  mixmuljmpsched99(structIterations, A);
+  ftime(&end);
+  time_diff_ms = 1000 * (end.time - start.time) + (end.millitm - start.millitm);
+    latency = 1e6 * (float)time_diff_ms / (float)(structIterations);
+  printf("99,%f\n", latency);
+
+  ftime(&start);
+  mixmuljmpsched100(structIterations, A);
+  ftime(&end);
+  time_diff_ms = 1000 * (end.time - start.time) + (end.millitm - start.millitm);
+    latency = 1e6 * (float)time_diff_ms / (float)(structIterations);
+  printf("100,%f\n", latency);
+
+  ftime(&start);
+  mixmuljmpsched101(structIterations, A);
+  ftime(&end);
+  time_diff_ms = 1000 * (end.time - start.time) + (end.millitm - start.millitm);
+    latency = 1e6 * (float)time_diff_ms / (float)(structIterations);
+  printf("101,%f\n", latency);
+
+  ftime(&start);
+  mixmuljmpsched102(structIterations, A);
+  ftime(&end);
+  time_diff_ms = 1000 * (end.time - start.time) + (end.millitm - start.millitm);
+    latency = 1e6 * (float)time_diff_ms / (float)(structIterations);
+  printf("102,%f\n", latency);
+
+  ftime(&start);
+  mixmuljmpsched103(structIterations, A);
+  ftime(&end);
+  time_diff_ms = 1000 * (end.time - start.time) + (end.millitm - start.millitm);
+    latency = 1e6 * (float)time_diff_ms / (float)(structIterations);
+  printf("103,%f\n", latency);
+
+  ftime(&start);
+  mixmuljmpsched104(structIterations, A);
+  ftime(&end);
+  time_diff_ms = 1000 * (end.time - start.time) + (end.millitm - start.millitm);
+    latency = 1e6 * (float)time_diff_ms / (float)(structIterations);
+  printf("104,%f\n", latency);
+
+  ftime(&start);
+  mixmuljmpsched105(structIterations, A);
+  ftime(&end);
+  time_diff_ms = 1000 * (end.time - start.time) + (end.millitm - start.millitm);
+    latency = 1e6 * (float)time_diff_ms / (float)(structIterations);
+  printf("105,%f\n", latency);
+
+  ftime(&start);
+  mixmuljmpsched106(structIterations, A);
+  ftime(&end);
+  time_diff_ms = 1000 * (end.time - start.time) + (end.millitm - start.millitm);
+    latency = 1e6 * (float)time_diff_ms / (float)(structIterations);
+  printf("106,%f\n", latency);
+
+  ftime(&start);
+  mixmuljmpsched107(structIterations, A);
+  ftime(&end);
+  time_diff_ms = 1000 * (end.time - start.time) + (end.millitm - start.millitm);
+    latency = 1e6 * (float)time_diff_ms / (float)(structIterations);
+  printf("107,%f\n", latency);
+
+  ftime(&start);
+  mixmuljmpsched108(structIterations, A);
+  ftime(&end);
+  time_diff_ms = 1000 * (end.time - start.time) + (end.millitm - start.millitm);
+    latency = 1e6 * (float)time_diff_ms / (float)(structIterations);
+  printf("108,%f\n", latency);
+
+  ftime(&start);
+  mixmuljmpsched109(structIterations, A);
+  ftime(&end);
+  time_diff_ms = 1000 * (end.time - start.time) + (end.millitm - start.millitm);
+    latency = 1e6 * (float)time_diff_ms / (float)(structIterations);
+  printf("109,%f\n", latency);
+
+  ftime(&start);
+  mixmuljmpsched110(structIterations, A);
+  ftime(&end);
+  time_diff_ms = 1000 * (end.time - start.time) + (end.millitm - start.millitm);
+    latency = 1e6 * (float)time_diff_ms / (float)(structIterations);
+  printf("110,%f\n", latency);
+
+  ftime(&start);
+  mixmuljmpsched111(structIterations, A);
+  ftime(&end);
+  time_diff_ms = 1000 * (end.time - start.time) + (end.millitm - start.millitm);
+    latency = 1e6 * (float)time_diff_ms / (float)(structIterations);
+  printf("111,%f\n", latency);
+
+  ftime(&start);
+  mixmuljmpsched112(structIterations, A);
+  ftime(&end);
+  time_diff_ms = 1000 * (end.time - start.time) + (end.millitm - start.millitm);
+    latency = 1e6 * (float)time_diff_ms / (float)(structIterations);
+  printf("112,%f\n", latency);
+
+  ftime(&start);
+  mixmuljmpsched113(structIterations, A);
+  ftime(&end);
+  time_diff_ms = 1000 * (end.time - start.time) + (end.millitm - start.millitm);
+    latency = 1e6 * (float)time_diff_ms / (float)(structIterations);
+  printf("113,%f\n", latency);
+
+  ftime(&start);
+  mixmuljmpsched114(structIterations, A);
+  ftime(&end);
+  time_diff_ms = 1000 * (end.time - start.time) + (end.millitm - start.millitm);
+    latency = 1e6 * (float)time_diff_ms / (float)(structIterations);
+  printf("114,%f\n", latency);
+
+  ftime(&start);
+  mixmuljmpsched115(structIterations, A);
+  ftime(&end);
+  time_diff_ms = 1000 * (end.time - start.time) + (end.millitm - start.millitm);
+    latency = 1e6 * (float)time_diff_ms / (float)(structIterations);
+  printf("115,%f\n", latency);
+
+  ftime(&start);
+  mixmuljmpsched116(structIterations, A);
+  ftime(&end);
+  time_diff_ms = 1000 * (end.time - start.time) + (end.millitm - start.millitm);
+    latency = 1e6 * (float)time_diff_ms / (float)(structIterations);
+  printf("116,%f\n", latency);
+
+  ftime(&start);
+  mixmuljmpsched117(structIterations, A);
+  ftime(&end);
+  time_diff_ms = 1000 * (end.time - start.time) + (end.millitm - start.millitm);
+    latency = 1e6 * (float)time_diff_ms / (float)(structIterations);
+  printf("117,%f\n", latency);
+
+  ftime(&start);
+  mixmuljmpsched118(structIterations, A);
+  ftime(&end);
+  time_diff_ms = 1000 * (end.time - start.time) + (end.millitm - start.millitm);
+    latency = 1e6 * (float)time_diff_ms / (float)(structIterations);
+  printf("118,%f\n", latency);
+
+  ftime(&start);
+  mixmuljmpsched119(structIterations, A);
+  ftime(&end);
+  time_diff_ms = 1000 * (end.time - start.time) + (end.millitm - start.millitm);
+    latency = 1e6 * (float)time_diff_ms / (float)(structIterations);
+  printf("119,%f\n", latency);
+
+  ftime(&start);
+  mixmuljmpsched120(structIterations, A);
+  ftime(&end);
+  time_diff_ms = 1000 * (end.time - start.time) + (end.millitm - start.millitm);
+    latency = 1e6 * (float)time_diff_ms / (float)(structIterations);
+  printf("120,%f\n", latency);
+
+  ftime(&start);
+  mixmuljmpsched121(structIterations, A);
+  ftime(&end);
+  time_diff_ms = 1000 * (end.time - start.time) + (end.millitm - start.millitm);
+    latency = 1e6 * (float)time_diff_ms / (float)(structIterations);
+  printf("121,%f\n", latency);
+
+  ftime(&start);
+  mixmuljmpsched122(structIterations, A);
+  ftime(&end);
+  time_diff_ms = 1000 * (end.time - start.time) + (end.millitm - start.millitm);
+    latency = 1e6 * (float)time_diff_ms / (float)(structIterations);
+  printf("122,%f\n", latency);
+
+  ftime(&start);
+  mixmuljmpsched123(structIterations, A);
+  ftime(&end);
+  time_diff_ms = 1000 * (end.time - start.time) + (end.millitm - start.millitm);
+    latency = 1e6 * (float)time_diff_ms / (float)(structIterations);
+  printf("123,%f\n", latency);
+
+  ftime(&start);
+  mixmuljmpsched124(structIterations, A);
+  ftime(&end);
+  time_diff_ms = 1000 * (end.time - start.time) + (end.millitm - start.millitm);
+    latency = 1e6 * (float)time_diff_ms / (float)(structIterations);
+  printf("124,%f\n", latency);
+
+  ftime(&start);
+  mixmuljmpsched125(structIterations, A);
+  ftime(&end);
+  time_diff_ms = 1000 * (end.time - start.time) + (end.millitm - start.millitm);
+    latency = 1e6 * (float)time_diff_ms / (float)(structIterations);
+  printf("125,%f\n", latency);
+
+  ftime(&start);
+  mixmuljmpsched126(structIterations, A);
+  ftime(&end);
+  time_diff_ms = 1000 * (end.time - start.time) + (end.millitm - start.millitm);
+    latency = 1e6 * (float)time_diff_ms / (float)(structIterations);
+  printf("126,%f\n", latency);
+
+  ftime(&start);
+  mixmuljmpsched127(structIterations, A);
+  ftime(&end);
+  time_diff_ms = 1000 * (end.time - start.time) + (end.millitm - start.millitm);
+    latency = 1e6 * (float)time_diff_ms / (float)(structIterations);
+  printf("127,%f\n", latency);
+
+  ftime(&start);
+  mixmuljmpsched128(structIterations, A);
+  ftime(&end);
+  time_diff_ms = 1000 * (end.time - start.time) + (end.millitm - start.millitm);
+    latency = 1e6 * (float)time_diff_ms / (float)(structIterations);
+  printf("128,%f\n", latency);
+
+  }
+
+  if (argc > 1 && _strnicmp(argv[1], "mixmulrorsched", 14) == 0) {
+  printf("Mixed Multiply/Rotate Scheduler Capacity Test:\n");
+  ftime(&start);
+  mixmulrorsched2(structIterations, A);
+  ftime(&end);
+  time_diff_ms = 1000 * (end.time - start.time) + (end.millitm - start.millitm);
+    latency = 1e6 * (float)time_diff_ms / (float)(structIterations);
+  printf("2,%f\n", latency);
+
+  ftime(&start);
+  mixmulrorsched3(structIterations, A);
+  ftime(&end);
+  time_diff_ms = 1000 * (end.time - start.time) + (end.millitm - start.millitm);
+    latency = 1e6 * (float)time_diff_ms / (float)(structIterations);
+  printf("3,%f\n", latency);
+
+  ftime(&start);
+  mixmulrorsched4(structIterations, A);
+  ftime(&end);
+  time_diff_ms = 1000 * (end.time - start.time) + (end.millitm - start.millitm);
+    latency = 1e6 * (float)time_diff_ms / (float)(structIterations);
+  printf("4,%f\n", latency);
+
+  ftime(&start);
+  mixmulrorsched5(structIterations, A);
+  ftime(&end);
+  time_diff_ms = 1000 * (end.time - start.time) + (end.millitm - start.millitm);
+    latency = 1e6 * (float)time_diff_ms / (float)(structIterations);
+  printf("5,%f\n", latency);
+
+  ftime(&start);
+  mixmulrorsched6(structIterations, A);
+  ftime(&end);
+  time_diff_ms = 1000 * (end.time - start.time) + (end.millitm - start.millitm);
+    latency = 1e6 * (float)time_diff_ms / (float)(structIterations);
+  printf("6,%f\n", latency);
+
+  ftime(&start);
+  mixmulrorsched7(structIterations, A);
+  ftime(&end);
+  time_diff_ms = 1000 * (end.time - start.time) + (end.millitm - start.millitm);
+    latency = 1e6 * (float)time_diff_ms / (float)(structIterations);
+  printf("7,%f\n", latency);
+
+  ftime(&start);
+  mixmulrorsched8(structIterations, A);
+  ftime(&end);
+  time_diff_ms = 1000 * (end.time - start.time) + (end.millitm - start.millitm);
+    latency = 1e6 * (float)time_diff_ms / (float)(structIterations);
+  printf("8,%f\n", latency);
+
+  ftime(&start);
+  mixmulrorsched9(structIterations, A);
+  ftime(&end);
+  time_diff_ms = 1000 * (end.time - start.time) + (end.millitm - start.millitm);
+    latency = 1e6 * (float)time_diff_ms / (float)(structIterations);
+  printf("9,%f\n", latency);
+
+  ftime(&start);
+  mixmulrorsched10(structIterations, A);
+  ftime(&end);
+  time_diff_ms = 1000 * (end.time - start.time) + (end.millitm - start.millitm);
+    latency = 1e6 * (float)time_diff_ms / (float)(structIterations);
+  printf("10,%f\n", latency);
+
+  ftime(&start);
+  mixmulrorsched11(structIterations, A);
+  ftime(&end);
+  time_diff_ms = 1000 * (end.time - start.time) + (end.millitm - start.millitm);
+    latency = 1e6 * (float)time_diff_ms / (float)(structIterations);
+  printf("11,%f\n", latency);
+
+  ftime(&start);
+  mixmulrorsched12(structIterations, A);
+  ftime(&end);
+  time_diff_ms = 1000 * (end.time - start.time) + (end.millitm - start.millitm);
+    latency = 1e6 * (float)time_diff_ms / (float)(structIterations);
+  printf("12,%f\n", latency);
+
+  ftime(&start);
+  mixmulrorsched13(structIterations, A);
+  ftime(&end);
+  time_diff_ms = 1000 * (end.time - start.time) + (end.millitm - start.millitm);
+    latency = 1e6 * (float)time_diff_ms / (float)(structIterations);
+  printf("13,%f\n", latency);
+
+  ftime(&start);
+  mixmulrorsched14(structIterations, A);
+  ftime(&end);
+  time_diff_ms = 1000 * (end.time - start.time) + (end.millitm - start.millitm);
+    latency = 1e6 * (float)time_diff_ms / (float)(structIterations);
+  printf("14,%f\n", latency);
+
+  ftime(&start);
+  mixmulrorsched15(structIterations, A);
+  ftime(&end);
+  time_diff_ms = 1000 * (end.time - start.time) + (end.millitm - start.millitm);
+    latency = 1e6 * (float)time_diff_ms / (float)(structIterations);
+  printf("15,%f\n", latency);
+
+  ftime(&start);
+  mixmulrorsched16(structIterations, A);
+  ftime(&end);
+  time_diff_ms = 1000 * (end.time - start.time) + (end.millitm - start.millitm);
+    latency = 1e6 * (float)time_diff_ms / (float)(structIterations);
+  printf("16,%f\n", latency);
+
+  ftime(&start);
+  mixmulrorsched17(structIterations, A);
+  ftime(&end);
+  time_diff_ms = 1000 * (end.time - start.time) + (end.millitm - start.millitm);
+    latency = 1e6 * (float)time_diff_ms / (float)(structIterations);
+  printf("17,%f\n", latency);
+
+  ftime(&start);
+  mixmulrorsched18(structIterations, A);
+  ftime(&end);
+  time_diff_ms = 1000 * (end.time - start.time) + (end.millitm - start.millitm);
+    latency = 1e6 * (float)time_diff_ms / (float)(structIterations);
+  printf("18,%f\n", latency);
+
+  ftime(&start);
+  mixmulrorsched19(structIterations, A);
+  ftime(&end);
+  time_diff_ms = 1000 * (end.time - start.time) + (end.millitm - start.millitm);
+    latency = 1e6 * (float)time_diff_ms / (float)(structIterations);
+  printf("19,%f\n", latency);
+
+  ftime(&start);
+  mixmulrorsched20(structIterations, A);
+  ftime(&end);
+  time_diff_ms = 1000 * (end.time - start.time) + (end.millitm - start.millitm);
+    latency = 1e6 * (float)time_diff_ms / (float)(structIterations);
+  printf("20,%f\n", latency);
+
+  ftime(&start);
+  mixmulrorsched21(structIterations, A);
+  ftime(&end);
+  time_diff_ms = 1000 * (end.time - start.time) + (end.millitm - start.millitm);
+    latency = 1e6 * (float)time_diff_ms / (float)(structIterations);
+  printf("21,%f\n", latency);
+
+  ftime(&start);
+  mixmulrorsched22(structIterations, A);
+  ftime(&end);
+  time_diff_ms = 1000 * (end.time - start.time) + (end.millitm - start.millitm);
+    latency = 1e6 * (float)time_diff_ms / (float)(structIterations);
+  printf("22,%f\n", latency);
+
+  ftime(&start);
+  mixmulrorsched23(structIterations, A);
+  ftime(&end);
+  time_diff_ms = 1000 * (end.time - start.time) + (end.millitm - start.millitm);
+    latency = 1e6 * (float)time_diff_ms / (float)(structIterations);
+  printf("23,%f\n", latency);
+
+  ftime(&start);
+  mixmulrorsched24(structIterations, A);
+  ftime(&end);
+  time_diff_ms = 1000 * (end.time - start.time) + (end.millitm - start.millitm);
+    latency = 1e6 * (float)time_diff_ms / (float)(structIterations);
+  printf("24,%f\n", latency);
+
+  ftime(&start);
+  mixmulrorsched25(structIterations, A);
+  ftime(&end);
+  time_diff_ms = 1000 * (end.time - start.time) + (end.millitm - start.millitm);
+    latency = 1e6 * (float)time_diff_ms / (float)(structIterations);
+  printf("25,%f\n", latency);
+
+  ftime(&start);
+  mixmulrorsched26(structIterations, A);
+  ftime(&end);
+  time_diff_ms = 1000 * (end.time - start.time) + (end.millitm - start.millitm);
+    latency = 1e6 * (float)time_diff_ms / (float)(structIterations);
+  printf("26,%f\n", latency);
+
+  ftime(&start);
+  mixmulrorsched27(structIterations, A);
+  ftime(&end);
+  time_diff_ms = 1000 * (end.time - start.time) + (end.millitm - start.millitm);
+    latency = 1e6 * (float)time_diff_ms / (float)(structIterations);
+  printf("27,%f\n", latency);
+
+  ftime(&start);
+  mixmulrorsched28(structIterations, A);
+  ftime(&end);
+  time_diff_ms = 1000 * (end.time - start.time) + (end.millitm - start.millitm);
+    latency = 1e6 * (float)time_diff_ms / (float)(structIterations);
+  printf("28,%f\n", latency);
+
+  ftime(&start);
+  mixmulrorsched29(structIterations, A);
+  ftime(&end);
+  time_diff_ms = 1000 * (end.time - start.time) + (end.millitm - start.millitm);
+    latency = 1e6 * (float)time_diff_ms / (float)(structIterations);
+  printf("29,%f\n", latency);
+
+  ftime(&start);
+  mixmulrorsched30(structIterations, A);
+  ftime(&end);
+  time_diff_ms = 1000 * (end.time - start.time) + (end.millitm - start.millitm);
+    latency = 1e6 * (float)time_diff_ms / (float)(structIterations);
+  printf("30,%f\n", latency);
+
+  ftime(&start);
+  mixmulrorsched31(structIterations, A);
+  ftime(&end);
+  time_diff_ms = 1000 * (end.time - start.time) + (end.millitm - start.millitm);
+    latency = 1e6 * (float)time_diff_ms / (float)(structIterations);
+  printf("31,%f\n", latency);
+
+  ftime(&start);
+  mixmulrorsched32(structIterations, A);
+  ftime(&end);
+  time_diff_ms = 1000 * (end.time - start.time) + (end.millitm - start.millitm);
+    latency = 1e6 * (float)time_diff_ms / (float)(structIterations);
+  printf("32,%f\n", latency);
+
+  ftime(&start);
+  mixmulrorsched33(structIterations, A);
+  ftime(&end);
+  time_diff_ms = 1000 * (end.time - start.time) + (end.millitm - start.millitm);
+    latency = 1e6 * (float)time_diff_ms / (float)(structIterations);
+  printf("33,%f\n", latency);
+
+  ftime(&start);
+  mixmulrorsched34(structIterations, A);
+  ftime(&end);
+  time_diff_ms = 1000 * (end.time - start.time) + (end.millitm - start.millitm);
+    latency = 1e6 * (float)time_diff_ms / (float)(structIterations);
+  printf("34,%f\n", latency);
+
+  ftime(&start);
+  mixmulrorsched35(structIterations, A);
+  ftime(&end);
+  time_diff_ms = 1000 * (end.time - start.time) + (end.millitm - start.millitm);
+    latency = 1e6 * (float)time_diff_ms / (float)(structIterations);
+  printf("35,%f\n", latency);
+
+  ftime(&start);
+  mixmulrorsched36(structIterations, A);
+  ftime(&end);
+  time_diff_ms = 1000 * (end.time - start.time) + (end.millitm - start.millitm);
+    latency = 1e6 * (float)time_diff_ms / (float)(structIterations);
+  printf("36,%f\n", latency);
+
+  ftime(&start);
+  mixmulrorsched37(structIterations, A);
+  ftime(&end);
+  time_diff_ms = 1000 * (end.time - start.time) + (end.millitm - start.millitm);
+    latency = 1e6 * (float)time_diff_ms / (float)(structIterations);
+  printf("37,%f\n", latency);
+
+  ftime(&start);
+  mixmulrorsched38(structIterations, A);
+  ftime(&end);
+  time_diff_ms = 1000 * (end.time - start.time) + (end.millitm - start.millitm);
+    latency = 1e6 * (float)time_diff_ms / (float)(structIterations);
+  printf("38,%f\n", latency);
+
+  ftime(&start);
+  mixmulrorsched39(structIterations, A);
+  ftime(&end);
+  time_diff_ms = 1000 * (end.time - start.time) + (end.millitm - start.millitm);
+    latency = 1e6 * (float)time_diff_ms / (float)(structIterations);
+  printf("39,%f\n", latency);
+
+  ftime(&start);
+  mixmulrorsched40(structIterations, A);
+  ftime(&end);
+  time_diff_ms = 1000 * (end.time - start.time) + (end.millitm - start.millitm);
+    latency = 1e6 * (float)time_diff_ms / (float)(structIterations);
+  printf("40,%f\n", latency);
+
+  ftime(&start);
+  mixmulrorsched41(structIterations, A);
+  ftime(&end);
+  time_diff_ms = 1000 * (end.time - start.time) + (end.millitm - start.millitm);
+    latency = 1e6 * (float)time_diff_ms / (float)(structIterations);
+  printf("41,%f\n", latency);
+
+  ftime(&start);
+  mixmulrorsched42(structIterations, A);
+  ftime(&end);
+  time_diff_ms = 1000 * (end.time - start.time) + (end.millitm - start.millitm);
+    latency = 1e6 * (float)time_diff_ms / (float)(structIterations);
+  printf("42,%f\n", latency);
+
+  ftime(&start);
+  mixmulrorsched43(structIterations, A);
+  ftime(&end);
+  time_diff_ms = 1000 * (end.time - start.time) + (end.millitm - start.millitm);
+    latency = 1e6 * (float)time_diff_ms / (float)(structIterations);
+  printf("43,%f\n", latency);
+
+  ftime(&start);
+  mixmulrorsched44(structIterations, A);
+  ftime(&end);
+  time_diff_ms = 1000 * (end.time - start.time) + (end.millitm - start.millitm);
+    latency = 1e6 * (float)time_diff_ms / (float)(structIterations);
+  printf("44,%f\n", latency);
+
+  ftime(&start);
+  mixmulrorsched45(structIterations, A);
+  ftime(&end);
+  time_diff_ms = 1000 * (end.time - start.time) + (end.millitm - start.millitm);
+    latency = 1e6 * (float)time_diff_ms / (float)(structIterations);
+  printf("45,%f\n", latency);
+
+  ftime(&start);
+  mixmulrorsched46(structIterations, A);
+  ftime(&end);
+  time_diff_ms = 1000 * (end.time - start.time) + (end.millitm - start.millitm);
+    latency = 1e6 * (float)time_diff_ms / (float)(structIterations);
+  printf("46,%f\n", latency);
+
+  ftime(&start);
+  mixmulrorsched47(structIterations, A);
+  ftime(&end);
+  time_diff_ms = 1000 * (end.time - start.time) + (end.millitm - start.millitm);
+    latency = 1e6 * (float)time_diff_ms / (float)(structIterations);
+  printf("47,%f\n", latency);
+
+  ftime(&start);
+  mixmulrorsched48(structIterations, A);
+  ftime(&end);
+  time_diff_ms = 1000 * (end.time - start.time) + (end.millitm - start.millitm);
+    latency = 1e6 * (float)time_diff_ms / (float)(structIterations);
+  printf("48,%f\n", latency);
+
+  ftime(&start);
+  mixmulrorsched49(structIterations, A);
+  ftime(&end);
+  time_diff_ms = 1000 * (end.time - start.time) + (end.millitm - start.millitm);
+    latency = 1e6 * (float)time_diff_ms / (float)(structIterations);
+  printf("49,%f\n", latency);
+
+  ftime(&start);
+  mixmulrorsched50(structIterations, A);
+  ftime(&end);
+  time_diff_ms = 1000 * (end.time - start.time) + (end.millitm - start.millitm);
+    latency = 1e6 * (float)time_diff_ms / (float)(structIterations);
+  printf("50,%f\n", latency);
+
+  ftime(&start);
+  mixmulrorsched51(structIterations, A);
+  ftime(&end);
+  time_diff_ms = 1000 * (end.time - start.time) + (end.millitm - start.millitm);
+    latency = 1e6 * (float)time_diff_ms / (float)(structIterations);
+  printf("51,%f\n", latency);
+
+  ftime(&start);
+  mixmulrorsched52(structIterations, A);
+  ftime(&end);
+  time_diff_ms = 1000 * (end.time - start.time) + (end.millitm - start.millitm);
+    latency = 1e6 * (float)time_diff_ms / (float)(structIterations);
+  printf("52,%f\n", latency);
+
+  ftime(&start);
+  mixmulrorsched53(structIterations, A);
+  ftime(&end);
+  time_diff_ms = 1000 * (end.time - start.time) + (end.millitm - start.millitm);
+    latency = 1e6 * (float)time_diff_ms / (float)(structIterations);
+  printf("53,%f\n", latency);
+
+  ftime(&start);
+  mixmulrorsched54(structIterations, A);
+  ftime(&end);
+  time_diff_ms = 1000 * (end.time - start.time) + (end.millitm - start.millitm);
+    latency = 1e6 * (float)time_diff_ms / (float)(structIterations);
+  printf("54,%f\n", latency);
+
+  ftime(&start);
+  mixmulrorsched55(structIterations, A);
+  ftime(&end);
+  time_diff_ms = 1000 * (end.time - start.time) + (end.millitm - start.millitm);
+    latency = 1e6 * (float)time_diff_ms / (float)(structIterations);
+  printf("55,%f\n", latency);
+
+  ftime(&start);
+  mixmulrorsched56(structIterations, A);
+  ftime(&end);
+  time_diff_ms = 1000 * (end.time - start.time) + (end.millitm - start.millitm);
+    latency = 1e6 * (float)time_diff_ms / (float)(structIterations);
+  printf("56,%f\n", latency);
+
+  ftime(&start);
+  mixmulrorsched57(structIterations, A);
+  ftime(&end);
+  time_diff_ms = 1000 * (end.time - start.time) + (end.millitm - start.millitm);
+    latency = 1e6 * (float)time_diff_ms / (float)(structIterations);
+  printf("57,%f\n", latency);
+
+  ftime(&start);
+  mixmulrorsched58(structIterations, A);
+  ftime(&end);
+  time_diff_ms = 1000 * (end.time - start.time) + (end.millitm - start.millitm);
+    latency = 1e6 * (float)time_diff_ms / (float)(structIterations);
+  printf("58,%f\n", latency);
+
+  ftime(&start);
+  mixmulrorsched59(structIterations, A);
+  ftime(&end);
+  time_diff_ms = 1000 * (end.time - start.time) + (end.millitm - start.millitm);
+    latency = 1e6 * (float)time_diff_ms / (float)(structIterations);
+  printf("59,%f\n", latency);
+
+  ftime(&start);
+  mixmulrorsched60(structIterations, A);
+  ftime(&end);
+  time_diff_ms = 1000 * (end.time - start.time) + (end.millitm - start.millitm);
+    latency = 1e6 * (float)time_diff_ms / (float)(structIterations);
+  printf("60,%f\n", latency);
+
+  ftime(&start);
+  mixmulrorsched61(structIterations, A);
+  ftime(&end);
+  time_diff_ms = 1000 * (end.time - start.time) + (end.millitm - start.millitm);
+    latency = 1e6 * (float)time_diff_ms / (float)(structIterations);
+  printf("61,%f\n", latency);
+
+  ftime(&start);
+  mixmulrorsched62(structIterations, A);
+  ftime(&end);
+  time_diff_ms = 1000 * (end.time - start.time) + (end.millitm - start.millitm);
+    latency = 1e6 * (float)time_diff_ms / (float)(structIterations);
+  printf("62,%f\n", latency);
+
+  ftime(&start);
+  mixmulrorsched63(structIterations, A);
+  ftime(&end);
+  time_diff_ms = 1000 * (end.time - start.time) + (end.millitm - start.millitm);
+    latency = 1e6 * (float)time_diff_ms / (float)(structIterations);
+  printf("63,%f\n", latency);
+
+  ftime(&start);
+  mixmulrorsched64(structIterations, A);
+  ftime(&end);
+  time_diff_ms = 1000 * (end.time - start.time) + (end.millitm - start.millitm);
+    latency = 1e6 * (float)time_diff_ms / (float)(structIterations);
+  printf("64,%f\n", latency);
+
+  ftime(&start);
+  mixmulrorsched65(structIterations, A);
+  ftime(&end);
+  time_diff_ms = 1000 * (end.time - start.time) + (end.millitm - start.millitm);
+    latency = 1e6 * (float)time_diff_ms / (float)(structIterations);
+  printf("65,%f\n", latency);
+
+  ftime(&start);
+  mixmulrorsched66(structIterations, A);
+  ftime(&end);
+  time_diff_ms = 1000 * (end.time - start.time) + (end.millitm - start.millitm);
+    latency = 1e6 * (float)time_diff_ms / (float)(structIterations);
+  printf("66,%f\n", latency);
+
+  ftime(&start);
+  mixmulrorsched67(structIterations, A);
+  ftime(&end);
+  time_diff_ms = 1000 * (end.time - start.time) + (end.millitm - start.millitm);
+    latency = 1e6 * (float)time_diff_ms / (float)(structIterations);
+  printf("67,%f\n", latency);
+
+  ftime(&start);
+  mixmulrorsched68(structIterations, A);
+  ftime(&end);
+  time_diff_ms = 1000 * (end.time - start.time) + (end.millitm - start.millitm);
+    latency = 1e6 * (float)time_diff_ms / (float)(structIterations);
+  printf("68,%f\n", latency);
+
+  ftime(&start);
+  mixmulrorsched69(structIterations, A);
+  ftime(&end);
+  time_diff_ms = 1000 * (end.time - start.time) + (end.millitm - start.millitm);
+    latency = 1e6 * (float)time_diff_ms / (float)(structIterations);
+  printf("69,%f\n", latency);
+
+  ftime(&start);
+  mixmulrorsched70(structIterations, A);
+  ftime(&end);
+  time_diff_ms = 1000 * (end.time - start.time) + (end.millitm - start.millitm);
+    latency = 1e6 * (float)time_diff_ms / (float)(structIterations);
+  printf("70,%f\n", latency);
+
+  ftime(&start);
+  mixmulrorsched71(structIterations, A);
+  ftime(&end);
+  time_diff_ms = 1000 * (end.time - start.time) + (end.millitm - start.millitm);
+    latency = 1e6 * (float)time_diff_ms / (float)(structIterations);
+  printf("71,%f\n", latency);
+
+  ftime(&start);
+  mixmulrorsched72(structIterations, A);
+  ftime(&end);
+  time_diff_ms = 1000 * (end.time - start.time) + (end.millitm - start.millitm);
+    latency = 1e6 * (float)time_diff_ms / (float)(structIterations);
+  printf("72,%f\n", latency);
+
+  ftime(&start);
+  mixmulrorsched73(structIterations, A);
+  ftime(&end);
+  time_diff_ms = 1000 * (end.time - start.time) + (end.millitm - start.millitm);
+    latency = 1e6 * (float)time_diff_ms / (float)(structIterations);
+  printf("73,%f\n", latency);
+
+  ftime(&start);
+  mixmulrorsched74(structIterations, A);
+  ftime(&end);
+  time_diff_ms = 1000 * (end.time - start.time) + (end.millitm - start.millitm);
+    latency = 1e6 * (float)time_diff_ms / (float)(structIterations);
+  printf("74,%f\n", latency);
+
+  ftime(&start);
+  mixmulrorsched75(structIterations, A);
+  ftime(&end);
+  time_diff_ms = 1000 * (end.time - start.time) + (end.millitm - start.millitm);
+    latency = 1e6 * (float)time_diff_ms / (float)(structIterations);
+  printf("75,%f\n", latency);
+
+  ftime(&start);
+  mixmulrorsched76(structIterations, A);
+  ftime(&end);
+  time_diff_ms = 1000 * (end.time - start.time) + (end.millitm - start.millitm);
+    latency = 1e6 * (float)time_diff_ms / (float)(structIterations);
+  printf("76,%f\n", latency);
+
+  ftime(&start);
+  mixmulrorsched77(structIterations, A);
+  ftime(&end);
+  time_diff_ms = 1000 * (end.time - start.time) + (end.millitm - start.millitm);
+    latency = 1e6 * (float)time_diff_ms / (float)(structIterations);
+  printf("77,%f\n", latency);
+
+  ftime(&start);
+  mixmulrorsched78(structIterations, A);
+  ftime(&end);
+  time_diff_ms = 1000 * (end.time - start.time) + (end.millitm - start.millitm);
+    latency = 1e6 * (float)time_diff_ms / (float)(structIterations);
+  printf("78,%f\n", latency);
+
+  ftime(&start);
+  mixmulrorsched79(structIterations, A);
+  ftime(&end);
+  time_diff_ms = 1000 * (end.time - start.time) + (end.millitm - start.millitm);
+    latency = 1e6 * (float)time_diff_ms / (float)(structIterations);
+  printf("79,%f\n", latency);
+
+  ftime(&start);
+  mixmulrorsched80(structIterations, A);
+  ftime(&end);
+  time_diff_ms = 1000 * (end.time - start.time) + (end.millitm - start.millitm);
+    latency = 1e6 * (float)time_diff_ms / (float)(structIterations);
+  printf("80,%f\n", latency);
+
+  ftime(&start);
+  mixmulrorsched81(structIterations, A);
+  ftime(&end);
+  time_diff_ms = 1000 * (end.time - start.time) + (end.millitm - start.millitm);
+    latency = 1e6 * (float)time_diff_ms / (float)(structIterations);
+  printf("81,%f\n", latency);
+
+  ftime(&start);
+  mixmulrorsched82(structIterations, A);
+  ftime(&end);
+  time_diff_ms = 1000 * (end.time - start.time) + (end.millitm - start.millitm);
+    latency = 1e6 * (float)time_diff_ms / (float)(structIterations);
+  printf("82,%f\n", latency);
+
+  ftime(&start);
+  mixmulrorsched83(structIterations, A);
+  ftime(&end);
+  time_diff_ms = 1000 * (end.time - start.time) + (end.millitm - start.millitm);
+    latency = 1e6 * (float)time_diff_ms / (float)(structIterations);
+  printf("83,%f\n", latency);
+
+  ftime(&start);
+  mixmulrorsched84(structIterations, A);
+  ftime(&end);
+  time_diff_ms = 1000 * (end.time - start.time) + (end.millitm - start.millitm);
+    latency = 1e6 * (float)time_diff_ms / (float)(structIterations);
+  printf("84,%f\n", latency);
+
+  ftime(&start);
+  mixmulrorsched85(structIterations, A);
+  ftime(&end);
+  time_diff_ms = 1000 * (end.time - start.time) + (end.millitm - start.millitm);
+    latency = 1e6 * (float)time_diff_ms / (float)(structIterations);
+  printf("85,%f\n", latency);
+
+  ftime(&start);
+  mixmulrorsched86(structIterations, A);
+  ftime(&end);
+  time_diff_ms = 1000 * (end.time - start.time) + (end.millitm - start.millitm);
+    latency = 1e6 * (float)time_diff_ms / (float)(structIterations);
+  printf("86,%f\n", latency);
+
+  ftime(&start);
+  mixmulrorsched87(structIterations, A);
+  ftime(&end);
+  time_diff_ms = 1000 * (end.time - start.time) + (end.millitm - start.millitm);
+    latency = 1e6 * (float)time_diff_ms / (float)(structIterations);
+  printf("87,%f\n", latency);
+
+  ftime(&start);
+  mixmulrorsched88(structIterations, A);
+  ftime(&end);
+  time_diff_ms = 1000 * (end.time - start.time) + (end.millitm - start.millitm);
+    latency = 1e6 * (float)time_diff_ms / (float)(structIterations);
+  printf("88,%f\n", latency);
+
+  ftime(&start);
+  mixmulrorsched89(structIterations, A);
+  ftime(&end);
+  time_diff_ms = 1000 * (end.time - start.time) + (end.millitm - start.millitm);
+    latency = 1e6 * (float)time_diff_ms / (float)(structIterations);
+  printf("89,%f\n", latency);
+
+  ftime(&start);
+  mixmulrorsched90(structIterations, A);
+  ftime(&end);
+  time_diff_ms = 1000 * (end.time - start.time) + (end.millitm - start.millitm);
+    latency = 1e6 * (float)time_diff_ms / (float)(structIterations);
+  printf("90,%f\n", latency);
+
+  ftime(&start);
+  mixmulrorsched91(structIterations, A);
+  ftime(&end);
+  time_diff_ms = 1000 * (end.time - start.time) + (end.millitm - start.millitm);
+    latency = 1e6 * (float)time_diff_ms / (float)(structIterations);
+  printf("91,%f\n", latency);
+
+  ftime(&start);
+  mixmulrorsched92(structIterations, A);
+  ftime(&end);
+  time_diff_ms = 1000 * (end.time - start.time) + (end.millitm - start.millitm);
+    latency = 1e6 * (float)time_diff_ms / (float)(structIterations);
+  printf("92,%f\n", latency);
+
+  ftime(&start);
+  mixmulrorsched93(structIterations, A);
+  ftime(&end);
+  time_diff_ms = 1000 * (end.time - start.time) + (end.millitm - start.millitm);
+    latency = 1e6 * (float)time_diff_ms / (float)(structIterations);
+  printf("93,%f\n", latency);
+
+  ftime(&start);
+  mixmulrorsched94(structIterations, A);
+  ftime(&end);
+  time_diff_ms = 1000 * (end.time - start.time) + (end.millitm - start.millitm);
+    latency = 1e6 * (float)time_diff_ms / (float)(structIterations);
+  printf("94,%f\n", latency);
+
+  ftime(&start);
+  mixmulrorsched95(structIterations, A);
+  ftime(&end);
+  time_diff_ms = 1000 * (end.time - start.time) + (end.millitm - start.millitm);
+    latency = 1e6 * (float)time_diff_ms / (float)(structIterations);
+  printf("95,%f\n", latency);
+
+  ftime(&start);
+  mixmulrorsched96(structIterations, A);
+  ftime(&end);
+  time_diff_ms = 1000 * (end.time - start.time) + (end.millitm - start.millitm);
+    latency = 1e6 * (float)time_diff_ms / (float)(structIterations);
+  printf("96,%f\n", latency);
+
+  ftime(&start);
+  mixmulrorsched97(structIterations, A);
+  ftime(&end);
+  time_diff_ms = 1000 * (end.time - start.time) + (end.millitm - start.millitm);
+    latency = 1e6 * (float)time_diff_ms / (float)(structIterations);
+  printf("97,%f\n", latency);
+
+  ftime(&start);
+  mixmulrorsched98(structIterations, A);
+  ftime(&end);
+  time_diff_ms = 1000 * (end.time - start.time) + (end.millitm - start.millitm);
+    latency = 1e6 * (float)time_diff_ms / (float)(structIterations);
+  printf("98,%f\n", latency);
+
+  ftime(&start);
+  mixmulrorsched99(structIterations, A);
+  ftime(&end);
+  time_diff_ms = 1000 * (end.time - start.time) + (end.millitm - start.millitm);
+    latency = 1e6 * (float)time_diff_ms / (float)(structIterations);
+  printf("99,%f\n", latency);
+
+  ftime(&start);
+  mixmulrorsched100(structIterations, A);
+  ftime(&end);
+  time_diff_ms = 1000 * (end.time - start.time) + (end.millitm - start.millitm);
+    latency = 1e6 * (float)time_diff_ms / (float)(structIterations);
+  printf("100,%f\n", latency);
+
+  ftime(&start);
+  mixmulrorsched101(structIterations, A);
+  ftime(&end);
+  time_diff_ms = 1000 * (end.time - start.time) + (end.millitm - start.millitm);
+    latency = 1e6 * (float)time_diff_ms / (float)(structIterations);
+  printf("101,%f\n", latency);
+
+  ftime(&start);
+  mixmulrorsched102(structIterations, A);
+  ftime(&end);
+  time_diff_ms = 1000 * (end.time - start.time) + (end.millitm - start.millitm);
+    latency = 1e6 * (float)time_diff_ms / (float)(structIterations);
+  printf("102,%f\n", latency);
+
+  ftime(&start);
+  mixmulrorsched103(structIterations, A);
+  ftime(&end);
+  time_diff_ms = 1000 * (end.time - start.time) + (end.millitm - start.millitm);
+    latency = 1e6 * (float)time_diff_ms / (float)(structIterations);
+  printf("103,%f\n", latency);
+
+  ftime(&start);
+  mixmulrorsched104(structIterations, A);
+  ftime(&end);
+  time_diff_ms = 1000 * (end.time - start.time) + (end.millitm - start.millitm);
+    latency = 1e6 * (float)time_diff_ms / (float)(structIterations);
+  printf("104,%f\n", latency);
+
+  ftime(&start);
+  mixmulrorsched105(structIterations, A);
+  ftime(&end);
+  time_diff_ms = 1000 * (end.time - start.time) + (end.millitm - start.millitm);
+    latency = 1e6 * (float)time_diff_ms / (float)(structIterations);
+  printf("105,%f\n", latency);
+
+  ftime(&start);
+  mixmulrorsched106(structIterations, A);
+  ftime(&end);
+  time_diff_ms = 1000 * (end.time - start.time) + (end.millitm - start.millitm);
+    latency = 1e6 * (float)time_diff_ms / (float)(structIterations);
+  printf("106,%f\n", latency);
+
+  ftime(&start);
+  mixmulrorsched107(structIterations, A);
+  ftime(&end);
+  time_diff_ms = 1000 * (end.time - start.time) + (end.millitm - start.millitm);
+    latency = 1e6 * (float)time_diff_ms / (float)(structIterations);
+  printf("107,%f\n", latency);
+
+  ftime(&start);
+  mixmulrorsched108(structIterations, A);
+  ftime(&end);
+  time_diff_ms = 1000 * (end.time - start.time) + (end.millitm - start.millitm);
+    latency = 1e6 * (float)time_diff_ms / (float)(structIterations);
+  printf("108,%f\n", latency);
+
+  ftime(&start);
+  mixmulrorsched109(structIterations, A);
+  ftime(&end);
+  time_diff_ms = 1000 * (end.time - start.time) + (end.millitm - start.millitm);
+    latency = 1e6 * (float)time_diff_ms / (float)(structIterations);
+  printf("109,%f\n", latency);
+
+  ftime(&start);
+  mixmulrorsched110(structIterations, A);
+  ftime(&end);
+  time_diff_ms = 1000 * (end.time - start.time) + (end.millitm - start.millitm);
+    latency = 1e6 * (float)time_diff_ms / (float)(structIterations);
+  printf("110,%f\n", latency);
+
+  ftime(&start);
+  mixmulrorsched111(structIterations, A);
+  ftime(&end);
+  time_diff_ms = 1000 * (end.time - start.time) + (end.millitm - start.millitm);
+    latency = 1e6 * (float)time_diff_ms / (float)(structIterations);
+  printf("111,%f\n", latency);
+
+  ftime(&start);
+  mixmulrorsched112(structIterations, A);
+  ftime(&end);
+  time_diff_ms = 1000 * (end.time - start.time) + (end.millitm - start.millitm);
+    latency = 1e6 * (float)time_diff_ms / (float)(structIterations);
+  printf("112,%f\n", latency);
+
+  ftime(&start);
+  mixmulrorsched113(structIterations, A);
+  ftime(&end);
+  time_diff_ms = 1000 * (end.time - start.time) + (end.millitm - start.millitm);
+    latency = 1e6 * (float)time_diff_ms / (float)(structIterations);
+  printf("113,%f\n", latency);
+
+  ftime(&start);
+  mixmulrorsched114(structIterations, A);
+  ftime(&end);
+  time_diff_ms = 1000 * (end.time - start.time) + (end.millitm - start.millitm);
+    latency = 1e6 * (float)time_diff_ms / (float)(structIterations);
+  printf("114,%f\n", latency);
+
+  ftime(&start);
+  mixmulrorsched115(structIterations, A);
+  ftime(&end);
+  time_diff_ms = 1000 * (end.time - start.time) + (end.millitm - start.millitm);
+    latency = 1e6 * (float)time_diff_ms / (float)(structIterations);
+  printf("115,%f\n", latency);
+
+  ftime(&start);
+  mixmulrorsched116(structIterations, A);
+  ftime(&end);
+  time_diff_ms = 1000 * (end.time - start.time) + (end.millitm - start.millitm);
+    latency = 1e6 * (float)time_diff_ms / (float)(structIterations);
+  printf("116,%f\n", latency);
+
+  ftime(&start);
+  mixmulrorsched117(structIterations, A);
+  ftime(&end);
+  time_diff_ms = 1000 * (end.time - start.time) + (end.millitm - start.millitm);
+    latency = 1e6 * (float)time_diff_ms / (float)(structIterations);
+  printf("117,%f\n", latency);
+
+  ftime(&start);
+  mixmulrorsched118(structIterations, A);
+  ftime(&end);
+  time_diff_ms = 1000 * (end.time - start.time) + (end.millitm - start.millitm);
+    latency = 1e6 * (float)time_diff_ms / (float)(structIterations);
+  printf("118,%f\n", latency);
+
+  ftime(&start);
+  mixmulrorsched119(structIterations, A);
+  ftime(&end);
+  time_diff_ms = 1000 * (end.time - start.time) + (end.millitm - start.millitm);
+    latency = 1e6 * (float)time_diff_ms / (float)(structIterations);
+  printf("119,%f\n", latency);
+
+  ftime(&start);
+  mixmulrorsched120(structIterations, A);
+  ftime(&end);
+  time_diff_ms = 1000 * (end.time - start.time) + (end.millitm - start.millitm);
+    latency = 1e6 * (float)time_diff_ms / (float)(structIterations);
+  printf("120,%f\n", latency);
+
+  ftime(&start);
+  mixmulrorsched121(structIterations, A);
+  ftime(&end);
+  time_diff_ms = 1000 * (end.time - start.time) + (end.millitm - start.millitm);
+    latency = 1e6 * (float)time_diff_ms / (float)(structIterations);
+  printf("121,%f\n", latency);
+
+  ftime(&start);
+  mixmulrorsched122(structIterations, A);
+  ftime(&end);
+  time_diff_ms = 1000 * (end.time - start.time) + (end.millitm - start.millitm);
+    latency = 1e6 * (float)time_diff_ms / (float)(structIterations);
+  printf("122,%f\n", latency);
+
+  ftime(&start);
+  mixmulrorsched123(structIterations, A);
+  ftime(&end);
+  time_diff_ms = 1000 * (end.time - start.time) + (end.millitm - start.millitm);
+    latency = 1e6 * (float)time_diff_ms / (float)(structIterations);
+  printf("123,%f\n", latency);
+
+  ftime(&start);
+  mixmulrorsched124(structIterations, A);
+  ftime(&end);
+  time_diff_ms = 1000 * (end.time - start.time) + (end.millitm - start.millitm);
+    latency = 1e6 * (float)time_diff_ms / (float)(structIterations);
+  printf("124,%f\n", latency);
+
+  ftime(&start);
+  mixmulrorsched125(structIterations, A);
+  ftime(&end);
+  time_diff_ms = 1000 * (end.time - start.time) + (end.millitm - start.millitm);
+    latency = 1e6 * (float)time_diff_ms / (float)(structIterations);
+  printf("125,%f\n", latency);
+
+  ftime(&start);
+  mixmulrorsched126(structIterations, A);
+  ftime(&end);
+  time_diff_ms = 1000 * (end.time - start.time) + (end.millitm - start.millitm);
+    latency = 1e6 * (float)time_diff_ms / (float)(structIterations);
+  printf("126,%f\n", latency);
+
+  ftime(&start);
+  mixmulrorsched127(structIterations, A);
+  ftime(&end);
+  time_diff_ms = 1000 * (end.time - start.time) + (end.millitm - start.millitm);
+    latency = 1e6 * (float)time_diff_ms / (float)(structIterations);
+  printf("127,%f\n", latency);
+
+  ftime(&start);
+  mixmulrorsched128(structIterations, A);
+  ftime(&end);
+  time_diff_ms = 1000 * (end.time - start.time) + (end.millitm - start.millitm);
+    latency = 1e6 * (float)time_diff_ms / (float)(structIterations);
+  printf("128,%f\n", latency);
+
+  }
+
+  if (argc > 1 && _strnicmp(argv[1], "branchhist", 10) == 0) {
+  printf("Branch predictor pattern recognition:\n");
+uint32_t testSizeCount = sizeof(branchHistoryLengths) / sizeof(int);
+initializeBranchHistFuncArr();
+srand(time(NULL));
+
+size_t resultSize = sizeof(float) * maxBranchCount * testSizeCount;
+float* randomResults = (float*)malloc(resultSize);
+float* predictableResults = (float*)malloc(resultSize);
+for (uint32_t branchCountIdx = 0; branchCountIdx < maxBranchCount; branchCountIdx++) {
+    for (uint32_t testSizeIdx = 0; testSizeIdx < testSizeCount; testSizeIdx++) {
+        uint32_t testSize = branchHistoryLengths[testSizeIdx];
+        uint32_t branchCount = branchCounts[branchCountIdx];
+        printf("Testing branch count %d history length %d\n", branchCount, testSize);
+        randomResults[branchCountIdx * testSizeCount + testSizeIdx] = runBranchHistTest(testSize, branchCountIdx, 1);
+        predictableResults[branchCountIdx * testSizeCount + testSizeIdx] = runBranchHistTest(testSize, branchCountIdx, 0);
+        printf("%d, %f, %f\n", testSize,
+            randomResults[branchCountIdx * testSizeCount + testSizeIdx],
+            predictableResults[branchCountIdx * testSizeCount + testSizeIdx]);
+    }
+}
+
+printf("Random:\n");
+printResultFloatArr(randomResults, branchHistoryLengths, testSizeCount, branchCounts, maxBranchCount);
+printf("\nPredictable:\n");
+printResultFloatArr(predictableResults, branchHistoryLengths, testSizeCount, branchCounts, maxBranchCount);
+
+free(randomResults);
+free(predictableResults);
+  }
+
+  if (argc > 1 && _strnicmp(argv[1], "indirectbranch", 14) == 0) {
+  printf("Indirect branch prediction:\n");
+// generated code will have:
+// - indirectBranchTargetCounts = array containing # of targets per branch
+// - indirectBranchCounts = array containing # of branches to test
+// - maxIndirectBranchCount = length of ^^
+// - initializeIndirectBranchFuncArr = populates
+
+uint32_t testSizeCount = sizeof(indirectBranchTargetCounts) / sizeof(int);
+initializeIndirectBranchFuncArr();
+srand(time(NULL));
+
+size_t resultSize = sizeof(float) * maxIndirectBranchCount * testSizeCount;
+float* results = (float*)malloc(resultSize);
+for (uint32_t branchCountIdx = 0; branchCountIdx < maxIndirectBranchCount; branchCountIdx++) {
+    for (uint32_t targetCountIdx = 0; targetCountIdx < testSizeCount; targetCountIdx++) {
+        uint32_t testSize = indirectBranchTargetCounts[targetCountIdx];
+        uint32_t branchCount = indirectBranchCounts[branchCountIdx];
+        printf("Testing branch count %d target count %d\n", branchCount, testSize);
+        results[branchCountIdx * testSizeCount + targetCountIdx] = runIndirectBranchTest(branchCountIdx, targetCountIdx, 0);
+        printf("%d, %f\n", testSize, results[branchCountIdx * testSizeCount + targetCountIdx]);
+    }
+}
+
+printf("Indirect branch results:\n");
+printResultFloatArr(results, indirectBranchTargetCounts, testSizeCount, indirectBranchCounts, maxIndirectBranchCount);
+
+free(results);
   }
 
   free(A); free(B); free(fpArr);

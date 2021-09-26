@@ -1,8 +1,5 @@
 ﻿using System.IO;
-using System.Collections.Generic;
-using System.Linq;
 using System.Text;
-using System.Threading.Tasks;
 
 namespace AsmGen
 {
@@ -28,7 +25,7 @@ namespace AsmGen
             FunctionDefinitionParameters = "uint64_t iterations, uint32_t **arr, uint32_t arrLen";
             GetFunctionCallParameters = "structIterations";
             DivideTimeByCount = true;
-            branchCounts = new int[] { 1, 2, 4, 16, 32, 64, 128, 256, 512 };
+            branchCounts = new int[] { 1, 2, 4, 8, 16, 32, 64, 128, 256, 512 };
             historyCounts = new int[] { 2, 4, 8, 12, 16, 24, 32, 48, 64, 96, 128, 192, 256, 512, 600, 768, 1024, 1536,
               2048, 3072, 4096, 5120, 6144, 8192, 10240, 12288, 16384, 24567, 32768, 65536 };
         }
@@ -241,7 +238,7 @@ namespace AsmGen
 
             sb.AppendLine($"uint64_t (*branchtestFuncArr[{branchCounts.Length}])(uint64_t iterations, uint32_t **arr, uint32_t arrLen);");
 
-            sb.AppendLine("void initializeFuncArr() {");
+            sb.AppendLine("void initializeBranchHistFuncArr() {");
             for (int i = 0; i < branchCounts.Length; i++)
             {
                 sb.AppendLine($"  branchtestFuncArr[{i}] = {Prefix + branchCounts[i]};");

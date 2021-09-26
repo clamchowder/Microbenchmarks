@@ -13,6 +13,7 @@ extern uint64_t noptest1b(uint64_t iterations);
 extern uint64_t clktest(uint64_t iterations); 
 extern uint64_t addtest(uint64_t iterations);
 extern uint64_t addmultest(uint64_t iterations); 
+extern uint64_t jmpmultest(uint64_t iterations); 
 extern uint64_t add256int(uint64_t iterations); 
 extern uint64_t mixadd256int(uint64_t iterations); 
 extern uint64_t mixadd256int11(uint64_t iterations); 
@@ -42,6 +43,8 @@ extern uint64_t store256(uint64_t iterations, float *arr, float *sink);
 extern uint64_t mixaddmul128int(uint64_t iterations);
 extern uint64_t mixmul16mul64(uint64_t iterations); 
 extern uint64_t mixmul16mul64_21(uint64_t iterations); 
+extern uint64_t pdeptest(uint64_t iterations);
+extern uint64_t pexttest(uint64_t iterations);
 
 float fpTestArr[8] __attribute__ ((aligned (64))) = { 0.2, 1.5, 2.7, 3.14, 5.16, 6.3, 7.7, 9.45 };
 float fpSinkArr[8] __attribute__ ((aligned (64))) = { 2.1, 3.2, 4.3, 5.4, 6.2, 7.8, 8.3, 9.4 };
@@ -96,9 +99,15 @@ int main(int argc, char *argv[]) {
     printf("Adds per clk: %.2f\n", measureFunction(iterationsHigh, clockSpeedGhz, addtest));
   if (argc == 1 || argc > 1 && strncmp(argv[1], "miximuladd", 10) == 0) 
     printf("4:1 adds/imul per clk: %.2f\n", measureFunction(iterationsHigh, clockSpeedGhz, addtest));
-  if (argc == 1 || argc > 1 && strncmp(argv[1], "avx256int", 9) == 0) 
+  if (argc == 1 || argc > 1 && strncmp(argv[1], "jmpmul", 6) == 0) 
+    printf("1:1 mul/jmp per clk: %.2f\n", measureFunction(iterationsHigh, clockSpeedGhz, jmpmultest)); 
+  if (argc == 1 || argc > 1 && strncmp(argv[1], "pdep", 4) == 0) 
+    printf("pdep per clk: %.4f\n", measureFunction(iterationsHigh, clockSpeedGhz, pdeptest)); 
+  if (argc == 1 || argc > 1 && strncmp(argv[1], "pext", 4) == 0) 
+    printf("pext per clk: %.4f\n", measureFunction(iterationsHigh, clockSpeedGhz, pexttest));  
 
   // vector and FP
+  if (argc == 1 || argc > 1 && strncmp(argv[1], "avx256int", 9) == 0) 
     printf("256-bit avx integer add per clk: %.2f\n", measureFunction(iterationsHigh, clockSpeedGhz, add256int));
   if (argc == 1 || argc > 1 && strncmp(argv[1], "mixavx256int", 12) == 0) 
     printf("2:1 scalar add/256-bit avx integer add per clk: %.2f\n", measureFunction(iterationsHigh, clockSpeedGhz, mixadd256int));
