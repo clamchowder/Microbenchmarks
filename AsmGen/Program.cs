@@ -132,6 +132,7 @@ namespace AsmGen
 
             UarchTestHelpers.GenerateVsProjectFile(tests);
             vsFileNames.Add("clammicrobench.vcxproj");
+            vsFileNames.Add("clammicrobench.cpp");
             if (args.Length > 0 && args[0].Equals("autocopy", StringComparison.OrdinalIgnoreCase))
             {
                 Console.WriteLine("Automatically copying files, based on default VS paths");

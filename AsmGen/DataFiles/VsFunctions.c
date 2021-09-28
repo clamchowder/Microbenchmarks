@@ -29,7 +29,11 @@ float runBranchHistTest(uint32_t historyLen, uint32_t branchCountIdx, int random
 
 // similar but for indirect branch test
 // needs indirectBranchTestFuncArr generated
-float runIndirectBranchTest(uint32_t branchCountIdx, uint32_t targetCountIdx, uint32_t random) {
+// mode:
+// 0 - cycle through targets
+// 1 - random target selection
+// 2 - jump to middle
+float runIndirectBranchTest(uint32_t branchCountIdx, uint32_t targetCountIdx, uint32_t mode) {
     struct timeb start, end;
     uint32_t branchCount = indirectBranchCounts[branchCountIdx];
     uint32_t targetCount = indirectBranchTargetCounts[targetCountIdx];
@@ -40,10 +44,12 @@ float runIndirectBranchTest(uint32_t branchCountIdx, uint32_t targetCountIdx, ui
     uint32_t** testArrToArr = (uint32_t**)malloc(sizeof(uint32_t*) * branchCount);
     for (int testArrIdx = 0; testArrIdx < branchCount; testArrIdx++) {
         uint32_t* testArr = (uint32_t*)malloc(sizeof(uint32_t) * targetCount);
-        if (random)
+        if (mode == 1)
             for (uint32_t i = 0; i < targetCount; i++) testArr[i] = rand() % targetCount;
-        else
+        else if (mode == 0)
             for (uint32_t i = 0; i < targetCount; i++) testArr[i] = i;
+        else if (mode == 2)
+            for (uint32_t i = 0; i < targetCount; i++) testArr[i] = targetCount / 2;
         testArrToArr[testArrIdx] = testArr;
     }
 

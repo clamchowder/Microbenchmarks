@@ -17,6 +17,7 @@ namespace AsmGen
 
         private int[] branchCounts;
         private int[] targetCounts;
+        private int globalHistoryAssistBits;
 
         public IndirectBranchTest()
         {
@@ -26,6 +27,7 @@ namespace AsmGen
             DivideTimeByCount = true;
             branchCounts = new int[] { 1, 2, 4, 8, 16, 32, 64, 128, 256, 512 };
             targetCounts = new int[] { 2, 4, 8, 12, 16, 24, 32, 48, 64, 96, 128 };
+            globalHistoryAssistBits = 4;
             //branchCounts = new int[] { 1, 2 };
             //targetCounts = new int[] { 2, 3 };
         }
@@ -101,10 +103,24 @@ namespace AsmGen
 
                         // use the target index (w13) to index into the jump table, and branch on it
                         sb.AppendLine("  ldr x17, [x9, w13, uxtw #3]");
-                        
+
+                        // global history assist branches
+                        // rax = index into jump table. make that correlate with global history
+                        sb.AppendLine("  mov x18, 1");
+                        sb.AppendLine("  eor w12, w12, w12");
+                        for (int eaxBits = 0; eaxBits < globalHistoryAssistBits; eaxBits++)
+                        {
+                            string targetName = functionLabel + "branch" + branchIdx + "ghist" + eaxBits;
+                            sb.AppendLine("  and w12, w13, w18");
+                            sb.AppendLine($"  cbnz w12, {targetName}");
+                            sb.AppendLine("  nop");
+                            sb.AppendLine($"{targetName}:");
+                            sb.AppendLine("  lsl w18, w18, 1");
+                        }
+
                         // branch on value of x17
                         sb.AppendLine($"  br x17");
-                        sb.AppendLine("  add x12, x12, 1");
+                        sb.AppendLine("  nop");
 
                         // generate targets
                         for (int targetIdx = 0; targetIdx < currentTargetCount; targetIdx++)
