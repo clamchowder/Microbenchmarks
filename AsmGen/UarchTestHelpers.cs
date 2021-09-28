@@ -8,7 +8,7 @@ namespace AsmGen
 {
     public static class UarchTestHelpers
     {
-        public static void GenerateVsProjectFile(List<IUarchTest> tests)
+        public static void GenerateVsProjectFile(List<IUarchTest> tests, List<string> additionalAsmFiles)
         {
             StringBuilder customBuildSb = new StringBuilder();
             string replaceText = "%REPLACEWITHCUSTOMBUILD%";
@@ -16,29 +16,42 @@ namespace AsmGen
 
             foreach(IUarchTest test in tests)
             {
+                if (test is IUarchTestParallelBuild) continue;
                 string fname = Program.GetNasmFileName(test.Prefix);
                 string objName = Program.GetNasmFileName(test.Prefix, true);
-                StringBuilder blockSb = new StringBuilder();
+                GenerateVsCustomBuildBlock(customBuildSb, fname, objName);
+            }
 
-                blockSb.AppendLine("    <ExcludedFromBuild Condition=\"'$(Configuration)|$(Platform)' == 'Release|x64'\">false</ExcludedFromBuild>");
-                blockSb.AppendLine($"   <Command Condition=\"'$(Configuration)|$(Platform)' == 'Release|x64'\">nasm -f win64 {fname}</Command>");
-                blockSb.AppendLine($"   <Message Condition=\"'$(Configuration)|$(Platform)' == 'Release|x64'\">Running NASM for {fname} to create {objName}</Message>");
-                blockSb.AppendLine($"   <Outputs Condition=\"'$(Configuration)|$(Platform)' == 'Release|x64'\">{objName}</Outputs>");
-                blockSb.AppendLine("    <BuildInParallel Condition=\"'$(Configuration)|$(Platform)' == 'Release|x64'\">true</BuildInParallel>");
-                string releaseBlock = blockSb.ToString();
-                string debugBlock = releaseBlock.Replace("Release|x64", "Debug|x64");
-
-                customBuildSb.AppendLine("<ItemGroup>");
-                customBuildSb.AppendLine($"  <CustomBuild Include=\"{fname}\">");
-                customBuildSb.AppendLine("    <FileType>Document</FileType>");
-                customBuildSb.AppendLine(releaseBlock);
-                customBuildSb.AppendLine(debugBlock);
-                customBuildSb.AppendLine("  </CustomBuild>");
-                customBuildSb.AppendLine("</ItemGroup>");
+            foreach (string fname in additionalAsmFiles)
+            {
+                string[] fnameSplit = fname.Split('.');
+                string objName = fnameSplit[0] + ".obj";
+                GenerateVsCustomBuildBlock(customBuildSb, fname, objName);
             }
 
             string editedTemplate = template.Replace(replaceText, customBuildSb.ToString());
             File.WriteAllText("clammicrobench.vcxproj", editedTemplate);
+        }
+
+        private static void GenerateVsCustomBuildBlock(StringBuilder sb, string fname, string objName)
+        {
+            StringBuilder blockSb = new StringBuilder();
+
+            blockSb.AppendLine("    <ExcludedFromBuild Condition=\"'$(Configuration)|$(Platform)' == 'Release|x64'\">false</ExcludedFromBuild>");
+            blockSb.AppendLine($"   <Command Condition=\"'$(Configuration)|$(Platform)' == 'Release|x64'\">nasm -f win64 {fname}</Command>");
+            blockSb.AppendLine($"   <Message Condition=\"'$(Configuration)|$(Platform)' == 'Release|x64'\">Running NASM for {fname} to create {objName}</Message>");
+            blockSb.AppendLine($"   <Outputs Condition=\"'$(Configuration)|$(Platform)' == 'Release|x64'\">{objName}</Outputs>");
+            blockSb.AppendLine("    <BuildInParallel Condition=\"'$(Configuration)|$(Platform)' == 'Release|x64'\">true</BuildInParallel>");
+            string releaseBlock = blockSb.ToString();
+            string debugBlock = releaseBlock.Replace("Release|x64", "Debug|x64");
+
+            sb.AppendLine("<ItemGroup>");
+            sb.AppendLine($"  <CustomBuild Include=\"{fname}\">");
+            sb.AppendLine("    <FileType>Document</FileType>");
+            sb.AppendLine(releaseBlock);
+            sb.AppendLine(debugBlock);
+            sb.AppendLine("  </CustomBuild>");
+            sb.AppendLine("</ItemGroup>");
         }
 
         public static int[] GenerateCountArray(int low, int high, int step)

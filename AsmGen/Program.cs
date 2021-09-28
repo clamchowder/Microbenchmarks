@@ -117,20 +117,30 @@ namespace AsmGen
             x86NasmFile.AppendLine("bits 64\n");
 
             // stupidly parallelize build, since it's taking too long
-            int vsBuildParallelizationFactor = 16;
             List<string> vsFileNames = new List<string>();
+            List<string> additionalFileNames = new List<string>();
             string nasmInitStr = x86NasmFile.ToString();
             foreach (IUarchTest test in tests)
             {
-                StringBuilder nasmFile = new StringBuilder();
-                nasmFile.AppendLine(nasmInitStr);
-                test.GenerateNasmGlobalLines(nasmFile);
-                test.GenerateX86NasmAsm(nasmFile);
-                File.WriteAllText(GetNasmFileName(test.Prefix), nasmFile.ToString());
-                vsFileNames.Add(GetNasmFileName(test.Prefix));
+                if (test is IUarchTestParallelBuild)
+                {
+                    IUarchTestParallelBuild parallelBuildTest = test as IUarchTestParallelBuild;
+                    List<string> generatedFiles = parallelBuildTest.GenerateNasmFiles();
+                    additionalFileNames.AddRange(generatedFiles);
+                }
+                else
+                {
+                    StringBuilder nasmFile = new StringBuilder();
+                    nasmFile.AppendLine(nasmInitStr);
+                    test.GenerateNasmGlobalLines(nasmFile);
+                    test.GenerateX86NasmAsm(nasmFile);
+                    File.WriteAllText(GetNasmFileName(test.Prefix), nasmFile.ToString());
+                    vsFileNames.Add(GetNasmFileName(test.Prefix));
+                }
             }
 
-            UarchTestHelpers.GenerateVsProjectFile(tests);
+            vsFileNames.AddRange(additionalFileNames);
+            UarchTestHelpers.GenerateVsProjectFile(tests, additionalFileNames);
             vsFileNames.Add("clammicrobench.vcxproj");
             vsFileNames.Add("clammicrobench.cpp");
             if (args.Length > 0 && args[0].Equals("autocopy", StringComparison.OrdinalIgnoreCase))

@@ -1,9 +1,11 @@
-﻿using System.IO;
+﻿using System;
+using System.Collections.Generic;
+using System.IO;
 using System.Text;
 
 namespace AsmGen
 {
-    public class IndirectBranchTest : IUarchTest
+    public class IndirectBranchTest : IUarchTestParallelBuild
     {
         public string Prefix { get; private set; }
 
@@ -256,11 +258,17 @@ namespace AsmGen
             }
         }
 
-        public void GenerateX86NasmAsm(StringBuilder sb)
+        public List<string> GenerateNasmFiles()
         {
+            List<string> filenames = new List<string>();
             for (int targetCountIdx = 0; targetCountIdx < targetCounts.Length; targetCountIdx++)
             {
+                StringBuilder sb = new StringBuilder();
                 int currentTargetCount = targetCounts[targetCountIdx];
+                string fname = Prefix + "_" + currentTargetCount + "targets.asm";
+                filenames.Add(fname);
+
+                sb.AppendLine("section .text\nbits 64");
                 for (int branchCountIdx = 0; branchCountIdx < branchCounts.Length; branchCountIdx++)
                 {
                     /* rcx = iteration count
@@ -270,6 +278,7 @@ namespace AsmGen
                      */
                     int currentBranchCount = branchCounts[branchCountIdx];
                     string functionLabel = GetFunctionName(currentBranchCount, currentTargetCount);
+                    sb.AppendLine("global " + functionLabel);
                     sb.AppendLine("\n" + functionLabel + ":");
                     sb.AppendLine("  push rbx");
                     sb.AppendLine("  push rsi");
@@ -361,7 +370,16 @@ namespace AsmGen
                     sb.AppendLine("  pop rbx");
                     sb.AppendLine("  ret");
                 }
+
+                File.WriteAllText(fname, sb.ToString());
             }
+
+            return filenames;
+        }
+
+        public void GenerateX86NasmAsm(StringBuilder sb)
+        {
+            throw new NotImplementedException();
         }
 
         public void GenerateTestBlock(StringBuilder sb)
@@ -389,9 +407,7 @@ namespace AsmGen
 
         public void GenerateNasmGlobalLines(StringBuilder sb)
         {
-            for (int branchCountIdx = 0; branchCountIdx < branchCounts.Length; branchCountIdx++)
-                for (int targetCountIdx = 0; targetCountIdx < targetCounts.Length; targetCountIdx++)
-                    sb.AppendLine("global " + GetFunctionName(branchCounts[branchCountIdx], targetCounts[targetCountIdx]));
+            throw new NotImplementedException();
         }
 
         // kinda hack this to put in initialization code we need
