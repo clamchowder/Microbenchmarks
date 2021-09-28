@@ -6,19 +6,22 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <None Update="CFiles\IndirectBranchTestBlock.c">
+    <None Update="DataFiles\clammicrobench.vcxproj_template">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
-    <None Update="CFiles\BranchhistTestBlock.c">
+    <None Update="DataFiles\IndirectBranchTestBlock.c">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
-    <None Update="CFiles\GccFunctions.c">
+    <None Update="DataFiles\BranchhistTestBlock.c">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
-    <None Update="CFiles\VsFunctions.c">
+    <None Update="DataFiles\GccFunctions.c">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
-    <None Update="CFiles\CommonFunctions.c">
+    <None Update="DataFiles\VsFunctions.c">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+    <None Update="DataFiles\CommonFunctions.c">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
   </ItemGroup>

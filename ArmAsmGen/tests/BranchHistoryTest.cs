@@ -101,7 +101,7 @@ namespace AsmGen
                     sb.AppendLine("  test %eax, %eax");
 
                     // conditional branch on test array value
-                    string zeroLabel = Program.branchHistPrefix + branchCounts[i] + "_zero" + branchCount;
+                    string zeroLabel = Prefix + branchCounts[i] + "_zero" + branchCount;
                     sb.AppendLine("  jz " + zeroLabel);
                     sb.AppendLine("  inc %r8");
                     sb.AppendLine(zeroLabel + ":");
@@ -249,7 +249,7 @@ namespace AsmGen
 
         public void GenerateCommonTestBlock(StringBuilder sb)
         {
-            string branchhistMain = File.ReadAllText("CFiles\\BranchhistTestBlock.c");
+            string branchhistMain = File.ReadAllText($"{Program.DataFilesDir}\\BranchhistTestBlock.c");
             sb.AppendLine(branchhistMain);
         }
     }

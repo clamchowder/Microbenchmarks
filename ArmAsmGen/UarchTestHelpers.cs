@@ -1,4 +1,4 @@
-﻿using System;
+﻿using System.IO;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -8,6 +8,39 @@ namespace AsmGen
 {
     public static class UarchTestHelpers
     {
+        public static void GenerateVsProjectFile(List<IUarchTest> tests)
+        {
+            StringBuilder customBuildSb = new StringBuilder();
+            string replaceText = "%REPLACEWITHCUSTOMBUILD%";
+            string template = File.ReadAllText($"{Program.DataFilesDir}\\clammicrobench.vcxproj_template");
+
+            foreach(IUarchTest test in tests)
+            {
+                string fname = Program.GetNasmFileName(test.Prefix);
+                string objName = Program.GetNasmFileName(test.Prefix, true);
+                StringBuilder blockSb = new StringBuilder();
+
+                blockSb.AppendLine("    <ExcludedFromBuild Condition=\"'$(Configuration)|$(Platform)' == 'Release|x64'\">false</ExcludedFromBuild>");
+                blockSb.AppendLine($"   <Command Condition=\"'$(Configuration)|$(Platform)' == 'Release|x64'\">nasm -f win64 {fname}</Command>");
+                blockSb.AppendLine($"   <Message Condition=\"'$(Configuration)|$(Platform)' == 'Release|x64'\">Running NASM for {fname} to create {objName}</Message>");
+                blockSb.AppendLine($"   <Outputs Condition=\"'$(Configuration)|$(Platform)' == 'Release|x64'\">{objName}</Outputs>");
+                blockSb.AppendLine("    <BuildInParallel Condition=\"'$(Configuration)|$(Platform)' == 'Release|x64'\">true</BuildInParallel>");
+                string releaseBlock = blockSb.ToString();
+                string debugBlock = releaseBlock.Replace("Release|x64", "Debug|x64");
+
+                customBuildSb.AppendLine("<ItemGroup>");
+                customBuildSb.AppendLine($"  <CustomBuild Include=\"{fname}\">");
+                customBuildSb.AppendLine("    <FileType>Document</FileType>");
+                customBuildSb.AppendLine(releaseBlock);
+                customBuildSb.AppendLine(debugBlock);
+                customBuildSb.AppendLine("  </CustomBuild>");
+                customBuildSb.AppendLine("</ItemGroup>");
+            }
+
+            string editedTemplate = template.Replace(replaceText, customBuildSb.ToString());
+            File.WriteAllText("clammicrobench.vcxproj", editedTemplate);
+        }
+
         public static int[] GenerateCountArray(int low, int high, int step)
         {
             List<int> countList = new List<int>();

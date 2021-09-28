@@ -7,6 +7,8 @@ namespace AsmGen
 {
     class Program
     {
+        public static string DataFilesDir = "DataFiles";
+
         static int structTestIterations = 5000000;
         static int iterations = 100 * structTestIterations;
         static int latencyListSize = 131072 * 1024 / 4; // 128 MB
@@ -59,11 +61,10 @@ namespace AsmGen
             StringBuilder armAsmFile = new StringBuilder();
             StringBuilder x86AsmFile = new StringBuilder();
             StringBuilder x86NasmFile = new StringBuilder();
-            StringBuilder x86NasmFile1 = new StringBuilder();
 
-            string commonFunctions = File.ReadAllText("CFiles\\CommonFunctions.c");
-            string vsFunctions = File.ReadAllText("CFiles\\VsFunctions.c");
-            string gccFunctions = File.ReadAllText("CFiles\\GccFunctions.c");
+            string commonFunctions = File.ReadAllText($"{DataFilesDir}\\CommonFunctions.c");
+            string vsFunctions = File.ReadAllText($"{DataFilesDir}\\VsFunctions.c");
+            string gccFunctions = File.ReadAllText($"{DataFilesDir}\\GccFunctions.c");
 
             // Generate C file for linux
             cSourceFile.AppendLine("#include <stdio.h>\n#include<stdint.h>\n#include<sys/time.h>\n#include <stdlib.h>\n#include <string.h>\n#include <time.h>\n");
@@ -112,53 +113,33 @@ namespace AsmGen
 
             File.WriteAllText("clammicrobench_x86.s", x86AsmFile.ToString());
 
-            x86NasmFile.AppendLine("section .text\n");
-            x86NasmFile.AppendLine("bits 64\n\n");
+            x86NasmFile.AppendLine("section .text");
+            x86NasmFile.AppendLine("bits 64\n");
 
-            // stupidly parallelize build a bit, since it's taking too long
-            x86NasmFile1.Append(x86NasmFile.ToString());
-            int testIdx = 0;
+            // stupidly parallelize build, since it's taking too long
+            int vsBuildParallelizationFactor = 16;
+            List<string> vsFileNames = new List<string>();
+            string nasmInitStr = x86NasmFile.ToString();
             foreach (IUarchTest test in tests)
             {
-                if (testIdx < tests.Count / 2) 
-                {
-                    test.GenerateNasmGlobalLines(x86NasmFile);
-                    test.GenerateX86NasmAsm(x86NasmFile);
-                }
-                else 
-                {
-                    test.GenerateNasmGlobalLines(x86NasmFile1);
-                    test.GenerateX86NasmAsm(x86NasmFile1);
-                }
-                
-                testIdx++;
+                StringBuilder nasmFile = new StringBuilder();
+                nasmFile.AppendLine(nasmInitStr);
+                test.GenerateNasmGlobalLines(nasmFile);
+                test.GenerateX86NasmAsm(nasmFile);
+                File.WriteAllText(GetNasmFileName(test.Prefix), nasmFile.ToString());
+                vsFileNames.Add(GetNasmFileName(test.Prefix));
             }
-            File.WriteAllText("clammicrobench_nasm.asm", x86NasmFile.ToString());
-            File.WriteAllText("clammicrobench1_nasm.asm", x86NasmFile1.ToString());
 
-            // redo this later
-            /*int[] branchHistCounts = new[] { 1, 2, 4, 8, 16, 32, 64, 128, 256, 512 };
-            GenerateBranchHistHeader(branchHistHeaderFile, branchHistCounts);
-            File.WriteAllText("branchhist.h", branchHistHeaderFile.ToString());
-            x86.GenerateX86AsmBranchHistFuncs(x86branchHistFile, branchHistCounts);
-            File.WriteAllText("branchhist_x86.s", x86branchHistFile.ToString());*/
-
+            UarchTestHelpers.GenerateVsProjectFile(tests);
+            vsFileNames.Add("clammicrobench.vcxproj");
             if (args.Length > 0 && args[0].Equals("autocopy", StringComparison.OrdinalIgnoreCase))
             {
                 Console.WriteLine("Automatically copying files, based on default VS paths");
                 string clammicrobenchPath = @"..\..\..\..\clammicrobench";
-                string[] clammicrobenchFiles = new[] { "clammicrobench_nasm.asm", "clammicrobench1_nasm.asm", "clammicrobench.cpp" };
+                string[] clammicrobenchFiles = vsFileNames.ToArray();
                 CopyFiles(clammicrobenchPath, clammicrobenchFiles);
-
-                /*string branchhistPath = @"..\..\..\..\BranchHistoryLength";
-                string[] branchhistFiles = new[] { "branchhist.h", "branchhist_x86.s" };
-                CopyFiles(branchhistPath, branchhistFiles);*/
             }
         }
-
-        public static string GetLabelName(string funcName, int part) { return funcName + "part" + part; }
-
-        public const string branchHistPrefix = "branchhist";
 
         static void CopyFiles(string targetDir, string[] fileNames)
         {
@@ -175,6 +156,7 @@ namespace AsmGen
             }
         }
 
+        public static string GetNasmFileName(string testName, bool obj = false) { return $"clammicrobench_nasm_{testName}" + (obj ? ".obj" : ".asm"); }
 
         static void AddCommonInitCode(StringBuilder sb, List<IUarchTest> tests)
         {
@@ -217,28 +199,6 @@ namespace AsmGen
             sb.AppendLine("  for (int i = 0; i < list_size; i++) { B[i] = i; }\n");
             sb.AppendLine("  fpArr = (float*)malloc(sizeof(float) * list_size);\n");
             sb.AppendLine("  for (int i = 0;i < list_size; i++) { fpArr[i] = i + .1; }\n");
-        }
-
-        static void GenerateBranchHistHeader(StringBuilder sb, int[] counts)
-        {
-            sb.AppendLine($"uint32_t maxBranchCount = {counts.Length};");
-            sb.Append($"uint32_t branchCounts[{counts.Length}] = ");
-            sb.Append("{ " + counts[0]);
-            for (int i = 1; i < counts.Length; i++) sb.Append(", " + counts[i]);
-            sb.AppendLine(" };");
-            sb.AppendLine($"uint64_t (*branchtestFuncArr[{counts.Length}])(uint64_t iterations, uint32_t **arr, uint32_t arrLen);");
-            for (int i = 0; i < counts.Length; i++)
-            {
-                sb.AppendLine("extern uint64_t " + branchHistPrefix + counts[i] + "(uint64_t iterations, uint32_t **arr, uint32_t arrLen);");
-            }
-
-            sb.AppendLine("void initializeFuncArr() {");
-            for (int i = 0; i < counts.Length; i++)
-            {
-                sb.AppendLine($"  branchtestFuncArr[{i}] = {branchHistPrefix + counts[i]};");
-            }
-
-            sb.AppendLine("}");
         }
     }
 }

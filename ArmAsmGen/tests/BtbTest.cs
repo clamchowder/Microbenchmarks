@@ -23,6 +23,7 @@ namespace AsmGen
         }
 
         private string GetBranchFuncName(int branchCount) { return Prefix + branchCount; }
+        public string GetLabelName(string funcName, int part) { return funcName + "part" + part; }
 
         public override void GenerateX86GccAsm(StringBuilder sb)
         {
@@ -44,7 +45,7 @@ namespace AsmGen
                 sb.AppendLine(funcName + ":\n");
                 for (int branchIdx = 1; branchIdx < Counts[i]; branchIdx++)
                 {
-                    string labelName = Program.GetLabelName(funcName, branchIdx);
+                    string labelName = GetLabelName(funcName, branchIdx);
                     sb.AppendLine("  jmp " + labelName);
                     sb.AppendLine(paddingAlign);
                     sb.AppendLine(labelName + ":");
@@ -91,7 +92,7 @@ namespace AsmGen
                 sb.AppendLine(funcName + ":\n");
                 for (int branchIdx = 1; branchIdx < Counts[i]; branchIdx++)
                 {
-                    string labelName = Program.GetLabelName(funcName, branchIdx);
+                    string labelName = GetLabelName(funcName, branchIdx);
                     sb.AppendLine("  jmp " + labelName);
                     sb.AppendLine(paddingAlign);
                     sb.AppendLine(labelName + ":");
@@ -131,7 +132,7 @@ namespace AsmGen
                 sb.AppendLine(funcName + ":");
                 for (int branchIdx = 1; branchIdx < Counts[i]; branchIdx++)
                 {
-                    string labelName = Program.GetLabelName(funcName, branchIdx);
+                    string labelName = GetLabelName(funcName, branchIdx);
                     sb.AppendLine("  b " + labelName);
                     sb.AppendLine(paddingAlign);
                     sb.AppendLine(labelName + ":");

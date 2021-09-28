@@ -150,6 +150,7 @@ namespace AsmGen
                     sb.AppendLine("  push %rbx");
                     sb.AppendLine("  push %r8");
                     sb.AppendLine("  push %r9");
+                    sb.AppendLine("  push %r13");
                     sb.AppendLine("  push %r15");
                     sb.AppendLine("  push %r14");
                     sb.AppendLine("  xor %rbx, %rbx");
@@ -190,8 +191,23 @@ namespace AsmGen
                         sb.AppendLine("  mov (%rcx,%r11,8), %r15");  // load jump table base pointer into r15
                         sb.AppendLine("  mov (%rsi,%r11,8), %r10");  // load target select array base pointer into r10
                         sb.AppendLine("  inc %r11");
-                        sb.AppendLine("  mov (%r10,%rbx,4), %eax "); // get the target for the current iteration into eax
+                        sb.AppendLine("  mov (%r10,%rbx,4), %eax"); // get the target for the current iteration into eax
                         sb.AppendLine("  mov (%r15,%rax,8), %r14");  // load address of jump target from jump table
+
+                        sb.AppendLine("  mov %rsi, %r13");
+                        sb.AppendLine("  mov $1, %rsi");
+                        for (int eaxBits = 0; eaxBits < 7; eaxBits++)
+                        {
+                            string targetName = functionLabel + "branch" + branchIdx + "ghist" + eaxBits;
+                            sb.AppendLine("  test %eax, %esi");
+                            sb.AppendLine($"  jnz {targetName}");
+                            sb.AppendLine("  nop");
+                            sb.AppendLine($"{targetName}:");
+                            sb.AppendLine("  shl $1, %esi");
+                        }
+
+                        sb.AppendLine("  mov %r13, %rsi");
+
                         sb.AppendLine("  jmp *%r14");                // and jump to it
                         // generate targets
                         for (int targetIdx = 0; targetIdx < currentTargetCount; targetIdx++)
@@ -215,6 +231,7 @@ namespace AsmGen
                     sb.AppendLine("  mov %r8, %rax");
                     sb.AppendLine("  pop %r14");
                     sb.AppendLine("  pop %r15");
+                    sb.AppendLine("  pop %r13");
                     sb.AppendLine("  pop %r9");
                     sb.AppendLine("  pop %r8");
                     sb.AppendLine("  pop %rbx");
@@ -239,6 +256,7 @@ namespace AsmGen
                     string functionLabel = GetFunctionName(currentBranchCount, currentTargetCount);
                     sb.AppendLine("\n" + functionLabel + ":");
                     sb.AppendLine("  push rbx");
+                    sb.AppendLine("  push rsi");
                     sb.AppendLine("  push r10");
                     sb.AppendLine("  push r12");
                     sb.AppendLine("  push r13");
@@ -284,6 +302,19 @@ namespace AsmGen
                         sb.AppendLine("  inc r11");
                         sb.AppendLine("  mov eax, [r10 + rbx * 4]"); // load the target for the current iteration into eax
                         sb.AppendLine("  mov r14, [r15 + rax * 8]"); // load address of jump target from jump table
+
+                        // rax = index into jump table. make that correlate with global history
+                        sb.AppendLine("  mov rsi, 1");
+                        for (int eaxBits = 0; eaxBits < 4; eaxBits++)
+                        {
+                            string targetName = functionLabel + "branch" + branchIdx + "ghist" + eaxBits;
+                            sb.AppendLine("  test eax, esi");
+                            sb.AppendLine($"  jnz {targetName}");
+                            sb.AppendLine("  nop");
+                            sb.AppendLine($"{targetName}:");
+                            sb.AppendLine("  shl rsi, 1");
+                        }
+
                         sb.AppendLine("  jmp r14");                  // and jump to it
                         // generate targets
                         for (int targetIdx = 0; targetIdx < currentTargetCount; targetIdx++)
@@ -310,6 +341,7 @@ namespace AsmGen
                     sb.AppendLine("  pop r13");
                     sb.AppendLine("  pop r12");
                     sb.AppendLine("  pop r10");
+                    sb.AppendLine("  pop rsi");
                     sb.AppendLine("  pop rbx");
                     sb.AppendLine("  ret");
                 }
@@ -394,7 +426,7 @@ namespace AsmGen
 
         public void GenerateCommonTestBlock(StringBuilder sb)
         {
-            string branchhistMain = File.ReadAllText("CFiles\\IndirectBranchTestBlock.c");
+            string branchhistMain = File.ReadAllText($"{Program.DataFilesDir}\\IndirectBranchTestBlock.c");
             sb.AppendLine(branchhistMain);
         }
     }
