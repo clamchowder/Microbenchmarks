@@ -55,6 +55,7 @@ namespace AsmGen
             tests.Add(new MixMulRorSchedTest(2, 128, 1));
             tests.Add(new BranchHistoryTest());
             tests.Add(new IndirectBranchTest());
+            //tests.Add(new MxcsrTest(1, 32, 1));
 
             StringBuilder cSourceFile = new StringBuilder();
             StringBuilder vsCSourceFile = new StringBuilder();
@@ -173,7 +174,7 @@ namespace AsmGen
         {
             sb.AppendLine("int main(int argc, char *argv[]) {");
             sb.AppendLine($"  uint64_t time_diff_ms, iterations = {iterations}, structIterations = {structTestIterations}, tmp;");
-            sb.AppendLine("  float latency; int *A = NULL, *B = NULL; float *fpArr = NULL;");
+            sb.AppendLine("  double latency; int *A = NULL, *B = NULL; float *fpArr = NULL;");
             sb.AppendLine("  uint64_t tmpsink;");
             sb.AppendLine("  uint32_t list_size = " + latencyListSize + ";");
 
