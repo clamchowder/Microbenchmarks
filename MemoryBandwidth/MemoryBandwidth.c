@@ -103,7 +103,7 @@ float MeasureBw(uint64_t sizeKb, uint64_t iterations, uint64_t threads, int shar
     // make array and fill it with something, if shared
     float* testArr = NULL;
     if (shared){ 
-        testArr = (float*)aligned_alloc(32, elements * sizeof(float));
+        testArr = (float*)aligned_alloc(64, elements * sizeof(float));
         if (testArr == NULL) {
             fprintf(stderr, "Could not allocate memory\n");
             return 0;
@@ -130,7 +130,7 @@ float MeasureBw(uint64_t sizeKb, uint64_t iterations, uint64_t threads, int shar
         }
         else
         {
-            threadData[i].arr = (float*)aligned_alloc(32, elements * sizeof(float));
+            threadData[i].arr = (float*)aligned_alloc(64, elements * sizeof(float));
             if (threadData[i].arr == NULL)
             {
                 fprintf(stderr, "Could not allocate memory for thread %ld\n", i);
