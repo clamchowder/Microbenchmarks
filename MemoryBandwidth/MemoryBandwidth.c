@@ -30,7 +30,7 @@ float MeasureBw(uint64_t sizeKb, uint64_t iterations, uint64_t threads, int shar
 
 extern float asm_read(float* arr, uint64_t arr_length, uint64_t iterations, uint64_t start);
 
-extern float asm_read(float* arr, uint64_t arr_length, uint64_t iterations, uint64_t start);
+extern float avx512_read(float* arr, uint64_t arr_length, uint64_t iterations, uint64_t start);
 uint64_t GetIterationCount(uint64_t testSize, uint64_t threads);
 void *ReadBandwidthTestThread(void *param);
 
@@ -55,12 +55,27 @@ int main(int argc, char *argv[]) {
     
     if (argc == 1)
     {
-        printf("Usage: [threads] [shared/private]\n");
+        printf("Usage: [threads] [shared/private] [scalar/asm/avx512]\n");
     }
 
     //bw_func = scalar_read;
-    bw_func = asm_read;
     printf("Using asm\n");
+    bw_func = asm_read;
+
+    if (argc > 3) 
+    {
+        if (strncmp(argv[3], "scalar", 6) == 0) {
+            bw_func = scalar_read;
+            printf("Using scalar C code\n");
+        } else if (strncmp(argv[3], "asm", 3) == 0) {
+            bw_func = asm_read;
+            printf("Using asm (neon or avx)\n");
+        } else if (strncmp(argv[3], "avx512", 6) == 0) {
+            bw_func = avx512_read;
+            printf("Using avx512\n");
+        }
+    }
+
 
     printf("Using %d threads\n", threads);
     for (int i = 0; i < sizeof(default_test_sizes) / sizeof(int); i++)
