@@ -74,19 +74,15 @@ avx512_read_pass_loop:
   lea (%rcx,%rsi,4), %rdi
   vmovaps (%rdi), %zmm0
   vmovaps 64(%rdi), %zmm1
-  add $32, %rsi
-  lea (%rcx,%rsi,4), %rdi
-  vmovaps (%rdi), %zmm2
-  vmovaps 64(%rdi), %zmm3
-  add $32, %rsi
+  vmovaps 128(%rdi), %zmm2
+  vmovaps 192(%rdi), %zmm3
+  add $64, %rsi
   lea (%rcx,%rsi,4), %rdi
   vmovaps (%rdi), %zmm4
   vmovaps 64(%rdi), %zmm5
-  add $32, %rsi
-  lea (%rcx,%rsi,4), %rdi
-  vmovaps (%rdi), %zmm6
-  vmovaps 64(%rdi), %zmm7
-  add $32, %rsi
+  vmovaps 128(%rdi), %zmm6
+  vmovaps 192(%rdi), %zmm7
+  add $64, %rsi
   cmp %rsi, %rdx
   cmovl %rbx, %rsi /* if rdx - 128 < rsi, loop back around */
   cmp %rsi, %r9
