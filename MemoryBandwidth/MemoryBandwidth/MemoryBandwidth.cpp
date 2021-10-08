@@ -123,7 +123,7 @@ float MeasureBw(uint64_t sizeKb, uint64_t iterations, uint64_t threads, int shar
 
     if (!shared) elements = private_elements;
 
-    if (sizeKb < threads) {
+    if (shared && sizeKb < threads) {
         fprintf(stderr, "Too many threads for this size, continuing\n");
         return 0;
     }

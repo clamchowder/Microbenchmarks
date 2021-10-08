@@ -109,7 +109,7 @@ float MeasureBw(uint64_t sizeKb, uint64_t iterations, uint64_t threads, int shar
     float bw = 0;
     uint64_t elements = sizeKb * 1024 / sizeof(float);
 
-    if (sizeKb < threads) {
+    if (shared && sizeKb < threads) {
         fprintf(stderr, "Too many threads for this test size\n");
         return 0;
     }
