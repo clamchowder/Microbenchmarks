@@ -109,6 +109,11 @@ float MeasureBw(uint64_t sizeKb, uint64_t iterations, uint64_t threads, int shar
     float bw = 0;
     uint64_t elements = sizeKb * 1024 / sizeof(float);
 
+    if (sizeKb < threads) {
+        fprintf(stderr, "Too many threads for this test size\n");
+        return 0;
+    }
+
     // make sure this is divisble by 512 bytes, since the unrolled asm loop depends on that
     // it's hard enough to get close to theoretical L1D BW as is, so we don't want additional cmovs or branches
     // in the hot loop
