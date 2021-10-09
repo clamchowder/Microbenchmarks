@@ -123,6 +123,11 @@ float MeasureBw(uint64_t sizeKb, uint64_t iterations, uint64_t threads, int shar
 
     if (!shared) elements = private_elements;
 
+    if (!shared && sizeKb < threads) {
+        fprintf(stderr, "Too many threads for this size, continuing\n");
+        return 0;
+    }
+
     // make array and fill it with something
     float* testArr = NULL;
     if (shared) {
@@ -142,7 +147,6 @@ float MeasureBw(uint64_t sizeKb, uint64_t iterations, uint64_t threads, int shar
     //bw_func(testArr, 128, iterations);
     struct BandwidthTestThreadData* threadData = (struct BandwidthTestThreadData*)malloc(threads * sizeof(struct BandwidthTestThreadData));
 
-    ftime(&start);
     for (uint64_t i = 0; i < threads; i++) {
         if (shared) {
             threadData[i].arr = testArr;
@@ -166,10 +170,12 @@ float MeasureBw(uint64_t sizeKb, uint64_t iterations, uint64_t threads, int shar
         threadData[i].bw = 0;
         threadData[i].start = 0;
         if (elements > 8192 * 1024) threadData[i].start = 4096 * i; // must be multiple of 128 because of unrolling
-        testThreads[i] = CreateThread(NULL, 0, ReadBandwidthTestThread, threadData + i, 0, tids + i);
+        testThreads[i] = CreateThread(NULL, 0, ReadBandwidthTestThread, threadData + i, CREATE_SUSPENDED, tids + i);
         SetThreadAffinityMask(testThreads[i], 1UL << i);
     }
 
+    ftime(&start);
+    for (uint64_t i = 0; i < threads; i++) ResumeThread(testThreads[i]);
     WaitForMultipleObjects(threads, testThreads, TRUE, INFINITE);
     ftime(&end);
 

@@ -2,12 +2,14 @@
 .text
 
 .global asm_read
+.global avx512_read /* this is a dummy */
 
 /* x0 = ptr to array (was rcx)
  * x1 = arr length (was rdx)
  * x2 = iterations (was r8)
  * x3 = start (was r9)
  */
+avx512_read:
 asm_read:
   sub sp, sp, #0x30
   stp x14, x15, [sp, #0x10]
