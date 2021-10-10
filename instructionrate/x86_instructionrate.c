@@ -45,6 +45,10 @@ extern uint64_t mixmul16mul64(uint64_t iterations);
 extern uint64_t mixmul16mul64_21(uint64_t iterations); 
 extern uint64_t pdeptest(uint64_t iterations);
 extern uint64_t pexttest(uint64_t iterations);
+extern uint64_t indepmovtest(uint64_t iterations);
+extern uint64_t depmovtest(uint64_t iterations);
+extern uint64_t xorzerotest(uint64_t iterations);
+extern uint64_t movzerotest(uint64_t iterations);
 
 float fpTestArr[8] __attribute__ ((aligned (64))) = { 0.2, 1.5, 2.7, 3.14, 5.16, 6.3, 7.7, 9.45 };
 float fpSinkArr[8] __attribute__ ((aligned (64))) = { 2.1, 3.2, 4.3, 5.4, 6.2, 7.8, 8.3, 9.4 };
@@ -97,6 +101,18 @@ int main(int argc, char *argv[]) {
     printf("2-byte nops per clk: %.2f\n", measureFunction(iterationsHigh, clockSpeedGhz, noptest));
   if (argc == 1 || argc > 1 && strncmp(argv[1], "add", 3) == 0) 
     printf("Adds per clk: %.2f\n", measureFunction(iterationsHigh, clockSpeedGhz, addtest));
+
+  // renamer throughput
+  if (argc == 1 || argc > 1 && strncmp(argv[1], "depmov", 6) == 0) 
+    printf("Dependent movs per clk: %.2f\n", measureFunction(iterationsHigh, clockSpeedGhz, depmovtest)); 
+  if (argc == 1 || argc > 1 && strncmp(argv[1], "indepmov", 8) == 0) 
+    printf("Independent movs per clk: %.2f\n", measureFunction(iterationsHigh, clockSpeedGhz, indepmovtest));  
+  if (argc == 1 || argc > 1 && strncmp(argv[1], "xorzero", 7) == 0) 
+    printf("xor -> 0 per clk: %.2f\n", measureFunction(iterationsHigh, clockSpeedGhz, xorzerotest));   
+  if (argc == 1 || argc > 1 && strncmp(argv[1], "movzero", 7) == 0) 
+    printf("mov -> 0 per clk: %.2f\n", measureFunction(iterationsHigh, clockSpeedGhz, movzerotest));   
+
+  // misc mixed integer tests
   if (argc == 1 || argc > 1 && strncmp(argv[1], "miximuladd", 10) == 0) 
     printf("4:1 adds/imul per clk: %.2f\n", measureFunction(iterationsHigh, clockSpeedGhz, addtest));
   if (argc == 1 || argc > 1 && strncmp(argv[1], "jmpmul", 6) == 0) 

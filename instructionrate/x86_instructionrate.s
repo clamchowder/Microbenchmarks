@@ -2,6 +2,10 @@
 
 .global clktest
 .global addtest
+.global indepmovtest
+.global depmovtest
+.global xorzerotest
+.global movzerotest
 .global addmultest
 .global jmpmultest
 .global noptest
@@ -1772,3 +1776,197 @@ pexttest_loop:
   pop %rcx
   pop %rbx
   ret
+
+depmovtest:
+  push %rbx
+  push %r8
+  push %r9
+  push %r15
+  push %r14
+  push %r13
+  push %r12
+  push %r11
+  push %r10
+  mov $1, %r8
+  mov $20, %r9
+  xor %rbx, %rbx
+depmovtest_loop:
+  mov %r12, %r15
+  mov %r14, %r12
+  mov %r13, %r14
+  mov %r11, %r13
+  mov %r15, %r11
+  mov %r12, %r15
+  mov %r14, %r12
+  mov %r13, %r14
+  mov %r11, %r13
+  mov %r15, %r11 
+  mov %r12, %r15
+  mov %r14, %r12
+  mov %r13, %r14
+  mov %r11, %r13
+  mov %r15, %r11 
+  mov %r12, %r15
+  mov %r14, %r12
+  mov %r13, %r14
+  mov %r11, %r13
+  mov %r15, %r11 
+  sub %r9, %rdi
+  jnz depmovtest_loop
+  pop %r10
+  pop %r11
+  pop %r12
+  pop %r13
+  pop %r14
+  pop %r15
+  pop %r9
+  pop %r8
+  pop %rbx
+  ret
+
+indepmovtest:
+  push %rbx
+  push %rcx
+  push %r8
+  push %r9
+  push %r15
+  push %r14
+  push %r13
+  push %r12
+  push %r11
+  push %r10 
+  mov $1, %r8
+  mov $20, %r9
+  xor %rbx, %rbx
+indepmovtest_loop:
+  mov %r10, %r15
+  mov %r11, %r14
+  mov %r12, %r13
+  mov %rax, %r15
+  mov %rcx, %r14
+  mov %r10, %r15
+  mov %r11, %r14
+  mov %r12, %r13
+  mov %rax, %r15
+  mov %rcx, %r14 
+  mov %r10, %r15
+  mov %r11, %r14
+  mov %r12, %r13
+  mov %rax, %r15
+  mov %rcx, %r14 
+  mov %r10, %r15
+  mov %r11, %r14
+  mov %r12, %r13
+  mov %rax, %r15
+  mov %rcx, %r14 
+  sub %r9, %rdi
+  jnz indepmovtest_loop
+  pop %r10
+  pop %r11
+  pop %r12
+  pop %r13
+  pop %r14
+  pop %r15 
+  pop %r9
+  pop %r8
+  pop %rcx
+  pop %rbx
+  ret 
+
+movzerotest:
+  push %rbx
+  push %rcx
+  push %r8
+  push %r9
+  push %r15
+  push %r14
+  push %r13
+  push %r12
+  push %r11
+  push %r10 
+  mov $1, %r8
+  mov $20, %r9
+  xor %rbx, %rbx
+movzerotest_loop:
+  mov $0, %r15
+  mov $0, %r15
+  mov $0, %r15
+  mov $0, %r15
+  mov $0, %r15
+  mov $0, %r15
+  mov $0, %r15
+  mov $0, %r15
+  mov $0, %r15
+  mov $0, %r15 
+  mov $0, %r15
+  mov $0, %r15
+  mov $0, %r15
+  mov $0, %r15
+  mov $0, %r15 
+  mov $0, %r15
+  mov $0, %r15
+  mov $0, %r15
+  mov $0, %r15
+  mov $0, %r15 
+  sub %r9, %rdi
+  jnz movzerotest_loop
+  pop %r10
+  pop %r11
+  pop %r12
+  pop %r13
+  pop %r14
+  pop %r15 
+  pop %r9
+  pop %r8
+  pop %rcx
+  pop %rbx
+  ret  
+
+xorzerotest:
+  push %rbx
+  push %rcx
+  push %r8
+  push %r9
+  push %r15
+  push %r14
+  push %r13
+  push %r12
+  push %r11
+  push %r10 
+  mov $1, %r8
+  mov $20, %r9
+  xor %rbx, %rbx
+xorzerotest_loop:
+  xor %r15, %r15
+  xor %r15, %r15
+  xor %r15, %r15
+  xor %r15, %r15
+  xor %r15, %r15
+  xor %r15, %r15
+  xor %r15, %r15
+  xor %r15, %r15
+  xor %r15, %r15
+  xor %r15, %r15 
+  xor %r15, %r15
+  xor %r15, %r15
+  xor %r15, %r15
+  xor %r15, %r15
+  xor %r15, %r15 
+  xor %r15, %r15
+  xor %r15, %r15
+  xor %r15, %r15
+  xor %r15, %r15
+  xor %r15, %r15 
+  sub %r9, %rdi
+  jnz xorzerotest_loop
+  pop %r10
+  pop %r11
+  pop %r12
+  pop %r13
+  pop %r14
+  pop %r15 
+  pop %r9
+  pop %r8
+  pop %rcx
+  pop %rbx
+  ret 
