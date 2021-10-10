@@ -6,6 +6,7 @@
 #include <stdint.h>
 #include <string.h>
 #include <sys\timeb.h>
+#include <math.h>
 #include <intrin.h>
 #include <immintrin.h>
 #include <windows.h>
@@ -25,7 +26,7 @@ struct BandwidthTestThreadData {
 float scalar_read(float* arr, uint64_t arr_length, uint64_t iterations, uint64_t start);
 float sse_read(float* arr, uint64_t arr_length, uint64_t iterations, uint64_t start);
 float avx_read(float* arr, uint64_t arr_length, uint64_t iterations, uint64_t start);
-float MeasureBw(uint64_t sizeKb, uint64_t iterations, uint64_t threads);
+float MeasureBw(uint64_t sizeKb, uint64_t iterations, uint64_t threads, int shared);
 extern "C" float avx_asm_read(float* arr, uint64_t arr_length, uint64_t iterations, uint64_t start);
 uint64_t GetIterationCount(uint64_t testSize, uint64_t threads);
 DWORD WINAPI ReadBandwidthTestThread(LPVOID param);
@@ -33,8 +34,13 @@ DWORD WINAPI ReadBandwidthTestThread(LPVOID param);
 float (*bw_func)(float*, uint64_t, uint64_t, uint64_t start) = scalar_read;
 
 int main(int argc, char *argv[]) {
-    int threads = 1;
+    int threads = 1, shared = 1;
     int cpuid_data[4];
+
+    if (argc == 1) {
+        printf("Usage: [threads] [sse/avx/asm_avx/scalar] [shared/private]\n");
+    }
+
     if (argc > 1) {
         threads = atoi(argv[1]);
         if (threads > 64) {
@@ -61,8 +67,7 @@ int main(int argc, char *argv[]) {
             bw_func = scalar_read;
         }
     }
-    else
-    {
+    else {
         // check for sse/avx
         __cpuidex(cpuid_data, 1, 0);
         // EDX bit 25 = SSE
@@ -77,10 +82,17 @@ int main(int argc, char *argv[]) {
         }
     }
 
-    printf("Using %d threads\n", threads);
-    for (int i = 0; i < sizeof(default_test_sizes) / sizeof(int); i++)
+    if (argc > 3)
     {
-        printf("%d,%f\n", default_test_sizes[i], MeasureBw(default_test_sizes[i], GetIterationCount(default_test_sizes[i], threads), threads));
+        if (_strnicmp(argv[3], "private", 7) == 0) {
+            shared = 0;
+            fprintf(stderr, "Using private data per-thread\n");
+        }
+    }
+
+    printf("Using %d threads\n", threads);
+    for (int i = 0; i < sizeof(default_test_sizes) / sizeof(int); i++) {
+        printf("%d,%f\n", default_test_sizes[i], MeasureBw(default_test_sizes[i], GetIterationCount(default_test_sizes[i], threads), threads, shared));
     }
 
     return 0;
@@ -103,20 +115,31 @@ uint64_t GetIterationCount(uint64_t testSize, uint64_t threads)
     else return iterations;
 }
 
-float MeasureBw(uint64_t sizeKb, uint64_t iterations, uint64_t threads) {
+float MeasureBw(uint64_t sizeKb, uint64_t iterations, uint64_t threads, int shared) {
     struct timeb start, end;
     float bw = 0;
     uint64_t elements = sizeKb * 1024 / sizeof(float);
+    uint64_t private_elements = (uint64_t)ceil(((double)sizeKb * 1024 / sizeof(float)) / (double)threads);
 
-    // make array and fill it with something
-    float* testArr = (float*)_aligned_malloc(elements * sizeof(float), 32);
-    if (testArr == NULL) {
-        fprintf(stderr, "Could not allocate memory\n");
+    if (!shared) elements = private_elements;
+
+    if (!shared && sizeKb < threads) {
+        fprintf(stderr, "Too many threads for this size, continuing\n");
         return 0;
     }
 
-    for (uint64_t i = 0; i < elements; i++) {
-        testArr[i] = i + 0.5f;
+    // make array and fill it with something
+    float* testArr = NULL;
+    if (shared) {
+        testArr = (float*)_aligned_malloc(elements * sizeof(float), 64);
+        if (testArr == NULL) {
+            fprintf(stderr, "Could not allocate memory\n");
+            return 0;
+        }
+
+        for (uint64_t i = 0; i < elements; i++) {
+            testArr[i] = i + 0.5f;
+        }
     }
 
     HANDLE* testThreads = (HANDLE*)malloc(threads * sizeof(HANDLE));
@@ -124,29 +147,55 @@ float MeasureBw(uint64_t sizeKb, uint64_t iterations, uint64_t threads) {
     //bw_func(testArr, 128, iterations);
     struct BandwidthTestThreadData* threadData = (struct BandwidthTestThreadData*)malloc(threads * sizeof(struct BandwidthTestThreadData));
 
-    ftime(&start);
     for (uint64_t i = 0; i < threads; i++) {
-        threadData[i].arr = testArr;
+        if (shared) {
+            threadData[i].arr = testArr;
+            threadData[i].iterations = iterations;
+        }
+        else {
+            threadData[i].arr = (float*)_aligned_malloc(elements * sizeof(float), 64);
+            if (threadData[i].arr == NULL) {
+                fprintf(stderr, "Could not allocate memory for thread %ld\n", i);
+                return 0;
+            }
+
+            for (uint64_t arr_idx = 0; arr_idx < elements; arr_idx++) {
+                threadData[i].arr[arr_idx] = arr_idx + i + 0.5f;
+            }
+
+            threadData[i].iterations = iterations * threads;
+        }
+
         threadData[i].arr_length = elements;
-        threadData[i].iterations = iterations;
         threadData[i].bw = 0;
         threadData[i].start = 0;
         if (elements > 8192 * 1024) threadData[i].start = 4096 * i; // must be multiple of 128 because of unrolling
-        testThreads[i] = CreateThread(NULL, 0, ReadBandwidthTestThread, threadData + i, 0, tids + i);
+        testThreads[i] = CreateThread(NULL, 0, ReadBandwidthTestThread, threadData + i, CREATE_SUSPENDED, tids + i);
         SetThreadAffinityMask(testThreads[i], 1UL << i);
     }
 
+    ftime(&start);
+    for (uint64_t i = 0; i < threads; i++) ResumeThread(testThreads[i]);
     WaitForMultipleObjects(threads, testThreads, TRUE, INFINITE);
     ftime(&end);
 
     int64_t time_diff_ms = 1000 * (end.time - start.time) + (end.millitm - start.millitm);
     double gbTransferred = iterations * sizeof(float) * elements * threads / (double)1e9;
     bw = 1000 * gbTransferred / (double)time_diff_ms;
+    if (!shared) bw = bw * threads;
     //printf("%f GB, %lu ms\n", gbTransferred, time_diff_ms);
 
     free(testThreads);
-    _aligned_free(testArr);
+    if (shared) _aligned_free(testArr);
     free(tids);
+
+    if (!shared) {
+        for (int i = 0; i < threads; i++) {
+            _aligned_free(threadData[i].arr);
+        }
+    }
+
+    free(threadData);
     return bw;
 }
 
