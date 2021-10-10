@@ -60,6 +60,7 @@ extern uint64_t indepmovtest(uint64_t iterations);
 extern uint64_t depmovtest(uint64_t iterations);
 extern uint64_t xorzerotest(uint64_t iterations);
 extern uint64_t movzerotest(uint64_t iterations);
+extern uint64_t subzerotest(uint64_t iterations);
 
 float fpTestArr[4] __attribute__ ((aligned (64))) = { 0.2, 1.5, 2.7, 3.14 };
 int intTestArr[4] __attribute__ ((aligned (64))) = { 1, 2, 3, 4 };
@@ -120,6 +121,7 @@ int main(int argc, char *argv[]) {
   printf("Dependent movs per clk: %.2f\n", measureFunction(iterationsHigh, clockSpeedGhz, depmovtest));
   printf("eor -> 0 per clk: %.2f\n", measureFunction(iterationsHigh, clockSpeedGhz, xorzerotest));
   printf("mov -> 0 per clk: %.2f\n", measureFunction(iterationsHigh, clockSpeedGhz, movzerotest));
+  printf("sub -> 0 per clk: %.2f\n", measureFunction(iterationsHigh, clockSpeedGhz, subzerotest));
 
 
   printf("Not taken jmps per clk: %.2f\n", measureFunction(iterationsHigh, clockSpeedGhz, jmptest));
