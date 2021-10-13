@@ -1792,26 +1792,26 @@ depmovtest:
   mov $20, %r9
   xor %rbx, %rbx
 depmovtest_loop:
-  mov %r12, %r15
-  mov %r14, %r12
-  mov %r13, %r14
-  mov %r11, %r13
-  mov %r15, %r11
-  mov %r12, %r15
-  mov %r14, %r12
-  mov %r13, %r14
-  mov %r11, %r13
-  mov %r15, %r11 
-  mov %r12, %r15
-  mov %r14, %r12
-  mov %r13, %r14
-  mov %r11, %r13
-  mov %r15, %r11 
-  mov %r12, %r15
-  mov %r14, %r12
-  mov %r13, %r14
-  mov %r11, %r13
-  mov %r15, %r11 
+  mov %r15, %r12
+  mov %r12, %r14
+  mov %r14, %r13
+  mov %r13, %r11
+  mov %r11, %r15
+  mov %r15, %r12
+  mov %r12, %r14
+  mov %r14, %r13
+  mov %r13, %r11
+  mov %r11, %r15 
+  mov %r15, %r12
+  mov %r12, %r14
+  mov %r14, %r13
+  mov %r13, %r11
+  mov %r11, %r15 
+  mov %r15, %r12
+  mov %r12, %r14
+  mov %r14, %r13
+  mov %r13, %r11
+  mov %r11, %r15 
   sub %r9, %rdi
   jnz depmovtest_loop
   pop %r10
