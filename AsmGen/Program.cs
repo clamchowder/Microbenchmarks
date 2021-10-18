@@ -55,7 +55,7 @@ namespace AsmGen
             tests.Add(new MixMulRorSchedTest(2, 128, 1));
             tests.Add(new BranchHistoryTest());
             tests.Add(new IndirectBranchTest());
-            //tests.Add(new MxcsrTest(1, 32, 1));
+            tests.Add(new MxcsrTest(1, 32, 1));
 
             StringBuilder cSourceFile = new StringBuilder();
             StringBuilder vsCSourceFile = new StringBuilder();
