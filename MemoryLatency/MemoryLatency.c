@@ -16,7 +16,11 @@ int default_test_sizes[36] = { 2, 4, 8, 12, 16, 24, 32, 48, 64, 96, 128, 192, 25
                                3072, 4096, 5120, 6144, 8192, 10240, 12288, 16384, 24567, 32768, 65536, 98304,
                                131072, 262144, 393216, 524288, 1048576 };
 
+extern void preplatencyarr(uint64_t *arr, uint32_t len) __attribute__((ms_abi));
+extern uint32_t latencytest(uint64_t iterations, uint64_t *arr) __attribute((ms_abi));                      
+
 float RunTest(uint32_t size_kb, uint64_t iterations);
+float RunAsmTest(uint32_t size_kb, uint64_t iterations);
 float RunTlbTest(uint32_t size_kb, uint64_t iterations);
 
 float (*testFunc)(uint32_t, uint64_t) = RunTest;
@@ -27,6 +31,11 @@ int main(int argc, char* argv[]) {
         if (strncmp(argv[1], "tlb", 3) == 0) {
             testFunc = RunTlbTest;
             fprintf(stderr, "Running TLB test\n");
+        } 
+        
+        if (strncmp(argv[1], "asm", 3) == 0) {
+            testFunc = RunAsmTest;
+            fprintf(stderr, "Running ASM (simple address) test\n");
         }
     }
 
@@ -83,6 +92,43 @@ float RunTest(uint32_t size_kb, uint64_t iterations) {
         current = A[current];
         sum += current;
     }
+    gettimeofday(&endTv, &endTz);
+    uint64_t time_diff_ms = 1000 * (endTv.tv_sec - startTv.tv_sec) + ((endTv.tv_usec - startTv.tv_usec) / 1000);
+    float latency = 1e6 * (float)time_diff_ms / (float)scaled_iterations;
+    free(A);
+
+    if (sum == 0) printf("sum == 0 (?)\n");
+    return latency;
+}
+
+float RunAsmTest(uint32_t size_kb, uint64_t iterations) {
+    struct timeval startTv, endTv;
+    struct timezone startTz, endTz;
+    uint32_t list_size = size_kb * 1024 / sizeof(uint64_t); // using 64-bit pointers
+    uint32_t sum = 0, current;
+
+    // Fill list to create random access pattern
+    uint64_t *A = (uint64_t*)malloc(sizeof(uint64_t) * list_size);
+    for (int i = 0; i < list_size; i++) {
+        A[i] = i;
+    }
+
+    int iter = list_size;
+    while (iter > 1) {
+        iter -= 1;
+        int j = iter - 1 == 0 ? 0 : rand() % (iter - 1);
+        uint64_t tmp = A[iter];
+        A[iter] = A[j];
+        A[j] = tmp;
+    }
+
+    preplatencyarr(A, list_size);
+
+    uint64_t scaled_iterations = scale_iterations(size_kb, iterations);
+
+    // Run test
+    gettimeofday(&startTv, &startTz);
+    sum = latencytest(scaled_iterations, A);
     gettimeofday(&endTv, &endTz);
     uint64_t time_diff_ms = 1000 * (endTv.tv_sec - startTv.tv_sec) + ((endTv.tv_usec - startTv.tv_usec) / 1000);
     float latency = 1e6 * (float)time_diff_ms / (float)scaled_iterations;
