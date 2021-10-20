@@ -16,7 +16,7 @@ int default_test_sizes[36] = { 2, 4, 8, 12, 16, 24, 32, 48, 64, 96, 128, 192, 25
                                3072, 4096, 5120, 6144, 8192, 10240, 12288, 16384, 24567, 32768, 65536, 98304,
                                131072, 262144, 393216, 524288, 1048576 };
 
-#ifdef __i386__
+#ifdef __x86_64
 extern void preplatencyarr(uint64_t *arr, uint32_t len) __attribute__((ms_abi));
 extern uint32_t latencytest(uint64_t iterations, uint64_t *arr) __attribute((ms_abi));
 #else
