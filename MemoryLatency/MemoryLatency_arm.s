@@ -11,11 +11,11 @@ preplatencyarr:
   stp x14, x15, [sp, #0x10]
   mov x15, 0
 preplatencyarr_loop:
-  ldr x14, [x1, w15, uxtw #3]
+  ldr x14, [x0, w15, uxtw #3]
   lsl x14, x14, 3
-  add x14, x14, x1
-  str x14, [x1, w15, uxtw #3]
-  add x15, x15, 1
+  add x14, x14, x0
+  str x14, [x0, w15, uxtw #3]
+  add w15, w15, 1
   cmp x15, x1
   b.ne preplatencyarr_loop
   ldp x14, x15, [sp, #0x10]
@@ -35,6 +35,7 @@ latencytest_loop:
   add x14, x14, x15
   sub x0, x0, 1
   cbnz x0, latencytest_loop
+  mov x0, x14
   ldp x14, x15, [sp, #0x10]
   add sp, sp, #0x20
   ret

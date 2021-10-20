@@ -16,8 +16,13 @@ int default_test_sizes[36] = { 2, 4, 8, 12, 16, 24, 32, 48, 64, 96, 128, 192, 25
                                3072, 4096, 5120, 6144, 8192, 10240, 12288, 16384, 24567, 32768, 65536, 98304,
                                131072, 262144, 393216, 524288, 1048576 };
 
+#ifdef __i386__
 extern void preplatencyarr(uint64_t *arr, uint32_t len) __attribute__((ms_abi));
-extern uint32_t latencytest(uint64_t iterations, uint64_t *arr) __attribute((ms_abi));                      
+extern uint32_t latencytest(uint64_t iterations, uint64_t *arr) __attribute((ms_abi));
+#else
+extern void preplatencyarr(uint64_t *arr, uint32_t len);
+extern uint32_t latencytest(uint64_t iterations, uint64_t *arr);
+#endif
 
 float RunTest(uint32_t size_kb, uint64_t iterations);
 float RunAsmTest(uint32_t size_kb, uint64_t iterations);
