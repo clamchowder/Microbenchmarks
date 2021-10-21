@@ -24,17 +24,24 @@ typedef struct BandwidthTestThreadData {
     float bw; // written to by the thread
 } BandwidthTestThreadData;
 
-float scalar_read(float* arr, uint64_t arr_length, uint64_t iterations, uint64_t start);
 float MeasureBw(uint64_t sizeKb, uint64_t iterations, uint64_t threads, int shared);
 
 
+#ifdef __x86_64
+float scalar_read(float* arr, uint64_t arr_length, uint64_t iterations, uint64_t start) __attribute((ms_abi));
+extern float asm_read(float* arr, uint64_t arr_length, uint64_t iterations, uint64_t start) __attribute__((ms_abi));
+extern float avx512_read(float* arr, uint64_t arr_length, uint64_t iterations, uint64_t start) __attribute__((ms_abi));
+float (*bw_func)(float*, uint64_t, uint64_t, uint64_t start) __attribute__((ms_abi)); 
+#else
+float scalar_read(float* arr, uint64_t arr_length, uint64_t iterations, uint64_t start);
 extern float asm_read(float* arr, uint64_t arr_length, uint64_t iterations, uint64_t start);
-
 extern float avx512_read(float* arr, uint64_t arr_length, uint64_t iterations, uint64_t start);
+float (*bw_func)(float*, uint64_t, uint64_t, uint64_t start); 
+#endif
+
 uint64_t GetIterationCount(uint64_t testSize, uint64_t threads);
 void *ReadBandwidthTestThread(void *param);
 
-float (*bw_func)(float*, uint64_t, uint64_t, uint64_t start) = scalar_read;
 
 int main(int argc, char *argv[]) {
     int threads = 1;
@@ -58,7 +65,6 @@ int main(int argc, char *argv[]) {
         printf("Usage: [threads] [shared/private] [scalar/asm/avx512]\n");
     }
 
-    //bw_func = scalar_read;
     printf("Using asm\n");
     bw_func = asm_read;
 
@@ -193,7 +199,11 @@ float MeasureBw(uint64_t sizeKb, uint64_t iterations, uint64_t threads, int shar
     return bw;
 }
 
+#ifdef __x86_64
+__attribute((ms_abi)) float scalar_read(float* arr, uint64_t arr_length, uint64_t iterations, uint64_t start) {
+#else
 float scalar_read(float* arr, uint64_t arr_length, uint64_t iterations, uint64_t start) {
+#endif
     float sum = 0;
     if (start + 16 >= arr_length) return 0;
 
