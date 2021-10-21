@@ -51,6 +51,7 @@
 .global depmovtest
 .global xorzerotest
 .global movzerotest
+.global subzerotest
 
 /* x0 = arg = iteration count. all iteration counts must be divisible by 10 */
 clktest:
@@ -2006,6 +2007,44 @@ movzerotest_loop:
   mov x15, 0 
   sub x0, x0, x14
   cbnz x0, movzerotest_loop
+  ldp x8, x9, [sp, #0x40]
+  ldp x10, x11, [sp, #0x30]
+  ldp x12, x13, [sp, #0x20]
+  ldp x14, x15, [sp, #0x10]
+  add sp, sp, #0x50
+  ret 
+
+subzerotest:
+  sub sp, sp, #0x50
+  stp x14, x15, [sp, #0x10]
+  stp x12, x13, [sp, #0x20]
+  stp x10, x11, [sp, #0x30]
+  stp x8, x9, [sp, #0x40]
+  mov x15, 1
+  mov x14, 20
+subzerotest_loop:
+  sub x15, x15, x15
+  sub x15, x15, x15
+  sub x15, x15, x15
+  sub x15, x15, x15
+  sub x15, x15, x15
+  sub x15, x15, x15
+  sub x15, x15, x15
+  sub x15, x15, x15
+  sub x15, x15, x15
+  sub x15, x15, x15 
+  sub x15, x15, x15
+  sub x15, x15, x15
+  sub x15, x15, x15
+  sub x15, x15, x15
+  sub x15, x15, x15 
+  sub x15, x15, x15
+  sub x15, x15, x15
+  sub x15, x15, x15
+  sub x15, x15, x15
+  sub x15, x15, x15 
+  sub x0, x0, x14
+  cbnz x0, subzerotest_loop
   ldp x8, x9, [sp, #0x40]
   ldp x10, x11, [sp, #0x30]
   ldp x12, x13, [sp, #0x20]

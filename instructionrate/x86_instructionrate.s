@@ -6,6 +6,7 @@
 .global depmovtest
 .global xorzerotest
 .global movzerotest
+.global subzerotest
 .global addmultest
 .global jmpmultest
 .global noptest
@@ -1791,26 +1792,26 @@ depmovtest:
   mov $20, %r9
   xor %rbx, %rbx
 depmovtest_loop:
-  mov %r12, %r15
-  mov %r14, %r12
-  mov %r13, %r14
-  mov %r11, %r13
-  mov %r15, %r11
-  mov %r12, %r15
-  mov %r14, %r12
-  mov %r13, %r14
-  mov %r11, %r13
-  mov %r15, %r11 
-  mov %r12, %r15
-  mov %r14, %r12
-  mov %r13, %r14
-  mov %r11, %r13
-  mov %r15, %r11 
-  mov %r12, %r15
-  mov %r14, %r12
-  mov %r13, %r14
-  mov %r11, %r13
-  mov %r15, %r11 
+  mov %r15, %r12
+  mov %r12, %r14
+  mov %r14, %r13
+  mov %r13, %r11
+  mov %r11, %r15
+  mov %r15, %r12
+  mov %r12, %r14
+  mov %r14, %r13
+  mov %r13, %r11
+  mov %r11, %r15 
+  mov %r15, %r12
+  mov %r12, %r14
+  mov %r14, %r13
+  mov %r13, %r11
+  mov %r11, %r15 
+  mov %r15, %r12
+  mov %r12, %r14
+  mov %r14, %r13
+  mov %r13, %r11
+  mov %r11, %r15 
   sub %r9, %rdi
   jnz depmovtest_loop
   pop %r10
@@ -1959,6 +1960,55 @@ xorzerotest_loop:
   xor %r15, %r15 
   sub %r9, %rdi
   jnz xorzerotest_loop
+  pop %r10
+  pop %r11
+  pop %r12
+  pop %r13
+  pop %r14
+  pop %r15 
+  pop %r9
+  pop %r8
+  pop %rcx
+  pop %rbx
+  ret 
+
+subzerotest:
+  push %rbx
+  push %rcx
+  push %r8
+  push %r9
+  push %r15
+  push %r14
+  push %r13
+  push %r12
+  push %r11
+  push %r10 
+  mov $1, %r8
+  mov $20, %r9
+  xor %rbx, %rbx
+subzerotest_loop:
+  sub %r15, %r15
+  sub %r15, %r15
+  sub %r15, %r15
+  sub %r15, %r15
+  sub %r15, %r15
+  sub %r15, %r15
+  sub %r15, %r15
+  sub %r15, %r15
+  sub %r15, %r15
+  sub %r15, %r15 
+  sub %r15, %r15
+  sub %r15, %r15
+  sub %r15, %r15
+  sub %r15, %r15
+  sub %r15, %r15 
+  sub %r15, %r15
+  sub %r15, %r15
+  sub %r15, %r15
+  sub %r15, %r15
+  sub %r15, %r15 
+  sub %r9, %rdi
+  jnz subzerotest_loop
   pop %r10
   pop %r11
   pop %r12
