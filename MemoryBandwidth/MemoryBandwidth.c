@@ -5,12 +5,21 @@
 #include <stdlib.h>
 #include <stdint.h>
 #include <string.h>
+
+#ifndef __MINGW32__
 #include <sys/syscall.h>
+#endif
+
 #include <sys/time.h>
 #include <unistd.h>
 #include <sched.h>
 #include <pthread.h>
 #include <math.h>
+
+// make mingw happy
+#ifdef __MINGW32__
+#define aligned_alloc(align, size) _aligned_malloc(size, align)
+#endif
 
 int default_test_sizes[39] = { 2, 4, 8, 12, 16, 24, 32, 48, 64, 96, 128, 192, 256, 512, 600, 768, 1024, 1536, 2048,
                                3072, 4096, 5120, 6144, 8192, 10240, 12288, 16384, 24567, 32768, 65536, 98304,
@@ -28,60 +37,92 @@ float MeasureBw(uint64_t sizeKb, uint64_t iterations, uint64_t threads, int shar
 
 
 #ifdef __x86_64
+#include <cpuid.h>
 float scalar_read(float* arr, uint64_t arr_length, uint64_t iterations, uint64_t start) __attribute((ms_abi));
 extern float asm_read(float* arr, uint64_t arr_length, uint64_t iterations, uint64_t start) __attribute__((ms_abi));
+extern float sse_read(float* arr, uint64_t arr_length, uint64_t iterations, uint64_t start) __attribute__((ms_abi));
 extern float avx512_read(float* arr, uint64_t arr_length, uint64_t iterations, uint64_t start) __attribute__((ms_abi));
 float (*bw_func)(float*, uint64_t, uint64_t, uint64_t start) __attribute__((ms_abi)); 
 #else
 float scalar_read(float* arr, uint64_t arr_length, uint64_t iterations, uint64_t start);
 extern float asm_read(float* arr, uint64_t arr_length, uint64_t iterations, uint64_t start);
-extern float avx512_read(float* arr, uint64_t arr_length, uint64_t iterations, uint64_t start);
 float (*bw_func)(float*, uint64_t, uint64_t, uint64_t start); 
 #endif
 
 uint64_t GetIterationCount(uint64_t testSize, uint64_t threads);
 void *ReadBandwidthTestThread(void *param);
 
-
 int main(int argc, char *argv[]) {
     int threads = 1;
     int cpuid_data[4];
     int shared = 1;
-
-    if (argc > 1) {
-        threads = atoi(argv[1]);
-    }
-    if (argc > 2)
-    {
-        if (strncmp(argv[2], "private", 7) == 0)
-        {
-            shared = 0;
-            printf("Using private data per-thread\n");
-        }
-    }
-    
-    if (argc == 1)
-    {
-        printf("Usage: [threads] [shared/private] [scalar/asm/avx512]\n");
-    }
-
-    printf("Using asm\n");
+    int methodSet = 0;
     bw_func = asm_read;
-
-    if (argc > 3) 
-    {
-        if (strncmp(argv[3], "scalar", 6) == 0) {
-            bw_func = scalar_read;
-            printf("Using scalar C code\n");
-        } else if (strncmp(argv[3], "asm", 3) == 0) {
-            bw_func = asm_read;
-            printf("Using asm (neon or avx)\n");
-        } else if (strncmp(argv[3], "avx512", 6) == 0) {
-            bw_func = avx512_read;
-            printf("Using avx512\n");
+    for (int argIdx = 1; argIdx < argc; argIdx++) {
+        if (*(argv[argIdx]) == '-') {
+            char *arg = argv[argIdx] + 1;
+            if (strncmp(arg, "threads", 7) == 0) {
+                argIdx++;
+                threads = atoi(argv[argIdx]);
+                fprintf(stderr, "Using %d threads\n", threads);
+            } else if (strncmp(arg, "shared", 6) == 0) {
+                shared = 1;
+                fprintf(stderr, "Using shared array\n");
+            } else if (strncmp(arg, "private", 7) == 0) {
+                shared = 0;
+                fprintf(stderr, "Using private array for each thread\n");
+            } else if (strncmp(arg, "method", 6) == 0) {
+                methodSet = 1;
+                argIdx++;
+                if (strncmp(argv[argIdx], "scalar", 6) == 0) {
+                    bw_func = scalar_read;
+                    fprintf(stderr, "Using scalar C code\n");
+                } else if (strncmp(argv[argIdx], "asm", 3) == 0) {
+                    bw_func = asm_read;
+                    fprintf(stderr, "Using ASM code (AVX or NEON)\n");
+                } 
+                #ifdef __x86_64
+                else if (strncmp(argv[argIdx], "avx512", 6) == 0) {
+                    bw_func = avx512_read;
+                    fprintf(stderr, "Using ASM code, AVX512\n");
+                }
+                else if (strncmp(argv[argIdx], "sse", 3) == 0) {
+                    bw_func = sse_read;
+                    fprintf(stderr, "Using ASM code, SSE\n");
+                }
+                #endif
+            }
+        } else {
+            fprintf(stderr, "Expected - parameter\n");
+            fprintf(stderr, "Usage: [-threads <thread count>] [-private] [-method <scalar/asm/avx512>]\n");
         }
     }
 
+#ifdef __x86_64
+    // if no method was specified, attempt to pick the best one for x86
+    // for aarch64 we'll just use NEON because SVE basically doesn't exist
+    if (!methodSet) {
+        bw_func = scalar_read;
+        if (__builtin_cpu_supports("sse")) {
+            fprintf(stderr, "SSE supported\n");
+            bw_func = sse_read;
+        }
+
+        if (__builtin_cpu_supports("avx")) {
+            fprintf(stderr, "AVX supported\n");
+            bw_func = asm_read;
+        }
+
+        // gcc has no __builtin_cpu_supports for avx512, so check by hand.
+        // eax = 7 -> extended features, bit 16 of ebx = avx512f
+        uint32_t cpuidEax, cpuidEbx, cpuidEcx, cpuidEdx;
+        __cpuid_count(7, 0, cpuidEax, cpuidEbx, cpuidEcx, cpuidEdx);
+        if (cpuidEbx & (1UL << 16)) {
+            fprintf(stderr, "AVX512 supported\n");
+            bw_func = avx512_read;
+        }
+    }
+#endif
 
     printf("Using %d threads\n", threads);
     for (int i = 0; i < sizeof(default_test_sizes) / sizeof(int); i++)
