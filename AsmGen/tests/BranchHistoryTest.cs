@@ -211,9 +211,12 @@ namespace AsmGen
         public void GenerateExternLines(StringBuilder sb)
         {
             for (int i = 0; i < branchCounts.Length; i++)
-                sb.AppendLine("extern uint64_t " + Prefix + branchCounts[i] + $"({FunctionDefinitionParameters});");
+                sb.AppendLine("extern uint64_t " + Prefix + branchCounts[i] + $"({FunctionDefinitionParameters}) __attribute((sysv_abi));");
 
             GenerateInitializationCode(sb);
+
+            string gccFunction = File.ReadAllText($"{Program.DataFilesDir}\\GccBranchHistFunction.c");
+            sb.AppendLine(gccFunction);
         }
 
         public void GenerateVsExternLines(StringBuilder sb)
@@ -222,6 +225,9 @@ namespace AsmGen
                 sb.AppendLine("extern \"C\" uint64_t " + Prefix + branchCounts[i] + $"({FunctionDefinitionParameters});");
 
             GenerateInitializationCode(sb);
+
+            string vsFunction = File.ReadAllText($"{Program.DataFilesDir}\\VsBranchHistFunction.c");
+            sb.AppendLine(vsFunction);
         }
 
         public void GenerateInitializationCode(StringBuilder sb)
@@ -236,7 +242,7 @@ namespace AsmGen
             for (int i = 1; i < historyCounts.Length; i++) sb.Append(", " + historyCounts[i]);
             sb.AppendLine(" };");
 
-            sb.AppendLine($"uint64_t (*branchtestFuncArr[{branchCounts.Length}])(uint64_t iterations, uint32_t **arr, uint32_t arrLen);");
+            sb.AppendLine($"uint64_t (__attribute((sysv_abi)) *branchtestFuncArr[{branchCounts.Length}])(uint64_t iterations, uint32_t **arr, uint32_t arrLen);");
 
             sb.AppendLine("void initializeBranchHistFuncArr() {");
             for (int i = 0; i < branchCounts.Length; i++)
