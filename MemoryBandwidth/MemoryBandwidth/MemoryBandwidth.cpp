@@ -28,46 +28,68 @@ float sse_read(float* arr, uint64_t arr_length, uint64_t iterations, uint64_t st
 float avx_read(float* arr, uint64_t arr_length, uint64_t iterations, uint64_t start);
 float MeasureBw(uint64_t sizeKb, uint64_t iterations, uint64_t threads, int shared);
 extern "C" float avx_asm_read(float* arr, uint64_t arr_length, uint64_t iterations, uint64_t start);
+extern "C" float avx512_asm_read(float* arr, uint64_t arr_length, uint64_t iterations, uint64_t start);
 uint64_t GetIterationCount(uint64_t testSize, uint64_t threads);
 DWORD WINAPI ReadBandwidthTestThread(LPVOID param);
 
 float (*bw_func)(float*, uint64_t, uint64_t, uint64_t start) = scalar_read;
 
 int main(int argc, char *argv[]) {
-    int threads = 1, shared = 1;
+    int threads = 1, shared = 1, methodSet = 0;
     int cpuid_data[4];
 
     if (argc == 1) {
-        printf("Usage: [threads] [sse/avx/asm_avx/scalar] [shared/private]\n");
+        printf("Usage: [-threads <thread count>] [-method <scalar/sse/avx/asm_avx/asm_avx512>] [-shared] [-private]\n");
     }
 
-    if (argc > 1) {
-        threads = atoi(argv[1]);
-        if (threads > 64) {
-            threads = 64;
-            fprintf(stderr, "Too many threads pls stop. Setting thread count to 64\n");
+    for (int argIdx = 1; argIdx < argc; argIdx++) {
+        if (*(argv[argIdx]) == '-') {
+            char* arg = argv[argIdx] + 1;
+            if (_strnicmp(arg, "threads", 7) == 0) {
+                argIdx++;
+                threads = atoi(argv[argIdx]);
+                fprintf(stderr, "Using %d threads\n", threads);
+            }
+            else if (_strnicmp(arg, "shared", 6) == 0) {
+                shared = 1;
+                fprintf(stderr, "Using one array shared across all threads\n");
+            }
+            else if (_strnicmp(arg, "private", 7) == 0) {
+                shared = 0;
+                fprintf(stderr, "Using private array for each thread\n");
+            }
+            else if (_strnicmp(arg, "method", 6) == 0) {
+                methodSet = 1;
+                argIdx++;
+                if (_strnicmp(argv[argIdx], "scalar", 6) == 0) {
+                    bw_func = scalar_read;
+                    fprintf(stderr, "Using scalar C code\n");
+                }
+                else if (_strnicmp(argv[argIdx], "asm_avx512", 10) == 0) {
+                    bw_func = avx512_asm_read;
+                    fprintf(stderr, "Using AVX512 assembly\n");
+                }
+                else if (_strnicmp(argv[argIdx], "sse", 3) == 0) {
+                    bw_func = sse_read;
+                    fprintf(stderr, "Using SSE intrinsics\n");
+                }
+                else if (_strnicmp(argv[argIdx], "avx", 3) == 0) {
+                    bw_func = avx_read;
+                    fprintf(stderr, "Using AVX intrinsics\n");
+                }
+                else if (_strnicmp(argv[argIdx], "asm_avx", 7) == 0) {
+                    bw_func = avx_asm_read;
+                    fprintf(stderr, "Using AVX assembly\n");
+                }
+                else {
+                    methodSet = 0;
+                    fprintf(stderr, "I'm so confused. Gonna use whatever the CPU supports I guess\n");
+                }
+            }
         }
     }
 
-    if (argc > 2) {
-        if (_strnicmp(argv[2], "sse", 3) == 0) {
-            fprintf(stderr, "Using SSE\n");
-            bw_func = sse_read;
-        }
-        else if (_strnicmp(argv[2], "avx", 3) == 0) {
-            fprintf(stderr, "Using AVX\n");
-            bw_func = avx_read;
-        }
-        else if (_strnicmp(argv[2], "asm_avx", 7) == 0) {
-            fprintf(stderr, "Using AVX (asm)\n");
-            bw_func = avx_asm_read;
-        }
-        else {
-            fprintf(stderr, "Using scalar C code\n");
-            bw_func = scalar_read;
-        }
-    }
-    else {
+    if (!methodSet) {
         // check for sse/avx
         __cpuidex(cpuid_data, 1, 0);
         // EDX bit 25 = SSE
@@ -80,13 +102,11 @@ int main(int argc, char *argv[]) {
             fprintf(stderr, "AVX supported\n");
             bw_func = avx_asm_read;
         }
-    }
 
-    if (argc > 3)
-    {
-        if (_strnicmp(argv[3], "private", 7) == 0) {
-            shared = 0;
-            fprintf(stderr, "Using private data per-thread\n");
+        __cpuidex(cpuid_data, 7, 0);
+        if (cpuid_data[1] & (1UL << 16)) {
+            fprintf(stderr, "AVX512 supported\n");
+            bw_func = avx512_asm_read;
         }
     }
 
@@ -171,7 +191,9 @@ float MeasureBw(uint64_t sizeKb, uint64_t iterations, uint64_t threads, int shar
         threadData[i].start = 0;
         if (elements > 8192 * 1024) threadData[i].start = 4096 * i; // must be multiple of 128 because of unrolling
         testThreads[i] = CreateThread(NULL, 0, ReadBandwidthTestThread, threadData + i, CREATE_SUSPENDED, tids + i);
-        SetThreadAffinityMask(testThreads[i], 1UL << i);
+
+        // turns out setting affinity makes no difference, and it's easier to set affinity via start /affinity <mask> anyway
+        //SetThreadAffinityMask(testThreads[i], 1UL << i);
     }
 
     ftime(&start);
