@@ -191,7 +191,9 @@ float MeasureBw(uint64_t sizeKb, uint64_t iterations, uint64_t threads, int shar
         threadData[i].start = 0;
         if (elements > 8192 * 1024) threadData[i].start = 4096 * i; // must be multiple of 128 because of unrolling
         testThreads[i] = CreateThread(NULL, 0, ReadBandwidthTestThread, threadData + i, CREATE_SUSPENDED, tids + i);
-        SetThreadAffinityMask(testThreads[i], 1UL << i);
+
+        // turns out setting affinity makes no difference, and it's easier to set affinity via start /affinity <mask> anyway
+        //SetThreadAffinityMask(testThreads[i], 1UL << i);
     }
 
     ftime(&start);
