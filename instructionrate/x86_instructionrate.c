@@ -8,60 +8,65 @@
 #include <stdlib.h>
 #include <string.h>
 
-extern uint64_t noptest(uint64_t iterations);
-extern uint64_t noptest1b(uint64_t iterations);
-extern uint64_t clktest(uint64_t iterations); 
-extern uint64_t addtest(uint64_t iterations);
-extern uint64_t addmultest(uint64_t iterations); 
-extern uint64_t jmpmultest(uint64_t iterations); 
-extern uint64_t add256int(uint64_t iterations); 
-extern uint64_t mixadd256int(uint64_t iterations); 
-extern uint64_t mixadd256int11(uint64_t iterations); 
-extern uint64_t mixadd256fpint(uint64_t iterations); 
-extern uint64_t mix256fp(uint64_t iterations); 
-extern uint64_t mix256fp11(uint64_t iterations); 
-extern uint64_t latadd256int(uint64_t iterations); 
-extern uint64_t latadd128int(uint64_t iterations); 
-extern uint64_t latadd256fp(uint64_t iterations); 
-extern uint64_t latmul128int(uint64_t iterations); 
-extern uint64_t latmul256int(uint64_t iterations); 
-extern uint64_t latmul256fp(uint64_t iterations); 
-extern uint64_t latadd128fp(uint64_t iterations); 
-extern uint64_t latmul128fp(uint64_t iterations); 
-extern uint64_t fma256(uint64_t iterations);
-extern uint64_t mul256fp(uint64_t iterations);
-extern uint64_t add256fp(uint64_t iterations);
-extern uint64_t latmul64(uint64_t iterations);
-extern uint64_t latmul16(uint64_t iterations);
-extern uint64_t mul16(uint64_t iterations);
-extern uint64_t mul64(uint64_t iterations);
-extern uint64_t load128(uint64_t iterations, int *arr);
-extern uint64_t spacedload128(uint64_t iterations, int *arr);
-extern uint64_t load256(uint64_t iterations, float *arr);
-extern uint64_t store128(uint64_t iterations, int *arr, int *sink);
-extern uint64_t store256(uint64_t iterations, float *arr, float *sink);
-extern uint64_t mixaddmul128int(uint64_t iterations);
-extern uint64_t mixmul16mul64(uint64_t iterations); 
-extern uint64_t mixmul16mul64_21(uint64_t iterations); 
-extern uint64_t pdeptest(uint64_t iterations);
-extern uint64_t pexttest(uint64_t iterations);
-extern uint64_t indepmovtest(uint64_t iterations);
-extern uint64_t depmovtest(uint64_t iterations);
-extern uint64_t xorzerotest(uint64_t iterations);
-extern uint64_t movzerotest(uint64_t iterations);
-extern uint64_t subzerotest(uint64_t iterations);
+// make mingw happy for cross compiling
+#ifdef __MINGW32__
+#define aligned_alloc(align, size) _aligned_malloc(size, align)
+#endif
+
+extern uint64_t noptest(uint64_t iterations) __attribute((sysv_abi));
+extern uint64_t noptest1b(uint64_t iterations) __attribute((sysv_abi));
+extern uint64_t clktest(uint64_t iterations) __attribute((sysv_abi)); 
+extern uint64_t addtest(uint64_t iterations) __attribute((sysv_abi));
+extern uint64_t addmultest(uint64_t iterations) __attribute((sysv_abi)); 
+extern uint64_t jmpmultest(uint64_t iterations) __attribute((sysv_abi)); 
+extern uint64_t add256int(uint64_t iterations) __attribute((sysv_abi)); 
+extern uint64_t mixadd256int(uint64_t iterations) __attribute((sysv_abi)); 
+extern uint64_t mixadd256int11(uint64_t iterations) __attribute((sysv_abi)); 
+extern uint64_t mixadd256fpint(uint64_t iterations) __attribute((sysv_abi)); 
+extern uint64_t mix256fp(uint64_t iterations) __attribute((sysv_abi)); 
+extern uint64_t mix256fp11(uint64_t iterations) __attribute((sysv_abi)); 
+extern uint64_t latadd256int(uint64_t iterations) __attribute((sysv_abi)); 
+extern uint64_t latadd128int(uint64_t iterations) __attribute((sysv_abi)); 
+extern uint64_t latadd256fp(uint64_t iterations) __attribute((sysv_abi)); 
+extern uint64_t latmul128int(uint64_t iterations) __attribute((sysv_abi)); 
+extern uint64_t latmul256int(uint64_t iterations) __attribute((sysv_abi)); 
+extern uint64_t latmul256fp(uint64_t iterations) __attribute((sysv_abi)); 
+extern uint64_t latadd128fp(uint64_t iterations) __attribute((sysv_abi)); 
+extern uint64_t latmul128fp(uint64_t iterations) __attribute((sysv_abi)); 
+extern uint64_t fma256(uint64_t iterations) __attribute((sysv_abi));
+extern uint64_t mul256fp(uint64_t iterations) __attribute((sysv_abi));
+extern uint64_t add256fp(uint64_t iterations) __attribute((sysv_abi));
+extern uint64_t latmul64(uint64_t iterations) __attribute((sysv_abi));
+extern uint64_t latmul16(uint64_t iterations) __attribute((sysv_abi));
+extern uint64_t mul16(uint64_t iterations) __attribute((sysv_abi));
+extern uint64_t mul64(uint64_t iterations) __attribute((sysv_abi));
+extern uint64_t load128(uint64_t iterations, int *arr) __attribute((sysv_abi));
+extern uint64_t spacedload128(uint64_t iterations, int *arr) __attribute((sysv_abi));
+extern uint64_t load256(uint64_t iterations, float *arr) __attribute((sysv_abi));
+extern uint64_t store128(uint64_t iterations, int *arr, int *sink) __attribute((sysv_abi));
+extern uint64_t store256(uint64_t iterations, float *arr, float *sink) __attribute((sysv_abi));
+extern uint64_t mixaddmul128int(uint64_t iterations) __attribute((sysv_abi));
+extern uint64_t mixmul16mul64(uint64_t iterations) __attribute((sysv_abi)); 
+extern uint64_t mixmul16mul64_21(uint64_t iterations) __attribute((sysv_abi)); 
+extern uint64_t pdeptest(uint64_t iterations) __attribute((sysv_abi));
+extern uint64_t pexttest(uint64_t iterations) __attribute((sysv_abi));
+extern uint64_t indepmovtest(uint64_t iterations) __attribute((sysv_abi));
+extern uint64_t depmovtest(uint64_t iterations) __attribute((sysv_abi));
+extern uint64_t xorzerotest(uint64_t iterations) __attribute((sysv_abi));
+extern uint64_t movzerotest(uint64_t iterations) __attribute((sysv_abi));
+extern uint64_t subzerotest(uint64_t iterations) __attribute((sysv_abi));
 
 float fpTestArr[8] __attribute__ ((aligned (64))) = { 0.2, 1.5, 2.7, 3.14, 5.16, 6.3, 7.7, 9.45 };
 float fpSinkArr[8] __attribute__ ((aligned (64))) = { 2.1, 3.2, 4.3, 5.4, 6.2, 7.8, 8.3, 9.4 };
 int *intTestArr;
 int intSinkArr[8] __attribute__ ((aligned (64))) = { 2, 3, 4, 5, 6, 7, 8, 9 };
 
-uint64_t load128wrapper(uint64_t iterations);
-uint64_t load256wrapper(uint64_t iterations);
-uint64_t store128wrapper(uint64_t iterations);
-uint64_t store256wrapper(uint64_t iterations);
+uint64_t load128wrapper(uint64_t iterations) __attribute((sysv_abi));
+uint64_t load256wrapper(uint64_t iterations) __attribute((sysv_abi));
+uint64_t store128wrapper(uint64_t iterations) __attribute((sysv_abi));
+uint64_t store256wrapper(uint64_t iterations) __attribute((sysv_abi));
 
-float measureFunction(uint64_t iterations, float clockSpeedGhz, uint64_t (*testfunc)(uint64_t));
+float measureFunction(uint64_t iterations, float clockSpeedGhz, __attribute((sysv_abi)) uint64_t (*testfunc)(uint64_t));
 
 int main(int argc, char *argv[]) {
   struct timeval startTv, endTv; 
@@ -192,7 +197,7 @@ int main(int argc, char *argv[]) {
   return 0;
 }
 
-float measureFunction(uint64_t iterations, float clockSpeedGhz, uint64_t (*testfunc)(uint64_t)) {
+float measureFunction(uint64_t iterations, float clockSpeedGhz,  __attribute((sysv_abi)) uint64_t (*testfunc)(uint64_t)) {
   struct timeval startTv, endTv; 
   struct timezone startTz, endTz; 
   uint64_t time_diff_ms, retval;
@@ -209,22 +214,22 @@ float measureFunction(uint64_t iterations, float clockSpeedGhz, uint64_t (*testf
   return opsPerNs / clockSpeedGhz;
 }
 
-uint64_t load128wrapper(uint64_t iterations) {
+__attribute((sysv_abi)) uint64_t load128wrapper(uint64_t iterations) {
   return load128(iterations, intTestArr);
 }
 
-uint64_t spacedload128wrapper(uint64_t iterations) {
+__attribute((sysv_abi)) uint64_t spacedload128wrapper(uint64_t iterations) {
   return spacedload128(iterations, intTestArr);
 } 
 
-uint64_t load256wrapper(uint64_t iterations) {
+__attribute((sysv_abi)) uint64_t load256wrapper(uint64_t iterations) {
   return load256(iterations, fpTestArr);
 }
 
-uint64_t store128wrapper(uint64_t iterations) {
+__attribute((sysv_abi)) uint64_t store128wrapper(uint64_t iterations) {
   return store128(iterations, intTestArr, intSinkArr);
 }
 
-uint64_t store256wrapper(uint64_t iterations) {
+__attribute((sysv_abi)) uint64_t store256wrapper(uint64_t iterations) {
   return store256(iterations, fpTestArr, fpSinkArr);
 }
