@@ -3,6 +3,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <limits.h>
+#include <math.h>
 #include <sys/time.h>
 #include <unistd.h>
 
@@ -60,11 +61,7 @@ int main(int argc, char* argv[]) {
 /// <param name="iterations">base iterations</param>
 /// <returns>scaled iterations</returns>
 uint64_t scale_iterations(uint32_t size_kb, uint64_t iterations) {
-    uint64_t retval = iterations;
-    if (size_kb <= 512) retval *= 10;
-    if (size_kb > 4096) retval /= 10;
-    if (size_kb > 131072) retval /= 30;
-    return retval;
+    return 10 * iterations / pow(size_kb, 1.0 / 4.0);
 }
 
 float RunTest(uint32_t size_kb, uint64_t iterations) {
