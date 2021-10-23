@@ -35,23 +35,46 @@ float RunTlbTest(uint32_t size_kb, uint32_t iterations);
 float (*testFunc)(uint32_t, uint32_t) = RunTest;
 
 int main(int argc, char* argv[]) {
-    if (argc > 1)
-    {
-        if (strncmp(argv[1], "tlb", 3) == 0) {
-            testFunc = RunTlbTest;
-            fprintf(stderr, "Running TLB test\n");
-        } 
-        
-        if (strncmp(argv[1], "asm", 3) == 0) {
-            testFunc = RunAsmTest;
-            fprintf(stderr, "Running ASM (simple address) test\n");
+    uint32_t maxTestSizeMb = 0;
+    for (int argIdx = 1; argIdx < argc; argIdx++) {
+        if (*(argv[argIdx]) == '-') {
+            char *arg = argv[argIdx] + 1; 
+            if (strncmp(arg, "test", 4) == 0) {
+                argIdx++;
+                char *testType = argv[argIdx];
+                if (strncmp(testType, "asm", 3) == 0) {
+                    testFunc = RunAsmTest;
+                    fprintf(stderr, "Using ASM (simple address) test\n");
+                } else if (strncmp(testType, "tlb", 3) == 0) {
+                    testFunc = RunTlbTest;
+                    fprintf(stderr, "Testing TLB with one element accessed per 4K page\n");
+                } else if (strncmp(testType, "c", 1) == 0) {
+                    testFunc = RunTest;
+                    fprintf(stderr, "Using simple C test\n");
+                } else {
+                    fprintf(stderr, "Unrecognized test type: %s\n", testType);
+                    fprintf(stderr, "Valid test types: c, asm, tlb\n");
+                }
+            } else if (strncmp(arg, "maxsizemb", 9) == 0) {
+                argIdx++;
+                maxTestSizeMb = atoi(argv[argIdx]);
+                fprintf(stderr, "Will not exceed %u MB\n", maxTestSizeMb);
+            } else {
+                fprintf(stderr, "Unrecognized option: %s\n", arg);
+            }
         }
+    }
+
+    if (argc == 1) {
+        fprintf(stderr, "Usage: [-test <c/asm/tlb>] [-maxsizemb <max test size in MB>]\n");
     }
 
     printf("Region,Latency (ns)\n");
     for (int i = 0; i < sizeof(default_test_sizes) / sizeof(int); i++)
     {
-        printf("%d,%f\n", default_test_sizes[i], testFunc(default_test_sizes[i], ITERATIONS));
+        if ((maxTestSizeMb == 0) || (default_test_sizes[i] <= maxTestSizeMb * 1024))
+            printf("%d,%f\n", default_test_sizes[i], testFunc(default_test_sizes[i], ITERATIONS));
+        else fprintf(stderr, "Test size %u KB exceeds max test size of %u KB\n", default_test_sizes[i], maxTestSizeMb * 1024);
     }
 
     return 0;
@@ -75,6 +98,11 @@ float RunTest(uint32_t size_kb, uint32_t iterations) {
 
     // Fill list to create random access pattern
     int* A = (int*)malloc(sizeof(int) * list_size);
+    if (!A) {
+        fprintf(stderr, "Failed to allocate memory for %u KB test\n", size_kb);
+        return 0;
+    }
+
     for (int i = 0; i < list_size; i++) {
         A[i] = i;
     }
@@ -122,6 +150,11 @@ float RunAsmTest(uint32_t size_kb, uint32_t iterations) {
 
     // Fill list to create random access pattern
     POINTER_INT *A = (POINTER_INT *)malloc(POINTER_SIZE * list_size);
+    if (!A) {
+        fprintf(stderr, "Failed to allocate memory for %u KB test\n", size_kb);
+        return 0;
+    }
+
     for (int i = 0; i < list_size; i++) {
         A[i] = i;
     }
@@ -164,6 +197,11 @@ float RunTlbTest(uint32_t size_kb, uint32_t iterations) {
 
     // create access pattern first, then fill it into the test array spaced by page size
     uint32_t* pattern_arr = (uint32_t*)malloc(sizeof(uint32_t) * element_count);
+    if (!pattern_arr) {
+        fprintf(stderr, "Failed to allocate memory for %u KB test (offset array)\n", size_kb);
+        return 0;
+    }
+
     for (int i = 0; i < element_count; i++) {
         pattern_arr[i] = i;
     }
@@ -180,6 +218,9 @@ float RunTlbTest(uint32_t size_kb, uint32_t iterations) {
     // translate offsets and fill the test array
     // [offset-------page-------][offset-----page------....etc
     uint32_t *A = (uint32_t *)malloc(sizeof(uint32_t) * list_size);
+    if (!A) {
+        fprintf(stderr, "Failed to allocate memory for %u KB test (pointer array)\n", size_kb);
+    }
     memset(A, INT_MAX, list_size); // catch any bad accesses immediately
     int pageIncrement = PAGE_SIZE / sizeof(uint32_t);
     for (int i = 0;i < element_count; i++) {
