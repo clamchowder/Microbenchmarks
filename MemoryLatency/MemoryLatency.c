@@ -20,16 +20,19 @@ int default_test_sizes[36] = { 2, 4, 8, 12, 16, 24, 32, 48, 64, 96, 128, 192, 25
 #ifdef __x86_64
 extern void preplatencyarr(uint64_t *arr, uint32_t len) __attribute__((ms_abi));
 extern uint32_t latencytest(uint64_t iterations, uint64_t *arr) __attribute((ms_abi));
+#elif __i686
+extern void preplatencyarr(uint32_t *arr, uint32_t len) __attribute__((fastcall));
+extern uint32_t latencytest(uint32_t iterations, uint32_t *arr) __attribute((fastcall));
 #else
 extern void preplatencyarr(uint64_t *arr, uint32_t len);
 extern uint32_t latencytest(uint64_t iterations, uint64_t *arr);
 #endif
 
-float RunTest(uint32_t size_kb, uint64_t iterations);
-float RunAsmTest(uint32_t size_kb, uint64_t iterations);
-float RunTlbTest(uint32_t size_kb, uint64_t iterations);
+float RunTest(uint32_t size_kb, uint32_t iterations);
+float RunAsmTest(uint32_t size_kb, uint32_t iterations);
+float RunTlbTest(uint32_t size_kb, uint32_t iterations);
 
-float (*testFunc)(uint32_t, uint64_t) = RunTest;
+float (*testFunc)(uint32_t, uint32_t) = RunTest;
 
 int main(int argc, char* argv[]) {
     if (argc > 1)
@@ -60,11 +63,11 @@ int main(int argc, char* argv[]) {
 /// <param name="size_kb">Region size</param>
 /// <param name="iterations">base iterations</param>
 /// <returns>scaled iterations</returns>
-uint64_t scale_iterations(uint32_t size_kb, uint64_t iterations) {
+uint64_t scale_iterations(uint32_t size_kb, uint32_t iterations) {
     return 10 * iterations / pow(size_kb, 1.0 / 4.0);
 }
 
-float RunTest(uint32_t size_kb, uint64_t iterations) {
+float RunTest(uint32_t size_kb, uint32_t iterations) {
     struct timeval startTv, endTv;
     struct timezone startTz, endTz;
     uint32_t list_size = size_kb * 1024 / 4;
@@ -85,7 +88,7 @@ float RunTest(uint32_t size_kb, uint64_t iterations) {
         A[j] = tmp;
     }
 
-    uint64_t scaled_iterations = scale_iterations(size_kb, iterations);
+    uint32_t scaled_iterations = scale_iterations(size_kb, iterations);
 
     // Run test
     gettimeofday(&startTv, &startTz);
@@ -103,14 +106,22 @@ float RunTest(uint32_t size_kb, uint64_t iterations) {
     return latency;
 }
 
-float RunAsmTest(uint32_t size_kb, uint64_t iterations) {
+#ifdef __i686
+#define POINTER_SIZE 4
+#define POINTER_INT uint32_t
+#else
+#define POINTER_SIZE 8
+#define POINTER_INT uint64_t
+#endif
+
+float RunAsmTest(uint32_t size_kb, uint32_t iterations) {
     struct timeval startTv, endTv;
     struct timezone startTz, endTz;
-    uint32_t list_size = size_kb * 1024 / sizeof(uint64_t); // using 64-bit pointers
+    uint32_t list_size = size_kb * 1024 / POINTER_SIZE; // using 32-bit pointers
     uint32_t sum = 0, current;
 
     // Fill list to create random access pattern
-    uint64_t *A = (uint64_t*)malloc(sizeof(uint64_t) * list_size);
+    POINTER_INT *A = (POINTER_INT *)malloc(POINTER_SIZE * list_size);
     for (int i = 0; i < list_size; i++) {
         A[i] = i;
     }
@@ -119,14 +130,14 @@ float RunAsmTest(uint32_t size_kb, uint64_t iterations) {
     while (iter > 1) {
         iter -= 1;
         int j = iter - 1 == 0 ? 0 : rand() % (iter - 1);
-        uint64_t tmp = A[iter];
+        POINTER_INT tmp = A[iter];
         A[iter] = A[j];
         A[j] = tmp;
     }
 
     preplatencyarr(A, list_size);
 
-    uint64_t scaled_iterations = scale_iterations(size_kb, iterations);
+    uint32_t scaled_iterations = scale_iterations(size_kb, iterations);
 
     // Run test
     gettimeofday(&startTv, &startTz);
@@ -140,7 +151,7 @@ float RunAsmTest(uint32_t size_kb, uint64_t iterations) {
     return latency;
 }
 
-float RunTlbTest(uint32_t size_kb, uint64_t iterations) {
+float RunTlbTest(uint32_t size_kb, uint32_t iterations) {
     struct timeval startTv, endTv;
     struct timezone startTz, endTz;
     uint32_t element_count = size_kb / 4;
@@ -182,7 +193,7 @@ float RunTlbTest(uint32_t size_kb, uint64_t iterations) {
 
     free(pattern_arr);  // don't need this anymore
 
-    uint64_t scaled_iterations = scale_iterations(size_kb, iterations);
+    uint32_t scaled_iterations = scale_iterations(size_kb, iterations);
 
     // Run test
     gettimeofday(&startTv, &startTz);
