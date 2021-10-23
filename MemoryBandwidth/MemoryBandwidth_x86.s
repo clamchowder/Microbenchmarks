@@ -1,96 +1,160 @@
 .text
 
 .global asm_read
+.global sse_read
 .global avx512_read
 
-/* rdi = ptr to array (was rcx)
- * rsi = arr length (was rdx)
- * rdx = iterations (was r8)
- * rcx = start (was r9)
- */
 asm_read:
+  push %rsi
+  push %rdi
   push %rbx
-  push %r8
-  push %r9
-  mov %rcx, %r9
-  mov %rdx, %r8
-  mov %rdi, %rcx
-  mov %rsi, %rdx
+  push %r15
+  push %r14
+  mov $256, %r15 /* load in blocks of 256 bytes */
   sub $128, %rdx /* last iteration: rsi == rdx. rsi > rdx = break */
   mov %r9, %rsi  /* assume we're passed in an aligned start location O.o */
   xor %rbx, %rbx
-avx_asm_read_pass_loop:
   lea (%rcx,%rsi,4), %rdi
+  mov %rdi, %r14
+avx_asm_read_pass_loop:
   vmovaps (%rdi), %ymm0
   vmovaps 32(%rdi), %ymm1
   vmovaps 64(%rdi), %ymm2
   vmovaps 96(%rdi), %ymm3
-  add $32, %rsi
-  lea (%rcx,%rsi,4), %rdi
+  vmovaps 128(%rdi), %ymm0
+  vmovaps 160(%rdi), %ymm1
+  vmovaps 192(%rdi), %ymm2
+  vmovaps 224(%rdi), %ymm3
+  add $64, %rsi
+  add %r15, %rdi
   vmovaps (%rdi), %ymm0
   vmovaps 32(%rdi), %ymm1
   vmovaps 64(%rdi), %ymm2
   vmovaps 96(%rdi), %ymm3
-  add $32, %rsi
-  lea (%rcx,%rsi,4), %rdi
-  vmovaps (%rdi), %ymm0
-  vmovaps 32(%rdi), %ymm1
-  vmovaps 64(%rdi), %ymm2
-  vmovaps 96(%rdi), %ymm3
-  add $32, %rsi
-  lea (%rcx,%rsi,4), %rdi
-  vmovaps (%rdi), %ymm0
-  vmovaps 32(%rdi), %ymm1
-  vmovaps 64(%rdi), %ymm2
-  vmovaps 96(%rdi), %ymm3
-  add $32, %rsi
+  vmovaps 128(%rdi), %ymm0
+  vmovaps 160(%rdi), %ymm1
+  vmovaps 192(%rdi), %ymm2
+  vmovaps 224(%rdi), %ymm3
+  add $64, %rsi
+  add %r15, %rdi 
   cmp %rsi, %rdx
-  cmovl %rbx, %rsi /* if rdx - 128 < rsi, loop back around */
+  jge asm_avx_test_iteration_count
+  mov %rbx, %rsi
+  lea (%rcx,%rsi,4), %rdi /* back to start */
+asm_avx_test_iteration_count:
   cmp %rsi, %r9
   jnz avx_asm_read_pass_loop /* skip iteration decrement if we're not back to start */
   dec %r8
   jnz avx_asm_read_pass_loop
-  pop %r9
-  pop %r8
-  pop %rbx
-  ret
+  pop %r14 
+  pop %r15 
+  pop %rbx 
+  pop %rdi 
+  pop %rsi 
+  ret 
 
-avx512_read:
+sse_read:
+  push %rsi
+  push %rdi
   push %rbx
-  push %r8
-  push %r9
   push %r15
-  mov %rcx, %r9
-  mov %rdx, %r8
-  mov %rdi, %rcx
-  mov %rsi, %rdx
+  push %r14
+  mov $256, %r15 /* load in blocks of 256 bytes */
   sub $128, %rdx /* last iteration: rsi == rdx. rsi > rdx = break */
   mov %r9, %rsi  /* assume we're passed in an aligned start location O.o */
   xor %rbx, %rbx
-  xor %r15, %r15
-  not %r15
-  kmovq %k0, %r15
-avx512_read_pass_loop:
   lea (%rcx,%rsi,4), %rdi
+  mov %rdi, %r14
+sse_read_pass_loop:
+  movaps (%rdi), %xmm0
+  movaps 16(%rdi), %xmm1
+  movaps 32(%rdi), %xmm2
+  movaps 48(%rdi), %xmm3
+  movaps 64(%rdi), %xmm0
+  movaps 80(%rdi), %xmm1
+  movaps 96(%rdi), %xmm2
+  movaps 112(%rdi), %xmm3
+  movaps 128(%rdi), %xmm0
+  movaps 144(%rdi), %xmm1
+  movaps 160(%rdi), %xmm2
+  movaps 176(%rdi), %xmm3
+  movaps 192(%rdi), %xmm0
+  movaps 208(%rdi), %xmm1
+  movaps 224(%rdi), %xmm2
+  movaps 240(%rdi), %xmm3
+  add $64, %rsi
+  add %r15, %rdi
+  movaps (%rdi), %xmm0
+  movaps 16(%rdi), %xmm1
+  movaps 32(%rdi), %xmm2
+  movaps 48(%rdi), %xmm3
+  movaps 64(%rdi), %xmm0
+  movaps 80(%rdi), %xmm1
+  movaps 96(%rdi), %xmm2
+  movaps 112(%rdi), %xmm3
+  movaps 128(%rdi), %xmm0
+  movaps 144(%rdi), %xmm1
+  movaps 160(%rdi), %xmm2
+  movaps 176(%rdi), %xmm3
+  movaps 192(%rdi), %xmm0
+  movaps 208(%rdi), %xmm1
+  movaps 224(%rdi), %xmm2
+  movaps 240(%rdi), %xmm3
+  add $64, %rsi
+  add %r15, %rdi  
+  cmp %rsi, %rdx
+  jge sse_test_iteration_count
+  mov %rbx, %rsi
+  lea (%rcx,%rsi,4), %rdi /* back to start */
+sse_test_iteration_count:
+  cmp %rsi, %r9
+  jnz sse_read_pass_loop /* skip iteration decrement if we're not back to start */
+  dec %r8
+  jnz sse_read_pass_loop
+  pop %r14 
+  pop %r15 
+  pop %rbx 
+  pop %rdi 
+  pop %rsi 
+  ret  
+
+avx512_read:
+  push %rsi
+  push %rdi
+  push %rbx
+  push %r15
+  push %r14
+  mov $256, %r15 /* load in blocks of 256 bytes */
+  sub $128, %rdx /* last iteration: rsi == rdx. rsi > rdx = break */
+  mov %r9, %rsi  /* assume we're passed in an aligned start location O.o */
+  xor %rbx, %rbx
+  lea (%rcx,%rsi,4), %rdi
+  mov %rdi, %r14
+avx512_read_pass_loop:
   vmovaps (%rdi), %zmm0
   vmovaps 64(%rdi), %zmm1
   vmovaps 128(%rdi), %zmm2
   vmovaps 192(%rdi), %zmm3
   add $64, %rsi
-  lea (%rcx,%rsi,4), %rdi
-  vmovaps (%rdi), %zmm4
-  vmovaps 64(%rdi), %zmm5
-  vmovaps 128(%rdi), %zmm6
-  vmovaps 192(%rdi), %zmm7
+  add %r15, %rdi
+  vmovaps (%rdi), %zmm0
+  vmovaps 64(%rdi), %zmm1
+  vmovaps 128(%rdi), %zmm2
+  vmovaps 192(%rdi), %zmm3
   add $64, %rsi
+  add %r15, %rdi 
   cmp %rsi, %rdx
-  cmovl %rbx, %rsi /* if rdx - 128 < rsi, loop back around */
+  jge avx512_test_iteration_count
+  mov %rbx, %rsi
+  lea (%rcx,%rsi,4), %rdi /* back to start */
+avx512_test_iteration_count:
   cmp %rsi, %r9
   jnz avx512_read_pass_loop /* skip iteration decrement if we're not back to start */
   dec %r8
   jnz avx512_read_pass_loop
-  pop %r15
-  pop %r9
-  pop %r8
-  pop %rbx
-  ret 
+  pop %r14 
+  pop %r15 
+  pop %rbx 
+  pop %rdi 
+  pop %rsi 
+  ret  
