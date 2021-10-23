@@ -54,7 +54,7 @@ namespace AsmGen
             tests.Add(new MixJmpMulSchedTest(2, 128, 1));
             tests.Add(new MixMulRorSchedTest(2, 128, 1));
             tests.Add(new BranchHistoryTest());
-            tests.Add(new IndirectBranchTest());
+            //tests.Add(new IndirectBranchTest());
             tests.Add(new MxcsrTest(1, 32, 1));
 
             StringBuilder cSourceFile = new StringBuilder();
@@ -64,16 +64,13 @@ namespace AsmGen
             StringBuilder x86NasmFile = new StringBuilder();
 
             string commonFunctions = File.ReadAllText($"{DataFilesDir}\\CommonFunctions.c");
-            string vsFunctions = File.ReadAllText($"{DataFilesDir}\\VsFunctions.c");
-            string gccFunctions = File.ReadAllText($"{DataFilesDir}\\GccFunctions.c");
 
             // Generate C file for linux
             cSourceFile.AppendLine("#include <stdio.h>\n#include<stdint.h>\n#include<sys/time.h>\n#include <stdlib.h>\n#include <string.h>\n#include <time.h>\n");
+            cSourceFile.AppendLine(commonFunctions);
 
             foreach (IUarchTest test in tests) test.GenerateExternLines(cSourceFile);
-
-            cSourceFile.AppendLine(commonFunctions);
-            cSourceFile.AppendLine(gccFunctions);
+            
             AddCommonInitCode(cSourceFile, tests);
             cSourceFile.AppendLine("  struct timeval startTv, endTv;");
             cSourceFile.AppendLine("  struct timezone startTz, endTz;");
@@ -86,10 +83,10 @@ namespace AsmGen
             // Generate C file for VS
             vsCSourceFile.AppendLine("#include <stdio.h>\n#include<stdint.h>\n#include<sys\\timeb.h>\n#include <stdlib.h>\n");
             vsCSourceFile.AppendLine("#include <string.h>\n#include <time.h>\n");
+            vsCSourceFile.AppendLine(commonFunctions);
 
             foreach (IUarchTest test in tests) test.GenerateVsExternLines(vsCSourceFile);
-            vsCSourceFile.AppendLine(commonFunctions);
-            vsCSourceFile.AppendLine(vsFunctions);
+            
             AddCommonInitCode(vsCSourceFile, tests);
             vsCSourceFile.AppendLine("  struct timeb start, end;");
 
@@ -196,6 +193,7 @@ namespace AsmGen
             sb.AppendLine("  if (argc > 2) list_size = atoi(argv[2]);");
 
             sb.AppendLine("  A = (int*)malloc(sizeof(int) * list_size);");
+            sb.AppendLine("  srand(time(NULL));");
             sb.AppendLine("  for (int i = 0; i < list_size; i++) { A[i] = i; }\n");
             sb.AppendLine("  int iter = list_size;");
             sb.AppendLine("  while (iter > 1)");

@@ -83,7 +83,7 @@ namespace AsmGen
         {
             int[] counts = test.Counts;
             for (int i = 0; i < counts.Length; i++)
-                sb.AppendLine("extern uint64_t " + test.Prefix + counts[i] + $"({test.FunctionDefinitionParameters});"); ;
+                sb.AppendLine("extern uint64_t " + test.Prefix + counts[i] + $"({test.FunctionDefinitionParameters}) __attribute((sysv_abi));"); ;
         }
 
         public static void GenerateVsExternLines(StringBuilder sb, UarchTest test)

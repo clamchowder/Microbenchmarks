@@ -36,7 +36,7 @@ namespace AsmGen
         public void GenerateExternLines(StringBuilder sb)
         {
             for (int i = 0; i < Counts.Length; i++)
-                sb.AppendLine("extern uint64_t " + Prefix + Counts[i] + $"({FunctionDefinitionParameters});"); ;
+                sb.AppendLine("extern uint64_t " + Prefix + Counts[i] + $"({FunctionDefinitionParameters}) __attribute((sysv_abi));"); ;
         }
 
         public void GenerateVsExternLines(StringBuilder sb)
