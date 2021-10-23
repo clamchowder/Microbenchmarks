@@ -103,7 +103,7 @@ namespace AsmGen
                     // conditional branch on test array value
                     string zeroLabel = Prefix + branchCounts[i] + "_zero" + branchCount;
                     sb.AppendLine("  jz " + zeroLabel);
-                    sb.AppendLine("  inc %r8");
+                    sb.AppendLine("  inc %r8"); // r8 is just a sink here
                     sb.AppendLine(zeroLabel + ":");
                 }
 
@@ -130,20 +130,21 @@ namespace AsmGen
         {
             for (int i = 0; i < branchCounts.Length; i++)
             {
+                // rcx = iterations, rdx = ptr to array of arrays, r8 = history length
                 string functionLabel = Prefix + branchCounts[i];
                 sb.AppendLine("\n" + functionLabel + ":");
                 sb.AppendLine("  push rbx");
-                sb.AppendLine("  push rsi");
+                sb.AppendLine("  push r15");
                 sb.AppendLine("  push r11");
                 sb.AppendLine("  push r10");
                 sb.AppendLine("  push r9");
-                sb.AppendLine("  xor rbx, rbx");
-                sb.AppendLine("  xor r10, r10");
+                sb.AppendLine("  xor rbx, rbx"); // rbx = index into branch history array
+                sb.AppendLine("  xor r10, r10"); // r10 = ptr to history array for each branch
                 sb.AppendLine("  xor r9, r9");
 
                 string loopLabel = Prefix + branchCounts[i] + "_loop";
                 sb.AppendLine("\n" + loopLabel + ":");
-                sb.AppendLine("  xor r11, r11"); // set index into arr of arrs to 0 (branch index)
+                sb.AppendLine("  xor r11, r11"); // set r11 = index into arr of arrs to 0 (branch index)
                 for (int branchCount = 0; branchCount < branchCounts[i]; branchCount++)
                 {
                     sb.AppendLine("  mov r10, [rdx + r11 * 8]");  // load array base pointer into r10
@@ -154,7 +155,7 @@ namespace AsmGen
                     // conditional branch on test array value
                     string zeroLabel = Prefix + branchCounts[i] + "_zero" + branchCount;
                     sb.AppendLine("  jz " + zeroLabel);
-                    sb.AppendLine("  inc rsi");
+                    sb.AppendLine("  inc r15");
                     sb.AppendLine(zeroLabel + ":");
                 }
 
@@ -173,7 +174,7 @@ namespace AsmGen
                 sb.AppendLine("  pop r9");
                 sb.AppendLine("  pop r10");
                 sb.AppendLine("  pop r11");
-                sb.AppendLine("  pop rsi");
+                sb.AppendLine("  pop r15");
                 sb.AppendLine("  pop rbx");
                 sb.AppendLine("  ret");
             }
@@ -213,7 +214,7 @@ namespace AsmGen
             for (int i = 0; i < branchCounts.Length; i++)
                 sb.AppendLine("extern uint64_t " + Prefix + branchCounts[i] + $"({FunctionDefinitionParameters}) __attribute((sysv_abi));");
 
-            GenerateInitializationCode(sb);
+            GenerateInitializationCode(sb, true);
 
             string gccFunction = File.ReadAllText($"{Program.DataFilesDir}\\GccBranchHistFunction.c");
             sb.AppendLine(gccFunction);
@@ -224,13 +225,13 @@ namespace AsmGen
             for (int i = 0; i < branchCounts.Length; i++)
                 sb.AppendLine("extern \"C\" uint64_t " + Prefix + branchCounts[i] + $"({FunctionDefinitionParameters});");
 
-            GenerateInitializationCode(sb);
+            GenerateInitializationCode(sb, false);
 
             string vsFunction = File.ReadAllText($"{Program.DataFilesDir}\\VsBranchHistFunction.c");
             sb.AppendLine(vsFunction);
         }
 
-        public void GenerateInitializationCode(StringBuilder sb)
+        public void GenerateInitializationCode(StringBuilder sb, bool gcc)
         {
             sb.AppendLine($"uint32_t maxBranchCount = {branchCounts.Length};");
             sb.Append($"uint32_t branchCounts[{branchCounts.Length}] = ");
@@ -242,7 +243,8 @@ namespace AsmGen
             for (int i = 1; i < historyCounts.Length; i++) sb.Append(", " + historyCounts[i]);
             sb.AppendLine(" };");
 
-            sb.AppendLine($"uint64_t (__attribute((sysv_abi)) *branchtestFuncArr[{branchCounts.Length}])(uint64_t iterations, uint32_t **arr, uint32_t arrLen);");
+            if (gcc) sb.AppendLine($"uint64_t (__attribute((sysv_abi)) *branchtestFuncArr[{branchCounts.Length}])(uint64_t iterations, uint32_t **arr, uint32_t arrLen);");
+            else sb.AppendLine($"uint64_t (*branchtestFuncArr[{branchCounts.Length}])(uint64_t iterations, uint32_t **arr, uint32_t arrLen);");
 
             sb.AppendLine("void initializeBranchHistFuncArr() {");
             for (int i = 0; i < branchCounts.Length; i++)

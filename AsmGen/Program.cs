@@ -54,7 +54,7 @@ namespace AsmGen
             tests.Add(new MixJmpMulSchedTest(2, 128, 1));
             tests.Add(new MixMulRorSchedTest(2, 128, 1));
             tests.Add(new BranchHistoryTest());
-            tests.Add(new IndirectBranchTest());
+            //tests.Add(new IndirectBranchTest());
             tests.Add(new MxcsrTest(1, 32, 1));
 
             StringBuilder cSourceFile = new StringBuilder();
@@ -193,6 +193,7 @@ namespace AsmGen
             sb.AppendLine("  if (argc > 2) list_size = atoi(argv[2]);");
 
             sb.AppendLine("  A = (int*)malloc(sizeof(int) * list_size);");
+            sb.AppendLine("  srand(time(NULL));");
             sb.AppendLine("  for (int i = 0; i < list_size; i++) { A[i] = i; }\n");
             sb.AppendLine("  int iter = list_size;");
             sb.AppendLine("  while (iter > 1)");

@@ -9,7 +9,7 @@ float runBranchHistTest(uint32_t historyLen, uint32_t branchCountIdx, int random
     uint32_t** testArrToArr = (uint32_t**)malloc(sizeof(uint32_t*) * branchCount);
     for (int testArrIdx = 0; testArrIdx < branchCount; testArrIdx++) {
         uint32_t* testArr = (uint32_t*)malloc(sizeof(uint32_t) * historyLen);
-        for (uint32_t i = 0; i < historyLen; i++) testArr[i] = random ? rand() % 2 : 0;
+        for (uint32_t i = 0; i < historyLen; i++) testArr[i] = random ? (rand() & 0x400U != 0) : 0;
         testArrToArr[testArrIdx] = testArr;
     }
 
