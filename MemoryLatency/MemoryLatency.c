@@ -7,8 +7,6 @@
 #include <sys/time.h>
 #include <unistd.h>
 
-#define ITERATIONS 100000000
-
 // TODO: possibly get this programatically
 #define PAGE_SIZE 4096
 #define CACHELINE_SIZE 64
@@ -33,6 +31,8 @@ float RunAsmTest(uint32_t size_kb, uint32_t iterations);
 float RunTlbTest(uint32_t size_kb, uint32_t iterations);
 
 float (*testFunc)(uint32_t, uint32_t) = RunTest;
+
+uint32_t ITERATIONS = 100000000;
 
 int main(int argc, char* argv[]) {
     uint32_t maxTestSizeMb = 0;
@@ -59,14 +59,19 @@ int main(int argc, char* argv[]) {
                 argIdx++;
                 maxTestSizeMb = atoi(argv[argIdx]);
                 fprintf(stderr, "Will not exceed %u MB\n", maxTestSizeMb);
-            } else {
+            } else if (strncmp(arg, "iter", 4) == 0) {
+                argIdx++;
+                ITERATIONS = atoi(argv[argIdx]);
+                fprintf(stderr, "Base iterations: %u\n", ITERATIONS);
+            }
+            else {
                 fprintf(stderr, "Unrecognized option: %s\n", arg);
             }
         }
     }
 
     if (argc == 1) {
-        fprintf(stderr, "Usage: [-test <c/asm/tlb>] [-maxsizemb <max test size in MB>]\n");
+        fprintf(stderr, "Usage: [-test <c/asm/tlb>] [-maxsizemb <max test size in MB>] [-iter <base iterations, default 100000000]\n");
     }
 
     printf("Region,Latency (ns)\n");
