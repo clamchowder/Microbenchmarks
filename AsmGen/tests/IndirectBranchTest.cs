@@ -415,9 +415,11 @@ namespace AsmGen
         {
             for (int branchCountIdx = 0; branchCountIdx < branchCounts.Length; branchCountIdx++)
                 for (int targetCountIdx = 0; targetCountIdx < targetCounts.Length; targetCountIdx++)
-                    sb.AppendLine("extern uint64_t " + GetFunctionName(branchCounts[branchCountIdx], targetCounts[targetCountIdx]) + $"({FunctionDefinitionParameters});");
+                    sb.AppendLine("extern uint64_t " + GetFunctionName(branchCounts[branchCountIdx], targetCounts[targetCountIdx]) + $"({FunctionDefinitionParameters}) __attribute((sysv_abi));");
 
             GenerateInitializationCode(sb);
+            string gccFunction = File.ReadAllText($"{Program.DataFilesDir}\\GccIndirectBranchFunction.c");
+            sb.AppendLine(gccFunction);
         }
 
         public void GenerateVsExternLines(StringBuilder sb)
@@ -427,6 +429,8 @@ namespace AsmGen
                     sb.AppendLine("extern \"C\" uint64_t " + GetFunctionName(branchCounts[branchCountIdx], targetCounts[targetCountIdx]) + $"({FunctionDefinitionParameters});");
 
             GenerateInitializationCode(sb);
+            string vsFunction = File.ReadAllText($"{Program.DataFilesDir}\\VsIndirectBranchFunction.c");
+            sb.AppendLine(vsFunction);
         }
 
         public void GenerateInitializationCode(StringBuilder sb)
@@ -442,7 +446,7 @@ namespace AsmGen
             sb.AppendLine(" };");
 
             // TODO: need to make this a 2D array - [branch count][target count]
-            sb.AppendLine($"uint64_t (*indirectBranchTestFuncArr[{branchCounts.Length}][{targetCounts.Length}])({FunctionDefinitionParameters});");
+            sb.AppendLine($"uint64_t (__attribute((sysv_abi)) *indirectBranchTestFuncArr[{branchCounts.Length}][{targetCounts.Length}])({FunctionDefinitionParameters});");
 
             sb.AppendLine("void initializeIndirectBranchFuncArr() {");
             for (int i = 0; i < branchCounts.Length; i++)

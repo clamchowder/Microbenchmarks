@@ -9,16 +9,22 @@
     <None Update="DataFiles\clammicrobench.vcxproj_template">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
+    <None Update="DataFiles\GccBranchHistFunction.c">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
     <None Update="DataFiles\IndirectBranchTestBlock.c">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
     <None Update="DataFiles\BranchhistTestBlock.c">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
-    <None Update="DataFiles\GccFunctions.c">
+    <None Update="DataFiles\GccIndirectBranchFunction.c">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
-    <None Update="DataFiles\VsFunctions.c">
+    <None Update="DataFiles\VsBranchHistFunction.c">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+    <None Update="DataFiles\VsIndirectBranchFunction.c">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
     <None Update="DataFiles\CommonFunctions.c">
