@@ -23,6 +23,8 @@ struct BandwidthTestThreadData {
     float bw; // written to by the thread
 };
 
+uint32_t dataGb = 512;
+
 float scalar_read(float* arr, uint64_t arr_length, uint64_t iterations, uint64_t start);
 float sse_read(float* arr, uint64_t arr_length, uint64_t iterations, uint64_t start);
 float avx_read(float* arr, uint64_t arr_length, uint64_t iterations, uint64_t start);
@@ -39,7 +41,7 @@ int main(int argc, char *argv[]) {
     int cpuid_data[4];
 
     if (argc == 1) {
-        printf("Usage: [-threads <thread count>] [-method <scalar/sse/avx/asm_avx/asm_avx512>] [-shared] [-private]\n");
+        printf("Usage: [-threads <thread count>] [-method <scalar/sse/avx/asm_avx/asm_avx512>] [-shared] [-private] [-data <base GB to transfer, default = 512>]\n");
     }
 
     for (int argIdx = 1; argIdx < argc; argIdx++) {
@@ -86,6 +88,11 @@ int main(int argc, char *argv[]) {
                     fprintf(stderr, "I'm so confused. Gonna use whatever the CPU supports I guess\n");
                 }
             }
+            else if (_strnicmp(arg, "data", 4) == 0) {
+                argIdx++;
+                dataGb = atoi(argv[argIdx]);
+                fprintf(stderr, "Base data to transfer: %u\n", dataGb);
+            }
         }
     }
 
@@ -125,7 +132,7 @@ int main(int argc, char *argv[]) {
 /// <returns>Iterations per thread</returns>
 uint64_t GetIterationCount(uint64_t testSize, uint64_t threads)
 {
-    uint64_t gbToTransfer = 512;
+    uint32_t gbToTransfer = dataGb;
     if (testSize > 64) gbToTransfer = 64;
     if (testSize > 512) gbToTransfer = 32;
     if (testSize > 8192) gbToTransfer = 16;
