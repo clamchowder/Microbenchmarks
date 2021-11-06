@@ -21,7 +21,7 @@ namespace AsmGen
             unrolledAdds[1] = "  kaddb %k0, %k2, %k2";
             unrolledAdds[2] = "  kaddb %k0, %k3, %k3";
             unrolledAdds[3] = "  kaddb %k0, %k4, %k4";
-            UarchTestHelpers.GenerateX86AsmStructureTestFuncs(sb, this.Counts, this.Prefix, unrolledAdds, unrolledAdds, true);
+            UarchTestHelpers.GenerateX86AsmStructureTestFuncs(sb, this.Counts, this.Prefix, unrolledAdds, unrolledAdds, false);
         }
 
         public override void GenerateX86NasmAsm(StringBuilder sb)
@@ -31,7 +31,7 @@ namespace AsmGen
             unrolledAdds[1] = "  kaddb k2, k2, k0";
             unrolledAdds[2] = "  kaddb k3, k3, k0";
             unrolledAdds[3] = "  kaddb k4, k4, k0";
-            UarchTestHelpers.GenerateX86NasmStructureTestFuncs(sb, this.Counts, this.Prefix, unrolledAdds, unrolledAdds, true);
+            UarchTestHelpers.GenerateX86NasmStructureTestFuncs(sb, this.Counts, this.Prefix, unrolledAdds, unrolledAdds, false);
         }
 
         public override void GenerateArmAsm(StringBuilder sb)

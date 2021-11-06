@@ -58,7 +58,7 @@ namespace AsmGen
             tests.Add(new BtbTest(8, BtbTest.BranchType.Conditional, true));
             tests.Add(new BtbTest(16, BtbTest.BranchType.Conditional));
             tests.Add(new BtbTest(16, BtbTest.BranchType.Conditional, true));
-            tests.Add(new BtbTest(32, BtbTest.BranchType.Mixed, false));
+            tests.Add(new BtbTest(32, BtbTest.BranchType.ZenMix, false));
             tests.Add(new MixJmpMulSchedTest(2, 128, 1));
             tests.Add(new MixMulRorSchedTest(2, 128, 1));
             tests.Add(new BranchHistoryTest());

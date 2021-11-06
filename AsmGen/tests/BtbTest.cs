@@ -26,7 +26,7 @@ namespace AsmGen
             /// Optimization guide says one entry can track two branches if they're in the same 64B line
             /// and the first is conditional
             /// </summary>
-            Mixed
+            ZenMix
         }
 
         /// <summary>
@@ -61,6 +61,8 @@ namespace AsmGen
                 //sb.AppendLine("; Start of function for branch count " + branchCounts[i] + " padding " + paddings[p]);
                 sb.AppendLine(funcName + ":\n");
                 sb.AppendLine("  xor %rax, %rax");
+
+                if (branchType == BranchType.ZenMix) sb.AppendLine("  .align 64");
                 for (int branchIdx = 1; branchIdx < Counts[i]; branchIdx++)
                 {
                     string labelName = GetLabelName(funcName, branchIdx);
@@ -74,7 +76,7 @@ namespace AsmGen
                     {
                         sb.AppendLine("  jmp " + labelName);
                     }
-                    else if (branchType == BranchType.Mixed)
+                    else if (branchType == BranchType.ZenMix)
                     {
                         if ((branchIdx & 0x1) == 0)
                         {
