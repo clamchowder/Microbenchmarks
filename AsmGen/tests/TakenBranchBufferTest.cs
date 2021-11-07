@@ -53,6 +53,8 @@ namespace AsmGen
                 {
                     string jumpLabel = $"{funcName}_edi_target{fillerIdx}";
                     sb.AppendLine($"  jmp {jumpLabel}");
+                    sb.AppendLine(".align 16");
+                    if (fillerIdx % 2 == 0) sb.AppendLine("  nop");
                     sb.AppendLine($"{jumpLabel}:");
                 }
 
@@ -62,6 +64,8 @@ namespace AsmGen
                     string jumpLabel = $"{funcName}_esi_target{fillerIdx}";
                     sb.AppendLine($"  jmp {jumpLabel}");
                     // try to space the jumps out a bit
+                    sb.AppendLine(".align 16");
+                    if (fillerIdx % 2 == 0) sb.AppendLine("  nop");
                     sb.AppendLine($"{jumpLabel}:");
                 }
 
@@ -107,6 +111,8 @@ namespace AsmGen
                 {
                     string jumpLabel = $"{funcName}_edi_target{fillerIdx}";
                     sb.AppendLine($"  jmp {jumpLabel}");
+                    sb.AppendLine($"align 16");
+                    if (fillerIdx % 2 == 0) sb.AppendLine("  nop");
                     sb.AppendLine($"{jumpLabel}:");
                 }
 
@@ -115,6 +121,8 @@ namespace AsmGen
                 {
                     string jumpLabel = $"{funcName}_esi_target{fillerIdx}";
                     sb.AppendLine($"  jmp {jumpLabel}");
+                    sb.AppendLine($"align 16");
+                    if (fillerIdx % 2 == 0) sb.AppendLine("  nop");
                     sb.AppendLine($"{jumpLabel}:");
                 }
 

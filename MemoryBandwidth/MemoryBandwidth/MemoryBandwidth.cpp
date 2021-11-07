@@ -29,6 +29,7 @@ float scalar_read(float* arr, uint64_t arr_length, uint64_t iterations, uint64_t
 float sse_read(float* arr, uint64_t arr_length, uint64_t iterations, uint64_t start);
 float avx_read(float* arr, uint64_t arr_length, uint64_t iterations, uint64_t start);
 float MeasureBw(uint64_t sizeKb, uint64_t iterations, uint64_t threads, int shared);
+extern "C" float sse_asm_read(float* arr, uint64_t arr_length, uint64_t iterations, uint64_t start);
 extern "C" float avx_asm_read(float* arr, uint64_t arr_length, uint64_t iterations, uint64_t start);
 extern "C" float avx512_asm_read(float* arr, uint64_t arr_length, uint64_t iterations, uint64_t start);
 uint64_t GetIterationCount(uint64_t testSize, uint64_t threads);
@@ -74,6 +75,10 @@ int main(int argc, char *argv[]) {
                 else if (_strnicmp(argv[argIdx], "sse", 3) == 0) {
                     bw_func = sse_read;
                     fprintf(stderr, "Using SSE intrinsics\n");
+                }
+                else if (_strnicmp(argv[argIdx], "asm_sse", 7) == 0) {
+                    bw_func = sse_asm_read;
+                    fprintf(stderr, "Using SSE assembly\n");
                 }
                 else if (_strnicmp(argv[argIdx], "avx", 3) == 0) {
                     bw_func = avx_read;
@@ -182,7 +187,7 @@ float MeasureBw(uint64_t sizeKb, uint64_t iterations, uint64_t threads, int shar
         else {
             threadData[i].arr = (float*)_aligned_malloc(elements * sizeof(float), 64);
             if (threadData[i].arr == NULL) {
-                fprintf(stderr, "Could not allocate memory for thread %ld\n", i);
+                fprintf(stderr, "Could not allocate memory for thread %llu\n", i);
                 return 0;
             }
 
@@ -205,7 +210,7 @@ float MeasureBw(uint64_t sizeKb, uint64_t iterations, uint64_t threads, int shar
 
     ftime(&start);
     for (uint64_t i = 0; i < threads; i++) ResumeThread(testThreads[i]);
-    WaitForMultipleObjects(threads, testThreads, TRUE, INFINITE);
+    WaitForMultipleObjects((DWORD)threads, testThreads, TRUE, INFINITE);
     ftime(&end);
 
     int64_t time_diff_ms = 1000 * (end.time - start.time) + (end.millitm - start.millitm);
