@@ -23,10 +23,13 @@ struct BandwidthTestThreadData {
     float bw; // written to by the thread
 };
 
+uint32_t dataGb = 512;
+
 float scalar_read(float* arr, uint64_t arr_length, uint64_t iterations, uint64_t start);
 float sse_read(float* arr, uint64_t arr_length, uint64_t iterations, uint64_t start);
 float avx_read(float* arr, uint64_t arr_length, uint64_t iterations, uint64_t start);
 float MeasureBw(uint64_t sizeKb, uint64_t iterations, uint64_t threads, int shared);
+extern "C" float sse_asm_read(float* arr, uint64_t arr_length, uint64_t iterations, uint64_t start);
 extern "C" float avx_asm_read(float* arr, uint64_t arr_length, uint64_t iterations, uint64_t start);
 extern "C" float avx512_asm_read(float* arr, uint64_t arr_length, uint64_t iterations, uint64_t start);
 uint64_t GetIterationCount(uint64_t testSize, uint64_t threads);
@@ -39,7 +42,7 @@ int main(int argc, char *argv[]) {
     int cpuid_data[4];
 
     if (argc == 1) {
-        printf("Usage: [-threads <thread count>] [-method <scalar/sse/avx/asm_avx/asm_avx512>] [-shared] [-private]\n");
+        printf("Usage: [-threads <thread count>] [-method <scalar/sse/avx/asm_avx/asm_avx512>] [-shared] [-private] [-data <base GB to transfer, default = 512>]\n");
     }
 
     for (int argIdx = 1; argIdx < argc; argIdx++) {
@@ -73,6 +76,10 @@ int main(int argc, char *argv[]) {
                     bw_func = sse_read;
                     fprintf(stderr, "Using SSE intrinsics\n");
                 }
+                else if (_strnicmp(argv[argIdx], "asm_sse", 7) == 0) {
+                    bw_func = sse_asm_read;
+                    fprintf(stderr, "Using SSE assembly\n");
+                }
                 else if (_strnicmp(argv[argIdx], "avx", 3) == 0) {
                     bw_func = avx_read;
                     fprintf(stderr, "Using AVX intrinsics\n");
@@ -85,6 +92,11 @@ int main(int argc, char *argv[]) {
                     methodSet = 0;
                     fprintf(stderr, "I'm so confused. Gonna use whatever the CPU supports I guess\n");
                 }
+            }
+            else if (_strnicmp(arg, "data", 4) == 0) {
+                argIdx++;
+                dataGb = atoi(argv[argIdx]);
+                fprintf(stderr, "Base data to transfer: %u\n", dataGb);
             }
         }
     }
@@ -125,7 +137,7 @@ int main(int argc, char *argv[]) {
 /// <returns>Iterations per thread</returns>
 uint64_t GetIterationCount(uint64_t testSize, uint64_t threads)
 {
-    uint64_t gbToTransfer = 512;
+    uint32_t gbToTransfer = dataGb;
     if (testSize > 64) gbToTransfer = 64;
     if (testSize > 512) gbToTransfer = 32;
     if (testSize > 8192) gbToTransfer = 16;
@@ -175,7 +187,7 @@ float MeasureBw(uint64_t sizeKb, uint64_t iterations, uint64_t threads, int shar
         else {
             threadData[i].arr = (float*)_aligned_malloc(elements * sizeof(float), 64);
             if (threadData[i].arr == NULL) {
-                fprintf(stderr, "Could not allocate memory for thread %ld\n", i);
+                fprintf(stderr, "Could not allocate memory for thread %llu\n", i);
                 return 0;
             }
 
@@ -198,7 +210,7 @@ float MeasureBw(uint64_t sizeKb, uint64_t iterations, uint64_t threads, int shar
 
     ftime(&start);
     for (uint64_t i = 0; i < threads; i++) ResumeThread(testThreads[i]);
-    WaitForMultipleObjects(threads, testThreads, TRUE, INFINITE);
+    WaitForMultipleObjects((DWORD)threads, testThreads, TRUE, INFINITE);
     ftime(&end);
 
     int64_t time_diff_ms = 1000 * (end.time - start.time) + (end.millitm - start.millitm);

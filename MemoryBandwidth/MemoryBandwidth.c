@@ -56,6 +56,7 @@ int main(int argc, char *argv[]) {
     int threads = 1;
     int cpuid_data[4];
     int shared = 1;
+    int sleepTime = 0;
     int methodSet = 0;
     bw_func = asm_read;
     for (int argIdx = 1; argIdx < argc; argIdx++) {
@@ -67,7 +68,11 @@ int main(int argc, char *argv[]) {
                 fprintf(stderr, "Using %d threads\n", threads);
             } else if (strncmp(arg, "shared", 6) == 0) {
                 shared = 1;
-                fprintf(stderr, "Using shared array\n");
+                fprintf(stderr, "Using sleep array\n");
+            } else if (strncmp(arg, "sleep", 5) == 0) {
+                argIdx++;
+                sleepTime = atoi(argv[argIdx]); 
+                fprintf(stderr, "Sleeping for %d second between tests\n", sleepTime);
             } else if (strncmp(arg, "private", 7) == 0) {
                 shared = 0;
                 fprintf(stderr, "Using private array for each thread\n");
@@ -94,7 +99,7 @@ int main(int argc, char *argv[]) {
             }
         } else {
             fprintf(stderr, "Expected - parameter\n");
-            fprintf(stderr, "Usage: [-threads <thread count>] [-private] [-method <scalar/asm/avx512>]\n");
+            fprintf(stderr, "Usage: [-threads <thread count>] [-private] [-method <scalar/asm/avx512>] [-sleep <time in seconds>]\n");
         }
     }
 
@@ -128,6 +133,7 @@ int main(int argc, char *argv[]) {
     for (int i = 0; i < sizeof(default_test_sizes) / sizeof(int); i++)
     {
         printf("%d,%f\n", default_test_sizes[i], MeasureBw(default_test_sizes[i], GetIterationCount(default_test_sizes[i], threads), threads, shared));
+        if (sleepTime > 0) sleep(sleepTime);
     }
 
     return 0;

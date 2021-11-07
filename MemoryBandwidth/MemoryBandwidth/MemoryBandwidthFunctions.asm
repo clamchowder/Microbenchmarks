@@ -2,6 +2,7 @@ section .text
 
 bits 64
 
+global sse_asm_read
 global avx_asm_read
 global avx512_asm_read
 
@@ -91,6 +92,72 @@ asm_avx512_test_iteration_count:
   jnz avx512_asm_read_pass_loop ; skip iteration decrement if we're not back to start
   dec r8
   jnz avx512_asm_read_pass_loop
+  pop r14
+  pop r15
+  pop rbx
+  pop rdi
+  pop rsi
+  ret
+
+sse_asm_read:
+  push rsi
+  push rdi
+  push rbx
+  push r15
+  push r14
+  mov r15, 256 ; load in blocks of 256 bytes
+  sub rdx, 128 ; last iteration: rsi == rdx. rsi > rdx = break
+  mov rsi, r9  ; assume we're passed in an aligned start location O.o
+  xor rbx, rbx
+  lea rdi, [rcx + rsi * 4]
+  mov r14, rdi
+sse_read_pass_loop:
+  ; xmm0 to 5 are considered volatile
+  movaps xmm0, [rdi]
+  movaps xmm1, [rdi + 16]
+  movaps xmm2, [rdi + 32]
+  movaps xmm3, [rdi + 48]
+  movaps xmm0, [rdi + 64]
+  movaps xmm1, [rdi + 80]
+  movaps xmm2, [rdi + 96]
+  movaps xmm3, [rdi + 112]
+  movaps xmm0, [rdi + 128]
+  movaps xmm1, [rdi + 144]
+  movaps xmm2, [rdi + 160]
+  movaps xmm3, [rdi + 176]
+  movaps xmm0, [rdi + 192]
+  movaps xmm2, [rdi + 208]
+  movaps xmm2, [rdi + 224]
+  movaps xmm2, [rdi + 240]
+  add rsi, 64
+  add rdi, r15
+  movaps xmm0, [rdi]
+  movaps xmm1, [rdi + 16]
+  movaps xmm2, [rdi + 32]
+  movaps xmm3, [rdi + 48]
+  movaps xmm0, [rdi + 64]
+  movaps xmm1, [rdi + 80]
+  movaps xmm2, [rdi + 96]
+  movaps xmm3, [rdi + 112]
+  movaps xmm0, [rdi + 128]
+  movaps xmm1, [rdi + 144]
+  movaps xmm2, [rdi + 160]
+  movaps xmm3, [rdi + 176]
+  movaps xmm0, [rdi + 192]
+  movaps xmm2, [rdi + 208]
+  movaps xmm2, [rdi + 224]
+  movaps xmm2, [rdi + 240]
+  add rsi, 64
+  add rdi, r15
+  cmp rdx, rsi
+  jge sse_test_iteration_count
+  mov rsi, rbx
+  lea rdi, [rcx + rsi * 4]  ; back to start
+sse_test_iteration_count:
+  cmp r9, rsi
+  jnz sse_read_pass_loop ; skip iteration decrement if we're not back to start
+  dec r8
+  jnz sse_read_pass_loop
   pop r14
   pop r15
   pop rbx

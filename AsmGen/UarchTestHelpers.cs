@@ -273,7 +273,7 @@ namespace AsmGen
             string funcNamePrefix, 
             string[] fillerInstrs1, 
             string[] fillerInstrs2, 
-            bool divs = true, 
+            bool includePtrChasingLoads = true, 
             string initInstrs = null, 
             string postLoadInstrs1 = null, 
             string postLoadInstrs2 = null)
@@ -314,7 +314,7 @@ namespace AsmGen
                 sb.AppendLine("\n" + funcName + "start:");
                 sb.AppendLine("  mov (%rdx,%rdi,4), %edi");
                 if (postLoadInstrs1 != null) sb.AppendLine(postLoadInstrs1);
-                int fillerInstrCount = divs ? counts[i] - 2 : counts[i];
+                int fillerInstrCount = includePtrChasingLoads ? counts[i] - 2 : counts[i];
                 for (int fillerIdx = 0, instrIdx = 0; fillerIdx < fillerInstrCount; fillerIdx++)
                 {
                     sb.AppendLine(fillerInstrs1[instrIdx]);
