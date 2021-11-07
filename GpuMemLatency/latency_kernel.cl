@@ -104,12 +104,93 @@ __kernel void constant_unrolled_latency_test(__constant const int* A, int count,
     ret[0] = result;
 }
 
-__kernel void sum_bw_test(__global float* A, int count, int size, __global int* ret) {
+
+__kernel void sum_bw_test(__global float* A, int count, int size, __global float* ret) {
     int threadId = get_global_id(0);
+    int localId = get_local_id(0);
+    int localSize = get_local_size(0);
     float result = 0;
-    for (int i = 0, idx = threadId; i < count; i++, idx++) {
-        if (idx >= size) idx = 0;
-        result += A[i];
+    int idx = localId;
+    for (int i = 0; i < count; i += 10) {
+        /*if (idx + localSize >= size) idx = 0;
+        result += A[idx + localId];
+        idx += localSize;
+
+        if (idx + localSize >= size) idx = 0;
+        result += A[idx + localId];
+        idx += localSize;
+
+        if (idx + localSize >= size) idx = 0;
+        result += A[idx + localId];
+        idx += localSize;
+
+        if (idx + localSize >= size) idx = 0;
+        result += A[idx + localId];
+        idx += localSize;
+
+        if (idx + localSize >= size) idx = 0;
+        result += A[idx + localId];
+        idx += localSize;
+
+        if (idx + localSize >= size) idx = 0;
+        result += A[idx + localId];
+        idx += localSize;
+
+        if (idx + localSize >= size) idx = 0;
+        result += A[idx + localId];
+        idx += localSize;
+
+        if (idx + localSize >= size) idx = 0;
+        result += A[idx + localId];
+        idx += localSize;
+
+        if (idx + localSize >= size) idx = 0;
+        result += A[idx + localId];
+        idx += localSize;
+
+        if (idx + localSize >= size) idx = 0;
+        result += A[idx + localId];
+        idx += localSize;*/
+
+        if (idx >= size) idx = localId;
+        result += A[idx];
+        idx += localSize;
+
+        if (idx >= size) idx = localId;
+        result += A[idx];
+        idx += localSize;
+
+        if (idx >= size) idx = localId;
+        result += A[idx];
+        idx += localSize;
+
+        if (idx >= size) idx = localId;
+        result += A[idx];
+        idx += localSize;
+
+        if (idx >= size) idx = localId;
+        result += A[idx];
+        idx += localSize;
+
+        if (idx >= size) idx = localId;
+        result += A[idx];
+        idx += localSize;
+
+        if (idx >= size) idx = localId;
+        result += A[idx];
+        idx += localSize;
+
+        if (idx >= size) idx = localId;
+        result += A[idx];
+        idx += localSize;
+
+        if (idx >= size) idx = localId;
+        result += A[idx];
+        idx += localSize;
+
+        if (idx >= size) idx = localId;
+        result += A[idx];
+        idx += localSize;
     }
 
     ret[threadId] = result;
