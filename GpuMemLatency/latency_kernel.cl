@@ -193,7 +193,7 @@ __kernel void sum_bw_test(__global float* A, int count, int size, __global float
         idx += localSize;
     }
 
-    ret[threadId] = result;
+    ret[0] = result;
 }
 
 // A = inputs, fixed size

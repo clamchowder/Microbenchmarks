@@ -11,7 +11,7 @@
 int default_test_sizes[27] = { 2, 4, 8, 16, 24, 32, 48, 64, 128, 256, 512, 600, 768, 1024, 1536, 2048, 3072, 4096, 5120, 6144, 8192, 16384, 32768, 65536, 131072, 262144, 1048576 };
 
 // lining this up with nemes's VK bw test sizes
-const int default_bw_test_sizes[] = {
+const uint64_t default_bw_test_sizes[] = {
     4096, 8192, 12288, 16384, 20480, 24576, 28672, 32768, 40960, 49152, 57344, 65536, 81920, 98304, 114688, 131072,
         196608, 262144, 393216, 458752, 524288, 786432, 1048576, 1572864, 2097152, 3145728, 4194304, 6291456, 8388608, 12582912, 16777216,
         25165824, 33554432, 41943040, 50331648, 58720256, 67108864, 100663296, 134217728, 201326592, 268435456, 402653184, 536870912, 805306368,
@@ -239,8 +239,8 @@ int main(int argc, char* argv[]) {
 
         for (int size_idx = 0; size_idx < sizeof(default_bw_test_sizes) / sizeof(int); size_idx++) {
             uint64_t testSizeKb = default_bw_test_sizes[size_idx] / 1024;
-            if (max_global_test_size <= testSizeKb) {
-                printf("%u K would exceed device's max buffer size of %lld K, stopping here.\n", testSizeKb, max_global_test_size / 1024);
+            if ((max_global_test_size / 1024) < testSizeKb) {
+                printf("%llu K would exceed device's max buffer size of %llu K, stopping here.\n", testSizeKb, max_global_test_size / 1024);
                 break;
             }
 
@@ -393,7 +393,7 @@ float bw_test(cl_context context,
 
     cl_mem result_obj = clCreateBuffer(context, CL_MEM_READ_WRITE, sizeof(float), NULL, &ret);
     //fprintf(stderr, "create result buffer = %d\n", ret);
-    ret = clEnqueueWriteBuffer(command_queue, result_obj, CL_TRUE, 0, sizeof(cl_int) * thread_count, result, 0, NULL, NULL);
+    ret = clEnqueueWriteBuffer(command_queue, result_obj, CL_TRUE, 0, sizeof(float) * thread_count, result, 0, NULL, NULL);
     //fprintf(stderr, "copy result buffer = %d\n", ret);
 
     // Set kernel arguments for parallel_latency_test(__global const int* A, int count, int size, __global int* ret)
