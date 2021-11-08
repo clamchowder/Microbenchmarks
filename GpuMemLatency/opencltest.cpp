@@ -391,7 +391,7 @@ float bw_test(cl_context context,
     cl_mem a_mem_obj = clCreateBuffer(context, CL_MEM_READ_ONLY, list_size * sizeof(float), NULL, &ret);
     ret = clEnqueueWriteBuffer(command_queue, a_mem_obj, CL_TRUE, 0, list_size * sizeof(uint32_t), A, 0, NULL, NULL);
 
-    cl_mem result_obj = clCreateBuffer(context, CL_MEM_READ_WRITE, sizeof(float), NULL, &ret);
+    cl_mem result_obj = clCreateBuffer(context, CL_MEM_READ_WRITE, sizeof(float) * thread_count, NULL, &ret);
     //fprintf(stderr, "create result buffer = %d\n", ret);
     ret = clEnqueueWriteBuffer(command_queue, result_obj, CL_TRUE, 0, sizeof(float) * thread_count, result, 0, NULL, NULL);
     //fprintf(stderr, "copy result buffer = %d\n", ret);
@@ -679,5 +679,5 @@ cl_ulong get_max_buffer_size() {
 uint32_t scale_bw_iterations(uint32_t base_iterations, uint32_t size_kb)
 {
     if (size_kb < 4096) return base_iterations;
-    else return base_iterations / 10;
+    else return base_iterations / 2;
 }

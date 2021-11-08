@@ -110,7 +110,8 @@ __kernel void sum_bw_test(__global float* A, int count, int size, __global float
     int localId = get_local_id(0);
     int localSize = get_local_size(0);
     float result = 0;
-    int idx = localId;
+    int initialIdx = threadId % size;
+    int idx = initialIdx;
     for (int i = 0; i < count; i += 10) {
         /*if (idx + localSize >= size) idx = 0;
         result += A[idx + localId];
@@ -152,48 +153,48 @@ __kernel void sum_bw_test(__global float* A, int count, int size, __global float
         result += A[idx + localId];
         idx += localSize;*/
 
-        if (idx >= size) idx = localId;
+        if (idx >= size) idx = initialIdx;
         result += A[idx];
         idx += localSize;
 
-        if (idx >= size) idx = localId;
+        if (idx >= size) idx = initialIdx;
         result += A[idx];
         idx += localSize;
 
-        if (idx >= size) idx = localId;
+        if (idx >= size) idx = initialIdx;
         result += A[idx];
         idx += localSize;
 
-        if (idx >= size) idx = localId;
+        if (idx >= size) idx = initialIdx;
         result += A[idx];
         idx += localSize;
 
-        if (idx >= size) idx = localId;
+        if (idx >= size) idx = initialIdx;
         result += A[idx];
         idx += localSize;
 
-        if (idx >= size) idx = localId;
+        if (idx >= size) idx = initialIdx;
         result += A[idx];
         idx += localSize;
 
-        if (idx >= size) idx = localId;
+        if (idx >= size) idx = initialIdx;
         result += A[idx];
         idx += localSize;
 
-        if (idx >= size) idx = localId;
+        if (idx >= size) idx = initialIdx;
         result += A[idx];
         idx += localSize;
 
-        if (idx >= size) idx = localId;
+        if (idx >= size) idx = initialIdx;
         result += A[idx];
         idx += localSize;
 
-        if (idx >= size) idx = localId;
+        if (idx >= size) idx = initialIdx;
         result += A[idx];
         idx += localSize;
     }
 
-    ret[0] = result;
+    ret[threadId] = result;
 }
 
 // A = inputs, fixed size
