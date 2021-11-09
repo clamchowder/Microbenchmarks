@@ -185,6 +185,11 @@ float MeasureInstructionBw(uint64_t sizeKb, uint64_t iterations, int nopSize) {
         return 0;
     }
 
+    if (funcLen > 0x7FFFFFFF) {
+        fprintf(stderr, "%ld KB is too big to jump over\n", sizeKb);
+        return 0;
+    }
+
     // nops, dec rcx (3 bytes), jump if zero flag set to 32-bit displacement (6 bytes), ret (1 byte)
     nops = (uint64_t *)malloc(funcLen);
     if (nops == NULL) {
