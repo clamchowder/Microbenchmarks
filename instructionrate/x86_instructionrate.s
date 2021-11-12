@@ -7,6 +7,9 @@
 .global xorzerotest
 .global movzerotest
 .global subzerotest
+.global depinctest
+.global depdectest
+.global depaddimmtest
 .global addmultest
 .global jmpmultest
 .global noptest
@@ -2020,3 +2023,152 @@ subzerotest_loop:
   pop %rcx
   pop %rbx
   ret 
+
+depaddimmtest:
+  push %rbx
+  push %rcx
+  push %r8
+  push %r9
+  push %r15
+  push %r14
+  push %r13
+  push %r12
+  push %r11
+  push %r10 
+  mov $1, %r8
+  mov $20, %r9
+  xor %rbx, %rbx
+depaddimmtest_loop:
+  add $1, %r15
+  add $2, %r15
+  add $3, %r15
+  add $4, %r15
+  add $5, %r15
+  add $6, %r15
+  add $7, %r15
+  add $8, %r15
+  add $9, %r15
+  add $10, %r15 
+  add $11, %r15
+  add $12, %r15
+  add $13, %r15
+  add $14, %r15
+  add $15, %r15 
+  add $16, %r15
+  add $17, %r15
+  add $18, %r15
+  add $19, %r15
+  add $20, %r15 
+  sub %r9, %rdi
+  jnz depaddimmtest_loop
+  pop %r10
+  pop %r11
+  pop %r12
+  pop %r13
+  pop %r14
+  pop %r15 
+  pop %r9
+  pop %r8
+  pop %rcx
+  pop %rbx
+  ret  
+
+depinctest:
+  push %rbx
+  push %rcx
+  push %r8
+  push %r9
+  push %r15
+  push %r14
+  push %r13
+  push %r12
+  push %r11
+  push %r10 
+  mov $1, %r8
+  mov $20, %r9
+  xor %rbx, %rbx
+depinctest_loop:
+  inc %r15
+  inc %r15
+  inc %r15
+  inc %r15
+  inc %r15
+  inc %r15
+  inc %r15
+  inc %r15
+  inc %r15
+  inc %r15 
+  inc %r15
+  inc %r15
+  inc %r15
+  inc %r15
+  inc %r15 
+  inc %r15
+  inc %r15
+  inc %r15
+  inc %r15
+  inc %r15 
+  sub %r9, %rdi
+  jnz depinctest_loop
+  pop %r10
+  pop %r11
+  pop %r12
+  pop %r13
+  pop %r14
+  pop %r15 
+  pop %r9
+  pop %r8
+  pop %rcx
+  pop %rbx
+  ret  
+
+depdectest:
+  push %rbx
+  push %rcx
+  push %r8
+  push %r9
+  push %r15
+  push %r14
+  push %r13
+  push %r12
+  push %r11
+  push %r10 
+  mov $1, %r8
+  mov $20, %r9
+  xor %r15, %r15
+  not %r15
+  xor %rbx, %rbx
+depdectest_loop:
+  dec %r15
+  dec %r15
+  dec %r15
+  dec %r15
+  dec %r15
+  dec %r15
+  dec %r15
+  dec %r15
+  dec %r15
+  dec %r15 
+  dec %r15
+  dec %r15
+  dec %r15
+  dec %r15
+  dec %r15 
+  dec %r15
+  dec %r15
+  dec %r15
+  dec %r15
+  dec %r15 
+  sub %r9, %rdi
+  jnz depdectest_loop
+  pop %r10
+  pop %r11
+  pop %r12
+  pop %r13
+  pop %r14
+  pop %r15 
+  pop %r9
+  pop %r8
+  pop %rcx
+  pop %rbx
+  ret   

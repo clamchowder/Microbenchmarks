@@ -55,6 +55,9 @@ extern uint64_t depmovtest(uint64_t iterations) __attribute((sysv_abi));
 extern uint64_t xorzerotest(uint64_t iterations) __attribute((sysv_abi));
 extern uint64_t movzerotest(uint64_t iterations) __attribute((sysv_abi));
 extern uint64_t subzerotest(uint64_t iterations) __attribute((sysv_abi));
+extern uint64_t depinctest(uint64_t iterations) __attribute((sysv_abi));
+extern uint64_t depdectest(uint64_t iterations) __attribute((sysv_abi));
+extern uint64_t depaddimmtest(uint64_t iterations) __attribute((sysv_abi));
 
 float fpTestArr[8] __attribute__ ((aligned (64))) = { 0.2, 1.5, 2.7, 3.14, 5.16, 6.3, 7.7, 9.45 };
 float fpSinkArr[8] __attribute__ ((aligned (64))) = { 2.1, 3.2, 4.3, 5.4, 6.2, 7.8, 8.3, 9.4 };
@@ -119,6 +122,12 @@ int main(int argc, char *argv[]) {
     printf("mov -> 0 per clk: %.2f\n", measureFunction(iterationsHigh, clockSpeedGhz, movzerotest));   
   if (argc == 1 || argc > 1 && strncmp(argv[1], "subzero", 7) == 0) 
     printf("sub -> 0 per clk: %.2f\n", measureFunction(iterationsHigh, clockSpeedGhz, subzerotest));   
+  if (argc == 1 || argc > 1 && strncmp(argv[1], "depinc", 6) == 0) 
+    printf("dep inc per clk: %.2f\n", measureFunction(iterationsHigh, clockSpeedGhz, depinctest));   
+  if (argc == 1 || argc > 1 && strncmp(argv[1], "depdec", 6) == 0) 
+    printf("dep dec per clk: %.2f\n", measureFunction(iterationsHigh, clockSpeedGhz, depdectest));    
+  if (argc == 1 || argc > 1 && strncmp(argv[1], "depdec", 6) == 0) 
+    printf("dep add immediate per clk: %.2f\n", measureFunction(iterationsHigh, clockSpeedGhz, depaddimmtest));    
 
   // misc mixed integer tests
   if (argc == 1 || argc > 1 && strncmp(argv[1], "miximuladd", 10) == 0) 
