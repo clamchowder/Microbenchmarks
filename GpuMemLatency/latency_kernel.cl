@@ -109,47 +109,48 @@ __kernel void sum_bw_test(__global float* A, int count, int size, __global float
     int threadId = get_global_id(0);
     int localId = get_local_id(0);
     int localSize = get_local_size(0);
+    int groupId = get_group_id(0);
     float result = 0;
-    int initialIdx = threadId % size;
+    int initialIdx = (groupId * localSize + localId) % size;
     int idx = initialIdx;
     for (int i = 0; i < count; i += 10) {
-        /*if (idx + localSize >= size) idx = 0;
+        /*if (idx + localSize >= size) idx = initialIdx;
         result += A[idx + localId];
         idx += localSize;
 
-        if (idx + localSize >= size) idx = 0;
+        if (idx + localSize >= size) idx = initialIdx;
         result += A[idx + localId];
         idx += localSize;
 
-        if (idx + localSize >= size) idx = 0;
+        if (idx + localSize >= size) idx = initialIdx;
         result += A[idx + localId];
         idx += localSize;
 
-        if (idx + localSize >= size) idx = 0;
+        if (idx + localSize >= size) idx = initialIdx;
         result += A[idx + localId];
         idx += localSize;
 
-        if (idx + localSize >= size) idx = 0;
+        if (idx + localSize >= size) idx = initialIdx;
         result += A[idx + localId];
         idx += localSize;
 
-        if (idx + localSize >= size) idx = 0;
+        if (idx + localSize >= size) idx = initialIdx;
         result += A[idx + localId];
         idx += localSize;
 
-        if (idx + localSize >= size) idx = 0;
+        if (idx + localSize >= size) idx = initialIdx;
         result += A[idx + localId];
         idx += localSize;
 
-        if (idx + localSize >= size) idx = 0;
+        if (idx + localSize >= size) idx = initialIdx;
         result += A[idx + localId];
         idx += localSize;
 
-        if (idx + localSize >= size) idx = 0;
+        if (idx + localSize >= size) idx = initialIdx;
         result += A[idx + localId];
         idx += localSize;
 
-        if (idx + localSize >= size) idx = 0;
+        if (idx + localSize >= size) idx = initialIdx;
         result += A[idx + localId];
         idx += localSize;*/
 
