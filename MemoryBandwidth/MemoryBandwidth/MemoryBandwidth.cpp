@@ -138,9 +138,9 @@ int main(int argc, char *argv[]) {
 uint64_t GetIterationCount(uint64_t testSize, uint64_t threads)
 {
     uint32_t gbToTransfer = dataGb;
-    if (testSize > 64) gbToTransfer = 64;
-    if (testSize > 512) gbToTransfer = 32;
-    if (testSize > 8192) gbToTransfer = 16;
+    if (testSize > 64) gbToTransfer = dataGb / 2;
+    if (testSize > 512) gbToTransfer = dataGb / 4;
+    if (testSize > 8192) gbToTransfer = dataGb / 8;
     uint64_t iterations = gbToTransfer * 1024 * 1024 / testSize;
 
     if (iterations < 8) return 8; // set a minimum to reduce noise

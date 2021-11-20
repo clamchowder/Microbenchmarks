@@ -64,6 +64,8 @@ int main(int argc, char* argv[]) {
 
     enum TestType testType = GlobalMemLatency;
 
+    char thread_count_set = 0, local_size_set = 0, chase_iterations_set = 0;
+
     for (int argIdx = 1; argIdx < argc; argIdx++) {
         if (*(argv[argIdx]) == '-') {
             char* arg = argv[argIdx] + 1;
@@ -75,16 +77,19 @@ int main(int argc, char* argv[]) {
             else if (_strnicmp(arg, "iterations", 10) == 0) {
                 argIdx++;
                 chase_iterations = atoi(argv[argIdx]);
+                chase_iterations_set = 1;
                 fprintf(stderr, "Using %u iterations\n", chase_iterations);
             }
             else if (_strnicmp(arg, "threads", 7) == 0) {
                 argIdx++;
                 thread_count = atoi(argv[argIdx]);
+                thread_count_set = 1;
                 fprintf(stderr, "Using %u threads\n", thread_count);
             }
             else if (_strnicmp(arg, "localsize", 9) == 0) {
                 argIdx++;
                 local_size = atoi(argv[argIdx]);
+                local_size_set = 1;
                 fprintf(stderr, "Using local size = %u\n", local_size);
             }
             else if (_strnicmp(arg, "platform", 8) == 0) {
@@ -123,6 +128,11 @@ int main(int argc, char* argv[]) {
                 else if (_strnicmp(argv[argIdx], "bw", 2) == 0) {
                     testType = GlobalMemBandwidth;
                     fprintf(stderr, "Testing global memory bandwidth\n");
+
+                    // Somewhat reasonable defaults
+                    if (!thread_count_set) thread_count = 131072;
+                    if (!local_size_set) local_size = 256;
+                    if (!chase_iterations_set) chase_iterations = 1500000;
                 }
                 else {
                     fprintf(stderr, "I'm so confused. Unknown test type %s\n", argv[argIdx]);
