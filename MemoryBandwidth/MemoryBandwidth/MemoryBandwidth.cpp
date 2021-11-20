@@ -151,9 +151,12 @@ float MeasureBw(uint64_t sizeKb, uint64_t iterations, uint64_t threads, int shar
     struct timeb start, end;
     float bw = 0;
     uint64_t elements = sizeKb * 1024 / sizeof(float);
-    uint64_t private_elements = (uint64_t)ceil(((double)sizeKb * 1024 / sizeof(float)) / (double)threads);
+    //uint64_t private_elements = (uint64_t)ceil(((double)sizeKb * 1024 / sizeof(float)) / (double)threads);
+    uint64_t private_elements = ceil((double)sizeKb / (double)threads) * 256;
 
     if (!shared) elements = private_elements;
+
+    //fprintf(stderr, "%llu elements per thread\n", elements);
 
     if (!shared && sizeKb < threads) {
         fprintf(stderr, "Too many threads for this size, continuing\n");
@@ -201,7 +204,6 @@ float MeasureBw(uint64_t sizeKb, uint64_t iterations, uint64_t threads, int shar
         threadData[i].arr_length = elements;
         threadData[i].bw = 0;
         threadData[i].start = 0;
-        if (elements > 8192 * 1024) threadData[i].start = 4096 * i; // must be multiple of 128 because of unrolling
         testThreads[i] = CreateThread(NULL, 0, ReadBandwidthTestThread, threadData + i, CREATE_SUSPENDED, tids + i);
 
         // turns out setting affinity makes no difference, and it's easier to set affinity via start /affinity <mask> anyway
