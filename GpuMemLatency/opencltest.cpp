@@ -33,6 +33,7 @@ float bw_test(cl_context context,
     uint64_t list_size,
     uint32_t thread_count,
     uint32_t local_size,
+    uint32_t skip,
     uint32_t chase_iterations);
 float int_exec_latency_test(cl_context context,
     cl_command_queue command_queue,
@@ -57,7 +58,7 @@ int main(int argc, char* argv[]) {
     uint32_t stride = 1211;
     uint32_t list_size = 3840 * 2160 * 4;
     uint32_t chase_iterations = 1e6 * 7;
-    uint32_t thread_count = 1, local_size = 1;
+    uint32_t thread_count = 1, local_size = 1, skip = 1;
     float result;
     int platform_index = -1, device_index = -1;
 
@@ -96,6 +97,11 @@ int main(int argc, char* argv[]) {
                 device_index = atoi(argv[argIdx]);
                 fprintf(stderr, "Using OpenCL device index %d\n", device_index);
             }
+            else if (_strnicmp(arg, "bwskip", 6) == 0) {
+                argIdx++;
+                skip = atoi(argv[argIdx]);
+                fprintf(stderr, "Workgroups will be spaced %u apart\n", skip);
+            }
             else if (_strnicmp(arg, "test", 4) == 0) {
                 argIdx++;
                 if (_strnicmp(argv[argIdx], "latency", 7) == 0) {
@@ -127,7 +133,8 @@ int main(int argc, char* argv[]) {
 
     if (argc == 1)
     {
-        fprintf(stderr, "Usage: [-test <latency/constantlatency/globalatomic/localatomic/bw>] [-platform <platform id>] [-device <device id>]\n");
+        fprintf(stderr, "Usage:\n\t[-test <latency/constantlatency/globalatomic/localatomic/bw>]\n\t[-platform <platform id>]\n\t[-device <device id>]\n");
+        fprintf(stderr, "\t[-threads <opencl thread count>]\n\t[-localsize <opencl workgroup size>]\n\t[-bwskip <workgroup spacing>]\n");
         fprintf(stderr, "Number of threads (OpenCL global work size) must be divisible by local work size\n");
     }
 
@@ -244,8 +251,15 @@ int main(int argc, char* argv[]) {
                 break;
             }
 
-            result = bw_test(context, command_queue, bw_kernel, 256 * testSizeKb, thread_count, local_size, scale_bw_iterations(chase_iterations, testSizeKb));
-            printf("%u,%f\n", testSizeKb, result);
+            result = bw_test(context, 
+                command_queue, 
+                bw_kernel, 256 * testSizeKb, 
+                thread_count, 
+                local_size, 
+                skip, 
+                scale_bw_iterations(chase_iterations, testSizeKb));
+
+            printf("%llu,%f\n", testSizeKb, result);
             if (result == 0) {
                 printf("Something went wrong, not testing anything bigger.\n");
                 break;
@@ -371,6 +385,7 @@ float bw_test(cl_context context,
     uint64_t list_size,
     uint32_t thread_count,
     uint32_t local_size,
+    uint32_t skip,
     uint32_t chase_iterations)
 {
     size_t global_item_size = thread_count;
@@ -396,11 +411,12 @@ float bw_test(cl_context context,
     ret = clEnqueueWriteBuffer(command_queue, result_obj, CL_TRUE, 0, sizeof(float) * thread_count, result, 0, NULL, NULL);
     //fprintf(stderr, "copy result buffer = %d\n", ret);
 
-    // Set kernel arguments for parallel_latency_test(__global const int* A, int count, int size, __global int* ret)
+    // Set kernel arguments for __kernel void sum_bw_test(__global float* A, int count, int size, __global float* ret, int skip)
     clSetKernelArg(kernel, 0, sizeof(cl_mem), (void*)&a_mem_obj);
     clSetKernelArg(kernel, 1, sizeof(cl_int), (void*)&chase_iterations);
     clSetKernelArg(kernel, 2, sizeof(cl_int), (void*)&list_size);
     clSetKernelArg(kernel, 3, sizeof(cl_mem), (void*)&result_obj);
+    clSetKernelArg(kernel, 4, sizeof(cl_int), (void*)&skip);
 
     ftime(&start);
     ret = clEnqueueNDRangeKernel(command_queue, kernel, 1, NULL, &global_item_size, &local_item_size, 0, NULL, NULL);

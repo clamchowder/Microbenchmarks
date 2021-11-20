@@ -105,13 +105,13 @@ __kernel void constant_unrolled_latency_test(__constant const int* A, int count,
 }
 
 
-__kernel void sum_bw_test(__global float* A, int count, int size, __global float* ret) {
+__kernel void sum_bw_test(__global float* A, int count, int size, __global float* ret, int skip) {
     int threadId = get_global_id(0);
     int localId = get_local_id(0);
     int localSize = get_local_size(0);
     int groupId = get_group_id(0);
     float result = 0;
-    int initialIdx = (groupId * localSize + localId) % size;
+    int initialIdx = (groupId * localSize * skip + localId) % size;
     int idx = initialIdx;
     int resetIdx = localId;
     for (int i = 0; i < count; i += 8) {
