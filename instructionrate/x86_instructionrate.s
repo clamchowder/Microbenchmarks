@@ -26,6 +26,7 @@
 .global latmul128fp
 .global latadd128fp
 .global fma256
+.global latfma256
 .global mul256fp
 .global add256fp
 .global latmul64
@@ -1051,6 +1052,53 @@ fma256_loop:
   pop %r8
   pop %r9
   ret   
+
+latfma256:
+  push %r9
+  push %r8
+  mov $20, %r9
+  movq %r9, %xmm1
+  cvtsi2ss %r9, %xmm6
+  vbroadcastss %xmm6, %ymm6
+  vmovups %ymm6, %ymm5
+  vmovups %ymm6, %ymm7
+  vmovups %ymm6, %ymm8
+  vmovups %ymm6, %ymm9
+  vmovups %ymm6, %ymm10
+  vmovups %ymm6, %ymm11
+  vmovups %ymm6, %ymm12
+  vmovups %ymm6, %ymm13
+  vmovups %ymm6, %ymm14
+  vmovups %ymm6, %ymm15
+latfma256_loop:
+  vfmadd132ps %ymm6, %ymm5, %ymm7
+  vfmadd132ps %ymm6, %ymm5, %ymm7
+  vfmadd132ps %ymm6, %ymm5, %ymm7
+  vfmadd132ps %ymm6, %ymm5, %ymm7
+  vfmadd132ps %ymm6, %ymm5, %ymm7
+  vfmadd132ps %ymm6, %ymm5, %ymm7
+  vfmadd132ps %ymm6, %ymm5, %ymm7
+  vfmadd132ps %ymm6, %ymm5, %ymm7
+  vfmadd132ps %ymm6, %ymm5, %ymm7
+  vfmadd132ps %ymm6, %ymm5, %ymm7
+  vfmadd132ps %ymm6, %ymm5, %ymm7
+  vfmadd132ps %ymm6, %ymm5, %ymm7
+  vfmadd132ps %ymm6, %ymm5, %ymm7
+  vfmadd132ps %ymm6, %ymm5, %ymm7
+  vfmadd132ps %ymm6, %ymm5, %ymm7
+  vfmadd132ps %ymm6, %ymm5, %ymm7
+  vfmadd132ps %ymm6, %ymm5, %ymm7
+  vfmadd132ps %ymm6, %ymm5, %ymm7
+  vfmadd132ps %ymm6, %ymm5, %ymm7
+  vfmadd132ps %ymm6, %ymm5, %ymm7
+  sub %r9, %rdi
+  jnz latfma256_loop
+  movq %xmm1, %rax
+  vzeroupper
+  pop %r8
+  pop %r9
+  ret   
+
 
 latadd128fp:
   push %r9
