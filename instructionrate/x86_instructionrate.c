@@ -37,6 +37,7 @@ extern uint64_t latfma256(uint64_t iterations) __attribute((sysv_abi));
 extern uint64_t fma256(uint64_t iterations) __attribute((sysv_abi));
 extern uint64_t mixfmafadd256(uint64_t iterations) __attribute((sysv_abi));
 extern uint64_t mixfmaadd256(uint64_t iterations) __attribute((sysv_abi));
+extern uint64_t nemesfpumix21(uint64_t iterations) __attribute((sysv_abi));
 extern uint64_t mul256fp(uint64_t iterations) __attribute((sysv_abi));
 extern uint64_t add256fp(uint64_t iterations) __attribute((sysv_abi));
 extern uint64_t latmul64(uint64_t iterations) __attribute((sysv_abi));
@@ -182,6 +183,8 @@ int main(int argc, char *argv[]) {
     printf("1:2 256b FMA:FADD per clk: %.2f\n", measureFunction(iterations, clockSpeedGhz, mixfmafadd256));
   if (argc == 1 || argc > 1 && strncmp(argv[1], "mixfmaadd256", 11) == 0) 
     printf("1:2 256b FMA:PADDQ per clk: %.2f\n", measureFunction(iterations, clockSpeedGhz, mixfmaadd256));
+  if (argc == 1 || argc > 1 && strncmp(argv[1], "nemesfpumix21", 13) == 0) 
+    printf("1:2 256b FMA:FADD per clk (nemes): %.2f\n", measureFunction(iterations, clockSpeedGhz, nemesfpumix21));
 
   // integer multiply. zhaoxin appears to handle 16-bit and 64-bit multiplies differntly
   // unlike Intel/AMD CPUs that behave similarly regardless of register width

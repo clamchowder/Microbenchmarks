@@ -31,6 +31,7 @@
 .global fma256
 .global mixfmafadd256
 .global mixfmaadd256
+.global nemesfpumix21
 .global latfma256
 .global mul256fp
 .global add256fp
@@ -1180,6 +1181,48 @@ mixfmaadd256_loop:
   pop %r8
   pop %r9
   ret     
+
+
+nemesfpumix21:
+  push %r9
+  mov $16, %r9
+  cvtsi2ss %r9, %xmm0
+  vbroadcastss %xmm0, %ymm1
+  vmovdqa %ymm1, %ymm2
+  vmovdqa %ymm1, %ymm3
+  vmovdqa %ymm1, %ymm4
+  vmovdqa %ymm1, %ymm5
+  vmovdqa %ymm1, %ymm6
+  vmovdqa %ymm1, %ymm7
+  vmovdqa %ymm1, %ymm8
+  vmovdqa %ymm1, %ymm9
+  vmovdqa %ymm1, %ymm10
+  vmovdqa %ymm1, %ymm11
+  vmovdqa %ymm1, %ymm12
+  vmovdqa %ymm1, %ymm13
+  vmovdqa %ymm1, %ymm14
+  vmovdqa %ymm1, %ymm15
+nemesfpumix21_loop:
+  vaddps %ymm0, %ymm0
+  vfmadd132ps %ymm1, %ymm1, %ymm1
+  vfmadd132ps %ymm2, %ymm2, %ymm2
+  vaddps %ymm3, %ymm3
+  vfmadd132ps %ymm4, %ymm4, %ymm4
+  vfmadd132ps %ymm5, %ymm5, %ymm5
+  vaddps %ymm6, %ymm6
+  vfmadd132ps %ymm7, %ymm7, %ymm7
+  vfmadd132ps %ymm8, %ymm8, %ymm8
+  vaddps %ymm9, %ymm9
+  vfmadd132ps %ymm10, %ymm10, %ymm10
+  vfmadd132ps %ymm11, %ymm11, %ymm11
+  vaddps %ymm12, %ymm12
+  vfmadd132ps %ymm13, %ymm13, %ymm13
+  vfmadd132ps %ymm14, %ymm14, %ymm14
+  vaddps %ymm15, %ymm15
+  sub %r9, $rdi
+  jl nemesfpumix21_loop
+  pop %r9
+  ret
 
 latfma256:
   push %r9
