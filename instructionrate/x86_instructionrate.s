@@ -31,6 +31,7 @@
 .global fma256
 .global mixfmafadd256
 .global mixfmaadd256
+.global mixfmaand256
 .global nemesfpumix21
 .global latfma256
 .global mul256fp
@@ -1123,65 +1124,96 @@ mixfmafadd256_loop:
 mixfmaadd256:
   push %r9
   push %r8
-  mov $30, %r9
-  movq %r9, %xmm1
-  cvtsi2ss %r9, %xmm6
-  vbroadcastss %xmm6, %ymm6
-  vpbroadcastq %xmm1, %ymm0
-  vmovdqu %ymm0, %ymm1
-  vmovdqu %ymm0, %ymm2
-  vmovdqu %ymm0, %ymm3
-  vmovaps %ymm6, %ymm4
-  vmovaps %ymm6, %ymm10
-  vmovaps %ymm6, %ymm11
-  vmovaps %ymm6, %ymm12
-  vmovaps %ymm6, %ymm13
-  vmovaps %ymm6, %ymm5
-  vmovaps %ymm6, %ymm7
-  vmovaps %ymm6, %ymm8
-  vmovaps %ymm6, %ymm9
-  vmovaps %ymm6, %ymm14
-  vmovaps %ymm6, %ymm15
+  mov $16, %r9
+  movq %r9, %xmm0
+  vpbroadcastq %xmm0, %ymm0
+  cvtsi2ss %r9, %xmm1
+  vbroadcastss %xmm1, %ymm1
+  vmovdqa %ymm0, %ymm3
+  vmovdqa %ymm0, %ymm6
+  vmovdqa %ymm0, %ymm9
+  vmovdqa %ymm0, %ymm12
+  vmovdqa %ymm0, %ymm15
+  vmovaps %ymm1, %ymm2
+  vmovaps %ymm1, %ymm4
+  vmovaps %ymm1, %ymm5
+  vmovaps %ymm1, %ymm7
+  vmovaps %ymm1, %ymm8
+  vmovaps %ymm1, %ymm10
+  vmovaps %ymm1, %ymm11
+  vmovaps %ymm1, %ymm13
+  vmovaps %ymm1, %ymm14
 mixfmaadd256_loop:
-  vfmadd132ps %ymm6, %ymm4, %ymm4
-  vfmadd132ps %ymm6, %ymm5, %ymm5
-  vpaddq %ymm1, %ymm2, %ymm3
-  vfmadd132ps %ymm6, %ymm6, %ymm6
-  vfmadd132ps %ymm6, %ymm7, %ymm7
-  vaddps %ymm1, %ymm2, %ymm3
-  vfmadd132ps %ymm6, %ymm8, %ymm8
-  vfmadd132ps %ymm6, %ymm9, %ymm9
-  vpaddq %ymm1, %ymm2, %ymm3
-  vfmadd132ps %ymm6, %ymm10, %ymm10
-  vfmadd132ps %ymm6, %ymm11, %ymm11
-  vpaddq %ymm1, %ymm2, %ymm3 
-  vfmadd132ps %ymm6, %ymm12, %ymm12
-  vfmadd132ps %ymm6, %ymm13, %ymm13
-  vpaddq %ymm1, %ymm2, %ymm3
-  vfmadd132ps %ymm6, %ymm14, %ymm14
-  vfmadd132ps %ymm6, %ymm15, %ymm15
-  vpaddq %ymm1, %ymm2, %ymm3
-  // break dependency chain
-  vfmadd132ps %ymm6, %ymm4, %ymm4
-  vfmadd132ps %ymm6, %ymm5, %ymm5
-  vpaddq %ymm1, %ymm2, %ymm3
-  vfmadd132ps %ymm6, %ymm7, %ymm7
-  vfmadd132ps %ymm6, %ymm8, %ymm8
-  vpaddq %ymm1, %ymm2, %ymm3  
-  vfmadd132ps %ymm6, %ymm9, %ymm9
-  vfmadd132ps %ymm6, %ymm10, %ymm10
-  vpaddq %ymm1, %ymm2, %ymm3
-  vfmadd132ps %ymm6, %ymm11, %ymm11
-  vfmadd132ps %ymm6, %ymm12, %ymm12
-  vpaddq %ymm1, %ymm2, %ymm3 
+  vpaddq %ymm0, %ymm0, %ymm0
+  vfmadd132ps %ymm1, %ymm1, %ymm1
+  vfmadd132ps %ymm2, %ymm2, %ymm2
+  vpaddq %ymm3, %ymm3, %ymm3
+  vfmadd132ps %ymm4, %ymm4, %ymm4
+  vfmadd132ps %ymm5, %ymm5, %ymm5
+  vpaddq %ymm6, %ymm6, %ymm6
+  vfmadd132ps %ymm7, %ymm7, %ymm7
+  vfmadd132ps %ymm8, %ymm8, %ymm8
+  vpaddq %ymm9, %ymm9, %ymm9
+  vfmadd132ps %ymm10, %ymm10, %ymm10
+  vfmadd132ps %ymm11, %ymm11, %ymm11
+  vpaddq %ymm12, %ymm12, %ymm12
+  vfmadd132ps %ymm13, %ymm13, %ymm13
+  vfmadd132ps %ymm14, %ymm14, %ymm14
+  vpaddq %ymm15, %ymm15, %ymm15 
   sub %r9, %rdi
-  jnz mixfmaadd256_loop
+  jg mixfmaadd256_loop
   movq %xmm1, %rax
   vzeroupper
   pop %r8
   pop %r9
   ret     
 
+mixfmaand256:
+  push %r9
+  push %r8
+  mov $16, %r9
+  movq %r9, %xmm0
+  vpbroadcastq %xmm0, %ymm0
+  cvtsi2ss %r9, %xmm1
+  vbroadcastss %xmm1, %ymm1
+  vmovdqa %ymm0, %ymm3
+  vmovdqa %ymm0, %ymm6
+  vmovdqa %ymm0, %ymm9
+  vmovdqa %ymm0, %ymm12
+  vmovdqa %ymm0, %ymm15
+  vmovaps %ymm1, %ymm2
+  vmovaps %ymm1, %ymm4
+  vmovaps %ymm1, %ymm5
+  vmovaps %ymm1, %ymm7
+  vmovaps %ymm1, %ymm8
+  vmovaps %ymm1, %ymm10
+  vmovaps %ymm1, %ymm11
+  vmovaps %ymm1, %ymm13
+  vmovaps %ymm1, %ymm14
+mixfmaand256_loop:
+  vpand %ymm0, %ymm0, %ymm0
+  vfmadd132ps %ymm1, %ymm1, %ymm1
+  vfmadd132ps %ymm2, %ymm2, %ymm2
+  vpand %ymm3, %ymm3, %ymm3
+  vfmadd132ps %ymm4, %ymm4, %ymm4
+  vfmadd132ps %ymm5, %ymm5, %ymm5
+  vpand %ymm6, %ymm6, %ymm6
+  vfmadd132ps %ymm7, %ymm7, %ymm7
+  vfmadd132ps %ymm8, %ymm8, %ymm8
+  vpand %ymm9, %ymm9, %ymm9
+  vfmadd132ps %ymm10, %ymm10, %ymm10
+  vfmadd132ps %ymm11, %ymm11, %ymm11
+  vpand %ymm12, %ymm12, %ymm12
+  vfmadd132ps %ymm13, %ymm13, %ymm13
+  vfmadd132ps %ymm14, %ymm14, %ymm14
+  vpand %ymm15, %ymm15, %ymm15 
+  sub %r9, %rdi
+  jg mixfmaand256_loop
+  movq %xmm1, %rax
+  vzeroupper
+  pop %r8
+  pop %r9
+  ret      
 
 nemesfpumix21:
   push %r9
@@ -1203,24 +1235,24 @@ nemesfpumix21:
   vmovdqa %ymm1, %ymm14
   vmovdqa %ymm1, %ymm15
 nemesfpumix21_loop:
-  vaddps %ymm0, %ymm0
+  vaddps %ymm0, %ymm0, %ymm0
   vfmadd132ps %ymm1, %ymm1, %ymm1
   vfmadd132ps %ymm2, %ymm2, %ymm2
-  vaddps %ymm3, %ymm3
+  vaddps %ymm3, %ymm3, %ymm3
   vfmadd132ps %ymm4, %ymm4, %ymm4
   vfmadd132ps %ymm5, %ymm5, %ymm5
-  vaddps %ymm6, %ymm6
+  vaddps %ymm6, %ymm6, %ymm6
   vfmadd132ps %ymm7, %ymm7, %ymm7
   vfmadd132ps %ymm8, %ymm8, %ymm8
-  vaddps %ymm9, %ymm9
+  vaddps %ymm9, %ymm9, %ymm9
   vfmadd132ps %ymm10, %ymm10, %ymm10
   vfmadd132ps %ymm11, %ymm11, %ymm11
-  vaddps %ymm12, %ymm12
+  vaddps %ymm12, %ymm12, %ymm12
   vfmadd132ps %ymm13, %ymm13, %ymm13
   vfmadd132ps %ymm14, %ymm14, %ymm14
-  vaddps %ymm15, %ymm15
-  sub %r9, $rdi
-  jl nemesfpumix21_loop
+  vaddps %ymm15, %ymm15, %ymm15
+  sub %r9, %rdi
+  jg nemesfpumix21_loop
   pop %r9
   ret
 
