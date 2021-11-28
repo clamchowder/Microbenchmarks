@@ -1130,48 +1130,49 @@ mixfmaadd256:
   vmovdqu %ymm0, %ymm1
   vmovdqu %ymm0, %ymm2
   vmovdqu %ymm0, %ymm3
-  vmovdqu %ymm0, %ymm4
-  vmovdqu %ymm6, %ymm10
-  vmovdqu %ymm0, %ymm11
-  vmovdqu %ymm6, %ymm12
-  vmovdqu %ymm0, %ymm13
-  vmovups %ymm6, %ymm5
-  vmovups %ymm6, %ymm7
-  vmovups %ymm6, %ymm8
-  vmovups %ymm6, %ymm9
-  vmovups %ymm6, %ymm14
-  vmovups %ymm6, %ymm15
+  vmovaps %ymm6, %ymm4
+  vmovaps %ymm6, %ymm10
+  vmovaps %ymm6, %ymm11
+  vmovaps %ymm6, %ymm12
+  vmovaps %ymm6, %ymm13
+  vmovaps %ymm6, %ymm5
+  vmovaps %ymm6, %ymm7
+  vmovaps %ymm6, %ymm8
+  vmovaps %ymm6, %ymm9
+  vmovaps %ymm6, %ymm14
+  vmovaps %ymm6, %ymm15
 mixfmaadd256_loop:
+  vfmadd132ps %ymm6, %ymm4, %ymm4
   vfmadd132ps %ymm6, %ymm5, %ymm5
-  vfmadd132ps %ymm6, %ymm7, %ymm7
   vpaddq %ymm1, %ymm2, %ymm3
+  vfmadd132ps %ymm6, %ymm6, %ymm6
+  vfmadd132ps %ymm6, %ymm7, %ymm7
+  vaddps %ymm1, %ymm2, %ymm3
   vfmadd132ps %ymm6, %ymm8, %ymm8
   vfmadd132ps %ymm6, %ymm9, %ymm9
-  vaddps %ymm1, %ymm4, %ymm10
+  vpaddq %ymm1, %ymm2, %ymm3
+  vfmadd132ps %ymm6, %ymm10, %ymm10
+  vfmadd132ps %ymm6, %ymm11, %ymm11
+  vpaddq %ymm1, %ymm2, %ymm3 
+  vfmadd132ps %ymm6, %ymm12, %ymm12
+  vfmadd132ps %ymm6, %ymm13, %ymm13
+  vpaddq %ymm1, %ymm2, %ymm3
   vfmadd132ps %ymm6, %ymm14, %ymm14
   vfmadd132ps %ymm6, %ymm15, %ymm15
-  vpaddq %ymm1, %ymm11, %ymm12
-  vfmadd132ps %ymm6, %ymm0, %ymm1
-  vfmadd132ps %ymm6, %ymm2, %ymm3
-  vpaddq %ymm1, %ymm13, %ymm0 
-  vfmadd132ps %ymm6, %ymm5, %ymm5
-  vfmadd132ps %ymm6, %ymm7, %ymm7
   vpaddq %ymm1, %ymm2, %ymm3
-  vfmadd132ps %ymm6, %ymm8, %ymm8
-  vfmadd132ps %ymm6, %ymm9, %ymm9
-  vpaddq %ymm1, %ymm10, %ymm13
-  vfmadd132ps %ymm6, %ymm14, %ymm14
-  vfmadd132ps %ymm6, %ymm15, %ymm15
-  vpaddq %ymm1, %ymm2, %ymm13
-  vfmadd132ps %ymm6, %ymm0, %ymm1
-  vfmadd132ps %ymm6, %ymm2, %ymm3
-  vpaddq %ymm1, %ymm3, %ymm2  
+  // break dependency chain
+  vfmadd132ps %ymm6, %ymm4, %ymm4
   vfmadd132ps %ymm6, %ymm5, %ymm5
+  vpaddq %ymm1, %ymm2, %ymm3
   vfmadd132ps %ymm6, %ymm7, %ymm7
-  vpaddq %ymm1, %ymm4, %ymm10
   vfmadd132ps %ymm6, %ymm8, %ymm8
+  vpaddq %ymm1, %ymm2, %ymm3  
   vfmadd132ps %ymm6, %ymm9, %ymm9
-  vpaddq %ymm1, %ymm4, %ymm3 
+  vfmadd132ps %ymm6, %ymm10, %ymm10
+  vpaddq %ymm1, %ymm2, %ymm3
+  vfmadd132ps %ymm6, %ymm11, %ymm11
+  vfmadd132ps %ymm6, %ymm12, %ymm12
+  vpaddq %ymm1, %ymm2, %ymm3 
   sub %r9, %rdi
   jnz mixfmaadd256_loop
   movq %xmm1, %rax
