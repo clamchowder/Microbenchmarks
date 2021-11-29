@@ -38,6 +38,7 @@ extern uint64_t fma256(uint64_t iterations) __attribute((sysv_abi));
 extern uint64_t mixfmafadd256(uint64_t iterations) __attribute((sysv_abi));
 extern uint64_t mixfmaadd256(uint64_t iterations) __attribute((sysv_abi));
 extern uint64_t mixfmaand256(uint64_t iterations) __attribute((sysv_abi));
+extern uint64_t mixfmaandmem256(uint64_t iterations, int *arr) __attribute((sysv_abi));
 extern uint64_t nemesfpumix21(uint64_t iterations) __attribute((sysv_abi));
 extern uint64_t mul256fp(uint64_t iterations) __attribute((sysv_abi));
 extern uint64_t add256fp(uint64_t iterations) __attribute((sysv_abi));
@@ -73,6 +74,7 @@ uint64_t load128wrapper(uint64_t iterations) __attribute((sysv_abi));
 uint64_t load256wrapper(uint64_t iterations) __attribute((sysv_abi));
 uint64_t store128wrapper(uint64_t iterations) __attribute((sysv_abi));
 uint64_t store256wrapper(uint64_t iterations) __attribute((sysv_abi));
+uint64_t mixfmaandmem256wrapper(uint64_t iterations)  __attribute((sysv_abi));
 
 float measureFunction(uint64_t iterations, float clockSpeedGhz, __attribute((sysv_abi)) uint64_t (*testfunc)(uint64_t));
 
@@ -186,6 +188,8 @@ int main(int argc, char *argv[]) {
     printf("1:2 256b FMA:PADDQ per clk: %.2f\n", measureFunction(iterations, clockSpeedGhz, mixfmaadd256));
   if (argc == 1 || argc > 1 && strncmp(argv[1], "mixfmaand256", 11) == 0) 
     printf("1:2 256b FMA:PANDQ per clk: %.2f\n", measureFunction(iterations, clockSpeedGhz, mixfmaand256));
+  if (argc == 1 || argc > 1 && strncmp(argv[1], "mixfmaandmem256", 14) == 0) 
+    printf("1:2 256b FMA:PANDQ load-op per clk: %.2f\n", measureFunction(iterations, clockSpeedGhz, mixfmaandmem256wrapper));
   if (argc == 1 || argc > 1 && strncmp(argv[1], "nemesfpumix21", 13) == 0) 
     printf("1:2 256b FMA:FADD per clk (nemes): %.2f\n", measureFunction(iterations, clockSpeedGhz, nemesfpumix21));
 
@@ -256,4 +260,8 @@ __attribute((sysv_abi)) uint64_t store128wrapper(uint64_t iterations) {
 
 __attribute((sysv_abi)) uint64_t store256wrapper(uint64_t iterations) {
   return store256(iterations, fpTestArr, fpSinkArr);
+}
+
+__attribute((sysv_abi)) uint64_t mixfmaandmem256wrapper(uint64_t iterations) {
+  return mixfmaandmem256(iterations, intTestArr); 
 }
