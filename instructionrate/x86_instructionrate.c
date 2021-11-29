@@ -33,7 +33,13 @@ extern uint64_t latmul256int(uint64_t iterations) __attribute((sysv_abi));
 extern uint64_t latmul256fp(uint64_t iterations) __attribute((sysv_abi)); 
 extern uint64_t latadd128fp(uint64_t iterations) __attribute((sysv_abi)); 
 extern uint64_t latmul128fp(uint64_t iterations) __attribute((sysv_abi)); 
+extern uint64_t latfma256(uint64_t iterations) __attribute((sysv_abi));
 extern uint64_t fma256(uint64_t iterations) __attribute((sysv_abi));
+extern uint64_t mixfmafadd256(uint64_t iterations) __attribute((sysv_abi));
+extern uint64_t mixfmaadd256(uint64_t iterations) __attribute((sysv_abi));
+extern uint64_t mixfmaand256(uint64_t iterations) __attribute((sysv_abi));
+extern uint64_t mixfmaandmem256(uint64_t iterations, int *arr) __attribute((sysv_abi));
+extern uint64_t nemesfpumix21(uint64_t iterations) __attribute((sysv_abi));
 extern uint64_t mul256fp(uint64_t iterations) __attribute((sysv_abi));
 extern uint64_t add256fp(uint64_t iterations) __attribute((sysv_abi));
 extern uint64_t latmul64(uint64_t iterations) __attribute((sysv_abi));
@@ -68,6 +74,7 @@ uint64_t load128wrapper(uint64_t iterations) __attribute((sysv_abi));
 uint64_t load256wrapper(uint64_t iterations) __attribute((sysv_abi));
 uint64_t store128wrapper(uint64_t iterations) __attribute((sysv_abi));
 uint64_t store256wrapper(uint64_t iterations) __attribute((sysv_abi));
+uint64_t mixfmaandmem256wrapper(uint64_t iterations)  __attribute((sysv_abi));
 
 float measureFunction(uint64_t iterations, float clockSpeedGhz, __attribute((sysv_abi)) uint64_t (*testfunc)(uint64_t));
 
@@ -167,12 +174,24 @@ int main(int argc, char *argv[]) {
   if (argc == 1 || argc > 1 && strncmp(argv[1], "latmul128fp", 11) == 0) 
     printf("128-bit sse fmul latency: %.2f clocks\n", 1 / measureFunction(iterations, clockSpeedGhz, latmul128fp));
   // zhaoxin does not support FMA
-  /*if (argc == 1 || argc > 1 && strncmp(argv[1], "fma256", 6) == 0) 
-    printf("256-bit FMA per clk: %.2f\n", measureFunction(iterations, clockSpeedGhz, fma256));*/
+  if (argc == 1 || argc > 1 && strncmp(argv[1], "fma256", 6) == 0) 
+    printf("256-bit FMA per clk: %.2f\n", measureFunction(iterations, clockSpeedGhz, fma256));
+  if (argc == 1 || argc > 1 && strncmp(argv[1], "latfma256", 9) == 0)
+    printf("256-bit FMA latency: %.2f clocks\n", 1 / measureFunction(iterations, clockSpeedGhz, latfma256));
   if (argc == 1 || argc > 1 && strncmp(argv[1], "fadd256", 6) == 0) 
     printf("256-bit FADD per clk: %.2f\n", measureFunction(iterations, clockSpeedGhz, add256fp));
   if (argc == 1 || argc > 1 && strncmp(argv[1], "fmul256", 6) == 0) 
     printf("256-bit FMUL per clk: %.2f\n", measureFunction(iterations, clockSpeedGhz, mul256fp));
+  if (argc == 1 || argc > 1 && strncmp(argv[1], "mixfmafadd256", 12) == 0) 
+    printf("1:2 256b FMA:FADD per clk: %.2f\n", measureFunction(iterations, clockSpeedGhz, mixfmafadd256));
+  if (argc == 1 || argc > 1 && strncmp(argv[1], "mixfmaadd256", 11) == 0) 
+    printf("1:2 256b FMA:PADDQ per clk: %.2f\n", measureFunction(iterations, clockSpeedGhz, mixfmaadd256));
+  if (argc == 1 || argc > 1 && strncmp(argv[1], "mixfmaand256", 11) == 0) 
+    printf("1:2 256b FMA:PANDQ per clk: %.2f\n", measureFunction(iterations, clockSpeedGhz, mixfmaand256));
+  if (argc == 1 || argc > 1 && strncmp(argv[1], "mixfmaandmem256", 14) == 0) 
+    printf("1:2 256b FMA:PANDQ load-op per clk: %.2f\n", measureFunction(iterations, clockSpeedGhz, mixfmaandmem256wrapper));
+  if (argc == 1 || argc > 1 && strncmp(argv[1], "nemesfpumix21", 13) == 0) 
+    printf("1:2 256b FMA:FADD per clk (nemes): %.2f\n", measureFunction(iterations, clockSpeedGhz, nemesfpumix21));
 
   // integer multiply. zhaoxin appears to handle 16-bit and 64-bit multiplies differntly
   // unlike Intel/AMD CPUs that behave similarly regardless of register width
@@ -241,4 +260,8 @@ __attribute((sysv_abi)) uint64_t store128wrapper(uint64_t iterations) {
 
 __attribute((sysv_abi)) uint64_t store256wrapper(uint64_t iterations) {
   return store256(iterations, fpTestArr, fpSinkArr);
+}
+
+__attribute((sysv_abi)) uint64_t mixfmaandmem256wrapper(uint64_t iterations) {
+  return mixfmaandmem256(iterations, intTestArr); 
 }

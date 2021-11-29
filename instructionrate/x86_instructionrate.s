@@ -29,6 +29,12 @@
 .global latmul128fp
 .global latadd128fp
 .global fma256
+.global mixfmafadd256
+.global mixfmaadd256
+.global mixfmaand256
+.global nemesfpumix21
+.global mixfmaandmem256
+.global latfma256
 .global mul256fp
 .global add256fp
 .global latmul64
@@ -1054,6 +1060,296 @@ fma256_loop:
   pop %r8
   pop %r9
   ret   
+
+mixfmafadd256:
+  push %r9
+  push %r8
+  mov $30, %r9
+  movq %r9, %xmm1
+  cvtsi2ss %r9, %xmm6
+  vbroadcastss %xmm6, %ymm6
+  vmovups %ymm6, %ymm0
+  vmovups %ymm6, %ymm1
+  vmovups %ymm6, %ymm2
+  vmovups %ymm6, %ymm3
+  vmovups %ymm6, %ymm4
+  vmovups %ymm6, %ymm5
+  vmovups %ymm6, %ymm7
+  vmovups %ymm6, %ymm8
+  vmovups %ymm6, %ymm9
+  vmovups %ymm6, %ymm10
+  vmovups %ymm6, %ymm11
+  vmovups %ymm6, %ymm12
+  vmovups %ymm6, %ymm13
+  vmovups %ymm6, %ymm14
+  vmovups %ymm6, %ymm15
+mixfmafadd256_loop:
+  vfmadd132ps %ymm6, %ymm5, %ymm5
+  vfmadd132ps %ymm6, %ymm7, %ymm7
+  vaddps %ymm10, %ymm5, %ymm11
+  vfmadd132ps %ymm6, %ymm8, %ymm8
+  vfmadd132ps %ymm6, %ymm9, %ymm9
+  vaddps %ymm12, %ymm5, %ymm13
+  vfmadd132ps %ymm6, %ymm14, %ymm14
+  vfmadd132ps %ymm6, %ymm15, %ymm15
+  vaddps %ymm12, %ymm6, %ymm13
+  vfmadd132ps %ymm6, %ymm0, %ymm1
+  vfmadd132ps %ymm6, %ymm2, %ymm3
+  vaddps %ymm6, %ymm5, %ymm4 
+  vfmadd132ps %ymm6, %ymm5, %ymm5
+  vfmadd132ps %ymm6, %ymm7, %ymm7
+  vaddps %ymm10, %ymm6, %ymm11
+  vfmadd132ps %ymm6, %ymm8, %ymm8
+  vfmadd132ps %ymm6, %ymm9, %ymm9
+  vaddps %ymm12, %ymm7, %ymm13
+  vfmadd132ps %ymm6, %ymm14, %ymm14
+  vfmadd132ps %ymm6, %ymm15, %ymm15
+  vaddps %ymm12, %ymm5, %ymm13
+  vfmadd132ps %ymm6, %ymm0, %ymm1
+  vfmadd132ps %ymm6, %ymm2, %ymm3
+  vaddps %ymm6, %ymm5, %ymm4  
+  vfmadd132ps %ymm6, %ymm5, %ymm5
+  vfmadd132ps %ymm6, %ymm7, %ymm7
+  vaddps %ymm10, %ymm6, %ymm11
+  vfmadd132ps %ymm6, %ymm8, %ymm8
+  vfmadd132ps %ymm6, %ymm9, %ymm9
+  vaddps %ymm12, %ymm5, %ymm13 
+  sub %r9, %rdi
+  jnz mixfmafadd256_loop
+  movq %xmm1, %rax
+  vzeroupper
+  pop %r8
+  pop %r9
+  ret    
+
+mixfmaadd256:
+  push %r9
+  push %r8
+  mov $16, %r9
+  movq %r9, %xmm0
+  vpbroadcastq %xmm0, %ymm0
+  cvtsi2ss %r9, %xmm1
+  vbroadcastss %xmm1, %ymm1
+  vmovdqa %ymm0, %ymm3
+  vmovdqa %ymm0, %ymm6
+  vmovdqa %ymm0, %ymm9
+  vmovdqa %ymm0, %ymm12
+  vmovdqa %ymm0, %ymm15
+  vmovaps %ymm1, %ymm2
+  vmovaps %ymm1, %ymm4
+  vmovaps %ymm1, %ymm5
+  vmovaps %ymm1, %ymm7
+  vmovaps %ymm1, %ymm8
+  vmovaps %ymm1, %ymm10
+  vmovaps %ymm1, %ymm11
+  vmovaps %ymm1, %ymm13
+  vmovaps %ymm1, %ymm14
+mixfmaadd256_loop:
+  vpaddq %ymm0, %ymm0, %ymm0
+  vfmadd132ps %ymm1, %ymm1, %ymm1
+  vfmadd132ps %ymm2, %ymm2, %ymm2
+  vpaddq %ymm3, %ymm3, %ymm3
+  vfmadd132ps %ymm4, %ymm4, %ymm4
+  vfmadd132ps %ymm5, %ymm5, %ymm5
+  vpaddq %ymm6, %ymm6, %ymm6
+  vfmadd132ps %ymm7, %ymm7, %ymm7
+  vfmadd132ps %ymm8, %ymm8, %ymm8
+  vpaddq %ymm9, %ymm9, %ymm9
+  vfmadd132ps %ymm10, %ymm10, %ymm10
+  vfmadd132ps %ymm11, %ymm11, %ymm11
+  vpaddq %ymm12, %ymm12, %ymm12
+  vfmadd132ps %ymm13, %ymm13, %ymm13
+  vfmadd132ps %ymm14, %ymm14, %ymm14
+  vpaddq %ymm15, %ymm15, %ymm15 
+  sub %r9, %rdi
+  jg mixfmaadd256_loop
+  movq %xmm1, %rax
+  vzeroupper
+  pop %r8
+  pop %r9
+  ret     
+
+mixfmaand256:
+  push %r9
+  push %r8
+  mov $16, %r9
+  movq %r9, %xmm0
+  vpbroadcastq %xmm0, %ymm0
+  cvtsi2ss %r9, %xmm1
+  vbroadcastss %xmm1, %ymm1
+  vmovdqa %ymm0, %ymm3
+  vmovdqa %ymm0, %ymm6
+  vmovdqa %ymm0, %ymm9
+  vmovdqa %ymm0, %ymm12
+  vmovdqa %ymm0, %ymm15
+  vmovaps %ymm1, %ymm2
+  vmovaps %ymm1, %ymm4
+  vmovaps %ymm1, %ymm5
+  vmovaps %ymm1, %ymm7
+  vmovaps %ymm1, %ymm8
+  vmovaps %ymm1, %ymm10
+  vmovaps %ymm1, %ymm11
+  vmovaps %ymm1, %ymm13
+  vmovaps %ymm1, %ymm14
+mixfmaand256_loop:
+  vpand %ymm0, %ymm0, %ymm0
+  vfmadd132ps %ymm1, %ymm1, %ymm1
+  vfmadd132ps %ymm2, %ymm2, %ymm2
+  vpand %ymm3, %ymm3, %ymm3
+  vfmadd132ps %ymm4, %ymm4, %ymm4
+  vfmadd132ps %ymm5, %ymm5, %ymm5
+  vpand %ymm6, %ymm6, %ymm6
+  vfmadd132ps %ymm7, %ymm7, %ymm7
+  vfmadd132ps %ymm8, %ymm8, %ymm8
+  vpand %ymm9, %ymm9, %ymm9
+  vfmadd132ps %ymm10, %ymm10, %ymm10
+  vfmadd132ps %ymm11, %ymm11, %ymm11
+  vpand %ymm12, %ymm12, %ymm12
+  vfmadd132ps %ymm13, %ymm13, %ymm13
+  vfmadd132ps %ymm14, %ymm14, %ymm14
+  vpand %ymm15, %ymm15, %ymm15 
+  sub %r9, %rdi
+  jg mixfmaand256_loop
+  movq %xmm1, %rax
+  vzeroupper
+  pop %r8
+  pop %r9
+  ret      
+
+mixfmaandmem256:
+  push %r9
+  push %r8
+  mov $16, %r9
+  movq %r9, %xmm0
+  vpbroadcastq %xmm0, %ymm0
+  cvtsi2ss %r9, %xmm1
+  vbroadcastss %xmm1, %ymm1
+  vmovdqa %ymm0, %ymm3
+  vmovdqa %ymm0, %ymm6
+  vmovdqa %ymm0, %ymm9
+  vmovdqa %ymm0, %ymm12
+  vmovdqa %ymm0, %ymm15
+  vmovaps %ymm1, %ymm2
+  vmovaps %ymm1, %ymm4
+  vmovaps %ymm1, %ymm5
+  vmovaps %ymm1, %ymm7
+  vmovaps %ymm1, %ymm8
+  vmovaps %ymm1, %ymm10
+  vmovaps %ymm1, %ymm11
+  vmovaps %ymm1, %ymm13
+  vmovaps %ymm1, %ymm14
+mixfmaandmem256_loop:
+  vpand (%rsi), %ymm0, %ymm0
+  vfmadd132ps %ymm1, %ymm1, %ymm1
+  vfmadd132ps %ymm2, %ymm2, %ymm2
+  vpand (%rsi), %ymm3, %ymm3
+  vfmadd132ps %ymm4, %ymm4, %ymm4
+  vfmadd132ps %ymm5, %ymm5, %ymm5
+  vpand (%rsi), %ymm6, %ymm6
+  vfmadd132ps %ymm7, %ymm7, %ymm7
+  vfmadd132ps %ymm8, %ymm8, %ymm8
+  vpand (%rsi), %ymm9, %ymm9
+  vfmadd132ps %ymm10, %ymm10, %ymm10
+  vfmadd132ps %ymm11, %ymm11, %ymm11
+  vpand (%rsi), %ymm12, %ymm12
+  vfmadd132ps %ymm13, %ymm13, %ymm13
+  vfmadd132ps %ymm14, %ymm14, %ymm14
+  vpand (%rsi), %ymm15, %ymm15 
+  sub %r9, %rdi
+  jg mixfmaandmem256_loop
+  movq %xmm1, %rax
+  vzeroupper
+  pop %r8
+  pop %r9
+  ret       
+
+nemesfpumix21:
+  push %r9
+  mov $16, %r9
+  cvtsi2ss %r9, %xmm0
+  vbroadcastss %xmm0, %ymm1
+  vmovdqa %ymm1, %ymm2
+  vmovdqa %ymm1, %ymm3
+  vmovdqa %ymm1, %ymm4
+  vmovdqa %ymm1, %ymm5
+  vmovdqa %ymm1, %ymm6
+  vmovdqa %ymm1, %ymm7
+  vmovdqa %ymm1, %ymm8
+  vmovdqa %ymm1, %ymm9
+  vmovdqa %ymm1, %ymm10
+  vmovdqa %ymm1, %ymm11
+  vmovdqa %ymm1, %ymm12
+  vmovdqa %ymm1, %ymm13
+  vmovdqa %ymm1, %ymm14
+  vmovdqa %ymm1, %ymm15
+nemesfpumix21_loop:
+  vaddps %ymm0, %ymm0, %ymm0
+  vfmadd132ps %ymm1, %ymm1, %ymm1
+  vfmadd132ps %ymm2, %ymm2, %ymm2
+  vaddps %ymm3, %ymm3, %ymm3
+  vfmadd132ps %ymm4, %ymm4, %ymm4
+  vfmadd132ps %ymm5, %ymm5, %ymm5
+  vaddps %ymm6, %ymm6, %ymm6
+  vfmadd132ps %ymm7, %ymm7, %ymm7
+  vfmadd132ps %ymm8, %ymm8, %ymm8
+  vaddps %ymm9, %ymm9, %ymm9
+  vfmadd132ps %ymm10, %ymm10, %ymm10
+  vfmadd132ps %ymm11, %ymm11, %ymm11
+  vaddps %ymm12, %ymm12, %ymm12
+  vfmadd132ps %ymm13, %ymm13, %ymm13
+  vfmadd132ps %ymm14, %ymm14, %ymm14
+  vaddps %ymm15, %ymm15, %ymm15
+  sub %r9, %rdi
+  jg nemesfpumix21_loop
+  pop %r9
+  ret
+
+latfma256:
+  push %r9
+  push %r8
+  mov $20, %r9
+  movq %r9, %xmm1
+  cvtsi2ss %r9, %xmm6
+  vbroadcastss %xmm6, %ymm6
+  vmovups %ymm6, %ymm5
+  vmovups %ymm6, %ymm7
+  vmovups %ymm6, %ymm8
+  vmovups %ymm6, %ymm9
+  vmovups %ymm6, %ymm10
+  vmovups %ymm6, %ymm11
+  vmovups %ymm6, %ymm12
+  vmovups %ymm6, %ymm13
+  vmovups %ymm6, %ymm14
+  vmovups %ymm6, %ymm15
+latfma256_loop:
+  vfmadd132ps %ymm6, %ymm5, %ymm7
+  vfmadd132ps %ymm6, %ymm5, %ymm7
+  vfmadd132ps %ymm6, %ymm5, %ymm7
+  vfmadd132ps %ymm6, %ymm5, %ymm7
+  vfmadd132ps %ymm6, %ymm5, %ymm7
+  vfmadd132ps %ymm6, %ymm5, %ymm7
+  vfmadd132ps %ymm6, %ymm5, %ymm7
+  vfmadd132ps %ymm6, %ymm5, %ymm7
+  vfmadd132ps %ymm6, %ymm5, %ymm7
+  vfmadd132ps %ymm6, %ymm5, %ymm7
+  vfmadd132ps %ymm6, %ymm5, %ymm7
+  vfmadd132ps %ymm6, %ymm5, %ymm7
+  vfmadd132ps %ymm6, %ymm5, %ymm7
+  vfmadd132ps %ymm6, %ymm5, %ymm7
+  vfmadd132ps %ymm6, %ymm5, %ymm7
+  vfmadd132ps %ymm6, %ymm5, %ymm7
+  vfmadd132ps %ymm6, %ymm5, %ymm7
+  vfmadd132ps %ymm6, %ymm5, %ymm7
+  vfmadd132ps %ymm6, %ymm5, %ymm7
+  vfmadd132ps %ymm6, %ymm5, %ymm7
+  sub %r9, %rdi
+  jnz latfma256_loop
+  movq %xmm1, %rax
+  vzeroupper
+  pop %r8
+  pop %r9
+  ret   
+
 
 latadd128fp:
   push %r9

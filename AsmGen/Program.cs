@@ -62,9 +62,11 @@ namespace AsmGen
             tests.Add(new MixJmpMulSchedTest(2, 128, 1));
             tests.Add(new MixMulRorSchedTest(2, 128, 1));
             tests.Add(new BranchHistoryTest());
-            tests.Add(new IndirectBranchTest());
+            //tests.Add(new IndirectBranchTest());
             tests.Add(new MxcsrTest(1, 32, 1));
             tests.Add(new MaskRfTest(1, 256, 1));
+            tests.Add(new NotIntRfTest(1, 450, 1));
+            tests.Add(new MovImmIntRfTest(1, 450, 1));
 
             StringBuilder cSourceFile = new StringBuilder();
             StringBuilder vsCSourceFile = new StringBuilder();
