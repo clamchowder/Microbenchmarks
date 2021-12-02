@@ -58,13 +58,14 @@ int main(int argc, char* argv[]) {
     uint32_t stride = 1211;
     uint32_t list_size = 3840 * 2160 * 4;
     uint32_t chase_iterations = 1e6 * 7;
-    uint32_t thread_count = 1, local_size = 1, skip = 1;
+    // skip = 0 means auto
+    uint32_t thread_count = 1, local_size = 1, skip = 0;
     float result;
     int platform_index = -1, device_index = -1;
 
     enum TestType testType = GlobalMemLatency;
 
-    char thread_count_set = 0, local_size_set = 0, chase_iterations_set = 0;
+    char thread_count_set = 0, local_size_set = 0, chase_iterations_set = 0, skip_set = 0;
 
     for (int argIdx = 1; argIdx < argc; argIdx++) {
         if (*(argv[argIdx]) == '-') {
@@ -132,7 +133,7 @@ int main(int argc, char* argv[]) {
                     // Somewhat reasonable defaults
                     if (!thread_count_set) thread_count = 131072;
                     if (!local_size_set) local_size = 256;
-                    if (!chase_iterations_set) chase_iterations = 1500000;
+                    if (!chase_iterations_set) chase_iterations = 500000;
                 }
                 else {
                     fprintf(stderr, "I'm so confused. Unknown test type %s\n", argv[argIdx]);
@@ -403,30 +404,59 @@ float bw_test(cl_context context,
     float bandwidth, total_data_gb;
     struct timeb start, end;
     cl_int ret;
+    cl_int float4size = list_size / 4;
     int64_t time_diff_ms;
+
+    if (skip == 0)
+    {
+        // nemes's read-combining-defeating heuristic
+        uint32_t region_size = list_size * sizeof(float);
+        uint32_t current_region_steps = (uint32_t)(region_size / (local_size * 4));
+        skip = (chase_iterations + current_region_steps + 1) * local_size * 4;
+    }
 
     float* A = (float*)malloc(sizeof(float) * list_size);
     float* result = (float*)malloc(sizeof(float) * thread_count);
+
+    // assume that cl_uint size is 4 bytes, same as float size
+    cl_uint* start_offsets = (cl_uint*)malloc(sizeof(cl_uint) * thread_count);
+    cl_uint* calculated_offsets = (cl_uint*)malloc(sizeof(cl_uint) * thread_count);
+    memset(calculated_offsets, 0, sizeof(uint32_t) * thread_count);
     for (uint32_t i = 0; i < list_size; i++)
     {
-        A[i] = i * 0.5;
+        A[i] = (float)(i * 0.5);
+    }
+
+    // tell each thread where to start
+    for (uint32_t i = 0; i < thread_count; i++)
+    {
+        uint32_t localId = i % local_size;
+        uint32_t groupId = i / local_size;
+        start_offsets[i] = (cl_uint)((groupId * skip * local_size + localId) % (float4size - 1));
+
+        // randomly start each workgroup somewhere - ends up being really bad
+        /*cl_uint groupOffset = rand() % (float4size / local_size);
+        start_offsets[i] = (cl_uint)((groupOffset * local_size + localId) % (float4size - 1));*/
     }
 
     // copy array to device
     cl_mem a_mem_obj = clCreateBuffer(context, CL_MEM_READ_ONLY, list_size * sizeof(float), NULL, &ret);
-    ret = clEnqueueWriteBuffer(command_queue, a_mem_obj, CL_TRUE, 0, list_size * sizeof(uint32_t), A, 0, NULL, NULL);
-
+    ret = clEnqueueWriteBuffer(command_queue, a_mem_obj, CL_TRUE, 0, list_size * sizeof(float), A, 0, NULL, NULL);
     cl_mem result_obj = clCreateBuffer(context, CL_MEM_READ_WRITE, sizeof(float) * thread_count, NULL, &ret);
-    //fprintf(stderr, "create result buffer = %d\n", ret);
     ret = clEnqueueWriteBuffer(command_queue, result_obj, CL_TRUE, 0, sizeof(float) * thread_count, result, 0, NULL, NULL);
-    //fprintf(stderr, "copy result buffer = %d\n", ret);
+    cl_mem start_offsets_obj = clCreateBuffer(context, CL_MEM_READ_WRITE, sizeof(cl_uint) * thread_count, NULL, &ret);
+    if (ret != 0) fprintf(stderr, "create buffer for start offsets failed. ret = %d\n", ret);
+    ret = clEnqueueWriteBuffer(command_queue, start_offsets_obj, CL_TRUE, 0, sizeof(cl_uint) * thread_count, start_offsets, 0, NULL, NULL);
+    if (ret != 0) fprintf(stderr, "enqueue write buffer for start offsets failed. ret = %d\n", ret);
 
-    // Set kernel arguments for __kernel void sum_bw_test(__global float* A, int count, int size, __global float* ret, int skip)
+    // Set kernel arguments for __kernel void sum_bw_test(__global float* A, int count, int float4size, __global float* ret, int skip, __global int *startPositions)
     clSetKernelArg(kernel, 0, sizeof(cl_mem), (void*)&a_mem_obj);
     clSetKernelArg(kernel, 1, sizeof(cl_int), (void*)&chase_iterations);
-    clSetKernelArg(kernel, 2, sizeof(cl_int), (void*)&list_size);
+    clSetKernelArg(kernel, 2, sizeof(cl_int), (void*)&float4size);
     clSetKernelArg(kernel, 3, sizeof(cl_mem), (void*)&result_obj);
     clSetKernelArg(kernel, 4, sizeof(cl_int), (void*)&skip);
+    clSetKernelArg(kernel, 5, sizeof(cl_mem), (void*)&start_offsets_obj);
+    clFinish(command_queue); // writes should be blocking, but are they?
 
     ftime(&start);
     ret = clEnqueueNDRangeKernel(command_queue, kernel, 1, NULL, &global_item_size, &local_item_size, 0, NULL, NULL);
@@ -455,7 +485,25 @@ float bw_test(cl_context context,
     //fprintf(stderr, "%llu ms, %llu GB\n", time_diff_ms, total_data_gb);
 
     ret = clEnqueueReadBuffer(command_queue, result_obj, CL_TRUE, 0, sizeof(uint32_t) * thread_count, result, 0, NULL, NULL);
+    if (ret != 0) fprintf(stderr, "enqueue read buffer for result failed. ret = %d\n", ret);
     clFinish(command_queue);
+
+    ret = clEnqueueReadBuffer(command_queue, start_offsets_obj, CL_TRUE, 0, sizeof(uint32_t) * thread_count, calculated_offsets, 0, NULL, NULL);
+    if (ret != 0) fprintf(stderr, "enqueue read buffer for start offsets failed. ret = %d\n", ret);
+    clFinish(command_queue);
+    
+    if (memcmp(calculated_offsets, start_offsets, sizeof(uint32_t) * thread_count))
+    {
+        fprintf(stderr, "mismatch in calculated start offsets\n");
+        for (uint32_t i = 0; i < thread_count; i++)
+        {
+            if (calculated_offsets[i] != start_offsets[i]) {
+                fprintf(stderr, "At index %u, calculated from GPU = %u, calculated on CPU = %u. skip=%u\n", i, calculated_offsets[i], start_offsets[i], skip);
+                break;
+            }
+        }
+    }
+
 
     //fprintf(stderr, "Finished reading result. Sum: %d\n", result[0]);
 
@@ -464,8 +512,11 @@ cleanup:
     clFinish(command_queue);
     clReleaseMemObject(a_mem_obj);
     clReleaseMemObject(result_obj);
+    clReleaseMemObject(start_offsets_obj);
     free(A);
     free(result);
+    free(start_offsets);
+    free(calculated_offsets);
     return bandwidth;
 }
 
