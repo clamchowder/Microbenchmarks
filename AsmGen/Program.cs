@@ -78,6 +78,7 @@ namespace AsmGen
 
             // Generate C file for linux
             cSourceFile.AppendLine("#include <stdio.h>\n#include<stdint.h>\n#include<sys/time.h>\n#include <stdlib.h>\n#include <string.h>\n#include <time.h>\n");
+            cSourceFile.AppendLine("#pragma GCC diagnostic ignored \"-Wattributes\"");
             cSourceFile.AppendLine(commonFunctions);
 
             foreach (IUarchTest test in tests) test.GenerateExternLines(cSourceFile);
