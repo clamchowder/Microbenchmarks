@@ -128,7 +128,29 @@ namespace AsmGen
                 for (int branchIdx = 1; branchIdx < Counts[i]; branchIdx++)
                 {
                     string labelName = GetLabelName(funcName, branchIdx);
-                    sb.AppendLine("  jmp " + labelName);
+                    
+                    if(branchType == BranchType.Conditional)
+                    {
+                        sb.AppendLine("  test rax, rax");
+                        sb.AppendLine("  jz " + labelName); // should always be set
+                    }
+                    else if (branchType == BranchType.Unconditional)
+                    {
+                        sb.AppendLine("  jmp " + labelName);
+                    }
+                    else if (branchType == BranchType.ZenMix)
+                    {
+                        if ((branchIdx & 0x1) == 0)
+                        {
+                            sb.AppendLine("  jmp " + labelName);
+                        }
+                        else
+                        {
+                            sb.AppendLine("  test rax, rax");
+                            sb.AppendLine("  jz " + labelName);
+                        }
+                    }
+
                     sb.AppendLine(paddingAlign);
                     sb.AppendLine(labelName + ":");
                 }
@@ -145,22 +167,67 @@ namespace AsmGen
 
         public override void GenerateArmAsm(StringBuilder sb)
         {
-            string paddingAlign = ".align " + spacing;
+            // things are 4 bytes on aarch64
+            string paddingAlign = "";
+            if (spacing == 8)
+            {
+                paddingAlign = "  nop";
+            }
+            else if (spacing == 16)
+            {
+                paddingAlign = "  nop\n  nop\n  nop";
+            }
+            else if (spacing == 32)
+            {
+                paddingAlign = "  nop\n  nop\n  nop\n  nop\n  nop\n  nop\n  nop";
+            }
+            else if (spacing != 4)
+            {
+                Console.WriteLine($"Unsupported padding value {spacing}");
+                throw new NotImplementedException("Unsupported padding value");
+            }
+
             for (int i = 0; i < Counts.Length; i++)
             {
                 string funcName = GetBranchFuncName(Counts[i]);
                 sb.AppendLine(funcName + ":");
+                sb.AppendLine($"  adrp x2, {funcName}");
+                sb.AppendLine($"  add x2, x2, :lo12:{funcName}");
+                sb.AppendLine("  mov x1, 1");
                 for (int branchIdx = 1; branchIdx < Counts[i]; branchIdx++)
                 {
                     string labelName = GetLabelName(funcName, branchIdx);
-                    sb.AppendLine("  b " + labelName);
+
+                    if (branchType == BranchType.Unconditional)
+                        sb.AppendLine("  b " + labelName);
+                    else if (branchType == BranchType.Conditional)
+                        sb.AppendLine("  cbnz x1, " + labelName); // x1 = 1 from earlier, should never be zero
+                    else if (branchType == BranchType.ZenMix)
+                    {
+                        if ((branchIdx & 0x1) == 0) sb.AppendLine("  b " + labelName);
+                        else sb.AppendLine("  cbnz x1, " + labelName);
+                    }
+
                     sb.AppendLine(paddingAlign);
                     sb.AppendLine(labelName + ":");
                 }
 
                 sb.AppendLine(paddingAlign);
                 sb.AppendLine("  sub x0, x0, 1");
-                sb.AppendLine("  cbnz x0, " + funcName);
+
+                // aarch64 is a mess. try to avoid 'relocation truncated to fit' issues with an indirect branch
+                if (spacing * Counts[i] >= (1024 * 1024 - 20))
+                {
+                    string workaroundTarget = funcName + "_aarch64_indirect_workaround";
+                    sb.AppendLine("  cbz x0, " + workaroundTarget);  // jump over indirect branch to return, on zero
+                    sb.AppendLine("  br x2");
+                    sb.AppendLine(workaroundTarget + ":");
+                }
+                else
+                {
+                    sb.AppendLine("  cbnz x0, " + funcName);
+                }
+
                 sb.AppendLine("  ret\n\n");
 
                 // don't let it get too close to the next branch
