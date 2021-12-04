@@ -19,6 +19,8 @@ extern uint64_t clktest(uint64_t iterations) __attribute((sysv_abi));
 extern uint64_t addtest(uint64_t iterations) __attribute((sysv_abi));
 extern uint64_t addmultest(uint64_t iterations) __attribute((sysv_abi)); 
 extern uint64_t jmpmultest(uint64_t iterations) __attribute((sysv_abi)); 
+extern uint64_t jmptest(uint64_t iterations) __attribute((sysv_abi)); 
+extern uint64_t ntjmptest(uint64_t iterations) __attribute((sysv_abi)); 
 extern uint64_t add256int(uint64_t iterations) __attribute((sysv_abi)); 
 extern uint64_t mixadd256int(uint64_t iterations) __attribute((sysv_abi)); 
 extern uint64_t mixadd256int11(uint64_t iterations) __attribute((sysv_abi)); 
@@ -143,6 +145,10 @@ int main(int argc, char *argv[]) {
     printf("4:1 adds/imul per clk: %.2f\n", measureFunction(iterationsHigh, clockSpeedGhz, addtest));
   if (argc == 1 || argc > 1 && strncmp(argv[1], "jmpmul", 6) == 0) 
     printf("1:1 mul/jmp per clk: %.2f\n", measureFunction(iterationsHigh, clockSpeedGhz, jmpmultest)); 
+  if (argc == 1 || argc > 1 && strncmp(argv[1], "jmp", 3) == 0) 
+    printf("taken jmp per clk: %.2f\n", measureFunction(iterationsHigh, clockSpeedGhz, jmptest)); 
+  if (argc == 1 || argc > 1 && strncmp(argv[1], "ntjmp", 5) == 0) 
+    printf("nt jmp per clk: %.2f\n", measureFunction(iterationsHigh, clockSpeedGhz, ntjmptest)); 
   if (argc == 1 || argc > 1 && strncmp(argv[1], "pdep", 4) == 0) 
     printf("pdep per clk: %.4f\n", measureFunction(iterationsHigh, clockSpeedGhz, pdeptest)); 
   if (argc == 1 || argc > 1 && strncmp(argv[1], "pext", 4) == 0) 

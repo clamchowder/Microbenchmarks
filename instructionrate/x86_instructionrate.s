@@ -12,6 +12,8 @@
 .global depaddimmtest
 .global addmultest
 .global jmpmultest
+.global jmptest
+.global ntjmptest
 .global noptest
 .global noptest1b
 .global add256int
@@ -208,6 +210,197 @@ addtest_loop:
   pop %rbx
   ret
 
+jmptest:
+  push %rsi
+  push %rbx
+  push %rcx
+  push %rdx
+  push %r8
+  push %r9
+  push %r10
+  push %r11
+  push %r12
+  push %r13
+  push %r14
+  push %r15
+  mov $1, %r8
+  mov $20, %r9
+  xor %rbx, %rbx 
+  xor %rcx, %rcx
+  xor %r10, %r10
+  xor %r11, %r11
+  xor %r12, %r12
+  xor %r13, %r13
+  xor %r14, %r14
+  xor %r15, %r15
+  xor %rsi, %rsi
+  mov %r8, %r10
+  mov %r8, %r11
+  mov %r8, %rsi
+  mov %r8, %rax
+  mov %r8, %rdx
+jmptest_loop:
+  jmp jmptest1
+  add $1, %rax
+jmptest1:
+  jmp jmptest2
+  add $2, %rax
+jmptest2:
+  jmp jmptest3
+  add $3, %rax
+jmptest3:
+  jmp jmptest4
+  add $4, %rax
+jmptest4:
+  jmp jmptest5
+  add $5, %rax
+jmptest5:
+  jmp jmptest6
+  add $6, %rax
+jmptest6: 
+  jmp jmptest7
+  add $7, %rax
+jmptest7:
+  jmp jmptest8
+  add $8, %rax
+jmptest8: 
+  jmp jmptest9
+  add $9, %rax
+jmptest9:  
+  jmp jmptest10
+  add $10, %rax
+jmptest10:   
+  jmp jmptest11
+  add $11, %rax
+jmptest11:
+  jmp jmptest12
+  add $12, %rax
+jmptest12:
+  jmp jmptest13
+  add $13, %rax
+jmptest13:
+  jmp jmptest14
+  add $14, %rax
+jmptest14:
+  jmp jmptest15
+  add $15, %rax
+jmptest15:
+  jmp jmptest16
+  add $16, %rax
+jmptest16: 
+  jmp jmptest17
+  add $17, %rax
+jmptest17:
+  jmp jmptest18
+  add $18, %rax
+jmptest18: 
+  jmp jmptest19
+  add $19, %rax
+jmptest19:      /* jump back counts as nr 20 */
+  sub %r9, %rdi
+  jnz jmptest_loop
+jmptest_jellydonut:
+  pop %r15
+  pop %r14
+  pop %r13
+  pop %r12
+  pop %r11
+  pop %r10
+  pop %r9
+  pop %r8 
+  pop %rdx
+  pop %rcx
+  pop %rbx
+  pop %rsi
+  ret   
+
+ntjmptest:
+  push %rsi
+  push %rbx
+  push %rcx
+  push %rdx
+  push %r8
+  push %r9
+  push %r10
+  push %r11
+  push %r12
+  push %r13
+  push %r14
+  push %r15
+  mov $1, %r8
+  mov $20, %r9
+  xor %rbx, %rbx 
+  xor %rcx, %rcx
+  xor %r10, %r10
+  xor %r11, %r11
+  xor %r12, %r12
+  xor %r13, %r13
+  xor %r14, %r14
+  xor %r15, %r15
+  xor %rsi, %rsi
+  mov %r8, %r10
+  mov %r8, %r11
+  mov %r8, %rsi
+  mov %r8, %rax
+  mov %r8, %rdx
+ntjmptest_loop:
+  cmp %r8, %r9
+  je jmpmultest_jellydonut
+  cmp %r8, %r9
+  je jmpmultest_jellydonut  
+  cmp %r8, %r9
+  je jmpmultest_jellydonut    
+  cmp %r8, %r9
+  je jmpmultest_jellydonut      
+  cmp %r8, %r9
+  je jmpmultest_jellydonut       
+  cmp %r8, %r9
+  je jmpmultest_jellydonut
+  cmp %r8, %r9
+  je jmpmultest_jellydonut  
+  cmp %r8, %r9
+  je jmpmultest_jellydonut    
+  cmp %r8, %r9
+  je jmpmultest_jellydonut      
+  cmp %r8, %r9
+  je jmpmultest_jellydonut         
+  cmp %r8, %r9
+  je jmpmultest_jellydonut
+  cmp %r8, %r9
+  je jmpmultest_jellydonut  
+  cmp %r8, %r9
+  je jmpmultest_jellydonut    
+  cmp %r8, %r9
+  je jmpmultest_jellydonut      
+  cmp %r8, %r9
+  je jmpmultest_jellydonut        
+  cmp %r8, %r9
+  je jmpmultest_jellydonut
+  cmp %r8, %r9
+  je jmpmultest_jellydonut  
+  cmp %r8, %r9
+  je jmpmultest_jellydonut    
+  cmp %r8, %r9
+  je jmpmultest_jellydonut      
+  cmp %r8, %r9
+  je jmpmultest_jellydonut        
+  sub %r9, %rdi
+  jnz ntjmptest_loop
+ntjmptest_jellydonut:
+  pop %r15
+  pop %r14
+  pop %r13
+  pop %r12
+  pop %r11
+  pop %r10
+  pop %r9
+  pop %r8 
+  pop %rdx
+  pop %rcx
+  pop %rbx
+  pop %rsi
+  ret  
+
 jmpmultest:
   push %rsi
   push %rbx
@@ -279,7 +472,7 @@ jmpmultest_loop:
   imul %r8d, %r14d  
   
   sub %r9, %rdi
-  jnz addmultest_loop
+  jnz jmpmultest_loop
 jmpmultest_jellydonut:
   pop %r15
   pop %r14
