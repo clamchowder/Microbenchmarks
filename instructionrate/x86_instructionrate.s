@@ -415,7 +415,7 @@ jmpmultest:
   push %r14
   push %r15
   mov $2, %r8
-  mov $40, %r9
+  mov $20, %r9
   xor %rbx, %rbx 
   xor %rcx, %rcx
   xor %r11, %r11
