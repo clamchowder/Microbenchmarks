@@ -36,7 +36,9 @@ extern uint64_t latmul256fp(uint64_t iterations) __attribute((sysv_abi));
 extern uint64_t latadd128fp(uint64_t iterations) __attribute((sysv_abi)); 
 extern uint64_t latmul128fp(uint64_t iterations) __attribute((sysv_abi)); 
 extern uint64_t latfma256(uint64_t iterations) __attribute((sysv_abi));
+extern uint64_t latfma128(uint64_t iterations) __attribute((sysv_abi));
 extern uint64_t fma256(uint64_t iterations) __attribute((sysv_abi));
+extern uint64_t fma128(uint64_t iterations) __attribute((sysv_abi));
 extern uint64_t mixfmafadd256(uint64_t iterations) __attribute((sysv_abi));
 extern uint64_t mixfmaadd256(uint64_t iterations) __attribute((sysv_abi));
 extern uint64_t mixfmaand256(uint64_t iterations) __attribute((sysv_abi));
@@ -184,8 +186,12 @@ int main(int argc, char *argv[]) {
   // zhaoxin does not support FMA
   if (argc == 1 || argc > 1 && strncmp(argv[1], "fma256", 6) == 0) 
     printf("256-bit FMA per clk: %.2f\n", measureFunction(iterations, clockSpeedGhz, fma256));
+  if (argc == 1 || argc > 1 && strncmp(argv[1], "fma128", 6) == 0) 
+    printf("128-bit FMA per clk: %.2f\n", measureFunction(iterations, clockSpeedGhz, fma128));
   if (argc == 1 || argc > 1 && strncmp(argv[1], "latfma256", 9) == 0)
     printf("256-bit FMA latency: %.2f clocks\n", 1 / measureFunction(iterations, clockSpeedGhz, latfma256));
+  if (argc == 1 || argc > 1 && strncmp(argv[1], "latfma128", 9) == 0)
+    printf("128-bit FMA latency: %.2f clocks\n", 1 / measureFunction(iterations, clockSpeedGhz, latfma128));
   if (argc == 1 || argc > 1 && strncmp(argv[1], "fadd256", 6) == 0) 
     printf("256-bit FADD per clk: %.2f\n", measureFunction(iterations, clockSpeedGhz, add256fp));
   if (argc == 1 || argc > 1 && strncmp(argv[1], "fmul256", 6) == 0) 

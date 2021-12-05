@@ -31,6 +31,7 @@
 .global latmul128fp
 .global latadd128fp
 .global fma256
+.global fma128
 .global mixfmafadd256
 .global mixfmaadd256
 .global mixfmaand256
@@ -38,6 +39,7 @@
 .global mixfmaandmem256
 .global mixfmaaddmem256
 .global latfma256
+.global latfma128
 .global mul256fp
 .global add256fp
 .global latmul64
@@ -1254,6 +1256,53 @@ fma256_loop:
   pop %r9
   ret   
 
+fma128:
+  push %r9
+  push %r8
+  vzeroupper
+  mov $20, %r9
+  movq %r9, %xmm1
+  cvtsi2ss %r9, %xmm6
+  vbroadcastss %xmm6, %xmm6
+  vmovups %xmm6, %xmm5
+  vmovups %xmm6, %xmm7
+  vmovups %xmm6, %xmm8
+  vmovups %xmm6, %xmm9
+  vmovups %xmm6, %xmm10
+  vmovups %xmm6, %xmm11
+  vmovups %xmm6, %xmm12
+  vmovups %xmm6, %xmm13
+  vmovups %xmm6, %xmm14
+  vmovups %xmm6, %xmm15
+fma128_loop:
+  vfmadd132ps %xmm6, %xmm5, %xmm5
+  vfmadd132ps %xmm6, %xmm7, %xmm7
+  vfmadd132ps %xmm6, %xmm8, %xmm8
+  vfmadd132ps %xmm6, %xmm9, %xmm9
+  vfmadd132ps %xmm6, %xmm10, %xmm10
+  vfmadd132ps %xmm6, %xmm11, %xmm11
+  vfmadd132ps %xmm6, %xmm12, %xmm12
+  vfmadd132ps %xmm6, %xmm13, %xmm13
+  vfmadd132ps %xmm6, %xmm14, %xmm14
+  vfmadd132ps %xmm6, %xmm15, %xmm15
+  vfmadd132ps %xmm6, %xmm5, %xmm5
+  vfmadd132ps %xmm6, %xmm7, %xmm7
+  vfmadd132ps %xmm6, %xmm8, %xmm8
+  vfmadd132ps %xmm6, %xmm9, %xmm9
+  vfmadd132ps %xmm6, %xmm10, %xmm10
+  vfmadd132ps %xmm6, %xmm11, %xmm11
+  vfmadd132ps %xmm6, %xmm12, %xmm12
+  vfmadd132ps %xmm6, %xmm13, %xmm13
+  vfmadd132ps %xmm6, %xmm14, %xmm14
+  vfmadd132ps %xmm6, %xmm15, %xmm15 
+  sub %r9, %rdi
+  jnz fma128_loop
+  movq %xmm1, %rax
+  vzeroupper
+  pop %r8
+  pop %r9
+  ret    
+
 mixfmafadd256:
   push %r9
   push %r8
@@ -1600,6 +1649,53 @@ latfma256_loop:
   pop %r8
   pop %r9
   ret   
+
+latfma128:
+  push %r9
+  push %r8
+  vzeroupper
+  mov $20, %r9
+  movq %r9, %xmm1
+  cvtsi2ss %r9, %xmm6
+  vbroadcastss %xmm6, %xmm6
+  vmovups %xmm6, %xmm5
+  vmovups %xmm6, %xmm7
+  vmovups %xmm6, %xmm8
+  vmovups %xmm6, %xmm9
+  vmovups %xmm6, %xmm10
+  vmovups %xmm6, %xmm11
+  vmovups %xmm6, %xmm12
+  vmovups %xmm6, %xmm13
+  vmovups %xmm6, %xmm14
+  vmovups %xmm6, %xmm15
+latfma128_loop:
+  vfmadd132ps %xmm6, %xmm5, %xmm7
+  vfmadd132ps %xmm6, %xmm5, %xmm7
+  vfmadd132ps %xmm6, %xmm5, %xmm7
+  vfmadd132ps %xmm6, %xmm5, %xmm7
+  vfmadd132ps %xmm6, %xmm5, %xmm7
+  vfmadd132ps %xmm6, %xmm5, %xmm7
+  vfmadd132ps %xmm6, %xmm5, %xmm7
+  vfmadd132ps %xmm6, %xmm5, %xmm7
+  vfmadd132ps %xmm6, %xmm5, %xmm7
+  vfmadd132ps %xmm6, %xmm5, %xmm7
+  vfmadd132ps %xmm6, %xmm5, %xmm7
+  vfmadd132ps %xmm6, %xmm5, %xmm7
+  vfmadd132ps %xmm6, %xmm5, %xmm7
+  vfmadd132ps %xmm6, %xmm5, %xmm7
+  vfmadd132ps %xmm6, %xmm5, %xmm7
+  vfmadd132ps %xmm6, %xmm5, %xmm7
+  vfmadd132ps %xmm6, %xmm5, %xmm7
+  vfmadd132ps %xmm6, %xmm5, %xmm7
+  vfmadd132ps %xmm6, %xmm5, %xmm7
+  vfmadd132ps %xmm6, %xmm5, %xmm7
+  sub %r9, %rdi
+  jnz latfma128_loop
+  movq %xmm1, %rax
+  vzeroupper
+  pop %r8
+  pop %r9
+  ret    
 
 
 latadd128fp:
