@@ -1243,7 +1243,7 @@ namespace AsmGen
             int totalOps,
             int[] counts,
             string funcNamePrefix,
-            string[] depInstrs,
+            string[] dependentInstrs,
             string[] indepInstrs,
             bool ptrChasingLoadsInSq = false,
             string initInstrs = null,
@@ -1284,13 +1284,8 @@ namespace AsmGen
                 }
 
                 sb.AppendLine("  ldr w26, [x1, w26, uxtw #2]");
-                if (postLoadInstrs2 != null) sb.AppendLine(postLoadInstrs2);
-                for (int nopIdx = 0, addIdx = 0; nopIdx < fillerInstrCount; nopIdx++)
-                {
-                    sb.AppendLine(indepInstrs[addIdx]);
-                    addIdx = (addIdx + 1) % indepInstrs.Length;
-                }
-
+                sb.AppendLine("  dsb sy"); // close enough to lfence
+                sb.AppendLine("  isb sy");
                 sb.AppendLine("  sub x0, x0, 1");
                 sb.AppendLine("  cbnz x0, " + funcName + "start");
                 sb.AppendLine("  ldp x25, x26, [sp, #0x40]");
