@@ -48,6 +48,7 @@ namespace AsmGen
             tests.Add(new YmmStateIntRfTest(1, 64, 1));
             tests.Add(new Add256RfTest(1, 256, 1));
             tests.Add(new Add256SchedTest(1, 256, 1));
+            tests.Add(new Add128SchedTest(1, 256, 1));
             tests.Add(new BtbTest(4, BtbTest.BranchType.Unconditional));
             tests.Add(new BtbTest(8, BtbTest.BranchType.Unconditional));
             tests.Add(new BtbTest(16, BtbTest.BranchType.Unconditional));
@@ -60,6 +61,20 @@ namespace AsmGen
             tests.Add(new MaskRfTest(1, 256, 1));
             tests.Add(new NotIntRfTest(1, 450, 1));
             tests.Add(new MovImmIntRfTest(1, 450, 1));
+            tests.Add(new FaddNsqTest(4, 120, 1));
+            tests.Add(new Add128NsqTest(4, 120, 1));
+            tests.Add(new LoadNsqTest(4, 70, 1));
+            tests.Add(new MixLoadStoreSchedTest(4, 120, 1));
+            tests.Add(new MixStoreSchedTest(4, 120, 1));
+            tests.Add(new VecStoreDataSchedTest(4, 120, 1));
+            tests.Add(new VecStoreDataNsqTest(4, 120, 1));
+            tests.Add(new StoreNsqTest(4, 47, 1));
+            tests.Add(new TakenJumpSchedTest(4, 60, 1));
+            tests.Add(new StoreHoistSchedTest(4, 90, 1));
+            tests.Add(new FpStoreDataNsqTest(4, 120, 1));
+            tests.Add(new FpStoreDataAddNsqTest(4, 120, 1));
+            tests.Add(new JumpNsqTest(4, 60, 1));
+            tests.Add(new BtsSchedTest(4, 80, 1));
 
             StringBuilder cSourceFile = new StringBuilder();
             StringBuilder vsCSourceFile = new StringBuilder();

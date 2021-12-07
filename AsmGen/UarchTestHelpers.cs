@@ -224,6 +224,8 @@ namespace AsmGen
                 sb.AppendLine("  idiv %rsi");
                 sb.AppendLine("  sub %rax, %rsi");
                 sb.AppendLine("  inc %rsi");
+
+                // rdx is the remainder, rax is the quotient
                 int fillerInstrCount = includePtrChasingLoads ? counts[i] - 2 : counts[i];
                 for (int fillerIdx = 0, instrIdx = 0; fillerIdx < fillerInstrCount; fillerIdx++)
                 {
@@ -268,6 +270,127 @@ namespace AsmGen
             }
         }
 
+        public static void GenerateX86AsmDivNsqTestFuncs(StringBuilder sb,
+            int maxSize,
+            int[] counts, 
+            string funcNamePrefix, 
+            string[] depInstrs, 
+            string[] indepInstrs,
+            bool divsInSq = false, 
+            string initInstrs = null)
+        {
+            for (int i = 0; i < counts.Length; i++)
+            {
+                string funcName = funcNamePrefix + counts[i];
+                sb.AppendLine("\n" + funcName + ":");
+                sb.AppendLine("  push %rsi");
+                sb.AppendLine("  push %rdi");
+                sb.AppendLine("  push %r15");
+                sb.AppendLine("  push %r14");
+                sb.AppendLine("  push %r13");
+                sb.AppendLine("  push %r12");
+                sb.AppendLine("  push %r11");
+                sb.AppendLine("  push %r8");
+                sb.AppendLine("  push %rcx");
+                sb.AppendLine("  push %rdx");
+
+                // arguments are in RDI, RSI, RDX, RCX, R8, and R9
+                // move them into familiar windows argument regs (rcx, rdx, r8)
+                sb.AppendLine("  mov %rdx, %r8"); // r8 <- rdx
+                sb.AppendLine("  mov %rsi, %rdx"); // rdx <- rsi
+                sb.AppendLine("  mov %rdi, %rcx"); // rcx <- rdi
+
+                sb.AppendLine("  xor %r15, %r15");
+                sb.AppendLine("  mov $0x10, %r14");
+                sb.AppendLine("  mov $0x20, %r13");
+                sb.AppendLine("  mov $0x30, %r12");
+                sb.AppendLine("  mov $0x40, %r11");
+
+                if (initInstrs != null) sb.AppendLine(initInstrs);
+
+                sb.AppendLine("  mov %rdx, %rdi");
+                sb.AppendLine("  mov %rdx, %rsi");
+                sb.AppendLine("\n" + funcName + "start:");
+
+                // keep dividing list size by itself
+                sb.AppendLine("  xor %rdx, %rdx");
+                sb.AppendLine("  mov %rdi, %rax");  // divide rdi by rsi
+                sb.AppendLine("  idiv %rsi");
+                sb.AppendLine("  xor %rdx, %rdx");
+                sb.AppendLine("  idiv %rsi");
+                sb.AppendLine("  xor %rdx, %rdx");
+                sb.AppendLine("  idiv %rsi");
+                sb.AppendLine("  xor %rdx, %rdx");
+                sb.AppendLine("  idiv %rsi");
+                sb.AppendLine("  xor %rdx, %rdx");
+                sb.AppendLine("  idiv %rsi");
+                sb.AppendLine("  xor %rdx, %rdx");
+                sb.AppendLine("  idiv %rsi");
+                sb.AppendLine("  sub %rax, %rsi");
+                sb.AppendLine("  inc %rsi");
+
+                // rdx is the remainder, rax is the quotient
+                int fillerInstrCount = divsInSq ? counts[i] - 6 : counts[i];
+                for (int fillerIdx = 0, depInstrIdx = 0, indepInstrIdx = 0; fillerIdx < maxSize; fillerIdx++)
+                {
+                    if (fillerIdx < fillerInstrCount) 
+                    {
+                        sb.AppendLine(depInstrs[depInstrIdx]);
+                        depInstrIdx = (depInstrIdx + 1) % depInstrs.Length;
+                    }
+                    else 
+                    {
+                        sb.AppendLine(indepInstrs[indepInstrIdx]);
+                        indepInstrIdx = (indepInstrIdx + 1) % indepInstrs.Length;
+                    }
+                }
+
+                sb.AppendLine("  xor %rdx, %rdx");
+                sb.AppendLine("  mov %rsi, %rax");  // divide rsi by rdi
+                sb.AppendLine("  idiv %rdi");
+                sb.AppendLine("  xor %rdx, %rdx");
+                sb.AppendLine("  idiv %rdi");
+                sb.AppendLine("  xor %rdx, %rdx");
+                sb.AppendLine("  idiv %rdi");
+                sb.AppendLine("  xor %rdx, %rdx");
+                sb.AppendLine("  idiv %rdi");
+                sb.AppendLine("  xor %rdx, %rdx");
+                sb.AppendLine("  idiv %rdi");
+                sb.AppendLine("  xor %rdx, %rdx");
+                sb.AppendLine("  idiv %rdi");
+                sb.AppendLine("  sub %rax, %rdi");
+                sb.AppendLine("  inc %rdi");
+
+                for (int fillerIdx = 0, depInstrIdx = 0, indepInstrIdx = 0; fillerIdx < maxSize; fillerIdx++)
+                {
+                    if (fillerIdx < fillerInstrCount)
+                    {
+                        sb.AppendLine(depInstrs[depInstrIdx]);
+                        depInstrIdx = (depInstrIdx + 1) % depInstrs.Length;
+                    }
+                    else
+                    {
+                        sb.AppendLine(indepInstrs[indepInstrIdx]);
+                        indepInstrIdx = (indepInstrIdx + 1) % indepInstrs.Length;
+                    }
+                }
+
+                sb.AppendLine("  dec %rcx");
+                sb.AppendLine("  jne " + funcName + "start");
+                sb.AppendLine("  pop %rdx");
+                sb.AppendLine("  pop %rcx");
+                sb.AppendLine("  pop %r8");
+                sb.AppendLine("  pop %r11");
+                sb.AppendLine("  pop %r12");
+                sb.AppendLine("  pop %r13");
+                sb.AppendLine("  pop %r14");
+                sb.AppendLine("  pop %r15");
+                sb.AppendLine("  pop %rdi");
+                sb.AppendLine("  pop %rsi");
+                sb.AppendLine("  ret\n\n");
+            }
+        }
+
         public static void GenerateX86AsmStructureTestFuncs(StringBuilder sb, 
             int[] counts, 
             string funcNamePrefix, 
@@ -276,7 +399,8 @@ namespace AsmGen
             bool includePtrChasingLoads = true, 
             string initInstrs = null, 
             string postLoadInstrs1 = null, 
-            string postLoadInstrs2 = null)
+            string postLoadInstrs2 = null,
+            bool lfence = true)
         {
             for (int i = 0; i < counts.Length; i++)
             {
@@ -322,11 +446,15 @@ namespace AsmGen
                 }
 
                 sb.AppendLine("  mov (%rdx,%rsi,4), %esi");
-                if (postLoadInstrs2 != null) sb.AppendLine(postLoadInstrs2);
-                for (int fillerIdx = 0, instrIdx = 0; fillerIdx < fillerInstrCount; fillerIdx++)
+                if (lfence) sb.AppendLine("lfence");
+                else
                 {
-                    sb.AppendLine(fillerInstrs2[instrIdx]);
-                    instrIdx = (instrIdx + 1) % fillerInstrs2.Length;
+                    if (postLoadInstrs2 != null) sb.AppendLine(postLoadInstrs2);
+                    for (int fillerIdx = 0, instrIdx = 0; fillerIdx < fillerInstrCount; fillerIdx++)
+                    {
+                        sb.AppendLine(fillerInstrs2[instrIdx]);
+                        instrIdx = (instrIdx + 1) % fillerInstrs2.Length;
+                    }
                 }
 
                 sb.AppendLine("  dec %rcx");
@@ -341,6 +469,159 @@ namespace AsmGen
                 sb.AppendLine("  pop %r15");
                 sb.AppendLine("  pop %rdi");
                 sb.AppendLine("  pop %rsi");
+                sb.AppendLine("  ret\n\n");
+            }
+        }
+
+        /// <summary>
+        /// Generate test functions to see how big a scheduler is, without a NSQ
+        /// Dependent ops are followed by independent ops, total op count = max
+        /// If number of dependent ops is greater than NSQ size, indep ops can't be executed and 
+        /// there will be a dispatch stall
+        /// </summary>
+        /// <param name="sb">Stringbuilder to append to</param>
+        /// <param name="totalOps">number of ops between dependent loads. must be less than RF size but greater than SQ+NSQ size</param>
+        /// <param name="counts">array of data points to test (SQ sizes in this case)</param>
+        /// <param name="funcNamePrefix">function name prefix</param>
+        /// <param name="dependentInstrs"></param>
+        /// <param name="indepInstrs"></param>
+        /// <param name="ptrChasingLoadsInSq">Do ptr chasing loads occupy entries in the SQ being measured?</param>
+        public static void GenerateX86AsmNsqTestFuncs(StringBuilder sb,
+            int totalOps,
+            int[] counts,
+            string funcNamePrefix,
+            string[] dependentInstrs,
+            string[] indepInstrs,
+            bool ptrChasingLoadsInSq = false,
+            string initInstrs = null,
+            string postLoadInstrs = null)
+        {
+            for (int i = 0; i < counts.Length; i++)
+            {
+                string funcName = funcNamePrefix + counts[i];
+                sb.AppendLine("\n" + funcName + ":");
+                sb.AppendLine("  push %rsi");
+                sb.AppendLine("  push %rdi");
+                sb.AppendLine("  push %r15");
+                sb.AppendLine("  push %r14");
+                sb.AppendLine("  push %r13");
+                sb.AppendLine("  push %r12");
+                sb.AppendLine("  push %r11");
+                sb.AppendLine("  push %r8");
+                sb.AppendLine("  push %rcx");
+                sb.AppendLine("  push %rdx");
+
+                // arguments are in RDI, RSI, RDX, RCX, R8, and R9
+                // move them into familiar windows argument regs (rcx, rdx, r8)
+                sb.AppendLine("  mov %rdx, %r8"); // r8 <- rdx
+                sb.AppendLine("  mov %rsi, %rdx"); // rdx <- rsi
+                sb.AppendLine("  mov %rdi, %rcx"); // rcx <- rdi
+
+                sb.AppendLine("  xor %r15, %r15");
+                sb.AppendLine("  mov $0x1, %r14");
+                sb.AppendLine("  mov $0x2, %r13");
+                sb.AppendLine("  mov $0x3, %r12");
+                sb.AppendLine("  mov $0x4, %r11");
+
+                if (initInstrs != null) sb.AppendLine(initInstrs);
+
+                sb.AppendLine("  xor %rdi, %rdi");
+                sb.AppendLine("  mov $0x40, %esi");
+                sb.AppendLine("  mov (%rdx,%rdi,4), %edi");
+                sb.AppendLine("  mov (%rdx,%rsi,4), %esi");
+                sb.AppendLine("\n" + funcName + "start:");
+                sb.AppendLine("  mov (%rdx,%rdi,4), %edi");
+                if (postLoadInstrs != null) sb.AppendLine(postLoadInstrs);
+                int sqInstrs = ptrChasingLoadsInSq ? counts[i] - 2 : counts[i];
+                for (int fillerIdx = 0, depInstrIdx = 0, indepInstrIdx = 0; fillerIdx < totalOps; fillerIdx++)
+                {
+                    if (fillerIdx < sqInstrs)
+                    {
+                        sb.AppendLine(dependentInstrs[depInstrIdx]);
+                        depInstrIdx = (depInstrIdx + 1) % dependentInstrs.Length;
+                    }
+                    else
+                    {
+                        sb.AppendLine(indepInstrs[indepInstrIdx]);
+                        indepInstrIdx = (indepInstrIdx + 1) % indepInstrs.Length;
+                    }
+                }
+
+                sb.AppendLine("  mov (%rdx,%rsi,4), %esi");
+                sb.AppendLine("  lfence");
+                sb.AppendLine("  dec %rcx");
+                sb.AppendLine("  jne " + funcName + "start");
+                sb.AppendLine("  pop %rdx");
+                sb.AppendLine("  pop %rcx");
+                sb.AppendLine("  pop %r8");
+                sb.AppendLine("  pop %r11");
+                sb.AppendLine("  pop %r12");
+                sb.AppendLine("  pop %r13");
+                sb.AppendLine("  pop %r14");
+                sb.AppendLine("  pop %r15");
+                sb.AppendLine("  pop %rdi");
+                sb.AppendLine("  pop %rsi");
+                sb.AppendLine("  ret\n\n");
+            }
+        }
+
+        public static void GenerateX86NasmNsqTestFuncs(StringBuilder sb,
+            int totalOps,
+            int[] counts,
+            string funcNamePrefix,
+            string[] dependentInstrs,
+            string[] indepInstrs,
+            bool ptrChasingLoadsInSq = false,
+            string initInstrs = null,
+            string postLoadInstrs = null)
+        {
+            for (int i = 0; i < counts.Length; i++)
+            {
+                string funcName = funcNamePrefix + counts[i];
+                sb.AppendLine("\n" + funcName + ":");
+                sb.AppendLine("  push rsi");
+                sb.AppendLine("  push rdi");
+                sb.AppendLine("  push r15");
+                sb.AppendLine("  push r14");
+                sb.AppendLine("  push r13");
+                sb.AppendLine("  push r12");
+                sb.AppendLine("  push r11");
+
+                sb.AppendLine("  xor r15, r15");
+                sb.AppendLine("  mov r14, 1");
+                sb.AppendLine("  mov r13, 2");
+                sb.AppendLine("  mov r12, 3");
+                sb.AppendLine("  mov r11, 4");
+
+                if (initInstrs != null) sb.AppendLine(initInstrs);
+
+                sb.AppendLine("  xor rdi, rdi");
+                sb.AppendLine("  mov esi, 64");
+                sb.AppendLine("\n" + funcName + "start:");
+                sb.AppendLine("  mov edi, [rdx + rdi * 4]");
+                if (postLoadInstrs != null) sb.AppendLine(postLoadInstrs);
+                int sqInstrs = ptrChasingLoadsInSq ? counts[i] - 2 : counts[i];
+                for (int fillerIdx = 0, instrIdx = 0; fillerIdx < totalOps; fillerIdx++)
+                {
+                    if (fillerIdx < sqInstrs)
+                        sb.AppendLine(dependentInstrs[instrIdx]);
+                    else
+                        sb.AppendLine(indepInstrs[instrIdx]);
+
+                    instrIdx = (instrIdx + 1) % dependentInstrs.Length;
+                }
+
+                sb.AppendLine("  mov esi, [rdx + rsi * 4]");
+                sb.AppendLine("  lfence");
+                sb.AppendLine("  dec rcx");
+                sb.AppendLine("  jne " + funcName + "start");
+                sb.AppendLine("  pop r11");
+                sb.AppendLine("  pop r12");
+                sb.AppendLine("  pop r13");
+                sb.AppendLine("  pop r14");
+                sb.AppendLine("  pop r15");
+                sb.AppendLine("  pop rdi");
+                sb.AppendLine("  pop rsi");
                 sb.AppendLine("  ret\n\n");
             }
         }
@@ -945,6 +1226,69 @@ namespace AsmGen
                 {
                     sb.AppendLine(fillerInstrs2[addIdx]);
                     addIdx = (addIdx + 1) % fillerInstrs2.Length;
+                }
+
+                sb.AppendLine("  sub x0, x0, 1");
+                sb.AppendLine("  cbnz x0, " + funcName + "start");
+                sb.AppendLine("  ldp x25, x26, [sp, #0x40]");
+                sb.AppendLine("  ldp x10, x11, [sp, #0x30]");
+                sb.AppendLine("  ldp x12, x13, [sp, #0x20]");
+                sb.AppendLine("  ldp x14, x15, [sp, #0x10]");
+                sb.AppendLine("  add sp, sp, #0x50");
+                sb.AppendLine("  ret\n\n");
+            }
+        }
+
+        public static void GenerateArmAsmNsqTestFuncs(StringBuilder sb,
+            int totalOps,
+            int[] counts,
+            string funcNamePrefix,
+            string[] depInstrs,
+            string[] indepInstrs,
+            bool ptrChasingLoadsInSq = false,
+            string initInstrs = null,
+            string postLoadInstrs = null)
+        {
+            for (int i = 0; i < counts.Length; i++)
+            {
+                string funcName = funcNamePrefix + counts[i];
+
+                // args in x0, x1
+                sb.AppendLine("\n" + funcName + ":");
+                sb.AppendLine("  sub sp, sp, #0x50");
+                sb.AppendLine("  stp x14, x15, [sp, #0x10]");
+                sb.AppendLine("  stp x12, x13, [sp, #0x20]");
+                sb.AppendLine("  stp x10, x11, [sp, #0x30]");
+                sb.AppendLine("  stp x25, x26, [sp, #0x40]");
+                sb.AppendLine("  mov x15, 1");
+                sb.AppendLine("  mov x14, 2");
+                sb.AppendLine("  mov x13, 3");
+                sb.AppendLine("  mov x12, 4");
+                sb.AppendLine("  mov x11, 5");
+                sb.AppendLine("  mov x10, 6");
+                if (initInstrs != null) sb.AppendLine(initInstrs);
+                sb.AppendLine("  mov w25, 0x0");
+                sb.AppendLine("  mov w26, 0x40");
+                sb.AppendLine("\n" + funcName + "start:");
+                sb.AppendLine("  ldr w25, [x1, w25, uxtw #2]"); // current = A[current]
+                if (postLoadInstrs != null) sb.AppendLine(postLoadInstrs);
+                int sqInstrs = ptrChasingLoadsInSq ? counts[i] - 2 : counts[i];
+                for (int fillerIdx = 0, instrIdx = 0; fillerIdx < totalOps; fillerIdx++)
+                {
+                    if (fillerIdx < sqInstrs)
+                        sb.AppendLine(dependentInstrs[instrIdx]);
+                    else
+                        sb.AppendLine(indepInstrs[instrIdx]);
+
+                    instrIdx = (instrIdx + 1) % dependentInstrs.Length;
+                }
+
+                sb.AppendLine("  ldr w26, [x1, w26, uxtw #2]");
+                if (postLoadInstrs2 != null) sb.AppendLine(postLoadInstrs2);
+                for (int nopIdx = 0, addIdx = 0; nopIdx < fillerInstrCount; nopIdx++)
+                {
+                    sb.AppendLine(indepInstrs[addIdx]);
+                    addIdx = (addIdx + 1) % indepInstrs.Length;
                 }
 
                 sb.AppendLine("  sub x0, x0, 1");

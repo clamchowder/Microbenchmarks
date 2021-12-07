@@ -40,7 +40,7 @@ namespace AsmGen
             string[] setFpcrInstrs = new string[2];
             setFpcrInstrs[0] = "  msr fpcr, x15\n  fadd s2, s2, s3\n";
             setFpcrInstrs[1] = "  msr fpcr, x14\n  fadd s4, s4, s5\n";
-            UarchTestHelpers.GenerateArmAsmStructureTestFuncs(sb, this.Counts, this.Prefix, setFpcrInstrs, setFpcrInstrs, false);
+            UarchTestHelpers.GenerateArmAsmStructureTestFuncs(sb, this.Counts, this.Prefix, setFpcrInstrs, setFpcrInstrs, false, initInstrs: initInstrs);
         }
     }
 }

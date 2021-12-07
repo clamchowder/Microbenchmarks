@@ -16,9 +16,13 @@ namespace AsmGen
 
         public override void GenerateX86GccAsm(StringBuilder sb)
         {
-            string[] unrolledJumps = new string[2];
+            string[] unrolledJumps = new string[6];
             unrolledJumps[0] = "  cmp %rdi, %rsi\n  je muljmpsched_reallybadthing";
             unrolledJumps[1] = "  imul %edi, %r12d";
+            unrolledJumps[2] = "  cmp %rdi, %rsi\n  je muljmpsched_reallybadthing";
+            unrolledJumps[3] = "  imul %edi, %r13d";
+            unrolledJumps[4] = "  cmp %rdi, %rsi\n  je muljmpsched_reallybadthing";
+            unrolledJumps[5] = "  imul %edi, %r14d";
 
             string[] unrolledJumps1 = new string[2];
             unrolledJumps1[0] = "  cmp %rdi, %rsi\n  je muljmpsched_reallybadthing";
