@@ -1297,6 +1297,22 @@ namespace AsmGen
             }
         }
 
+        /// <summary>
+        /// Filler for todo functions
+        /// </summary>
+        /// <param name="sb"></param>
+        /// <param name="counts"></param>
+        /// <param name="funcNamePrefix"></param>
+        public static void GenerateStub(StringBuilder sb, int[] counts, string funcNamePrefix)
+        {
+            for (int i = 0; i < counts.Length; i++)
+            {
+                string funcName = funcNamePrefix + counts[i];
+                sb.AppendLine("\n" + funcName + ":");
+                sb.AppendLine("  ret");
+            }
+        }
+
         public static void GenerateArmAsmFpSchedTestFuncs(StringBuilder sb, int[] counts, string funcNamePrefix, string[] fillerInstrs1, string[] fillerInstrs2)
         {
             GenerateArmAsmStructureTestFuncs(sb, 

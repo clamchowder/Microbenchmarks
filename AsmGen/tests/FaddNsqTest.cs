@@ -50,7 +50,7 @@ namespace AsmGen
 
         public override void GenerateArmAsm(StringBuilder sb)
         {
-            // todo
+            UarchTestHelpers.GenerateStub(sb, this.Counts, this.Prefix);
         }
     }
 }
