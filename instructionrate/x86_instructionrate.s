@@ -5,6 +5,10 @@
 .global rortest
 .global mixrormultest
 .global btstest
+.global leatest
+.global leamultest
+.global rorbtstest
+.global btsmultest
 .global indepmovtest
 .global depmovtest
 .global xorzerotest
@@ -54,6 +58,7 @@
 .global load256
 .global store128
 .global store256
+.global spacedstorescalar
 .global mixaddmul128int
 .global mixmul16mul64
 .global mixmul16mul64_21
@@ -275,6 +280,7 @@ mixrormultest:
   push %rbx
   push %rcx
   push %rsi
+  push %rdx
   push %r8
   push %r9
   push %r10
@@ -296,24 +302,33 @@ mixrormultest:
 mixrormultest_loop:
   ror $1, %r15
   imul %r8, %r14
+  mov %r9, %r14
   ror $1, %r13
   imul %r8, %r12
+  mov %r9, %r12
   ror $1, %r11
   imul %r8, %r10
+  mov %r9, %r10
   ror $1, %rbx
   imul %r8, %rcx
+  mov %r9, %rcx
   ror $1, %rsi
   imul %r8, %rax
+  mov %r9, %rax
   ror $1, %r15
   imul %r8, %r14
+  mov %r9, %r14
   ror $1, %r13
   imul %r8, %r12
+  mov %r9, %r12
   ror $1, %r11
   imul %r8, %r10
+  mov %r9, %r10
   ror $1, %rbx
   imul %r8, %rcx
+  mov %r9, %rcx
   ror $1, %rsi
-  imul %r8, %rax  
+  imul %r8, %rdx  
   sub %r9, %rdi
   jnz mixrormultest_loop
   pop %r15
@@ -324,7 +339,69 @@ mixrormultest_loop:
   pop %r10
   pop %r9
   pop %r8 
+  pop %rdx
   pop %rsi
+  pop %rcx
+  pop %rbx
+  ret  
+
+rorbtstest:
+  push %rbx
+  push %rcx
+  push %rdx
+  push %rsi
+  push %r8
+  push %r9
+  push %r10
+  push %r11
+  push %r12
+  push %r13
+  push %r14
+  push %r15
+  mov $1, %r8
+  mov $20, %r9
+  mov %r8, %rbx 
+  mov %r8, %rcx
+  mov %r8, %r10
+  mov %r8, %r11
+  mov %r8, %r12
+  mov %r8, %r13
+  mov %r8, %r14
+  mov %r8, %r15
+  inc %r8
+rorbtstest_loop:
+  bts %r8, %r15
+  ror $1, %r14
+  bts %r8, %r13
+  ror $1, %r12
+  bts %r8, %r11
+  ror $1, %r10
+  bts %r8, %rcx
+  ror $1, %rbx
+  bts %r8, %rdx
+  ror $1, %rsi
+  bts %r8, %r15
+  ror $1, %r14
+  bts %r8, %r13
+  ror $1, %r12
+  bts %r8, %r11
+  ror $1, %r10
+  bts %r8, %rcx
+  ror $1, %rbx
+  bts %r8, %rdx
+  ror $1, %rsi
+  sub %r9, %rdi
+  jnz rorbtstest_loop
+  pop %r15
+  pop %r14
+  pop %r13
+  pop %r12
+  pop %r11
+  pop %r10
+  pop %r9
+  pop %r8 
+  pop %rsi
+  pop %rdx
   pop %rcx
   pop %rbx
   ret  
@@ -385,6 +462,202 @@ btstest_loop:
   pop %rcx
   pop %rbx
   ret  
+
+leatest:
+  push %rbx
+  push %rcx
+  push %r8
+  push %r9
+  push %r10
+  push %r11
+  push %r12
+  push %r13
+  push %r14
+  push %r15
+  mov $1, %r8
+  mov $20, %r9
+  mov %r8, %rbx 
+  mov %r8, %rcx
+  mov %r8, %r10
+  mov %r8, %r11
+  mov %r8, %r12
+  mov %r8, %r13
+  mov %r8, %r14
+  mov %r8, %r15
+  inc %r8
+leatest_loop:
+  lea (%r9,%r10,8), %r10
+  lea (%r9,%r11,8), %r11
+  lea (%r9,%r12,8), %r12
+  lea (%r9,%r13,8), %r13
+  lea (%r9,%r14,8), %r14
+  lea (%r9,%r15,8), %r15
+  lea (%r9,%r10,8), %r10
+  lea (%r9,%r11,8), %r11
+  lea (%r9,%r12,8), %r12
+  lea (%r9,%r13,8), %r13
+  lea (%r9,%r14,8), %r14
+  lea (%r9,%r15,8), %r15
+  lea (%r9,%r10,8), %r10
+  lea (%r9,%r11,8), %r11
+  lea (%r9,%r12,8), %r12
+  lea (%r9,%r13,8), %r13
+  lea (%r9,%r14,8), %r14
+  lea (%r9,%r15,8), %r15
+  lea (%r9,%r10,8), %r10
+  lea (%r9,%r11,8), %r11
+  sub %r9, %rdi
+  jnz leatest_loop
+  pop %r15
+  pop %r14
+  pop %r13
+  pop %r12
+  pop %r11
+  pop %r10
+  pop %r9
+  pop %r8 
+  pop %rcx
+  pop %rbx
+  ret  
+
+leamultest:
+  push %rbx
+  push %rcx
+  push %rdx
+  push %rsi
+  push %r8
+  push %r9
+  push %r10
+  push %r11
+  push %r12
+  push %r13
+  push %r14
+  push %r15
+  mov $1, %r8
+  mov $20, %r9
+  mov %r8, %rbx 
+  mov %r8, %rcx
+  mov %r8, %r10
+  mov %r8, %r11
+  mov %r8, %r12
+  mov %r8, %r13
+  mov %r8, %r14
+  mov %r8, %r15
+  inc %r8
+leamultest_loop:
+  lea (%r9,%r15,8), %r15
+  imul %r8, %r14
+  mov %r8, %r14
+  lea (%r9,%r13,8), %r13
+  imul %r8, %r12
+  mov %r8, %r12
+  lea (%r9,%r11,8), %r11
+  imul %r8, %r10
+  mov %r8, %r10
+  lea (%r9,%rbx,8), %rbx
+  imul %r8, %rcx
+  mov %r8, %rcx
+  lea (%r9,%rdx,8), %rdx
+  imul %r8, %rax
+  lea (%r9,%r15,8), %r15
+  imul %r8, %r14
+  lea (%r9,%r13,8), %r13
+  imul %r8, %r12
+  lea (%r9,%r11,8), %r11
+  imul %r8, %r10
+  lea (%r9,%rbx,8), %rbx
+  imul %r8, %rcx
+  lea (%r9,%rdx,8), %rdx
+  imul %r8, %rax
+  sub %r9, %rdi
+  jnz leamultest_loop
+  pop %r15
+  pop %r14
+  pop %r13
+  pop %r12
+  pop %r11
+  pop %r10
+  pop %r9
+  pop %r8 
+  pop %rsi
+  pop %rdx
+  pop %rcx
+  pop %rbx
+  ret  
+
+
+btsmultest:
+  push %rbx
+  push %rcx
+  push %rsi
+  push %rdx
+  push %r8
+  push %r9
+  push %r10
+  push %r11
+  push %r12
+  push %r13
+  push %r14
+  push %r15
+  mov $1, %r8
+  mov $20, %r9
+  mov %r8, %rbx 
+  mov %r8, %rdx 
+  mov %r8, %rsi 
+  mov %r8, %rcx
+  mov %r8, %r10
+  mov %r8, %r11
+  mov %r8, %r12
+  mov %r8, %r13
+  mov %r8, %r14
+  mov %r8, %r15
+  inc %r8
+btsmultest_loop:
+  imul %r8, %r14
+  bts %r8, %r13
+  mov %r8, %r13
+  imul %r8, %r12
+  bts %r8, %r11
+  mov %r8, %r11
+  imul %r8, %r10
+  bts %r8, %rbx
+  imul %r8, %rcx
+  mov %r8, %rcx
+  bts %r8, %rsi
+  imul %r8, %rax
+  mov %r8, %rax
+  bts %r8, %r15
+  imul %r8, %r14
+  mov %r8, %r14
+  bts %r8, %r13
+  imul %r8, %r12
+  mov %r8, %r12
+  bts %r8, %r11
+  imul %r8, %r10
+  mov %r8, %r10
+  bts %r8, %rbx
+  imul %r8, %rcx
+  mov %r8, %rcx
+  bts %r8, %rsi
+  imul %r8, %rdx  
+  mov %r8, %rdx
+  bts %r8, %r11 
+  sub %r9, %rdi
+  jnz btsmultest_loop
+  pop %r15
+  pop %r14
+  pop %r13
+  pop %r12
+  pop %r11
+  pop %r10
+  pop %r9
+  pop %r8 
+  pop %rdx
+  pop %rsi
+  pop %rcx
+  pop %rbx
+  ret  
+
 
 jmptest:
   push %rsi
@@ -2136,25 +2409,45 @@ mul64:
   mov %r9, %r15
 mul64_loop:
   imul %r9, %r15
+  mov %r9, %r15
   imul %r9, %r14
+  mov %r9, %r14
   imul %r9, %r13
+  mov %r9, %r13
   imul %r9, %r12
+  mov %r9, %r12
   imul %r9, %r11
+  mov %r9, %r11
   imul %r9, %r10
+  mov %r9, %r10
   imul %r9, %r8
+  mov %r9, %r8
   imul %r9, %rbx
+  mov %r9, %rbx
   imul %r9, %rcx
+  mov %r9, %rcx
   imul %r9, %rsi
+  mov %r9, %rsi
   imul %r9, %r15
+  mov %r9, %r15
   imul %r9, %r14
+  mov %r9, %r14
   imul %r9, %r13
+  mov %r9, %r13
   imul %r9, %r12
+  mov %r9, %r12
   imul %r9, %r11
+  mov %r9, %r11
   imul %r9, %r10
+  mov %r9, %r10
   imul %r9, %r8
+  mov %r9, %r8
   imul %r9, %rbx
+  mov %r9, %rbx
   imul %r9, %rcx
+  mov %r9, %rcx
   imul %r9, %rsi 
+  mov %r9, %rsi
   sub %r9, %rdi
   jnz mul64_loop
   pop %r15
@@ -2296,6 +2589,42 @@ mixmul16mul64_21_loop:
   pop %rcx
   pop %rbx
   ret    
+
+spacedstorescalar:
+  push %rbx
+  push %rcx
+  push %r8
+  push %r9
+  mov $20, %r9
+spacedstorescalar_loop:
+  mov %rdi, (%rsi) 
+  mov %rdi, 64(%rsi)
+  mov %rdi, 128(%rsi)
+  mov %rdi, 192(%rsi)
+  mov %rdi, 256(%rsi)
+  mov %rdi, 320(%rsi)
+  mov %rdi, 384(%rsi)
+  mov %rdi, 448(%rsi)
+  mov %rdi, 512(%rsi)
+  mov %rdi, 576(%rsi)
+  mov %rdi, 640(%rsi)
+  mov %rdi, 704(%rsi)
+  mov %rdi, 768(%rsi)
+  mov %rdi, 832(%rsi)
+  mov %rdi, 896(%rsi)
+  mov %rdi, 960(%rsi)
+  mov %rdi, 1024(%rsi)
+  mov %rdi, 1088(%rsi)
+  mov %rdi, 1152(%rsi)
+  mov %rdi, 1216(%rsi)
+  sub %r9, %rdi
+  jnz spacedstorescalar_loop
+  pop %r9
+  pop %r8 
+  pop %rcx
+  pop %rbx
+  ret
+
 
 spacedload128:
   push %rbx
