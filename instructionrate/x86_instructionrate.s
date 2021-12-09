@@ -2,6 +2,9 @@
 
 .global clktest
 .global addtest
+.global rortest
+.global mixrormultest
+.global btstest
 .global indepmovtest
 .global depmovtest
 .global xorzerotest
@@ -211,6 +214,177 @@ addtest_loop:
   pop %rcx
   pop %rbx
   ret
+
+rortest:
+  push %rbx
+  push %rcx
+  push %r8
+  push %r9
+  push %r10
+  push %r11
+  push %r12
+  push %r13
+  push %r14
+  push %r15
+  mov $1, %r8
+  mov $20, %r9
+  mov %r8, %rbx 
+  mov %r8, %rcx
+  mov %r8, %r10
+  mov %r8, %r11
+  mov %r8, %r12
+  mov %r8, %r13
+  mov %r8, %r14
+  mov %r8, %r15
+rortest_loop:
+  ror $1, %r15
+  ror $1, %r14
+  ror $1, %r13
+  ror $1, %r12
+  ror $1, %r11
+  ror $1, %r15
+  ror $1, %r14
+  ror $1, %r13
+  ror $1, %r12
+  ror $1, %r11 
+  ror $1, %r15
+  ror $1, %r14
+  ror $1, %r13
+  ror $1, %r12
+  ror $1, %r11 
+  ror $1, %r15
+  ror $1, %r14
+  ror $1, %r13
+  ror $1, %r12
+  ror $1, %r11 
+  sub %r9, %rdi
+  jnz rortest_loop
+  pop %r15
+  pop %r14
+  pop %r13
+  pop %r12
+  pop %r11
+  pop %r10
+  pop %r9
+  pop %r8 
+  pop %rcx
+  pop %rbx
+  ret 
+
+mixrormultest:
+  push %rbx
+  push %rcx
+  push %rsi
+  push %r8
+  push %r9
+  push %r10
+  push %r11
+  push %r12
+  push %r13
+  push %r14
+  push %r15
+  mov $3, %r8
+  mov $20, %r9
+  mov %r8, %rbx 
+  mov %r8, %rcx
+  mov %r8, %r10
+  mov %r8, %r11
+  mov %r8, %r12
+  mov %r8, %r13
+  mov %r8, %r14
+  mov %r8, %r15
+mixrormultest_loop:
+  ror $1, %r15
+  imul %r8, %r14
+  ror $1, %r13
+  imul %r8, %r12
+  ror $1, %r11
+  imul %r8, %r10
+  ror $1, %rbx
+  imul %r8, %rcx
+  ror $1, %rsi
+  imul %r8, %rax
+  ror $1, %r15
+  imul %r8, %r14
+  ror $1, %r13
+  imul %r8, %r12
+  ror $1, %r11
+  imul %r8, %r10
+  ror $1, %rbx
+  imul %r8, %rcx
+  ror $1, %rsi
+  imul %r8, %rax  
+  sub %r9, %rdi
+  jnz mixrormultest_loop
+  pop %r15
+  pop %r14
+  pop %r13
+  pop %r12
+  pop %r11
+  pop %r10
+  pop %r9
+  pop %r8 
+  pop %rsi
+  pop %rcx
+  pop %rbx
+  ret  
+
+btstest:
+  push %rbx
+  push %rcx
+  push %r8
+  push %r9
+  push %r10
+  push %r11
+  push %r12
+  push %r13
+  push %r14
+  push %r15
+  mov $1, %r8
+  mov $20, %r9
+  mov %r8, %rbx 
+  mov %r8, %rcx
+  mov %r8, %r10
+  mov %r8, %r11
+  mov %r8, %r12
+  mov %r8, %r13
+  mov %r8, %r14
+  mov %r8, %r15
+  inc %r8
+btstest_loop:
+  bts %r8, %r15
+  bts %r8, %r14
+  bts %r8, %r13
+  bts %r8, %r12
+  bts %r8, %r11
+  bts %r8, %r15
+  bts %r8, %r14
+  bts %r8, %r13
+  bts %r8, %r12
+  bts %r8, %r11 
+  bts %r8, %r15
+  bts %r8, %r14
+  bts %r8, %r13
+  bts %r8, %r12
+  bts %r8, %r11 
+  bts %r8, %r15
+  bts %r8, %r14
+  bts %r8, %r13
+  bts %r8, %r12
+  bts %r8, %r11 
+  sub %r9, %rdi
+  jnz btstest_loop
+  pop %r15
+  pop %r14
+  pop %r13
+  pop %r12
+  pop %r11
+  pop %r10
+  pop %r9
+  pop %r8 
+  pop %rcx
+  pop %rbx
+  ret  
 
 jmptest:
   push %rsi

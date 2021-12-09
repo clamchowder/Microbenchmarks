@@ -17,6 +17,9 @@ extern uint64_t noptest(uint64_t iterations) __attribute((sysv_abi));
 extern uint64_t noptest1b(uint64_t iterations) __attribute((sysv_abi));
 extern uint64_t clktest(uint64_t iterations) __attribute((sysv_abi)); 
 extern uint64_t addtest(uint64_t iterations) __attribute((sysv_abi));
+extern uint64_t rortest(uint64_t iterations) __attribute((sysv_abi));
+extern uint64_t mixrormultest(uint64_t iterations) __attribute((sysv_abi));
+extern uint64_t btstest(uint64_t iterations) __attribute((sysv_abi));
 extern uint64_t addmultest(uint64_t iterations) __attribute((sysv_abi)); 
 extern uint64_t jmpmultest(uint64_t iterations) __attribute((sysv_abi)); 
 extern uint64_t jmptest(uint64_t iterations) __attribute((sysv_abi)); 
@@ -144,7 +147,7 @@ int main(int argc, char *argv[]) {
 
   // misc mixed integer tests
   if (argc == 1 || argc > 1 && strncmp(argv[1], "miximuladd", 10) == 0) 
-    printf("4:1 adds/imul per clk: %.2f\n", measureFunction(iterationsHigh, clockSpeedGhz, addtest));
+    printf("4:1 adds/imul per clk: %.2f\n", measureFunction(iterationsHigh, clockSpeedGhz, addmultest));
   if (argc == 1 || argc > 1 && strncmp(argv[1], "jmpmul", 6) == 0) 
     printf("1:1 mul/jmp per clk: %.2f\n", measureFunction(iterationsHigh, clockSpeedGhz, jmpmultest)); 
   if (argc == 1 || argc > 1 && strncmp(argv[1], "jmp", 3) == 0) 
@@ -155,6 +158,12 @@ int main(int argc, char *argv[]) {
     printf("pdep per clk: %.4f\n", measureFunction(iterationsHigh, clockSpeedGhz, pdeptest)); 
   if (argc == 1 || argc > 1 && strncmp(argv[1], "pext", 4) == 0) 
     printf("pext per clk: %.4f\n", measureFunction(iterationsHigh, clockSpeedGhz, pexttest));  
+  if (argc == 1 || argc > 1 && strncmp(argv[1], "ror", 3) == 0) 
+    printf("ror r,1 per clk: %.4f\n", measureFunction(iterationsHigh, clockSpeedGhz, rortest));  
+  if (argc == 1 || argc > 1 && strncmp(argv[1], "mixrormul", 3) == 0) 
+    printf("1:1 ror/mul per clk: %.4f\n", measureFunction(iterationsHigh, clockSpeedGhz, mixrormultest));  
+  if (argc == 1 || argc > 1 && strncmp(argv[1], "ror", 3) == 0) 
+    printf("bts per clk: %.4f\n", measureFunction(iterationsHigh, clockSpeedGhz, btstest));  
 
   // vector and FP
   if (argc == 1 || argc > 1 && strncmp(argv[1], "avx256int", 9) == 0) 
