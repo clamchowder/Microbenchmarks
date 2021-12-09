@@ -79,6 +79,9 @@ namespace AsmGen
             tests.Add(new LeaSchedTest(4, 80, 1));
             tests.Add(new MixMulBtsSchedTest(4, 80, 1));
             tests.Add(new MixLeaMulSchedTest(4, 80, 1));
+            tests.Add(new PdepSchedTest(4, 80, 1));
+            tests.Add(new PdepLeaSchedTest(4, 80, 1));
+            tests.Add(new MixPdepMulSchedTest(4, 80, 1));
 
             StringBuilder cSourceFile = new StringBuilder();
             StringBuilder vsCSourceFile = new StringBuilder();
