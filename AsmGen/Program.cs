@@ -75,6 +75,10 @@ namespace AsmGen
             tests.Add(new FpStoreDataAddNsqTest(4, 120, 1));
             tests.Add(new JumpNsqTest(4, 60, 1));
             tests.Add(new BtsSchedTest(4, 80, 1));
+            tests.Add(new MixRorBtsSchedTest(4, 80, 1));
+            tests.Add(new LeaSchedTest(4, 80, 1));
+            tests.Add(new MixMulBtsSchedTest(4, 80, 1));
+            tests.Add(new MixLeaMulSchedTest(4, 80, 1));
 
             StringBuilder cSourceFile = new StringBuilder();
             StringBuilder vsCSourceFile = new StringBuilder();
