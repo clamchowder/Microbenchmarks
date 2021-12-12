@@ -17,16 +17,16 @@ namespace AsmGen
         {
             List<IUarchTest> tests = new List<IUarchTest>();
             tests.Add(new RobTest(4, 512, 1));
-            tests.Add(new IntRfTest(4, 256, 1));
-            tests.Add(new FpRfTest(4, 256, 1));
-            tests.Add(new VecRfTest(4, 256, 1));
-            tests.Add(new Vec256RfTest(4, 256, 1));
+            tests.Add(new IntRfTest(4, 384, 1));
+            tests.Add(new FpRfTest(4, 384, 1));
+            tests.Add(new VecRfTest(4, 384, 1));
+            tests.Add(new Vec256RfTest(4, 384, 1));
             tests.Add(new AddSchedTest(4, 160, 1));
             tests.Add(new MulSchedTest(4, 128, 1));
             tests.Add(new Mul16SchedTest(4, 128, 1));
             tests.Add(new Mul32SchedTest(4, 48, 1));
-            tests.Add(new FaddSchedTest(1, 128, 1));
-            tests.Add(new FmulSchedTest(1, 128, 1));
+            tests.Add(new FaddSchedTest(1, 256, 1));
+            tests.Add(new FmulSchedTest(1, 256, 1));
             tests.Add(new Fadd256SchedTest(1, 128, 1));
             tests.Add(new MixFaddFmulSchedTest(2, 128, 1));
             tests.Add(new JumpSchedTest(4, 128, 1));
@@ -35,8 +35,8 @@ namespace AsmGen
             tests.Add(new LoadSchedTest(4, 128, 1));
             tests.Add(new StoreSchedTest(4, 128, 1));
             tests.Add(new StoreDataSchedTest(2, 128, 1));
-            tests.Add(new LdqTest(4, 128, 1));
-            tests.Add(new StqTest(4, 128, 1));
+            tests.Add(new LdqTest(4, 256, 1));
+            tests.Add(new StqTest(4, 160, 1));
             tests.Add(new LdqStqTest(4, 128, 1));
             tests.Add(new ReturnStackTest(1, 64, 1));
             tests.Add(new MshrsTest(1, 12, 1));
@@ -48,14 +48,40 @@ namespace AsmGen
             tests.Add(new YmmStateIntRfTest(1, 64, 1));
             tests.Add(new Add256RfTest(1, 256, 1));
             tests.Add(new Add256SchedTest(1, 256, 1));
-            tests.Add(new BtbTest(4));
-            tests.Add(new BtbTest(8));
-            tests.Add(new BtbTest(16));
+            tests.Add(new Add128SchedTest(1, 256, 1));
+            tests.Add(new BtbTest(4, BtbTest.BranchType.Unconditional));
+            tests.Add(new BtbTest(8, BtbTest.BranchType.Unconditional));
+            tests.Add(new BtbTest(16, BtbTest.BranchType.Unconditional));
+            tests.Add(new BtbTest(32, BtbTest.BranchType.Unconditional));
             tests.Add(new MixJmpMulSchedTest(2, 128, 1));
             tests.Add(new MixMulRorSchedTest(2, 128, 1));
             tests.Add(new BranchHistoryTest());
             //tests.Add(new IndirectBranchTest());
             tests.Add(new MxcsrTest(1, 32, 1));
+            tests.Add(new MaskRfTest(1, 256, 1));
+            tests.Add(new NotIntRfTest(1, 450, 1));
+            tests.Add(new MovImmIntRfTest(1, 450, 1));
+            tests.Add(new FaddNsqTest(4, 120, 1));
+            tests.Add(new Add128NsqTest(4, 120, 1));
+            tests.Add(new LoadNsqTest(4, 70, 1));
+            tests.Add(new MixLoadStoreSchedTest(4, 120, 1));
+            tests.Add(new MixStoreSchedTest(4, 120, 1));
+            tests.Add(new VecStoreDataSchedTest(4, 120, 1));
+            tests.Add(new VecStoreDataNsqTest(4, 120, 1));
+            tests.Add(new StoreNsqTest(4, 47, 1));
+            tests.Add(new TakenJumpSchedTest(4, 60, 1));
+            tests.Add(new StoreHoistSchedTest(4, 90, 1));
+            tests.Add(new FpStoreDataNsqTest(4, 120, 1));
+            tests.Add(new FpStoreDataAddNsqTest(4, 120, 1));
+            tests.Add(new JumpNsqTest(4, 60, 1));
+            tests.Add(new BtsSchedTest(4, 80, 1));
+            tests.Add(new MixRorBtsSchedTest(4, 80, 1));
+            tests.Add(new LeaSchedTest(4, 80, 1));
+            tests.Add(new MixMulBtsSchedTest(4, 80, 1));
+            tests.Add(new MixLeaMulSchedTest(4, 80, 1));
+            tests.Add(new PdepSchedTest(4, 80, 1));
+            tests.Add(new PdepLeaSchedTest(4, 80, 1));
+            tests.Add(new MixPdepMulSchedTest(4, 80, 1));
 
             StringBuilder cSourceFile = new StringBuilder();
             StringBuilder vsCSourceFile = new StringBuilder();
@@ -67,6 +93,7 @@ namespace AsmGen
 
             // Generate C file for linux
             cSourceFile.AppendLine("#include <stdio.h>\n#include<stdint.h>\n#include<sys/time.h>\n#include <stdlib.h>\n#include <string.h>\n#include <time.h>\n");
+            cSourceFile.AppendLine("#pragma GCC diagnostic ignored \"-Wattributes\"");
             cSourceFile.AppendLine(commonFunctions);
 
             foreach (IUarchTest test in tests) test.GenerateExternLines(cSourceFile);

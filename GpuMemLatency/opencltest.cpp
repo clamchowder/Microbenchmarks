@@ -10,6 +10,14 @@
 
 int default_test_sizes[27] = { 2, 4, 8, 16, 24, 32, 48, 64, 128, 256, 512, 600, 768, 1024, 1536, 2048, 3072, 4096, 5120, 6144, 8192, 16384, 32768, 65536, 131072, 262144, 1048576 };
 
+// lining this up with nemes's VK bw test sizes
+const uint64_t default_bw_test_sizes[] = {
+    4096, 8192, 12288, 16384, 20480, 24576, 28672, 32768, 40960, 49152, 57344, 65536, 81920, 98304, 114688, 131072,
+        196608, 262144, 393216, 458752, 524288, 786432, 1048576, 1572864, 2097152, 3145728, 4194304, 6291456, 8388608, 12582912, 16777216,
+        25165824, 33554432, 41943040, 50331648, 58720256, 67108864, 100663296, 134217728, 201326592, 268435456, 402653184, 536870912, 805306368,
+        1073741824, 1610612736, 2147483648, 3221225472, 4294967296
+};
+
 cl_device_id selected_device_id;
 cl_platform_id selected_platform_id;
 cl_context get_context_from_user(int platform_index, int device_index);
@@ -19,12 +27,13 @@ float latency_test(cl_context context,
     uint32_t list_size,
     uint32_t chase_iterations,
     bool sattolo);
-float latency_bw_test(cl_context context,
+float bw_test(cl_context context,
     cl_command_queue command_queue,
     cl_kernel kernel,
-    uint32_t list_size,
+    uint64_t list_size,
     uint32_t thread_count,
     uint32_t local_size,
+    uint32_t skip,
     uint32_t chase_iterations);
 float int_exec_latency_test(cl_context context,
     cl_command_queue command_queue,
@@ -35,37 +44,111 @@ float int_atomic_latency_test(cl_context context,
     cl_kernel kernel,
     uint32_t iterations,
     bool local);
+uint32_t scale_bw_iterations(uint32_t base_iterations, uint32_t size_kb);
+
+
 cl_ulong get_max_buffer_size();
 cl_ulong get_max_constant_buffer_size();
 
+enum TestType { GlobalMemLatency, ConstantMemLatency, GlobalAtomicLatency, LocalAtomicLatency, GlobalMemBandwidth };
 
-int main(int argc, char *argv[]) {
+
+int main(int argc, char* argv[]) {
     cl_int ret;
     uint32_t stride = 1211;
-    uint32_t list_size = 3840*2160*4;
+    uint32_t list_size = 3840 * 2160 * 4;
     uint32_t chase_iterations = 1e6 * 7;
-    uint32_t thread_count = 1, local_size = 1;
-    float latency, bandwidth;
+    // skip = 0 means auto
+    uint32_t thread_count = 1, local_size = 1, skip = 0;
+    float result;
     int platform_index = -1, device_index = -1;
 
-    if (argc > 2)
-    {
-        platform_index = atoi(argv[1]);
-        device_index = atoi(argv[2]);
-        fprintf(stderr, "Will use OpenCL platform index %d, device index %d\n", platform_index, device_index);
+    enum TestType testType = GlobalMemLatency;
 
-        if (argc > 3) stride = atoi(argv[3]);
-        if (argc > 4) chase_iterations = atoi(argv[4]);
-        if (argc > 5) thread_count = atoi(argv[5]);
-        if (argc > 6) local_size = atoi(argv[6]);
+    char thread_count_set = 0, local_size_set = 0, chase_iterations_set = 0, skip_set = 0;
+
+    for (int argIdx = 1; argIdx < argc; argIdx++) {
+        if (*(argv[argIdx]) == '-') {
+            char* arg = argv[argIdx] + 1;
+            if (_strnicmp(arg, "stride", 6) == 0) {
+                argIdx++;
+                stride = atoi(argv[argIdx]);
+                fprintf(stderr, "Using stride = %u\n", stride);
+            }
+            else if (_strnicmp(arg, "iterations", 10) == 0) {
+                argIdx++;
+                chase_iterations = atoi(argv[argIdx]);
+                chase_iterations_set = 1;
+                fprintf(stderr, "Using %u iterations\n", chase_iterations);
+            }
+            else if (_strnicmp(arg, "threads", 7) == 0) {
+                argIdx++;
+                thread_count = atoi(argv[argIdx]);
+                thread_count_set = 1;
+                fprintf(stderr, "Using %u threads\n", thread_count);
+            }
+            else if (_strnicmp(arg, "localsize", 9) == 0) {
+                argIdx++;
+                local_size = atoi(argv[argIdx]);
+                local_size_set = 1;
+                fprintf(stderr, "Using local size = %u\n", local_size);
+            }
+            else if (_strnicmp(arg, "platform", 8) == 0) {
+                argIdx++;
+                platform_index = atoi(argv[argIdx]);
+                fprintf(stderr, "Using OpenCL platform index %d\n", platform_index);
+            }
+            else if (_strnicmp(arg, "device", 6) == 0) {
+                argIdx++;
+                device_index = atoi(argv[argIdx]);
+                fprintf(stderr, "Using OpenCL device index %d\n", device_index);
+            }
+            else if (_strnicmp(arg, "bwskip", 6) == 0) {
+                argIdx++;
+                skip = atoi(argv[argIdx]);
+                fprintf(stderr, "Workgroups will be spaced %u apart\n", skip);
+            }
+            else if (_strnicmp(arg, "test", 4) == 0) {
+                argIdx++;
+                if (_strnicmp(argv[argIdx], "latency", 7) == 0) {
+                    testType = GlobalMemLatency;
+                    fprintf(stderr, "Testing global memory latency\n");
+                }
+                else if (_strnicmp(argv[argIdx], "constantlatency", 15) == 0) {
+                    testType = ConstantMemLatency;
+                    fprintf(stderr, "Testing constant memory latency\n");
+                }
+                else if (_strnicmp(argv[argIdx], "globalatomic", 13) == 0) {
+                    testType = GlobalAtomicLatency;
+                    fprintf(stderr, "Testing global atomic latency\n");
+                }
+                else if (_strnicmp(argv[argIdx], "localatomic", 11) == 0) {
+                    testType = LocalAtomicLatency;
+                    fprintf(stderr, "Testing local atomic latency\n");
+                }
+                else if (_strnicmp(argv[argIdx], "bw", 2) == 0) {
+                    testType = GlobalMemBandwidth;
+                    fprintf(stderr, "Testing global memory bandwidth\n");
+
+                    // Somewhat reasonable defaults
+                    if (!thread_count_set) thread_count = 131072;
+                    if (!local_size_set) local_size = 256;
+                    if (!chase_iterations_set) chase_iterations = 500000;
+                }
+                else {
+                    fprintf(stderr, "I'm so confused. Unknown test type %s\n", argv[argIdx]);
+                }
+            }
+        }
     }
-    else
+
+    if (argc == 1)
     {
-        fprintf(stderr, "Usage: [opencl platform index] [opencl device index] [stride] [p-chase iterations] [threads] [local work size]\n");
+        fprintf(stderr, "Usage:\n\t[-test <latency/constantlatency/globalatomic/localatomic/bw>]\n\t[-platform <platform id>]\n\t[-device <device id>]\n");
+        fprintf(stderr, "\t[-threads <opencl thread count>]\n\t[-localsize <opencl workgroup size>]\n\t[-bwskip <workgroup spacing>]\n");
         fprintf(stderr, "Number of threads (OpenCL global work size) must be divisible by local work size\n");
     }
 
-    fprintf(stderr, "Doing %d K p-chase iterations with stride %d over %d KiB region\n", chase_iterations / 1000, stride, list_size * 4 / 1024);
     fprintf(stderr, "Using %d threads with local size %d\n", thread_count, local_size);
 #pragma region opencl_overhead
     // Load the kernel source code into the array source_str
@@ -82,14 +165,14 @@ int main(int argc, char *argv[]) {
     source_size = fread(source_str, 1, MAX_SOURCE_SIZE, fp);
     fclose(fp);
     fprintf(stderr, "kernel loading done\n");
-    
+
     // Create an OpenCL context
     cl_context context = get_context_from_user(platform_index, device_index);
     if (context == NULL) exit(1);
 
     // Create a command queue
     cl_command_queue command_queue = clCreateCommandQueue(context, selected_device_id, 0, &ret);
-    fprintf(stderr, "clCreateCommandQueue returned %d\n",ret);
+    fprintf(stderr, "clCreateCommandQueue returned %d\n", ret);
 
     // Create a program from the kernel source
     cl_program program = clCreateProgramWithSource(context, 1, (const char**)&source_str, (const size_t*)&source_size, &ret);
@@ -111,8 +194,8 @@ int main(int argc, char *argv[]) {
     }
 
     // Create the OpenCL kernel. both simple and unrolled kernels take the same parameters
-    cl_kernel kernel = clCreateKernel(program, "unrolled_latency_test", &ret);
-    cl_kernel parallel_kernel = clCreateKernel(program, "parallel_latency_test", &ret);
+    cl_kernel latency_kernel = clCreateKernel(program, "unrolled_latency_test", &ret);
+    cl_kernel bw_kernel = clCreateKernel(program, "sum_bw_test", &ret);
     cl_kernel constant_kernel = clCreateKernel(program, "constant_unrolled_latency_test", &ret);
     cl_kernel int_exec_latency_test_kernel = clCreateKernel(program, "int_exec_latency_test", &ret);
     cl_kernel atomic_latency_test_kernel = clCreateKernel(program, "atomic_exec_latency_test", &ret);
@@ -121,64 +204,77 @@ int main(int argc, char *argv[]) {
 
     cl_ulong max_global_test_size = get_max_buffer_size();
 
-    // this is a dumb idea
-    /*printf("\nSattolo, global memory parallel pointer chasing BW(up to %lld K) unroll:\n", max_global_test_size / 1024);
+    if (testType == GlobalAtomicLatency)
+    {
+        result = int_atomic_latency_test(context, command_queue, atomic_latency_test_kernel, chase_iterations, false);
+        printf("global atomic latency: %f\n", result);
+    }
+    else if (testType == LocalAtomicLatency)
+    {
+        result = int_atomic_latency_test(context, command_queue, local_atomic_latency_test_kernel, chase_iterations, true);
+        printf("local atomic latency: %f\n", result);
+    }
+    else if (testType == GlobalMemLatency)
+    {
+        fprintf(stderr, "Doing %d K p-chase iterations with stride %d over %d KiB region\n", chase_iterations / 1000, stride, list_size * 4 / 1024);
+        printf("\nSattolo, global memory latency (up to %lld K) unroll:\n", max_global_test_size / 1024);
 
-    for (int size_idx = 0; size_idx < sizeof(default_test_sizes) / sizeof(int); size_idx++) {
-        if (max_global_test_size < sizeof(int) * 256 * default_test_sizes[size_idx]) {
-            printf("%d K would exceed device's max buffer size of %lld K, stopping here.\n", default_test_sizes[size_idx], max_global_test_size / 1024);
-            break;
-        }
-        latency = latency_bw_test(context, command_queue, parallel_kernel, 
-            256 * default_test_sizes[size_idx], // list size
-            262144, // thread count
-            256, // local size
-            chase_iterations / default_test_sizes[size_idx]); // iterations
-
-        printf("%d,%f\n", default_test_sizes[size_idx], latency);
-        if (latency == 0) {
-            printf("Something went wrong, not testing anything bigger.\n");
-            break;
-        }
-    }*/
-
-    
-
-    //latency = int_exec_latency_test(context, command_queue, int_exec_latency_test_kernel, chase_iterations);
-    //printf("int latency: %f\n", latency);
-    latency = int_atomic_latency_test(context, command_queue, atomic_latency_test_kernel, chase_iterations, false);
-    printf("global atomic latency: %f\n", latency);
-    latency = int_atomic_latency_test(context, command_queue, local_atomic_latency_test_kernel, chase_iterations, true);
-    printf("local atomic latency: %f\n", latency);
-
-    printf("\nSattolo, global memory latency (up to %lld K) unroll:\n", max_global_test_size / 1024);
-
-    for (int size_idx = 0; size_idx < sizeof(default_test_sizes) / sizeof(int); size_idx++) {
-        if (max_global_test_size < sizeof(int) * 256 * default_test_sizes[size_idx]) {
-            printf("%d K would exceed device's max buffer size of %lld K, stopping here.\n", default_test_sizes[size_idx], max_global_test_size / 1024);
-            break;
-        }
-        latency = latency_test(context, command_queue, kernel, 256 * default_test_sizes[size_idx], chase_iterations, true);
-        printf("%d,%f\n", default_test_sizes[size_idx], latency);
-        if (latency == 0) {
-            printf("Something went wrong, not testing anything bigger.\n");
-            break;
+        for (int size_idx = 0; size_idx < sizeof(default_test_sizes) / sizeof(int); size_idx++) {
+            if (max_global_test_size < sizeof(int) * 256 * default_test_sizes[size_idx]) {
+                printf("%d K would exceed device's max buffer size of %lld K, stopping here.\n", default_test_sizes[size_idx], max_global_test_size / 1024);
+                break;
+            }
+            result = latency_test(context, command_queue, latency_kernel, 256 * default_test_sizes[size_idx], chase_iterations, true);
+            printf("%d,%f\n", default_test_sizes[size_idx], result);
+            if (result == 0) {
+                printf("Something went wrong, not testing anything bigger.\n");
+                break;
+            }
         }
     }
+    else if (testType == ConstantMemLatency)
+    {
+        cl_ulong max_constant_test_size = get_max_constant_buffer_size();
+        printf("\nSattolo, constant memory (up to %lld K), no-unroll:\n", max_constant_test_size / 1024);
 
-    cl_ulong max_constant_test_size = get_max_constant_buffer_size();
-    printf("\nSattolo, constant memory (up to %lld K), no-unroll:\n", max_constant_test_size / 1024);
-
-    for (int size_idx = 0; size_idx < sizeof(default_test_sizes) / sizeof(int); size_idx++) {
-        if (max_constant_test_size < sizeof(int) * 256 * default_test_sizes[size_idx]) {
-            printf("%d K would exceed device's max constant buffer size of %lld K, stopping here.\n", default_test_sizes[size_idx], max_constant_test_size / 1024);
-            break;
+        for (int size_idx = 0; size_idx < sizeof(default_test_sizes) / sizeof(int); size_idx++) {
+            if (max_constant_test_size < sizeof(int) * 256 * default_test_sizes[size_idx]) {
+                printf("%d K would exceed device's max constant buffer size of %lld K, stopping here.\n", default_test_sizes[size_idx], max_constant_test_size / 1024);
+                break;
+            }
+            result = latency_test(context, command_queue, constant_kernel, 256 * default_test_sizes[size_idx], chase_iterations, false);
+            printf("%d,%f\n", default_test_sizes[size_idx], result);
+            if (result == 0) {
+                printf("Something went wrong, not testing anything bigger.\n");
+                break;
+            }
         }
-        latency = latency_test(context, command_queue, constant_kernel, 256 * default_test_sizes[size_idx], chase_iterations, false);
-        printf("%d,%f\n", default_test_sizes[size_idx], latency);
-        if (latency == 0) {
-            printf("Something went wrong, not testing anything bigger.\n");
-            break;
+    }
+    else if (testType == GlobalMemBandwidth)
+    {
+        fprintf(stderr, "Using %u threads, %u local size, %u base iterations\n", thread_count, local_size, chase_iterations / 1000);
+        printf("\nMemory bandwidth (up to %lld K):\n", max_global_test_size / 1024);
+
+        for (int size_idx = 0; size_idx < sizeof(default_bw_test_sizes) / sizeof(int); size_idx++) {
+            uint64_t testSizeKb = default_bw_test_sizes[size_idx] / 1024;
+            if ((max_global_test_size / 1024) < testSizeKb) {
+                printf("%llu K would exceed device's max buffer size of %llu K, stopping here.\n", testSizeKb, max_global_test_size / 1024);
+                break;
+            }
+
+            result = bw_test(context, 
+                command_queue, 
+                bw_kernel, 256 * testSizeKb, 
+                thread_count, 
+                local_size, 
+                skip, 
+                scale_bw_iterations(chase_iterations, testSizeKb));
+
+            printf("%llu,%f\n", testSizeKb, result);
+            if (result == 0) {
+                printf("Something went wrong, not testing anything bigger.\n");
+                break;
+            }
         }
     }
 
@@ -189,7 +285,7 @@ int main(int argc, char *argv[]) {
     cleanup:
     ret = clFlush(command_queue);
     ret = clFinish(command_queue);
-    ret = clReleaseKernel(kernel);
+    ret = clReleaseKernel(latency_kernel);
     ret = clReleaseProgram(program);
     ret = clReleaseCommandQueue(command_queue);
     ret = clReleaseContext(context);
@@ -294,12 +390,13 @@ cleanup:
     return latency;
 }
 
-float latency_bw_test(cl_context context,
+float bw_test(cl_context context,
     cl_command_queue command_queue,
     cl_kernel kernel,
-    uint32_t list_size,
+    uint64_t list_size,
     uint32_t thread_count,
     uint32_t local_size,
+    uint32_t skip,
     uint32_t chase_iterations)
 {
     size_t global_item_size = thread_count;
@@ -307,42 +404,61 @@ float latency_bw_test(cl_context context,
     float bandwidth, total_data_gb;
     struct timeb start, end;
     cl_int ret;
+    cl_int float4size = list_size / 4;
     int64_t time_diff_ms;
 
-    uint32_t* A = (uint32_t*)malloc(sizeof(uint32_t) * list_size);
-    cl_int* result = (cl_int*)malloc(sizeof(cl_int) * thread_count);
-    for (uint32_t i = 0; i < list_size; i++)
+    if (skip == 0)
     {
-        A[i] = i;
+        // nemes's read-combining-defeating heuristic
+        uint32_t region_size = list_size * sizeof(float);
+        uint32_t current_region_steps = (uint32_t)(region_size / (local_size * 4));
+        skip = (chase_iterations + current_region_steps + 1) * local_size * 4;
     }
 
-    int iter = list_size;
-    while (iter > 1)
+    float* A = (float*)malloc(sizeof(float) * list_size);
+    float* result = (float*)malloc(sizeof(float) * thread_count);
+
+    // assume that cl_uint size is 4 bytes, same as float size
+    cl_uint* start_offsets = (cl_uint*)malloc(sizeof(cl_uint) * thread_count);
+    cl_uint* calculated_offsets = (cl_uint*)malloc(sizeof(cl_uint) * thread_count);
+    memset(calculated_offsets, 0, sizeof(uint32_t) * thread_count);
+    for (uint32_t i = 0; i < list_size; i++)
     {
-        iter -= 1;
-        int j = iter - 1 == 0 ? 0 : rand() % (iter - 1);
-        uint32_t tmp = A[iter];
-        A[iter] = A[j];
-        A[j] = tmp;
+        A[i] = (float)(i * 0.5);
+    }
+
+    // tell each thread where to start
+    for (uint32_t i = 0; i < thread_count; i++)
+    {
+        uint32_t localId = i % local_size;
+        uint32_t groupId = i / local_size;
+        start_offsets[i] = (cl_uint)((groupId * skip * local_size + localId) % (float4size - 1));
+
+        // randomly start each workgroup somewhere - ends up being really bad
+        /*cl_uint groupOffset = rand() % (float4size / local_size);
+        start_offsets[i] = (cl_uint)((groupOffset * local_size + localId) % (float4size - 1));*/
     }
 
     // copy array to device
-    cl_mem a_mem_obj = clCreateBuffer(context, CL_MEM_READ_ONLY, list_size * sizeof(uint32_t), NULL, &ret);
-    ret = clEnqueueWriteBuffer(command_queue, a_mem_obj, CL_TRUE, 0, list_size * sizeof(uint32_t), A, 0, NULL, NULL);
+    cl_mem a_mem_obj = clCreateBuffer(context, CL_MEM_READ_ONLY, list_size * sizeof(float), NULL, &ret);
+    ret = clEnqueueWriteBuffer(command_queue, a_mem_obj, CL_TRUE, 0, list_size * sizeof(float), A, 0, NULL, NULL);
+    cl_mem result_obj = clCreateBuffer(context, CL_MEM_READ_WRITE, sizeof(float) * thread_count, NULL, &ret);
+    ret = clEnqueueWriteBuffer(command_queue, result_obj, CL_TRUE, 0, sizeof(float) * thread_count, result, 0, NULL, NULL);
+    cl_mem start_offsets_obj = clCreateBuffer(context, CL_MEM_READ_WRITE, sizeof(cl_uint) * thread_count, NULL, &ret);
+    if (ret != 0) fprintf(stderr, "create buffer for start offsets failed. ret = %d\n", ret);
+    ret = clEnqueueWriteBuffer(command_queue, start_offsets_obj, CL_TRUE, 0, sizeof(cl_uint) * thread_count, start_offsets, 0, NULL, NULL);
+    if (ret != 0) fprintf(stderr, "enqueue write buffer for start offsets failed. ret = %d\n", ret);
 
-    cl_mem result_obj = clCreateBuffer(context, CL_MEM_READ_WRITE, sizeof(cl_int) * thread_count, NULL, &ret);
-    //fprintf(stderr, "create result buffer = %d\n", ret);
-    ret = clEnqueueWriteBuffer(command_queue, result_obj, CL_TRUE, 0, sizeof(cl_int) * thread_count, result, 0, NULL, NULL);
-    //fprintf(stderr, "copy result buffer = %d\n", ret);
-
-    // Set kernel arguments for parallel_latency_test(__global const int* A, int count, int size, __global int* ret)
+    // Set kernel arguments for __kernel void sum_bw_test(__global float* A, int count, int float4size, __global float* ret, int skip, __global int *startPositions)
     clSetKernelArg(kernel, 0, sizeof(cl_mem), (void*)&a_mem_obj);
     clSetKernelArg(kernel, 1, sizeof(cl_int), (void*)&chase_iterations);
-    clSetKernelArg(kernel, 2, sizeof(cl_int), (void*)&list_size);
+    clSetKernelArg(kernel, 2, sizeof(cl_int), (void*)&float4size);
     clSetKernelArg(kernel, 3, sizeof(cl_mem), (void*)&result_obj);
+    clSetKernelArg(kernel, 4, sizeof(cl_int), (void*)&skip);
+    clSetKernelArg(kernel, 5, sizeof(cl_mem), (void*)&start_offsets_obj);
+    clFinish(command_queue); // writes should be blocking, but are they?
 
     ftime(&start);
-    // Execute the OpenCL kernel. launch a single thread
     ret = clEnqueueNDRangeKernel(command_queue, kernel, 1, NULL, &global_item_size, &local_item_size, 0, NULL, NULL);
     if (ret != CL_SUCCESS)
     {
@@ -363,13 +479,31 @@ float latency_bw_test(cl_context context,
     time_diff_ms = 1000 * (end.time - start.time) + (end.millitm - start.millitm);
 
     // each thread does iterations reads
-    total_data_gb = sizeof(cl_int) * ((float)chase_iterations * thread_count + thread_count)/ 1e9;
+    total_data_gb = sizeof(float) * ((float)chase_iterations * thread_count + thread_count)/ 1e9;
     bandwidth = 1000 * (float)total_data_gb / (float)time_diff_ms;
 
     //fprintf(stderr, "%llu ms, %llu GB\n", time_diff_ms, total_data_gb);
 
     ret = clEnqueueReadBuffer(command_queue, result_obj, CL_TRUE, 0, sizeof(uint32_t) * thread_count, result, 0, NULL, NULL);
+    if (ret != 0) fprintf(stderr, "enqueue read buffer for result failed. ret = %d\n", ret);
     clFinish(command_queue);
+
+    ret = clEnqueueReadBuffer(command_queue, start_offsets_obj, CL_TRUE, 0, sizeof(uint32_t) * thread_count, calculated_offsets, 0, NULL, NULL);
+    if (ret != 0) fprintf(stderr, "enqueue read buffer for start offsets failed. ret = %d\n", ret);
+    clFinish(command_queue);
+    
+    if (memcmp(calculated_offsets, start_offsets, sizeof(uint32_t) * thread_count))
+    {
+        fprintf(stderr, "mismatch in calculated start offsets\n");
+        for (uint32_t i = 0; i < thread_count; i++)
+        {
+            if (calculated_offsets[i] != start_offsets[i]) {
+                fprintf(stderr, "At index %u, calculated from GPU = %u, calculated on CPU = %u. skip=%u\n", i, calculated_offsets[i], start_offsets[i], skip);
+                break;
+            }
+        }
+    }
+
 
     //fprintf(stderr, "Finished reading result. Sum: %d\n", result[0]);
 
@@ -378,8 +512,11 @@ cleanup:
     clFinish(command_queue);
     clReleaseMemObject(a_mem_obj);
     clReleaseMemObject(result_obj);
+    clReleaseMemObject(start_offsets_obj);
     free(A);
     free(result);
+    free(start_offsets);
+    free(calculated_offsets);
     return bandwidth;
 }
 
@@ -614,4 +751,10 @@ cl_ulong get_max_buffer_size() {
     }
 
     return buffer_size;
+}
+
+uint32_t scale_bw_iterations(uint32_t base_iterations, uint32_t size_kb)
+{
+    if (size_kb < 4096) return base_iterations;
+    else return base_iterations / 2;
 }

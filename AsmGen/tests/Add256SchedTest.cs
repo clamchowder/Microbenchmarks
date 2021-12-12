@@ -25,7 +25,7 @@ namespace AsmGen
             unrolledAdds[2] = "  vpaddd %ymm0, %ymm3, %ymm3";
             unrolledAdds[3] = "  vpaddd %ymm0, %ymm4, %ymm3";
 
-            UarchTestHelpers.GenerateX86AsmStructureTestFuncs(sb, this.Counts, this.Prefix, unrolledAdds, unrolledAdds, postLoadInstrs1: postLoadInstr1, postLoadInstrs2: postLoadInstr2);
+            UarchTestHelpers.GenerateX86AsmStructureTestFuncs(sb, this.Counts, this.Prefix, unrolledAdds, unrolledAdds, false, postLoadInstrs1: postLoadInstr1, postLoadInstrs2: postLoadInstr2);
         }
 
         public override void GenerateX86NasmAsm(StringBuilder sb)
@@ -38,7 +38,7 @@ namespace AsmGen
             unrolledAdds[1] = "  vpaddd ymm2, ymm2, ymm0";
             unrolledAdds[2] = "  vpaddd ymm3, ymm3, ymm0";
             unrolledAdds[3] = "  vpaddd ymm4, ymm4, ymm0";
-            UarchTestHelpers.GenerateX86NasmStructureTestFuncs(sb, this.Counts, this.Prefix, unrolledAdds, unrolledAdds, postLoadInstrs1: postLoadInstr1, postLoadInstrs2: postLoadInstr2);
+            UarchTestHelpers.GenerateX86NasmStructureTestFuncs(sb, this.Counts, this.Prefix, unrolledAdds, unrolledAdds, false, postLoadInstrs1: postLoadInstr1, postLoadInstrs2: postLoadInstr2);
         }
 
         public override void GenerateArmAsm(StringBuilder sb)

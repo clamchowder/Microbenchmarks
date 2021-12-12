@@ -15,6 +15,8 @@
 #include <sched.h>
 #include <pthread.h>
 #include <math.h>
+#include <sys/mman.h>
+#include <errno.h>
 
 // make mingw happy
 #ifdef __MINGW32__
@@ -49,6 +51,7 @@ extern float asm_read(float* arr, uint64_t arr_length, uint64_t iterations, uint
 float (*bw_func)(float*, uint64_t, uint64_t, uint64_t start); 
 #endif
 
+float MeasureInstructionBw(uint64_t sizeKb, uint64_t iterations, int nopSize); 
 uint64_t GetIterationCount(uint64_t testSize, uint64_t threads);
 void *ReadBandwidthTestThread(void *param);
 
@@ -56,7 +59,8 @@ int main(int argc, char *argv[]) {
     int threads = 1;
     int cpuid_data[4];
     int shared = 1;
-    int methodSet = 0;
+    int sleepTime = 0;
+    int methodSet = 0, testInstructionBandwidth = 0, nopBytes = 8;
     bw_func = asm_read;
     for (int argIdx = 1; argIdx < argc; argIdx++) {
         if (*(argv[argIdx]) == '-') {
@@ -67,7 +71,11 @@ int main(int argc, char *argv[]) {
                 fprintf(stderr, "Using %d threads\n", threads);
             } else if (strncmp(arg, "shared", 6) == 0) {
                 shared = 1;
-                fprintf(stderr, "Using shared array\n");
+                fprintf(stderr, "Using sleep array\n");
+            } else if (strncmp(arg, "sleep", 5) == 0) {
+                argIdx++;
+                sleepTime = atoi(argv[argIdx]); 
+                fprintf(stderr, "Sleeping for %d second between tests\n", sleepTime);
             } else if (strncmp(arg, "private", 7) == 0) {
                 shared = 0;
                 fprintf(stderr, "Using private array for each thread\n");
@@ -80,6 +88,14 @@ int main(int argc, char *argv[]) {
                 } else if (strncmp(argv[argIdx], "asm", 3) == 0) {
                     bw_func = asm_read;
                     fprintf(stderr, "Using ASM code (AVX or NEON)\n");
+                } else if (strncmp(argv[argIdx], "instr8", 7) == 0) {
+                    testInstructionBandwidth = 1; 
+		    nopBytes = 8;
+                    fprintf(stderr, "Testing instruction fetch bandwidth with 8 byte instructions. Threads/shared/private args will be ignored\n");
+                } else if (strncmp(argv[argIdx], "instr4", 7) == 0) {
+                    testInstructionBandwidth = 1; 
+		    nopBytes = 4;
+                    fprintf(stderr, "Testing instruction fetch bandwidth with 4 byte instructions. Threads/shared/private args will be ignored\n");
                 } 
                 #ifdef __x86_64
                 else if (strncmp(argv[argIdx], "avx512", 6) == 0) {
@@ -94,7 +110,7 @@ int main(int argc, char *argv[]) {
             }
         } else {
             fprintf(stderr, "Expected - parameter\n");
-            fprintf(stderr, "Usage: [-threads <thread count>] [-private] [-method <scalar/asm/avx512>]\n");
+            fprintf(stderr, "Usage: [-threads <thread count>] [-private] [-method <scalar/asm/avx512>] [-sleep <time in seconds>]\n");
         }
     }
 
@@ -124,10 +140,19 @@ int main(int argc, char *argv[]) {
     }
 #endif
 
-    printf("Using %d threads\n", threads);
-    for (int i = 0; i < sizeof(default_test_sizes) / sizeof(int); i++)
-    {
-        printf("%d,%f\n", default_test_sizes[i], MeasureBw(default_test_sizes[i], GetIterationCount(default_test_sizes[i], threads), threads, shared));
+    if (testInstructionBandwidth) {
+        for (int i = 0; i < sizeof(default_test_sizes) / sizeof(int); i++)
+        {
+            printf("%d,%f\n", default_test_sizes[i], MeasureInstructionBw(default_test_sizes[i], GetIterationCount(default_test_sizes[i], threads), nopBytes));
+            if (sleepTime > 0) sleep(sleepTime);
+        } 
+    } else {
+        printf("Using %d threads\n", threads);
+        for (int i = 0; i < sizeof(default_test_sizes) / sizeof(int); i++)
+        {
+            printf("%d,%f\n", default_test_sizes[i], MeasureBw(default_test_sizes[i], GetIterationCount(default_test_sizes[i], threads), threads, shared));
+            if (sleepTime > 0) sleep(sleepTime);
+        }
     }
 
     return 0;
@@ -148,6 +173,67 @@ uint64_t GetIterationCount(uint64_t testSize, uint64_t threads)
 
     if (iterations < 8) return 8; // set a minimum to reduce noise
     else return iterations;
+}
+
+float MeasureInstructionBw(uint64_t sizeKb, uint64_t iterations, int nopSize) {
+    char nop8b[8] = { 0x0F, 0x1F, 0x84, 0x00, 0x00, 0x00, 0x00, 0x00 };
+
+    // zen/piledriver optimization manual uses this pattern
+    char nop4b[8] = { 0x0F, 0x1F, 0x40, 0x00, 0x0F, 0x1F, 0x40, 0x00 };
+
+    // athlon64 (K8) optimization manual pattern
+    char k8_nop4b[8] = { 0x66, 0x66, 0x66, 0x90, 0x66, 0x66, 0x66, 0x90 };
+    
+    struct timeval startTv, endTv;
+    struct timezone startTz, endTz;
+    float bw = 0; 
+    uint64_t *nops;
+    uint64_t elements = sizeKb * 1024 / 8;
+    size_t funcLen = sizeKb * 1024 + 1;
+
+    void (*nopfunc)(uint64_t) __attribute((ms_abi));
+
+    // nops, dec rcx (3 bytes), jump if zero flag set to 32-bit displacement (6 bytes), ret (1 byte)
+    nops = (uint64_t *)malloc(funcLen);
+    if (nops == NULL) {
+        fprintf(stderr, "Failed to allocate memory for size %lu\n", sizeKb);
+        return 0;
+    }
+
+    uint64_t *nop8bptr;
+    if (nopSize == 8) nop8bptr = (uint64_t *)(nop8b);
+    else if (nopSize == 4) nop8bptr = (uint64_t *)(nop4b);
+    else {
+        fprintf(stderr, "%d byte instruction length isn't supported :(\n", nopSize);
+    }
+
+    for (uint64_t nopIdx = 0; nopIdx < elements; nopIdx++) {
+        nops[nopIdx] = *nop8bptr;
+    }
+
+    unsigned char *functionEnd = (unsigned char *)(nops + elements);
+    // ret
+    functionEnd[0] = 0xC3;
+
+    uint64_t nopfuncPage = (~0xFFF) & (uint64_t)(nops);
+    size_t mprotectLen = (0xFFF & (uint64_t)(nops)) + funcLen;
+    if (mprotect((void *)nopfuncPage, mprotectLen, PROT_EXEC | PROT_READ | PROT_WRITE) < 0) {
+        fprintf(stderr, "mprotect failed, errno %d\n", errno); 
+        return 0;
+    }  
+
+    nopfunc = (__attribute((ms_abi)) void(*)(uint64_t))nops;
+    gettimeofday(&startTv, &startTz);
+    for (int iterIdx = 0; iterIdx < iterations; iterIdx++) nopfunc(iterations);
+    gettimeofday(&endTv, &endTz);
+ 
+    uint64_t time_diff_ms = 1000 * (endTv.tv_sec - startTv.tv_sec) + ((endTv.tv_usec - startTv.tv_usec) / 1000);
+    double gbTransferred = (iterations * 8 * elements + 1)  / (double)1e9;
+    //fprintf(stderr, "%lf GB transferred in %ld ms\n", gbTransferred, time_diff_ms);
+    bw = 1000 * gbTransferred / (double)time_diff_ms; 
+
+    free(nops);
+    return bw;
 }
 
 float MeasureBw(uint64_t sizeKb, uint64_t iterations, uint64_t threads, int shared) {
