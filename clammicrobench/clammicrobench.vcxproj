@@ -141,29 +141,1316 @@
   <ItemGroup>
     <ClCompile Include="clammicrobench.cpp" />
   </ItemGroup>
-  <ItemGroup>
-    <CustomBuild Include="clammicrobench_nasm.asm">
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">false</ExcludedFromBuild>
-      <FileType>Document</FileType>
-      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">nasm -f win64 clammicrobench_nasm.asm</Command>
-      <Message Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Running NASM</Message>
-      <Outputs Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">clammicrobench_nasm.obj</Outputs>
-      <Command Condition="'$(Configuration)|$(Platform)'=='Release|x64'">nasm -f win64 clammicrobench_nasm.asm</Command>
-      <Message Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Running NASM for first asm file</Message>
-      <Outputs Condition="'$(Configuration)|$(Platform)'=='Release|x64'">clammicrobench_nasm.obj</Outputs>
-      <BuildInParallel Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</BuildInParallel>
-    </CustomBuild>
-  </ItemGroup>
-  <ItemGroup>
-    <CustomBuild Include="clammicrobench1_nasm.asm">
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">false</ExcludedFromBuild>
-      <FileType>Document</FileType>
-      <Command Condition="'$(Configuration)|$(Platform)'=='Release|x64'">nasm -f win64 clammicrobench1_nasm.asm</Command>
-      <Outputs Condition="'$(Configuration)|$(Platform)'=='Release|x64'">clammicrobench1_nasm.obj</Outputs>
-      <BuildInParallel Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</BuildInParallel>
-      <Message Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Running NASM for second assembly file</Message>
-    </CustomBuild>
-  </ItemGroup>
+<ItemGroup>
+  <CustomBuild Include="clammicrobench_nasm_rob.asm">
+    <FileType>Document</FileType>
+    <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)' == 'Release|x64'">false</ExcludedFromBuild>
+   <Command Condition="'$(Configuration)|$(Platform)' == 'Release|x64'">nasm -f win64 clammicrobench_nasm_rob.asm</Command>
+   <Message Condition="'$(Configuration)|$(Platform)' == 'Release|x64'">Running NASM for clammicrobench_nasm_rob.asm to create clammicrobench_nasm_rob.obj</Message>
+   <Outputs Condition="'$(Configuration)|$(Platform)' == 'Release|x64'">clammicrobench_nasm_rob.obj</Outputs>
+    <BuildInParallel Condition="'$(Configuration)|$(Platform)' == 'Release|x64'">true</BuildInParallel>
+
+    <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)' == 'Debug|x64'">false</ExcludedFromBuild>
+   <Command Condition="'$(Configuration)|$(Platform)' == 'Debug|x64'">nasm -f win64 clammicrobench_nasm_rob.asm</Command>
+   <Message Condition="'$(Configuration)|$(Platform)' == 'Debug|x64'">Running NASM for clammicrobench_nasm_rob.asm to create clammicrobench_nasm_rob.obj</Message>
+   <Outputs Condition="'$(Configuration)|$(Platform)' == 'Debug|x64'">clammicrobench_nasm_rob.obj</Outputs>
+    <BuildInParallel Condition="'$(Configuration)|$(Platform)' == 'Debug|x64'">true</BuildInParallel>
+
+  </CustomBuild>
+</ItemGroup>
+<ItemGroup>
+  <CustomBuild Include="clammicrobench_nasm_intrf.asm">
+    <FileType>Document</FileType>
+    <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)' == 'Release|x64'">false</ExcludedFromBuild>
+   <Command Condition="'$(Configuration)|$(Platform)' == 'Release|x64'">nasm -f win64 clammicrobench_nasm_intrf.asm</Command>
+   <Message Condition="'$(Configuration)|$(Platform)' == 'Release|x64'">Running NASM for clammicrobench_nasm_intrf.asm to create clammicrobench_nasm_intrf.obj</Message>
+   <Outputs Condition="'$(Configuration)|$(Platform)' == 'Release|x64'">clammicrobench_nasm_intrf.obj</Outputs>
+    <BuildInParallel Condition="'$(Configuration)|$(Platform)' == 'Release|x64'">true</BuildInParallel>
+
+    <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)' == 'Debug|x64'">false</ExcludedFromBuild>
+   <Command Condition="'$(Configuration)|$(Platform)' == 'Debug|x64'">nasm -f win64 clammicrobench_nasm_intrf.asm</Command>
+   <Message Condition="'$(Configuration)|$(Platform)' == 'Debug|x64'">Running NASM for clammicrobench_nasm_intrf.asm to create clammicrobench_nasm_intrf.obj</Message>
+   <Outputs Condition="'$(Configuration)|$(Platform)' == 'Debug|x64'">clammicrobench_nasm_intrf.obj</Outputs>
+    <BuildInParallel Condition="'$(Configuration)|$(Platform)' == 'Debug|x64'">true</BuildInParallel>
+
+  </CustomBuild>
+</ItemGroup>
+<ItemGroup>
+  <CustomBuild Include="clammicrobench_nasm_fprf.asm">
+    <FileType>Document</FileType>
+    <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)' == 'Release|x64'">false</ExcludedFromBuild>
+   <Command Condition="'$(Configuration)|$(Platform)' == 'Release|x64'">nasm -f win64 clammicrobench_nasm_fprf.asm</Command>
+   <Message Condition="'$(Configuration)|$(Platform)' == 'Release|x64'">Running NASM for clammicrobench_nasm_fprf.asm to create clammicrobench_nasm_fprf.obj</Message>
+   <Outputs Condition="'$(Configuration)|$(Platform)' == 'Release|x64'">clammicrobench_nasm_fprf.obj</Outputs>
+    <BuildInParallel Condition="'$(Configuration)|$(Platform)' == 'Release|x64'">true</BuildInParallel>
+
+    <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)' == 'Debug|x64'">false</ExcludedFromBuild>
+   <Command Condition="'$(Configuration)|$(Platform)' == 'Debug|x64'">nasm -f win64 clammicrobench_nasm_fprf.asm</Command>
+   <Message Condition="'$(Configuration)|$(Platform)' == 'Debug|x64'">Running NASM for clammicrobench_nasm_fprf.asm to create clammicrobench_nasm_fprf.obj</Message>
+   <Outputs Condition="'$(Configuration)|$(Platform)' == 'Debug|x64'">clammicrobench_nasm_fprf.obj</Outputs>
+    <BuildInParallel Condition="'$(Configuration)|$(Platform)' == 'Debug|x64'">true</BuildInParallel>
+
+  </CustomBuild>
+</ItemGroup>
+<ItemGroup>
+  <CustomBuild Include="clammicrobench_nasm_vec128rf.asm">
+    <FileType>Document</FileType>
+    <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)' == 'Release|x64'">false</ExcludedFromBuild>
+   <Command Condition="'$(Configuration)|$(Platform)' == 'Release|x64'">nasm -f win64 clammicrobench_nasm_vec128rf.asm</Command>
+   <Message Condition="'$(Configuration)|$(Platform)' == 'Release|x64'">Running NASM for clammicrobench_nasm_vec128rf.asm to create clammicrobench_nasm_vec128rf.obj</Message>
+   <Outputs Condition="'$(Configuration)|$(Platform)' == 'Release|x64'">clammicrobench_nasm_vec128rf.obj</Outputs>
+    <BuildInParallel Condition="'$(Configuration)|$(Platform)' == 'Release|x64'">true</BuildInParallel>
+
+    <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)' == 'Debug|x64'">false</ExcludedFromBuild>
+   <Command Condition="'$(Configuration)|$(Platform)' == 'Debug|x64'">nasm -f win64 clammicrobench_nasm_vec128rf.asm</Command>
+   <Message Condition="'$(Configuration)|$(Platform)' == 'Debug|x64'">Running NASM for clammicrobench_nasm_vec128rf.asm to create clammicrobench_nasm_vec128rf.obj</Message>
+   <Outputs Condition="'$(Configuration)|$(Platform)' == 'Debug|x64'">clammicrobench_nasm_vec128rf.obj</Outputs>
+    <BuildInParallel Condition="'$(Configuration)|$(Platform)' == 'Debug|x64'">true</BuildInParallel>
+
+  </CustomBuild>
+</ItemGroup>
+<ItemGroup>
+  <CustomBuild Include="clammicrobench_nasm_vec256rf.asm">
+    <FileType>Document</FileType>
+    <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)' == 'Release|x64'">false</ExcludedFromBuild>
+   <Command Condition="'$(Configuration)|$(Platform)' == 'Release|x64'">nasm -f win64 clammicrobench_nasm_vec256rf.asm</Command>
+   <Message Condition="'$(Configuration)|$(Platform)' == 'Release|x64'">Running NASM for clammicrobench_nasm_vec256rf.asm to create clammicrobench_nasm_vec256rf.obj</Message>
+   <Outputs Condition="'$(Configuration)|$(Platform)' == 'Release|x64'">clammicrobench_nasm_vec256rf.obj</Outputs>
+    <BuildInParallel Condition="'$(Configuration)|$(Platform)' == 'Release|x64'">true</BuildInParallel>
+
+    <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)' == 'Debug|x64'">false</ExcludedFromBuild>
+   <Command Condition="'$(Configuration)|$(Platform)' == 'Debug|x64'">nasm -f win64 clammicrobench_nasm_vec256rf.asm</Command>
+   <Message Condition="'$(Configuration)|$(Platform)' == 'Debug|x64'">Running NASM for clammicrobench_nasm_vec256rf.asm to create clammicrobench_nasm_vec256rf.obj</Message>
+   <Outputs Condition="'$(Configuration)|$(Platform)' == 'Debug|x64'">clammicrobench_nasm_vec256rf.obj</Outputs>
+    <BuildInParallel Condition="'$(Configuration)|$(Platform)' == 'Debug|x64'">true</BuildInParallel>
+
+  </CustomBuild>
+</ItemGroup>
+<ItemGroup>
+  <CustomBuild Include="clammicrobench_nasm_addsched.asm">
+    <FileType>Document</FileType>
+    <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)' == 'Release|x64'">false</ExcludedFromBuild>
+   <Command Condition="'$(Configuration)|$(Platform)' == 'Release|x64'">nasm -f win64 clammicrobench_nasm_addsched.asm</Command>
+   <Message Condition="'$(Configuration)|$(Platform)' == 'Release|x64'">Running NASM for clammicrobench_nasm_addsched.asm to create clammicrobench_nasm_addsched.obj</Message>
+   <Outputs Condition="'$(Configuration)|$(Platform)' == 'Release|x64'">clammicrobench_nasm_addsched.obj</Outputs>
+    <BuildInParallel Condition="'$(Configuration)|$(Platform)' == 'Release|x64'">true</BuildInParallel>
+
+    <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)' == 'Debug|x64'">false</ExcludedFromBuild>
+   <Command Condition="'$(Configuration)|$(Platform)' == 'Debug|x64'">nasm -f win64 clammicrobench_nasm_addsched.asm</Command>
+   <Message Condition="'$(Configuration)|$(Platform)' == 'Debug|x64'">Running NASM for clammicrobench_nasm_addsched.asm to create clammicrobench_nasm_addsched.obj</Message>
+   <Outputs Condition="'$(Configuration)|$(Platform)' == 'Debug|x64'">clammicrobench_nasm_addsched.obj</Outputs>
+    <BuildInParallel Condition="'$(Configuration)|$(Platform)' == 'Debug|x64'">true</BuildInParallel>
+
+  </CustomBuild>
+</ItemGroup>
+<ItemGroup>
+  <CustomBuild Include="clammicrobench_nasm_mulsched.asm">
+    <FileType>Document</FileType>
+    <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)' == 'Release|x64'">false</ExcludedFromBuild>
+   <Command Condition="'$(Configuration)|$(Platform)' == 'Release|x64'">nasm -f win64 clammicrobench_nasm_mulsched.asm</Command>
+   <Message Condition="'$(Configuration)|$(Platform)' == 'Release|x64'">Running NASM for clammicrobench_nasm_mulsched.asm to create clammicrobench_nasm_mulsched.obj</Message>
+   <Outputs Condition="'$(Configuration)|$(Platform)' == 'Release|x64'">clammicrobench_nasm_mulsched.obj</Outputs>
+    <BuildInParallel Condition="'$(Configuration)|$(Platform)' == 'Release|x64'">true</BuildInParallel>
+
+    <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)' == 'Debug|x64'">false</ExcludedFromBuild>
+   <Command Condition="'$(Configuration)|$(Platform)' == 'Debug|x64'">nasm -f win64 clammicrobench_nasm_mulsched.asm</Command>
+   <Message Condition="'$(Configuration)|$(Platform)' == 'Debug|x64'">Running NASM for clammicrobench_nasm_mulsched.asm to create clammicrobench_nasm_mulsched.obj</Message>
+   <Outputs Condition="'$(Configuration)|$(Platform)' == 'Debug|x64'">clammicrobench_nasm_mulsched.obj</Outputs>
+    <BuildInParallel Condition="'$(Configuration)|$(Platform)' == 'Debug|x64'">true</BuildInParallel>
+
+  </CustomBuild>
+</ItemGroup>
+<ItemGroup>
+  <CustomBuild Include="clammicrobench_nasm_mul16sched.asm">
+    <FileType>Document</FileType>
+    <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)' == 'Release|x64'">false</ExcludedFromBuild>
+   <Command Condition="'$(Configuration)|$(Platform)' == 'Release|x64'">nasm -f win64 clammicrobench_nasm_mul16sched.asm</Command>
+   <Message Condition="'$(Configuration)|$(Platform)' == 'Release|x64'">Running NASM for clammicrobench_nasm_mul16sched.asm to create clammicrobench_nasm_mul16sched.obj</Message>
+   <Outputs Condition="'$(Configuration)|$(Platform)' == 'Release|x64'">clammicrobench_nasm_mul16sched.obj</Outputs>
+    <BuildInParallel Condition="'$(Configuration)|$(Platform)' == 'Release|x64'">true</BuildInParallel>
+
+    <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)' == 'Debug|x64'">false</ExcludedFromBuild>
+   <Command Condition="'$(Configuration)|$(Platform)' == 'Debug|x64'">nasm -f win64 clammicrobench_nasm_mul16sched.asm</Command>
+   <Message Condition="'$(Configuration)|$(Platform)' == 'Debug|x64'">Running NASM for clammicrobench_nasm_mul16sched.asm to create clammicrobench_nasm_mul16sched.obj</Message>
+   <Outputs Condition="'$(Configuration)|$(Platform)' == 'Debug|x64'">clammicrobench_nasm_mul16sched.obj</Outputs>
+    <BuildInParallel Condition="'$(Configuration)|$(Platform)' == 'Debug|x64'">true</BuildInParallel>
+
+  </CustomBuild>
+</ItemGroup>
+<ItemGroup>
+  <CustomBuild Include="clammicrobench_nasm_mul32sched.asm">
+    <FileType>Document</FileType>
+    <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)' == 'Release|x64'">false</ExcludedFromBuild>
+   <Command Condition="'$(Configuration)|$(Platform)' == 'Release|x64'">nasm -f win64 clammicrobench_nasm_mul32sched.asm</Command>
+   <Message Condition="'$(Configuration)|$(Platform)' == 'Release|x64'">Running NASM for clammicrobench_nasm_mul32sched.asm to create clammicrobench_nasm_mul32sched.obj</Message>
+   <Outputs Condition="'$(Configuration)|$(Platform)' == 'Release|x64'">clammicrobench_nasm_mul32sched.obj</Outputs>
+    <BuildInParallel Condition="'$(Configuration)|$(Platform)' == 'Release|x64'">true</BuildInParallel>
+
+    <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)' == 'Debug|x64'">false</ExcludedFromBuild>
+   <Command Condition="'$(Configuration)|$(Platform)' == 'Debug|x64'">nasm -f win64 clammicrobench_nasm_mul32sched.asm</Command>
+   <Message Condition="'$(Configuration)|$(Platform)' == 'Debug|x64'">Running NASM for clammicrobench_nasm_mul32sched.asm to create clammicrobench_nasm_mul32sched.obj</Message>
+   <Outputs Condition="'$(Configuration)|$(Platform)' == 'Debug|x64'">clammicrobench_nasm_mul32sched.obj</Outputs>
+    <BuildInParallel Condition="'$(Configuration)|$(Platform)' == 'Debug|x64'">true</BuildInParallel>
+
+  </CustomBuild>
+</ItemGroup>
+<ItemGroup>
+  <CustomBuild Include="clammicrobench_nasm_faddsched.asm">
+    <FileType>Document</FileType>
+    <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)' == 'Release|x64'">false</ExcludedFromBuild>
+   <Command Condition="'$(Configuration)|$(Platform)' == 'Release|x64'">nasm -f win64 clammicrobench_nasm_faddsched.asm</Command>
+   <Message Condition="'$(Configuration)|$(Platform)' == 'Release|x64'">Running NASM for clammicrobench_nasm_faddsched.asm to create clammicrobench_nasm_faddsched.obj</Message>
+   <Outputs Condition="'$(Configuration)|$(Platform)' == 'Release|x64'">clammicrobench_nasm_faddsched.obj</Outputs>
+    <BuildInParallel Condition="'$(Configuration)|$(Platform)' == 'Release|x64'">true</BuildInParallel>
+
+    <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)' == 'Debug|x64'">false</ExcludedFromBuild>
+   <Command Condition="'$(Configuration)|$(Platform)' == 'Debug|x64'">nasm -f win64 clammicrobench_nasm_faddsched.asm</Command>
+   <Message Condition="'$(Configuration)|$(Platform)' == 'Debug|x64'">Running NASM for clammicrobench_nasm_faddsched.asm to create clammicrobench_nasm_faddsched.obj</Message>
+   <Outputs Condition="'$(Configuration)|$(Platform)' == 'Debug|x64'">clammicrobench_nasm_faddsched.obj</Outputs>
+    <BuildInParallel Condition="'$(Configuration)|$(Platform)' == 'Debug|x64'">true</BuildInParallel>
+
+  </CustomBuild>
+</ItemGroup>
+<ItemGroup>
+  <CustomBuild Include="clammicrobench_nasm_fmulsched.asm">
+    <FileType>Document</FileType>
+    <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)' == 'Release|x64'">false</ExcludedFromBuild>
+   <Command Condition="'$(Configuration)|$(Platform)' == 'Release|x64'">nasm -f win64 clammicrobench_nasm_fmulsched.asm</Command>
+   <Message Condition="'$(Configuration)|$(Platform)' == 'Release|x64'">Running NASM for clammicrobench_nasm_fmulsched.asm to create clammicrobench_nasm_fmulsched.obj</Message>
+   <Outputs Condition="'$(Configuration)|$(Platform)' == 'Release|x64'">clammicrobench_nasm_fmulsched.obj</Outputs>
+    <BuildInParallel Condition="'$(Configuration)|$(Platform)' == 'Release|x64'">true</BuildInParallel>
+
+    <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)' == 'Debug|x64'">false</ExcludedFromBuild>
+   <Command Condition="'$(Configuration)|$(Platform)' == 'Debug|x64'">nasm -f win64 clammicrobench_nasm_fmulsched.asm</Command>
+   <Message Condition="'$(Configuration)|$(Platform)' == 'Debug|x64'">Running NASM for clammicrobench_nasm_fmulsched.asm to create clammicrobench_nasm_fmulsched.obj</Message>
+   <Outputs Condition="'$(Configuration)|$(Platform)' == 'Debug|x64'">clammicrobench_nasm_fmulsched.obj</Outputs>
+    <BuildInParallel Condition="'$(Configuration)|$(Platform)' == 'Debug|x64'">true</BuildInParallel>
+
+  </CustomBuild>
+</ItemGroup>
+<ItemGroup>
+  <CustomBuild Include="clammicrobench_nasm_fadd256sched.asm">
+    <FileType>Document</FileType>
+    <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)' == 'Release|x64'">false</ExcludedFromBuild>
+   <Command Condition="'$(Configuration)|$(Platform)' == 'Release|x64'">nasm -f win64 clammicrobench_nasm_fadd256sched.asm</Command>
+   <Message Condition="'$(Configuration)|$(Platform)' == 'Release|x64'">Running NASM for clammicrobench_nasm_fadd256sched.asm to create clammicrobench_nasm_fadd256sched.obj</Message>
+   <Outputs Condition="'$(Configuration)|$(Platform)' == 'Release|x64'">clammicrobench_nasm_fadd256sched.obj</Outputs>
+    <BuildInParallel Condition="'$(Configuration)|$(Platform)' == 'Release|x64'">true</BuildInParallel>
+
+    <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)' == 'Debug|x64'">false</ExcludedFromBuild>
+   <Command Condition="'$(Configuration)|$(Platform)' == 'Debug|x64'">nasm -f win64 clammicrobench_nasm_fadd256sched.asm</Command>
+   <Message Condition="'$(Configuration)|$(Platform)' == 'Debug|x64'">Running NASM for clammicrobench_nasm_fadd256sched.asm to create clammicrobench_nasm_fadd256sched.obj</Message>
+   <Outputs Condition="'$(Configuration)|$(Platform)' == 'Debug|x64'">clammicrobench_nasm_fadd256sched.obj</Outputs>
+    <BuildInParallel Condition="'$(Configuration)|$(Platform)' == 'Debug|x64'">true</BuildInParallel>
+
+  </CustomBuild>
+</ItemGroup>
+<ItemGroup>
+  <CustomBuild Include="clammicrobench_nasm_mixfaddfmulsched.asm">
+    <FileType>Document</FileType>
+    <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)' == 'Release|x64'">false</ExcludedFromBuild>
+   <Command Condition="'$(Configuration)|$(Platform)' == 'Release|x64'">nasm -f win64 clammicrobench_nasm_mixfaddfmulsched.asm</Command>
+   <Message Condition="'$(Configuration)|$(Platform)' == 'Release|x64'">Running NASM for clammicrobench_nasm_mixfaddfmulsched.asm to create clammicrobench_nasm_mixfaddfmulsched.obj</Message>
+   <Outputs Condition="'$(Configuration)|$(Platform)' == 'Release|x64'">clammicrobench_nasm_mixfaddfmulsched.obj</Outputs>
+    <BuildInParallel Condition="'$(Configuration)|$(Platform)' == 'Release|x64'">true</BuildInParallel>
+
+    <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)' == 'Debug|x64'">false</ExcludedFromBuild>
+   <Command Condition="'$(Configuration)|$(Platform)' == 'Debug|x64'">nasm -f win64 clammicrobench_nasm_mixfaddfmulsched.asm</Command>
+   <Message Condition="'$(Configuration)|$(Platform)' == 'Debug|x64'">Running NASM for clammicrobench_nasm_mixfaddfmulsched.asm to create clammicrobench_nasm_mixfaddfmulsched.obj</Message>
+   <Outputs Condition="'$(Configuration)|$(Platform)' == 'Debug|x64'">clammicrobench_nasm_mixfaddfmulsched.obj</Outputs>
+    <BuildInParallel Condition="'$(Configuration)|$(Platform)' == 'Debug|x64'">true</BuildInParallel>
+
+  </CustomBuild>
+</ItemGroup>
+<ItemGroup>
+  <CustomBuild Include="clammicrobench_nasm_jmpsched.asm">
+    <FileType>Document</FileType>
+    <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)' == 'Release|x64'">false</ExcludedFromBuild>
+   <Command Condition="'$(Configuration)|$(Platform)' == 'Release|x64'">nasm -f win64 clammicrobench_nasm_jmpsched.asm</Command>
+   <Message Condition="'$(Configuration)|$(Platform)' == 'Release|x64'">Running NASM for clammicrobench_nasm_jmpsched.asm to create clammicrobench_nasm_jmpsched.obj</Message>
+   <Outputs Condition="'$(Configuration)|$(Platform)' == 'Release|x64'">clammicrobench_nasm_jmpsched.obj</Outputs>
+    <BuildInParallel Condition="'$(Configuration)|$(Platform)' == 'Release|x64'">true</BuildInParallel>
+
+    <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)' == 'Debug|x64'">false</ExcludedFromBuild>
+   <Command Condition="'$(Configuration)|$(Platform)' == 'Debug|x64'">nasm -f win64 clammicrobench_nasm_jmpsched.asm</Command>
+   <Message Condition="'$(Configuration)|$(Platform)' == 'Debug|x64'">Running NASM for clammicrobench_nasm_jmpsched.asm to create clammicrobench_nasm_jmpsched.obj</Message>
+   <Outputs Condition="'$(Configuration)|$(Platform)' == 'Debug|x64'">clammicrobench_nasm_jmpsched.obj</Outputs>
+    <BuildInParallel Condition="'$(Configuration)|$(Platform)' == 'Debug|x64'">true</BuildInParallel>
+
+  </CustomBuild>
+</ItemGroup>
+<ItemGroup>
+  <CustomBuild Include="clammicrobench_nasm_flagrf.asm">
+    <FileType>Document</FileType>
+    <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)' == 'Release|x64'">false</ExcludedFromBuild>
+   <Command Condition="'$(Configuration)|$(Platform)' == 'Release|x64'">nasm -f win64 clammicrobench_nasm_flagrf.asm</Command>
+   <Message Condition="'$(Configuration)|$(Platform)' == 'Release|x64'">Running NASM for clammicrobench_nasm_flagrf.asm to create clammicrobench_nasm_flagrf.obj</Message>
+   <Outputs Condition="'$(Configuration)|$(Platform)' == 'Release|x64'">clammicrobench_nasm_flagrf.obj</Outputs>
+    <BuildInParallel Condition="'$(Configuration)|$(Platform)' == 'Release|x64'">true</BuildInParallel>
+
+    <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)' == 'Debug|x64'">false</ExcludedFromBuild>
+   <Command Condition="'$(Configuration)|$(Platform)' == 'Debug|x64'">nasm -f win64 clammicrobench_nasm_flagrf.asm</Command>
+   <Message Condition="'$(Configuration)|$(Platform)' == 'Debug|x64'">Running NASM for clammicrobench_nasm_flagrf.asm to create clammicrobench_nasm_flagrf.obj</Message>
+   <Outputs Condition="'$(Configuration)|$(Platform)' == 'Debug|x64'">clammicrobench_nasm_flagrf.obj</Outputs>
+    <BuildInParallel Condition="'$(Configuration)|$(Platform)' == 'Debug|x64'">true</BuildInParallel>
+
+  </CustomBuild>
+</ItemGroup>
+<ItemGroup>
+  <CustomBuild Include="clammicrobench_nasm_mixintfprf.asm">
+    <FileType>Document</FileType>
+    <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)' == 'Release|x64'">false</ExcludedFromBuild>
+   <Command Condition="'$(Configuration)|$(Platform)' == 'Release|x64'">nasm -f win64 clammicrobench_nasm_mixintfprf.asm</Command>
+   <Message Condition="'$(Configuration)|$(Platform)' == 'Release|x64'">Running NASM for clammicrobench_nasm_mixintfprf.asm to create clammicrobench_nasm_mixintfprf.obj</Message>
+   <Outputs Condition="'$(Configuration)|$(Platform)' == 'Release|x64'">clammicrobench_nasm_mixintfprf.obj</Outputs>
+    <BuildInParallel Condition="'$(Configuration)|$(Platform)' == 'Release|x64'">true</BuildInParallel>
+
+    <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)' == 'Debug|x64'">false</ExcludedFromBuild>
+   <Command Condition="'$(Configuration)|$(Platform)' == 'Debug|x64'">nasm -f win64 clammicrobench_nasm_mixintfprf.asm</Command>
+   <Message Condition="'$(Configuration)|$(Platform)' == 'Debug|x64'">Running NASM for clammicrobench_nasm_mixintfprf.asm to create clammicrobench_nasm_mixintfprf.obj</Message>
+   <Outputs Condition="'$(Configuration)|$(Platform)' == 'Debug|x64'">clammicrobench_nasm_mixintfprf.obj</Outputs>
+    <BuildInParallel Condition="'$(Configuration)|$(Platform)' == 'Debug|x64'">true</BuildInParallel>
+
+  </CustomBuild>
+</ItemGroup>
+<ItemGroup>
+  <CustomBuild Include="clammicrobench_nasm_loadsched.asm">
+    <FileType>Document</FileType>
+    <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)' == 'Release|x64'">false</ExcludedFromBuild>
+   <Command Condition="'$(Configuration)|$(Platform)' == 'Release|x64'">nasm -f win64 clammicrobench_nasm_loadsched.asm</Command>
+   <Message Condition="'$(Configuration)|$(Platform)' == 'Release|x64'">Running NASM for clammicrobench_nasm_loadsched.asm to create clammicrobench_nasm_loadsched.obj</Message>
+   <Outputs Condition="'$(Configuration)|$(Platform)' == 'Release|x64'">clammicrobench_nasm_loadsched.obj</Outputs>
+    <BuildInParallel Condition="'$(Configuration)|$(Platform)' == 'Release|x64'">true</BuildInParallel>
+
+    <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)' == 'Debug|x64'">false</ExcludedFromBuild>
+   <Command Condition="'$(Configuration)|$(Platform)' == 'Debug|x64'">nasm -f win64 clammicrobench_nasm_loadsched.asm</Command>
+   <Message Condition="'$(Configuration)|$(Platform)' == 'Debug|x64'">Running NASM for clammicrobench_nasm_loadsched.asm to create clammicrobench_nasm_loadsched.obj</Message>
+   <Outputs Condition="'$(Configuration)|$(Platform)' == 'Debug|x64'">clammicrobench_nasm_loadsched.obj</Outputs>
+    <BuildInParallel Condition="'$(Configuration)|$(Platform)' == 'Debug|x64'">true</BuildInParallel>
+
+  </CustomBuild>
+</ItemGroup>
+<ItemGroup>
+  <CustomBuild Include="clammicrobench_nasm_storesched.asm">
+    <FileType>Document</FileType>
+    <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)' == 'Release|x64'">false</ExcludedFromBuild>
+   <Command Condition="'$(Configuration)|$(Platform)' == 'Release|x64'">nasm -f win64 clammicrobench_nasm_storesched.asm</Command>
+   <Message Condition="'$(Configuration)|$(Platform)' == 'Release|x64'">Running NASM for clammicrobench_nasm_storesched.asm to create clammicrobench_nasm_storesched.obj</Message>
+   <Outputs Condition="'$(Configuration)|$(Platform)' == 'Release|x64'">clammicrobench_nasm_storesched.obj</Outputs>
+    <BuildInParallel Condition="'$(Configuration)|$(Platform)' == 'Release|x64'">true</BuildInParallel>
+
+    <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)' == 'Debug|x64'">false</ExcludedFromBuild>
+   <Command Condition="'$(Configuration)|$(Platform)' == 'Debug|x64'">nasm -f win64 clammicrobench_nasm_storesched.asm</Command>
+   <Message Condition="'$(Configuration)|$(Platform)' == 'Debug|x64'">Running NASM for clammicrobench_nasm_storesched.asm to create clammicrobench_nasm_storesched.obj</Message>
+   <Outputs Condition="'$(Configuration)|$(Platform)' == 'Debug|x64'">clammicrobench_nasm_storesched.obj</Outputs>
+    <BuildInParallel Condition="'$(Configuration)|$(Platform)' == 'Debug|x64'">true</BuildInParallel>
+
+  </CustomBuild>
+</ItemGroup>
+<ItemGroup>
+  <CustomBuild Include="clammicrobench_nasm_storedatasched.asm">
+    <FileType>Document</FileType>
+    <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)' == 'Release|x64'">false</ExcludedFromBuild>
+   <Command Condition="'$(Configuration)|$(Platform)' == 'Release|x64'">nasm -f win64 clammicrobench_nasm_storedatasched.asm</Command>
+   <Message Condition="'$(Configuration)|$(Platform)' == 'Release|x64'">Running NASM for clammicrobench_nasm_storedatasched.asm to create clammicrobench_nasm_storedatasched.obj</Message>
+   <Outputs Condition="'$(Configuration)|$(Platform)' == 'Release|x64'">clammicrobench_nasm_storedatasched.obj</Outputs>
+    <BuildInParallel Condition="'$(Configuration)|$(Platform)' == 'Release|x64'">true</BuildInParallel>
+
+    <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)' == 'Debug|x64'">false</ExcludedFromBuild>
+   <Command Condition="'$(Configuration)|$(Platform)' == 'Debug|x64'">nasm -f win64 clammicrobench_nasm_storedatasched.asm</Command>
+   <Message Condition="'$(Configuration)|$(Platform)' == 'Debug|x64'">Running NASM for clammicrobench_nasm_storedatasched.asm to create clammicrobench_nasm_storedatasched.obj</Message>
+   <Outputs Condition="'$(Configuration)|$(Platform)' == 'Debug|x64'">clammicrobench_nasm_storedatasched.obj</Outputs>
+    <BuildInParallel Condition="'$(Configuration)|$(Platform)' == 'Debug|x64'">true</BuildInParallel>
+
+  </CustomBuild>
+</ItemGroup>
+<ItemGroup>
+  <CustomBuild Include="clammicrobench_nasm_ldq.asm">
+    <FileType>Document</FileType>
+    <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)' == 'Release|x64'">false</ExcludedFromBuild>
+   <Command Condition="'$(Configuration)|$(Platform)' == 'Release|x64'">nasm -f win64 clammicrobench_nasm_ldq.asm</Command>
+   <Message Condition="'$(Configuration)|$(Platform)' == 'Release|x64'">Running NASM for clammicrobench_nasm_ldq.asm to create clammicrobench_nasm_ldq.obj</Message>
+   <Outputs Condition="'$(Configuration)|$(Platform)' == 'Release|x64'">clammicrobench_nasm_ldq.obj</Outputs>
+    <BuildInParallel Condition="'$(Configuration)|$(Platform)' == 'Release|x64'">true</BuildInParallel>
+
+    <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)' == 'Debug|x64'">false</ExcludedFromBuild>
+   <Command Condition="'$(Configuration)|$(Platform)' == 'Debug|x64'">nasm -f win64 clammicrobench_nasm_ldq.asm</Command>
+   <Message Condition="'$(Configuration)|$(Platform)' == 'Debug|x64'">Running NASM for clammicrobench_nasm_ldq.asm to create clammicrobench_nasm_ldq.obj</Message>
+   <Outputs Condition="'$(Configuration)|$(Platform)' == 'Debug|x64'">clammicrobench_nasm_ldq.obj</Outputs>
+    <BuildInParallel Condition="'$(Configuration)|$(Platform)' == 'Debug|x64'">true</BuildInParallel>
+
+  </CustomBuild>
+</ItemGroup>
+<ItemGroup>
+  <CustomBuild Include="clammicrobench_nasm_stq.asm">
+    <FileType>Document</FileType>
+    <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)' == 'Release|x64'">false</ExcludedFromBuild>
+   <Command Condition="'$(Configuration)|$(Platform)' == 'Release|x64'">nasm -f win64 clammicrobench_nasm_stq.asm</Command>
+   <Message Condition="'$(Configuration)|$(Platform)' == 'Release|x64'">Running NASM for clammicrobench_nasm_stq.asm to create clammicrobench_nasm_stq.obj</Message>
+   <Outputs Condition="'$(Configuration)|$(Platform)' == 'Release|x64'">clammicrobench_nasm_stq.obj</Outputs>
+    <BuildInParallel Condition="'$(Configuration)|$(Platform)' == 'Release|x64'">true</BuildInParallel>
+
+    <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)' == 'Debug|x64'">false</ExcludedFromBuild>
+   <Command Condition="'$(Configuration)|$(Platform)' == 'Debug|x64'">nasm -f win64 clammicrobench_nasm_stq.asm</Command>
+   <Message Condition="'$(Configuration)|$(Platform)' == 'Debug|x64'">Running NASM for clammicrobench_nasm_stq.asm to create clammicrobench_nasm_stq.obj</Message>
+   <Outputs Condition="'$(Configuration)|$(Platform)' == 'Debug|x64'">clammicrobench_nasm_stq.obj</Outputs>
+    <BuildInParallel Condition="'$(Configuration)|$(Platform)' == 'Debug|x64'">true</BuildInParallel>
+
+  </CustomBuild>
+</ItemGroup>
+<ItemGroup>
+  <CustomBuild Include="clammicrobench_nasm_mixldqstq.asm">
+    <FileType>Document</FileType>
+    <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)' == 'Release|x64'">false</ExcludedFromBuild>
+   <Command Condition="'$(Configuration)|$(Platform)' == 'Release|x64'">nasm -f win64 clammicrobench_nasm_mixldqstq.asm</Command>
+   <Message Condition="'$(Configuration)|$(Platform)' == 'Release|x64'">Running NASM for clammicrobench_nasm_mixldqstq.asm to create clammicrobench_nasm_mixldqstq.obj</Message>
+   <Outputs Condition="'$(Configuration)|$(Platform)' == 'Release|x64'">clammicrobench_nasm_mixldqstq.obj</Outputs>
+    <BuildInParallel Condition="'$(Configuration)|$(Platform)' == 'Release|x64'">true</BuildInParallel>
+
+    <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)' == 'Debug|x64'">false</ExcludedFromBuild>
+   <Command Condition="'$(Configuration)|$(Platform)' == 'Debug|x64'">nasm -f win64 clammicrobench_nasm_mixldqstq.asm</Command>
+   <Message Condition="'$(Configuration)|$(Platform)' == 'Debug|x64'">Running NASM for clammicrobench_nasm_mixldqstq.asm to create clammicrobench_nasm_mixldqstq.obj</Message>
+   <Outputs Condition="'$(Configuration)|$(Platform)' == 'Debug|x64'">clammicrobench_nasm_mixldqstq.obj</Outputs>
+    <BuildInParallel Condition="'$(Configuration)|$(Platform)' == 'Debug|x64'">true</BuildInParallel>
+
+  </CustomBuild>
+</ItemGroup>
+<ItemGroup>
+  <CustomBuild Include="clammicrobench_nasm_returnstack.asm">
+    <FileType>Document</FileType>
+    <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)' == 'Release|x64'">false</ExcludedFromBuild>
+   <Command Condition="'$(Configuration)|$(Platform)' == 'Release|x64'">nasm -f win64 clammicrobench_nasm_returnstack.asm</Command>
+   <Message Condition="'$(Configuration)|$(Platform)' == 'Release|x64'">Running NASM for clammicrobench_nasm_returnstack.asm to create clammicrobench_nasm_returnstack.obj</Message>
+   <Outputs Condition="'$(Configuration)|$(Platform)' == 'Release|x64'">clammicrobench_nasm_returnstack.obj</Outputs>
+    <BuildInParallel Condition="'$(Configuration)|$(Platform)' == 'Release|x64'">true</BuildInParallel>
+
+    <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)' == 'Debug|x64'">false</ExcludedFromBuild>
+   <Command Condition="'$(Configuration)|$(Platform)' == 'Debug|x64'">nasm -f win64 clammicrobench_nasm_returnstack.asm</Command>
+   <Message Condition="'$(Configuration)|$(Platform)' == 'Debug|x64'">Running NASM for clammicrobench_nasm_returnstack.asm to create clammicrobench_nasm_returnstack.obj</Message>
+   <Outputs Condition="'$(Configuration)|$(Platform)' == 'Debug|x64'">clammicrobench_nasm_returnstack.obj</Outputs>
+    <BuildInParallel Condition="'$(Configuration)|$(Platform)' == 'Debug|x64'">true</BuildInParallel>
+
+  </CustomBuild>
+</ItemGroup>
+<ItemGroup>
+  <CustomBuild Include="clammicrobench_nasm_mshrs.asm">
+    <FileType>Document</FileType>
+    <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)' == 'Release|x64'">false</ExcludedFromBuild>
+   <Command Condition="'$(Configuration)|$(Platform)' == 'Release|x64'">nasm -f win64 clammicrobench_nasm_mshrs.asm</Command>
+   <Message Condition="'$(Configuration)|$(Platform)' == 'Release|x64'">Running NASM for clammicrobench_nasm_mshrs.asm to create clammicrobench_nasm_mshrs.obj</Message>
+   <Outputs Condition="'$(Configuration)|$(Platform)' == 'Release|x64'">clammicrobench_nasm_mshrs.obj</Outputs>
+    <BuildInParallel Condition="'$(Configuration)|$(Platform)' == 'Release|x64'">true</BuildInParallel>
+
+    <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)' == 'Debug|x64'">false</ExcludedFromBuild>
+   <Command Condition="'$(Configuration)|$(Platform)' == 'Debug|x64'">nasm -f win64 clammicrobench_nasm_mshrs.asm</Command>
+   <Message Condition="'$(Configuration)|$(Platform)' == 'Debug|x64'">Running NASM for clammicrobench_nasm_mshrs.asm to create clammicrobench_nasm_mshrs.obj</Message>
+   <Outputs Condition="'$(Configuration)|$(Platform)' == 'Debug|x64'">clammicrobench_nasm_mshrs.obj</Outputs>
+    <BuildInParallel Condition="'$(Configuration)|$(Platform)' == 'Debug|x64'">true</BuildInParallel>
+
+  </CustomBuild>
+</ItemGroup>
+<ItemGroup>
+  <CustomBuild Include="clammicrobench_nasm_cvtsched.asm">
+    <FileType>Document</FileType>
+    <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)' == 'Release|x64'">false</ExcludedFromBuild>
+   <Command Condition="'$(Configuration)|$(Platform)' == 'Release|x64'">nasm -f win64 clammicrobench_nasm_cvtsched.asm</Command>
+   <Message Condition="'$(Configuration)|$(Platform)' == 'Release|x64'">Running NASM for clammicrobench_nasm_cvtsched.asm to create clammicrobench_nasm_cvtsched.obj</Message>
+   <Outputs Condition="'$(Configuration)|$(Platform)' == 'Release|x64'">clammicrobench_nasm_cvtsched.obj</Outputs>
+    <BuildInParallel Condition="'$(Configuration)|$(Platform)' == 'Release|x64'">true</BuildInParallel>
+
+    <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)' == 'Debug|x64'">false</ExcludedFromBuild>
+   <Command Condition="'$(Configuration)|$(Platform)' == 'Debug|x64'">nasm -f win64 clammicrobench_nasm_cvtsched.asm</Command>
+   <Message Condition="'$(Configuration)|$(Platform)' == 'Debug|x64'">Running NASM for clammicrobench_nasm_cvtsched.asm to create clammicrobench_nasm_cvtsched.obj</Message>
+   <Outputs Condition="'$(Configuration)|$(Platform)' == 'Debug|x64'">clammicrobench_nasm_cvtsched.obj</Outputs>
+    <BuildInParallel Condition="'$(Configuration)|$(Platform)' == 'Debug|x64'">true</BuildInParallel>
+
+  </CustomBuild>
+</ItemGroup>
+<ItemGroup>
+  <CustomBuild Include="clammicrobench_nasm_rorsched.asm">
+    <FileType>Document</FileType>
+    <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)' == 'Release|x64'">false</ExcludedFromBuild>
+   <Command Condition="'$(Configuration)|$(Platform)' == 'Release|x64'">nasm -f win64 clammicrobench_nasm_rorsched.asm</Command>
+   <Message Condition="'$(Configuration)|$(Platform)' == 'Release|x64'">Running NASM for clammicrobench_nasm_rorsched.asm to create clammicrobench_nasm_rorsched.obj</Message>
+   <Outputs Condition="'$(Configuration)|$(Platform)' == 'Release|x64'">clammicrobench_nasm_rorsched.obj</Outputs>
+    <BuildInParallel Condition="'$(Configuration)|$(Platform)' == 'Release|x64'">true</BuildInParallel>
+
+    <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)' == 'Debug|x64'">false</ExcludedFromBuild>
+   <Command Condition="'$(Configuration)|$(Platform)' == 'Debug|x64'">nasm -f win64 clammicrobench_nasm_rorsched.asm</Command>
+   <Message Condition="'$(Configuration)|$(Platform)' == 'Debug|x64'">Running NASM for clammicrobench_nasm_rorsched.asm to create clammicrobench_nasm_rorsched.obj</Message>
+   <Outputs Condition="'$(Configuration)|$(Platform)' == 'Debug|x64'">clammicrobench_nasm_rorsched.obj</Outputs>
+    <BuildInParallel Condition="'$(Configuration)|$(Platform)' == 'Debug|x64'">true</BuildInParallel>
+
+  </CustomBuild>
+</ItemGroup>
+<ItemGroup>
+  <CustomBuild Include="clammicrobench_nasm_mixmulschedtest.asm">
+    <FileType>Document</FileType>
+    <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)' == 'Release|x64'">false</ExcludedFromBuild>
+   <Command Condition="'$(Configuration)|$(Platform)' == 'Release|x64'">nasm -f win64 clammicrobench_nasm_mixmulschedtest.asm</Command>
+   <Message Condition="'$(Configuration)|$(Platform)' == 'Release|x64'">Running NASM for clammicrobench_nasm_mixmulschedtest.asm to create clammicrobench_nasm_mixmulschedtest.obj</Message>
+   <Outputs Condition="'$(Configuration)|$(Platform)' == 'Release|x64'">clammicrobench_nasm_mixmulschedtest.obj</Outputs>
+    <BuildInParallel Condition="'$(Configuration)|$(Platform)' == 'Release|x64'">true</BuildInParallel>
+
+    <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)' == 'Debug|x64'">false</ExcludedFromBuild>
+   <Command Condition="'$(Configuration)|$(Platform)' == 'Debug|x64'">nasm -f win64 clammicrobench_nasm_mixmulschedtest.asm</Command>
+   <Message Condition="'$(Configuration)|$(Platform)' == 'Debug|x64'">Running NASM for clammicrobench_nasm_mixmulschedtest.asm to create clammicrobench_nasm_mixmulschedtest.obj</Message>
+   <Outputs Condition="'$(Configuration)|$(Platform)' == 'Debug|x64'">clammicrobench_nasm_mixmulschedtest.obj</Outputs>
+    <BuildInParallel Condition="'$(Configuration)|$(Platform)' == 'Debug|x64'">true</BuildInParallel>
+
+  </CustomBuild>
+</ItemGroup>
+<ItemGroup>
+  <CustomBuild Include="clammicrobench_nasm_tbb.asm">
+    <FileType>Document</FileType>
+    <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)' == 'Release|x64'">false</ExcludedFromBuild>
+   <Command Condition="'$(Configuration)|$(Platform)' == 'Release|x64'">nasm -f win64 clammicrobench_nasm_tbb.asm</Command>
+   <Message Condition="'$(Configuration)|$(Platform)' == 'Release|x64'">Running NASM for clammicrobench_nasm_tbb.asm to create clammicrobench_nasm_tbb.obj</Message>
+   <Outputs Condition="'$(Configuration)|$(Platform)' == 'Release|x64'">clammicrobench_nasm_tbb.obj</Outputs>
+    <BuildInParallel Condition="'$(Configuration)|$(Platform)' == 'Release|x64'">true</BuildInParallel>
+
+    <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)' == 'Debug|x64'">false</ExcludedFromBuild>
+   <Command Condition="'$(Configuration)|$(Platform)' == 'Debug|x64'">nasm -f win64 clammicrobench_nasm_tbb.asm</Command>
+   <Message Condition="'$(Configuration)|$(Platform)' == 'Debug|x64'">Running NASM for clammicrobench_nasm_tbb.asm to create clammicrobench_nasm_tbb.obj</Message>
+   <Outputs Condition="'$(Configuration)|$(Platform)' == 'Debug|x64'">clammicrobench_nasm_tbb.obj</Outputs>
+    <BuildInParallel Condition="'$(Configuration)|$(Platform)' == 'Debug|x64'">true</BuildInParallel>
+
+  </CustomBuild>
+</ItemGroup>
+<ItemGroup>
+  <CustomBuild Include="clammicrobench_nasm_bob.asm">
+    <FileType>Document</FileType>
+    <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)' == 'Release|x64'">false</ExcludedFromBuild>
+   <Command Condition="'$(Configuration)|$(Platform)' == 'Release|x64'">nasm -f win64 clammicrobench_nasm_bob.asm</Command>
+   <Message Condition="'$(Configuration)|$(Platform)' == 'Release|x64'">Running NASM for clammicrobench_nasm_bob.asm to create clammicrobench_nasm_bob.obj</Message>
+   <Outputs Condition="'$(Configuration)|$(Platform)' == 'Release|x64'">clammicrobench_nasm_bob.obj</Outputs>
+    <BuildInParallel Condition="'$(Configuration)|$(Platform)' == 'Release|x64'">true</BuildInParallel>
+
+    <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)' == 'Debug|x64'">false</ExcludedFromBuild>
+   <Command Condition="'$(Configuration)|$(Platform)' == 'Debug|x64'">nasm -f win64 clammicrobench_nasm_bob.asm</Command>
+   <Message Condition="'$(Configuration)|$(Platform)' == 'Debug|x64'">Running NASM for clammicrobench_nasm_bob.asm to create clammicrobench_nasm_bob.obj</Message>
+   <Outputs Condition="'$(Configuration)|$(Platform)' == 'Debug|x64'">clammicrobench_nasm_bob.obj</Outputs>
+    <BuildInParallel Condition="'$(Configuration)|$(Platform)' == 'Debug|x64'">true</BuildInParallel>
+
+  </CustomBuild>
+</ItemGroup>
+<ItemGroup>
+  <CustomBuild Include="clammicrobench_nasm_ymmstateintrf.asm">
+    <FileType>Document</FileType>
+    <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)' == 'Release|x64'">false</ExcludedFromBuild>
+   <Command Condition="'$(Configuration)|$(Platform)' == 'Release|x64'">nasm -f win64 clammicrobench_nasm_ymmstateintrf.asm</Command>
+   <Message Condition="'$(Configuration)|$(Platform)' == 'Release|x64'">Running NASM for clammicrobench_nasm_ymmstateintrf.asm to create clammicrobench_nasm_ymmstateintrf.obj</Message>
+   <Outputs Condition="'$(Configuration)|$(Platform)' == 'Release|x64'">clammicrobench_nasm_ymmstateintrf.obj</Outputs>
+    <BuildInParallel Condition="'$(Configuration)|$(Platform)' == 'Release|x64'">true</BuildInParallel>
+
+    <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)' == 'Debug|x64'">false</ExcludedFromBuild>
+   <Command Condition="'$(Configuration)|$(Platform)' == 'Debug|x64'">nasm -f win64 clammicrobench_nasm_ymmstateintrf.asm</Command>
+   <Message Condition="'$(Configuration)|$(Platform)' == 'Debug|x64'">Running NASM for clammicrobench_nasm_ymmstateintrf.asm to create clammicrobench_nasm_ymmstateintrf.obj</Message>
+   <Outputs Condition="'$(Configuration)|$(Platform)' == 'Debug|x64'">clammicrobench_nasm_ymmstateintrf.obj</Outputs>
+    <BuildInParallel Condition="'$(Configuration)|$(Platform)' == 'Debug|x64'">true</BuildInParallel>
+
+  </CustomBuild>
+</ItemGroup>
+<ItemGroup>
+  <CustomBuild Include="clammicrobench_nasm_add256rf.asm">
+    <FileType>Document</FileType>
+    <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)' == 'Release|x64'">false</ExcludedFromBuild>
+   <Command Condition="'$(Configuration)|$(Platform)' == 'Release|x64'">nasm -f win64 clammicrobench_nasm_add256rf.asm</Command>
+   <Message Condition="'$(Configuration)|$(Platform)' == 'Release|x64'">Running NASM for clammicrobench_nasm_add256rf.asm to create clammicrobench_nasm_add256rf.obj</Message>
+   <Outputs Condition="'$(Configuration)|$(Platform)' == 'Release|x64'">clammicrobench_nasm_add256rf.obj</Outputs>
+    <BuildInParallel Condition="'$(Configuration)|$(Platform)' == 'Release|x64'">true</BuildInParallel>
+
+    <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)' == 'Debug|x64'">false</ExcludedFromBuild>
+   <Command Condition="'$(Configuration)|$(Platform)' == 'Debug|x64'">nasm -f win64 clammicrobench_nasm_add256rf.asm</Command>
+   <Message Condition="'$(Configuration)|$(Platform)' == 'Debug|x64'">Running NASM for clammicrobench_nasm_add256rf.asm to create clammicrobench_nasm_add256rf.obj</Message>
+   <Outputs Condition="'$(Configuration)|$(Platform)' == 'Debug|x64'">clammicrobench_nasm_add256rf.obj</Outputs>
+    <BuildInParallel Condition="'$(Configuration)|$(Platform)' == 'Debug|x64'">true</BuildInParallel>
+
+  </CustomBuild>
+</ItemGroup>
+<ItemGroup>
+  <CustomBuild Include="clammicrobench_nasm_add256sched.asm">
+    <FileType>Document</FileType>
+    <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)' == 'Release|x64'">false</ExcludedFromBuild>
+   <Command Condition="'$(Configuration)|$(Platform)' == 'Release|x64'">nasm -f win64 clammicrobench_nasm_add256sched.asm</Command>
+   <Message Condition="'$(Configuration)|$(Platform)' == 'Release|x64'">Running NASM for clammicrobench_nasm_add256sched.asm to create clammicrobench_nasm_add256sched.obj</Message>
+   <Outputs Condition="'$(Configuration)|$(Platform)' == 'Release|x64'">clammicrobench_nasm_add256sched.obj</Outputs>
+    <BuildInParallel Condition="'$(Configuration)|$(Platform)' == 'Release|x64'">true</BuildInParallel>
+
+    <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)' == 'Debug|x64'">false</ExcludedFromBuild>
+   <Command Condition="'$(Configuration)|$(Platform)' == 'Debug|x64'">nasm -f win64 clammicrobench_nasm_add256sched.asm</Command>
+   <Message Condition="'$(Configuration)|$(Platform)' == 'Debug|x64'">Running NASM for clammicrobench_nasm_add256sched.asm to create clammicrobench_nasm_add256sched.obj</Message>
+   <Outputs Condition="'$(Configuration)|$(Platform)' == 'Debug|x64'">clammicrobench_nasm_add256sched.obj</Outputs>
+    <BuildInParallel Condition="'$(Configuration)|$(Platform)' == 'Debug|x64'">true</BuildInParallel>
+
+  </CustomBuild>
+</ItemGroup>
+<ItemGroup>
+  <CustomBuild Include="clammicrobench_nasm_add128sched.asm">
+    <FileType>Document</FileType>
+    <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)' == 'Release|x64'">false</ExcludedFromBuild>
+   <Command Condition="'$(Configuration)|$(Platform)' == 'Release|x64'">nasm -f win64 clammicrobench_nasm_add128sched.asm</Command>
+   <Message Condition="'$(Configuration)|$(Platform)' == 'Release|x64'">Running NASM for clammicrobench_nasm_add128sched.asm to create clammicrobench_nasm_add128sched.obj</Message>
+   <Outputs Condition="'$(Configuration)|$(Platform)' == 'Release|x64'">clammicrobench_nasm_add128sched.obj</Outputs>
+    <BuildInParallel Condition="'$(Configuration)|$(Platform)' == 'Release|x64'">true</BuildInParallel>
+
+    <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)' == 'Debug|x64'">false</ExcludedFromBuild>
+   <Command Condition="'$(Configuration)|$(Platform)' == 'Debug|x64'">nasm -f win64 clammicrobench_nasm_add128sched.asm</Command>
+   <Message Condition="'$(Configuration)|$(Platform)' == 'Debug|x64'">Running NASM for clammicrobench_nasm_add128sched.asm to create clammicrobench_nasm_add128sched.obj</Message>
+   <Outputs Condition="'$(Configuration)|$(Platform)' == 'Debug|x64'">clammicrobench_nasm_add128sched.obj</Outputs>
+    <BuildInParallel Condition="'$(Configuration)|$(Platform)' == 'Debug|x64'">true</BuildInParallel>
+
+  </CustomBuild>
+</ItemGroup>
+<ItemGroup>
+  <CustomBuild Include="clammicrobench_nasm_btb4Unconditional.asm">
+    <FileType>Document</FileType>
+    <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)' == 'Release|x64'">false</ExcludedFromBuild>
+   <Command Condition="'$(Configuration)|$(Platform)' == 'Release|x64'">nasm -f win64 clammicrobench_nasm_btb4Unconditional.asm</Command>
+   <Message Condition="'$(Configuration)|$(Platform)' == 'Release|x64'">Running NASM for clammicrobench_nasm_btb4Unconditional.asm to create clammicrobench_nasm_btb4Unconditional.obj</Message>
+   <Outputs Condition="'$(Configuration)|$(Platform)' == 'Release|x64'">clammicrobench_nasm_btb4Unconditional.obj</Outputs>
+    <BuildInParallel Condition="'$(Configuration)|$(Platform)' == 'Release|x64'">true</BuildInParallel>
+
+    <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)' == 'Debug|x64'">false</ExcludedFromBuild>
+   <Command Condition="'$(Configuration)|$(Platform)' == 'Debug|x64'">nasm -f win64 clammicrobench_nasm_btb4Unconditional.asm</Command>
+   <Message Condition="'$(Configuration)|$(Platform)' == 'Debug|x64'">Running NASM for clammicrobench_nasm_btb4Unconditional.asm to create clammicrobench_nasm_btb4Unconditional.obj</Message>
+   <Outputs Condition="'$(Configuration)|$(Platform)' == 'Debug|x64'">clammicrobench_nasm_btb4Unconditional.obj</Outputs>
+    <BuildInParallel Condition="'$(Configuration)|$(Platform)' == 'Debug|x64'">true</BuildInParallel>
+
+  </CustomBuild>
+</ItemGroup>
+<ItemGroup>
+  <CustomBuild Include="clammicrobench_nasm_btb8Unconditional.asm">
+    <FileType>Document</FileType>
+    <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)' == 'Release|x64'">false</ExcludedFromBuild>
+   <Command Condition="'$(Configuration)|$(Platform)' == 'Release|x64'">nasm -f win64 clammicrobench_nasm_btb8Unconditional.asm</Command>
+   <Message Condition="'$(Configuration)|$(Platform)' == 'Release|x64'">Running NASM for clammicrobench_nasm_btb8Unconditional.asm to create clammicrobench_nasm_btb8Unconditional.obj</Message>
+   <Outputs Condition="'$(Configuration)|$(Platform)' == 'Release|x64'">clammicrobench_nasm_btb8Unconditional.obj</Outputs>
+    <BuildInParallel Condition="'$(Configuration)|$(Platform)' == 'Release|x64'">true</BuildInParallel>
+
+    <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)' == 'Debug|x64'">false</ExcludedFromBuild>
+   <Command Condition="'$(Configuration)|$(Platform)' == 'Debug|x64'">nasm -f win64 clammicrobench_nasm_btb8Unconditional.asm</Command>
+   <Message Condition="'$(Configuration)|$(Platform)' == 'Debug|x64'">Running NASM for clammicrobench_nasm_btb8Unconditional.asm to create clammicrobench_nasm_btb8Unconditional.obj</Message>
+   <Outputs Condition="'$(Configuration)|$(Platform)' == 'Debug|x64'">clammicrobench_nasm_btb8Unconditional.obj</Outputs>
+    <BuildInParallel Condition="'$(Configuration)|$(Platform)' == 'Debug|x64'">true</BuildInParallel>
+
+  </CustomBuild>
+</ItemGroup>
+<ItemGroup>
+  <CustomBuild Include="clammicrobench_nasm_btb16Unconditional.asm">
+    <FileType>Document</FileType>
+    <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)' == 'Release|x64'">false</ExcludedFromBuild>
+   <Command Condition="'$(Configuration)|$(Platform)' == 'Release|x64'">nasm -f win64 clammicrobench_nasm_btb16Unconditional.asm</Command>
+   <Message Condition="'$(Configuration)|$(Platform)' == 'Release|x64'">Running NASM for clammicrobench_nasm_btb16Unconditional.asm to create clammicrobench_nasm_btb16Unconditional.obj</Message>
+   <Outputs Condition="'$(Configuration)|$(Platform)' == 'Release|x64'">clammicrobench_nasm_btb16Unconditional.obj</Outputs>
+    <BuildInParallel Condition="'$(Configuration)|$(Platform)' == 'Release|x64'">true</BuildInParallel>
+
+    <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)' == 'Debug|x64'">false</ExcludedFromBuild>
+   <Command Condition="'$(Configuration)|$(Platform)' == 'Debug|x64'">nasm -f win64 clammicrobench_nasm_btb16Unconditional.asm</Command>
+   <Message Condition="'$(Configuration)|$(Platform)' == 'Debug|x64'">Running NASM for clammicrobench_nasm_btb16Unconditional.asm to create clammicrobench_nasm_btb16Unconditional.obj</Message>
+   <Outputs Condition="'$(Configuration)|$(Platform)' == 'Debug|x64'">clammicrobench_nasm_btb16Unconditional.obj</Outputs>
+    <BuildInParallel Condition="'$(Configuration)|$(Platform)' == 'Debug|x64'">true</BuildInParallel>
+
+  </CustomBuild>
+</ItemGroup>
+<ItemGroup>
+  <CustomBuild Include="clammicrobench_nasm_btb32Unconditional.asm">
+    <FileType>Document</FileType>
+    <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)' == 'Release|x64'">false</ExcludedFromBuild>
+   <Command Condition="'$(Configuration)|$(Platform)' == 'Release|x64'">nasm -f win64 clammicrobench_nasm_btb32Unconditional.asm</Command>
+   <Message Condition="'$(Configuration)|$(Platform)' == 'Release|x64'">Running NASM for clammicrobench_nasm_btb32Unconditional.asm to create clammicrobench_nasm_btb32Unconditional.obj</Message>
+   <Outputs Condition="'$(Configuration)|$(Platform)' == 'Release|x64'">clammicrobench_nasm_btb32Unconditional.obj</Outputs>
+    <BuildInParallel Condition="'$(Configuration)|$(Platform)' == 'Release|x64'">true</BuildInParallel>
+
+    <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)' == 'Debug|x64'">false</ExcludedFromBuild>
+   <Command Condition="'$(Configuration)|$(Platform)' == 'Debug|x64'">nasm -f win64 clammicrobench_nasm_btb32Unconditional.asm</Command>
+   <Message Condition="'$(Configuration)|$(Platform)' == 'Debug|x64'">Running NASM for clammicrobench_nasm_btb32Unconditional.asm to create clammicrobench_nasm_btb32Unconditional.obj</Message>
+   <Outputs Condition="'$(Configuration)|$(Platform)' == 'Debug|x64'">clammicrobench_nasm_btb32Unconditional.obj</Outputs>
+    <BuildInParallel Condition="'$(Configuration)|$(Platform)' == 'Debug|x64'">true</BuildInParallel>
+
+  </CustomBuild>
+</ItemGroup>
+<ItemGroup>
+  <CustomBuild Include="clammicrobench_nasm_mixmuljmpsched.asm">
+    <FileType>Document</FileType>
+    <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)' == 'Release|x64'">false</ExcludedFromBuild>
+   <Command Condition="'$(Configuration)|$(Platform)' == 'Release|x64'">nasm -f win64 clammicrobench_nasm_mixmuljmpsched.asm</Command>
+   <Message Condition="'$(Configuration)|$(Platform)' == 'Release|x64'">Running NASM for clammicrobench_nasm_mixmuljmpsched.asm to create clammicrobench_nasm_mixmuljmpsched.obj</Message>
+   <Outputs Condition="'$(Configuration)|$(Platform)' == 'Release|x64'">clammicrobench_nasm_mixmuljmpsched.obj</Outputs>
+    <BuildInParallel Condition="'$(Configuration)|$(Platform)' == 'Release|x64'">true</BuildInParallel>
+
+    <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)' == 'Debug|x64'">false</ExcludedFromBuild>
+   <Command Condition="'$(Configuration)|$(Platform)' == 'Debug|x64'">nasm -f win64 clammicrobench_nasm_mixmuljmpsched.asm</Command>
+   <Message Condition="'$(Configuration)|$(Platform)' == 'Debug|x64'">Running NASM for clammicrobench_nasm_mixmuljmpsched.asm to create clammicrobench_nasm_mixmuljmpsched.obj</Message>
+   <Outputs Condition="'$(Configuration)|$(Platform)' == 'Debug|x64'">clammicrobench_nasm_mixmuljmpsched.obj</Outputs>
+    <BuildInParallel Condition="'$(Configuration)|$(Platform)' == 'Debug|x64'">true</BuildInParallel>
+
+  </CustomBuild>
+</ItemGroup>
+<ItemGroup>
+  <CustomBuild Include="clammicrobench_nasm_mixmulrorsched.asm">
+    <FileType>Document</FileType>
+    <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)' == 'Release|x64'">false</ExcludedFromBuild>
+   <Command Condition="'$(Configuration)|$(Platform)' == 'Release|x64'">nasm -f win64 clammicrobench_nasm_mixmulrorsched.asm</Command>
+   <Message Condition="'$(Configuration)|$(Platform)' == 'Release|x64'">Running NASM for clammicrobench_nasm_mixmulrorsched.asm to create clammicrobench_nasm_mixmulrorsched.obj</Message>
+   <Outputs Condition="'$(Configuration)|$(Platform)' == 'Release|x64'">clammicrobench_nasm_mixmulrorsched.obj</Outputs>
+    <BuildInParallel Condition="'$(Configuration)|$(Platform)' == 'Release|x64'">true</BuildInParallel>
+
+    <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)' == 'Debug|x64'">false</ExcludedFromBuild>
+   <Command Condition="'$(Configuration)|$(Platform)' == 'Debug|x64'">nasm -f win64 clammicrobench_nasm_mixmulrorsched.asm</Command>
+   <Message Condition="'$(Configuration)|$(Platform)' == 'Debug|x64'">Running NASM for clammicrobench_nasm_mixmulrorsched.asm to create clammicrobench_nasm_mixmulrorsched.obj</Message>
+   <Outputs Condition="'$(Configuration)|$(Platform)' == 'Debug|x64'">clammicrobench_nasm_mixmulrorsched.obj</Outputs>
+    <BuildInParallel Condition="'$(Configuration)|$(Platform)' == 'Debug|x64'">true</BuildInParallel>
+
+  </CustomBuild>
+</ItemGroup>
+<ItemGroup>
+  <CustomBuild Include="clammicrobench_nasm_branchhist.asm">
+    <FileType>Document</FileType>
+    <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)' == 'Release|x64'">false</ExcludedFromBuild>
+   <Command Condition="'$(Configuration)|$(Platform)' == 'Release|x64'">nasm -f win64 clammicrobench_nasm_branchhist.asm</Command>
+   <Message Condition="'$(Configuration)|$(Platform)' == 'Release|x64'">Running NASM for clammicrobench_nasm_branchhist.asm to create clammicrobench_nasm_branchhist.obj</Message>
+   <Outputs Condition="'$(Configuration)|$(Platform)' == 'Release|x64'">clammicrobench_nasm_branchhist.obj</Outputs>
+    <BuildInParallel Condition="'$(Configuration)|$(Platform)' == 'Release|x64'">true</BuildInParallel>
+
+    <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)' == 'Debug|x64'">false</ExcludedFromBuild>
+   <Command Condition="'$(Configuration)|$(Platform)' == 'Debug|x64'">nasm -f win64 clammicrobench_nasm_branchhist.asm</Command>
+   <Message Condition="'$(Configuration)|$(Platform)' == 'Debug|x64'">Running NASM for clammicrobench_nasm_branchhist.asm to create clammicrobench_nasm_branchhist.obj</Message>
+   <Outputs Condition="'$(Configuration)|$(Platform)' == 'Debug|x64'">clammicrobench_nasm_branchhist.obj</Outputs>
+    <BuildInParallel Condition="'$(Configuration)|$(Platform)' == 'Debug|x64'">true</BuildInParallel>
+
+  </CustomBuild>
+</ItemGroup>
+<ItemGroup>
+  <CustomBuild Include="clammicrobench_nasm_mxcsrrename.asm">
+    <FileType>Document</FileType>
+    <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)' == 'Release|x64'">false</ExcludedFromBuild>
+   <Command Condition="'$(Configuration)|$(Platform)' == 'Release|x64'">nasm -f win64 clammicrobench_nasm_mxcsrrename.asm</Command>
+   <Message Condition="'$(Configuration)|$(Platform)' == 'Release|x64'">Running NASM for clammicrobench_nasm_mxcsrrename.asm to create clammicrobench_nasm_mxcsrrename.obj</Message>
+   <Outputs Condition="'$(Configuration)|$(Platform)' == 'Release|x64'">clammicrobench_nasm_mxcsrrename.obj</Outputs>
+    <BuildInParallel Condition="'$(Configuration)|$(Platform)' == 'Release|x64'">true</BuildInParallel>
+
+    <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)' == 'Debug|x64'">false</ExcludedFromBuild>
+   <Command Condition="'$(Configuration)|$(Platform)' == 'Debug|x64'">nasm -f win64 clammicrobench_nasm_mxcsrrename.asm</Command>
+   <Message Condition="'$(Configuration)|$(Platform)' == 'Debug|x64'">Running NASM for clammicrobench_nasm_mxcsrrename.asm to create clammicrobench_nasm_mxcsrrename.obj</Message>
+   <Outputs Condition="'$(Configuration)|$(Platform)' == 'Debug|x64'">clammicrobench_nasm_mxcsrrename.obj</Outputs>
+    <BuildInParallel Condition="'$(Configuration)|$(Platform)' == 'Debug|x64'">true</BuildInParallel>
+
+  </CustomBuild>
+</ItemGroup>
+<ItemGroup>
+  <CustomBuild Include="clammicrobench_nasm_maskrf.asm">
+    <FileType>Document</FileType>
+    <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)' == 'Release|x64'">false</ExcludedFromBuild>
+   <Command Condition="'$(Configuration)|$(Platform)' == 'Release|x64'">nasm -f win64 clammicrobench_nasm_maskrf.asm</Command>
+   <Message Condition="'$(Configuration)|$(Platform)' == 'Release|x64'">Running NASM for clammicrobench_nasm_maskrf.asm to create clammicrobench_nasm_maskrf.obj</Message>
+   <Outputs Condition="'$(Configuration)|$(Platform)' == 'Release|x64'">clammicrobench_nasm_maskrf.obj</Outputs>
+    <BuildInParallel Condition="'$(Configuration)|$(Platform)' == 'Release|x64'">true</BuildInParallel>
+
+    <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)' == 'Debug|x64'">false</ExcludedFromBuild>
+   <Command Condition="'$(Configuration)|$(Platform)' == 'Debug|x64'">nasm -f win64 clammicrobench_nasm_maskrf.asm</Command>
+   <Message Condition="'$(Configuration)|$(Platform)' == 'Debug|x64'">Running NASM for clammicrobench_nasm_maskrf.asm to create clammicrobench_nasm_maskrf.obj</Message>
+   <Outputs Condition="'$(Configuration)|$(Platform)' == 'Debug|x64'">clammicrobench_nasm_maskrf.obj</Outputs>
+    <BuildInParallel Condition="'$(Configuration)|$(Platform)' == 'Debug|x64'">true</BuildInParallel>
+
+  </CustomBuild>
+</ItemGroup>
+<ItemGroup>
+  <CustomBuild Include="clammicrobench_nasm_notintrf.asm">
+    <FileType>Document</FileType>
+    <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)' == 'Release|x64'">false</ExcludedFromBuild>
+   <Command Condition="'$(Configuration)|$(Platform)' == 'Release|x64'">nasm -f win64 clammicrobench_nasm_notintrf.asm</Command>
+   <Message Condition="'$(Configuration)|$(Platform)' == 'Release|x64'">Running NASM for clammicrobench_nasm_notintrf.asm to create clammicrobench_nasm_notintrf.obj</Message>
+   <Outputs Condition="'$(Configuration)|$(Platform)' == 'Release|x64'">clammicrobench_nasm_notintrf.obj</Outputs>
+    <BuildInParallel Condition="'$(Configuration)|$(Platform)' == 'Release|x64'">true</BuildInParallel>
+
+    <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)' == 'Debug|x64'">false</ExcludedFromBuild>
+   <Command Condition="'$(Configuration)|$(Platform)' == 'Debug|x64'">nasm -f win64 clammicrobench_nasm_notintrf.asm</Command>
+   <Message Condition="'$(Configuration)|$(Platform)' == 'Debug|x64'">Running NASM for clammicrobench_nasm_notintrf.asm to create clammicrobench_nasm_notintrf.obj</Message>
+   <Outputs Condition="'$(Configuration)|$(Platform)' == 'Debug|x64'">clammicrobench_nasm_notintrf.obj</Outputs>
+    <BuildInParallel Condition="'$(Configuration)|$(Platform)' == 'Debug|x64'">true</BuildInParallel>
+
+  </CustomBuild>
+</ItemGroup>
+<ItemGroup>
+  <CustomBuild Include="clammicrobench_nasm_movimmintrf.asm">
+    <FileType>Document</FileType>
+    <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)' == 'Release|x64'">false</ExcludedFromBuild>
+   <Command Condition="'$(Configuration)|$(Platform)' == 'Release|x64'">nasm -f win64 clammicrobench_nasm_movimmintrf.asm</Command>
+   <Message Condition="'$(Configuration)|$(Platform)' == 'Release|x64'">Running NASM for clammicrobench_nasm_movimmintrf.asm to create clammicrobench_nasm_movimmintrf.obj</Message>
+   <Outputs Condition="'$(Configuration)|$(Platform)' == 'Release|x64'">clammicrobench_nasm_movimmintrf.obj</Outputs>
+    <BuildInParallel Condition="'$(Configuration)|$(Platform)' == 'Release|x64'">true</BuildInParallel>
+
+    <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)' == 'Debug|x64'">false</ExcludedFromBuild>
+   <Command Condition="'$(Configuration)|$(Platform)' == 'Debug|x64'">nasm -f win64 clammicrobench_nasm_movimmintrf.asm</Command>
+   <Message Condition="'$(Configuration)|$(Platform)' == 'Debug|x64'">Running NASM for clammicrobench_nasm_movimmintrf.asm to create clammicrobench_nasm_movimmintrf.obj</Message>
+   <Outputs Condition="'$(Configuration)|$(Platform)' == 'Debug|x64'">clammicrobench_nasm_movimmintrf.obj</Outputs>
+    <BuildInParallel Condition="'$(Configuration)|$(Platform)' == 'Debug|x64'">true</BuildInParallel>
+
+  </CustomBuild>
+</ItemGroup>
+<ItemGroup>
+  <CustomBuild Include="clammicrobench_nasm_faddnsq.asm">
+    <FileType>Document</FileType>
+    <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)' == 'Release|x64'">false</ExcludedFromBuild>
+   <Command Condition="'$(Configuration)|$(Platform)' == 'Release|x64'">nasm -f win64 clammicrobench_nasm_faddnsq.asm</Command>
+   <Message Condition="'$(Configuration)|$(Platform)' == 'Release|x64'">Running NASM for clammicrobench_nasm_faddnsq.asm to create clammicrobench_nasm_faddnsq.obj</Message>
+   <Outputs Condition="'$(Configuration)|$(Platform)' == 'Release|x64'">clammicrobench_nasm_faddnsq.obj</Outputs>
+    <BuildInParallel Condition="'$(Configuration)|$(Platform)' == 'Release|x64'">true</BuildInParallel>
+
+    <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)' == 'Debug|x64'">false</ExcludedFromBuild>
+   <Command Condition="'$(Configuration)|$(Platform)' == 'Debug|x64'">nasm -f win64 clammicrobench_nasm_faddnsq.asm</Command>
+   <Message Condition="'$(Configuration)|$(Platform)' == 'Debug|x64'">Running NASM for clammicrobench_nasm_faddnsq.asm to create clammicrobench_nasm_faddnsq.obj</Message>
+   <Outputs Condition="'$(Configuration)|$(Platform)' == 'Debug|x64'">clammicrobench_nasm_faddnsq.obj</Outputs>
+    <BuildInParallel Condition="'$(Configuration)|$(Platform)' == 'Debug|x64'">true</BuildInParallel>
+
+  </CustomBuild>
+</ItemGroup>
+<ItemGroup>
+  <CustomBuild Include="clammicrobench_nasm_add128nsq.asm">
+    <FileType>Document</FileType>
+    <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)' == 'Release|x64'">false</ExcludedFromBuild>
+   <Command Condition="'$(Configuration)|$(Platform)' == 'Release|x64'">nasm -f win64 clammicrobench_nasm_add128nsq.asm</Command>
+   <Message Condition="'$(Configuration)|$(Platform)' == 'Release|x64'">Running NASM for clammicrobench_nasm_add128nsq.asm to create clammicrobench_nasm_add128nsq.obj</Message>
+   <Outputs Condition="'$(Configuration)|$(Platform)' == 'Release|x64'">clammicrobench_nasm_add128nsq.obj</Outputs>
+    <BuildInParallel Condition="'$(Configuration)|$(Platform)' == 'Release|x64'">true</BuildInParallel>
+
+    <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)' == 'Debug|x64'">false</ExcludedFromBuild>
+   <Command Condition="'$(Configuration)|$(Platform)' == 'Debug|x64'">nasm -f win64 clammicrobench_nasm_add128nsq.asm</Command>
+   <Message Condition="'$(Configuration)|$(Platform)' == 'Debug|x64'">Running NASM for clammicrobench_nasm_add128nsq.asm to create clammicrobench_nasm_add128nsq.obj</Message>
+   <Outputs Condition="'$(Configuration)|$(Platform)' == 'Debug|x64'">clammicrobench_nasm_add128nsq.obj</Outputs>
+    <BuildInParallel Condition="'$(Configuration)|$(Platform)' == 'Debug|x64'">true</BuildInParallel>
+
+  </CustomBuild>
+</ItemGroup>
+<ItemGroup>
+  <CustomBuild Include="clammicrobench_nasm_loadnsq.asm">
+    <FileType>Document</FileType>
+    <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)' == 'Release|x64'">false</ExcludedFromBuild>
+   <Command Condition="'$(Configuration)|$(Platform)' == 'Release|x64'">nasm -f win64 clammicrobench_nasm_loadnsq.asm</Command>
+   <Message Condition="'$(Configuration)|$(Platform)' == 'Release|x64'">Running NASM for clammicrobench_nasm_loadnsq.asm to create clammicrobench_nasm_loadnsq.obj</Message>
+   <Outputs Condition="'$(Configuration)|$(Platform)' == 'Release|x64'">clammicrobench_nasm_loadnsq.obj</Outputs>
+    <BuildInParallel Condition="'$(Configuration)|$(Platform)' == 'Release|x64'">true</BuildInParallel>
+
+    <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)' == 'Debug|x64'">false</ExcludedFromBuild>
+   <Command Condition="'$(Configuration)|$(Platform)' == 'Debug|x64'">nasm -f win64 clammicrobench_nasm_loadnsq.asm</Command>
+   <Message Condition="'$(Configuration)|$(Platform)' == 'Debug|x64'">Running NASM for clammicrobench_nasm_loadnsq.asm to create clammicrobench_nasm_loadnsq.obj</Message>
+   <Outputs Condition="'$(Configuration)|$(Platform)' == 'Debug|x64'">clammicrobench_nasm_loadnsq.obj</Outputs>
+    <BuildInParallel Condition="'$(Configuration)|$(Platform)' == 'Debug|x64'">true</BuildInParallel>
+
+  </CustomBuild>
+</ItemGroup>
+<ItemGroup>
+  <CustomBuild Include="clammicrobench_nasm_mixloadstoresched.asm">
+    <FileType>Document</FileType>
+    <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)' == 'Release|x64'">false</ExcludedFromBuild>
+   <Command Condition="'$(Configuration)|$(Platform)' == 'Release|x64'">nasm -f win64 clammicrobench_nasm_mixloadstoresched.asm</Command>
+   <Message Condition="'$(Configuration)|$(Platform)' == 'Release|x64'">Running NASM for clammicrobench_nasm_mixloadstoresched.asm to create clammicrobench_nasm_mixloadstoresched.obj</Message>
+   <Outputs Condition="'$(Configuration)|$(Platform)' == 'Release|x64'">clammicrobench_nasm_mixloadstoresched.obj</Outputs>
+    <BuildInParallel Condition="'$(Configuration)|$(Platform)' == 'Release|x64'">true</BuildInParallel>
+
+    <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)' == 'Debug|x64'">false</ExcludedFromBuild>
+   <Command Condition="'$(Configuration)|$(Platform)' == 'Debug|x64'">nasm -f win64 clammicrobench_nasm_mixloadstoresched.asm</Command>
+   <Message Condition="'$(Configuration)|$(Platform)' == 'Debug|x64'">Running NASM for clammicrobench_nasm_mixloadstoresched.asm to create clammicrobench_nasm_mixloadstoresched.obj</Message>
+   <Outputs Condition="'$(Configuration)|$(Platform)' == 'Debug|x64'">clammicrobench_nasm_mixloadstoresched.obj</Outputs>
+    <BuildInParallel Condition="'$(Configuration)|$(Platform)' == 'Debug|x64'">true</BuildInParallel>
+
+  </CustomBuild>
+</ItemGroup>
+<ItemGroup>
+  <CustomBuild Include="clammicrobench_nasm_mixstoresched.asm">
+    <FileType>Document</FileType>
+    <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)' == 'Release|x64'">false</ExcludedFromBuild>
+   <Command Condition="'$(Configuration)|$(Platform)' == 'Release|x64'">nasm -f win64 clammicrobench_nasm_mixstoresched.asm</Command>
+   <Message Condition="'$(Configuration)|$(Platform)' == 'Release|x64'">Running NASM for clammicrobench_nasm_mixstoresched.asm to create clammicrobench_nasm_mixstoresched.obj</Message>
+   <Outputs Condition="'$(Configuration)|$(Platform)' == 'Release|x64'">clammicrobench_nasm_mixstoresched.obj</Outputs>
+    <BuildInParallel Condition="'$(Configuration)|$(Platform)' == 'Release|x64'">true</BuildInParallel>
+
+    <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)' == 'Debug|x64'">false</ExcludedFromBuild>
+   <Command Condition="'$(Configuration)|$(Platform)' == 'Debug|x64'">nasm -f win64 clammicrobench_nasm_mixstoresched.asm</Command>
+   <Message Condition="'$(Configuration)|$(Platform)' == 'Debug|x64'">Running NASM for clammicrobench_nasm_mixstoresched.asm to create clammicrobench_nasm_mixstoresched.obj</Message>
+   <Outputs Condition="'$(Configuration)|$(Platform)' == 'Debug|x64'">clammicrobench_nasm_mixstoresched.obj</Outputs>
+    <BuildInParallel Condition="'$(Configuration)|$(Platform)' == 'Debug|x64'">true</BuildInParallel>
+
+  </CustomBuild>
+</ItemGroup>
+<ItemGroup>
+  <CustomBuild Include="clammicrobench_nasm_vecstoredatasched.asm">
+    <FileType>Document</FileType>
+    <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)' == 'Release|x64'">false</ExcludedFromBuild>
+   <Command Condition="'$(Configuration)|$(Platform)' == 'Release|x64'">nasm -f win64 clammicrobench_nasm_vecstoredatasched.asm</Command>
+   <Message Condition="'$(Configuration)|$(Platform)' == 'Release|x64'">Running NASM for clammicrobench_nasm_vecstoredatasched.asm to create clammicrobench_nasm_vecstoredatasched.obj</Message>
+   <Outputs Condition="'$(Configuration)|$(Platform)' == 'Release|x64'">clammicrobench_nasm_vecstoredatasched.obj</Outputs>
+    <BuildInParallel Condition="'$(Configuration)|$(Platform)' == 'Release|x64'">true</BuildInParallel>
+
+    <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)' == 'Debug|x64'">false</ExcludedFromBuild>
+   <Command Condition="'$(Configuration)|$(Platform)' == 'Debug|x64'">nasm -f win64 clammicrobench_nasm_vecstoredatasched.asm</Command>
+   <Message Condition="'$(Configuration)|$(Platform)' == 'Debug|x64'">Running NASM for clammicrobench_nasm_vecstoredatasched.asm to create clammicrobench_nasm_vecstoredatasched.obj</Message>
+   <Outputs Condition="'$(Configuration)|$(Platform)' == 'Debug|x64'">clammicrobench_nasm_vecstoredatasched.obj</Outputs>
+    <BuildInParallel Condition="'$(Configuration)|$(Platform)' == 'Debug|x64'">true</BuildInParallel>
+
+  </CustomBuild>
+</ItemGroup>
+<ItemGroup>
+  <CustomBuild Include="clammicrobench_nasm_vecstoredatansq.asm">
+    <FileType>Document</FileType>
+    <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)' == 'Release|x64'">false</ExcludedFromBuild>
+   <Command Condition="'$(Configuration)|$(Platform)' == 'Release|x64'">nasm -f win64 clammicrobench_nasm_vecstoredatansq.asm</Command>
+   <Message Condition="'$(Configuration)|$(Platform)' == 'Release|x64'">Running NASM for clammicrobench_nasm_vecstoredatansq.asm to create clammicrobench_nasm_vecstoredatansq.obj</Message>
+   <Outputs Condition="'$(Configuration)|$(Platform)' == 'Release|x64'">clammicrobench_nasm_vecstoredatansq.obj</Outputs>
+    <BuildInParallel Condition="'$(Configuration)|$(Platform)' == 'Release|x64'">true</BuildInParallel>
+
+    <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)' == 'Debug|x64'">false</ExcludedFromBuild>
+   <Command Condition="'$(Configuration)|$(Platform)' == 'Debug|x64'">nasm -f win64 clammicrobench_nasm_vecstoredatansq.asm</Command>
+   <Message Condition="'$(Configuration)|$(Platform)' == 'Debug|x64'">Running NASM for clammicrobench_nasm_vecstoredatansq.asm to create clammicrobench_nasm_vecstoredatansq.obj</Message>
+   <Outputs Condition="'$(Configuration)|$(Platform)' == 'Debug|x64'">clammicrobench_nasm_vecstoredatansq.obj</Outputs>
+    <BuildInParallel Condition="'$(Configuration)|$(Platform)' == 'Debug|x64'">true</BuildInParallel>
+
+  </CustomBuild>
+</ItemGroup>
+<ItemGroup>
+  <CustomBuild Include="clammicrobench_nasm_storensq.asm">
+    <FileType>Document</FileType>
+    <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)' == 'Release|x64'">false</ExcludedFromBuild>
+   <Command Condition="'$(Configuration)|$(Platform)' == 'Release|x64'">nasm -f win64 clammicrobench_nasm_storensq.asm</Command>
+   <Message Condition="'$(Configuration)|$(Platform)' == 'Release|x64'">Running NASM for clammicrobench_nasm_storensq.asm to create clammicrobench_nasm_storensq.obj</Message>
+   <Outputs Condition="'$(Configuration)|$(Platform)' == 'Release|x64'">clammicrobench_nasm_storensq.obj</Outputs>
+    <BuildInParallel Condition="'$(Configuration)|$(Platform)' == 'Release|x64'">true</BuildInParallel>
+
+    <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)' == 'Debug|x64'">false</ExcludedFromBuild>
+   <Command Condition="'$(Configuration)|$(Platform)' == 'Debug|x64'">nasm -f win64 clammicrobench_nasm_storensq.asm</Command>
+   <Message Condition="'$(Configuration)|$(Platform)' == 'Debug|x64'">Running NASM for clammicrobench_nasm_storensq.asm to create clammicrobench_nasm_storensq.obj</Message>
+   <Outputs Condition="'$(Configuration)|$(Platform)' == 'Debug|x64'">clammicrobench_nasm_storensq.obj</Outputs>
+    <BuildInParallel Condition="'$(Configuration)|$(Platform)' == 'Debug|x64'">true</BuildInParallel>
+
+  </CustomBuild>
+</ItemGroup>
+<ItemGroup>
+  <CustomBuild Include="clammicrobench_nasm_takenjmpsched.asm">
+    <FileType>Document</FileType>
+    <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)' == 'Release|x64'">false</ExcludedFromBuild>
+   <Command Condition="'$(Configuration)|$(Platform)' == 'Release|x64'">nasm -f win64 clammicrobench_nasm_takenjmpsched.asm</Command>
+   <Message Condition="'$(Configuration)|$(Platform)' == 'Release|x64'">Running NASM for clammicrobench_nasm_takenjmpsched.asm to create clammicrobench_nasm_takenjmpsched.obj</Message>
+   <Outputs Condition="'$(Configuration)|$(Platform)' == 'Release|x64'">clammicrobench_nasm_takenjmpsched.obj</Outputs>
+    <BuildInParallel Condition="'$(Configuration)|$(Platform)' == 'Release|x64'">true</BuildInParallel>
+
+    <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)' == 'Debug|x64'">false</ExcludedFromBuild>
+   <Command Condition="'$(Configuration)|$(Platform)' == 'Debug|x64'">nasm -f win64 clammicrobench_nasm_takenjmpsched.asm</Command>
+   <Message Condition="'$(Configuration)|$(Platform)' == 'Debug|x64'">Running NASM for clammicrobench_nasm_takenjmpsched.asm to create clammicrobench_nasm_takenjmpsched.obj</Message>
+   <Outputs Condition="'$(Configuration)|$(Platform)' == 'Debug|x64'">clammicrobench_nasm_takenjmpsched.obj</Outputs>
+    <BuildInParallel Condition="'$(Configuration)|$(Platform)' == 'Debug|x64'">true</BuildInParallel>
+
+  </CustomBuild>
+</ItemGroup>
+<ItemGroup>
+  <CustomBuild Include="clammicrobench_nasm_storehoistsched.asm">
+    <FileType>Document</FileType>
+    <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)' == 'Release|x64'">false</ExcludedFromBuild>
+   <Command Condition="'$(Configuration)|$(Platform)' == 'Release|x64'">nasm -f win64 clammicrobench_nasm_storehoistsched.asm</Command>
+   <Message Condition="'$(Configuration)|$(Platform)' == 'Release|x64'">Running NASM for clammicrobench_nasm_storehoistsched.asm to create clammicrobench_nasm_storehoistsched.obj</Message>
+   <Outputs Condition="'$(Configuration)|$(Platform)' == 'Release|x64'">clammicrobench_nasm_storehoistsched.obj</Outputs>
+    <BuildInParallel Condition="'$(Configuration)|$(Platform)' == 'Release|x64'">true</BuildInParallel>
+
+    <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)' == 'Debug|x64'">false</ExcludedFromBuild>
+   <Command Condition="'$(Configuration)|$(Platform)' == 'Debug|x64'">nasm -f win64 clammicrobench_nasm_storehoistsched.asm</Command>
+   <Message Condition="'$(Configuration)|$(Platform)' == 'Debug|x64'">Running NASM for clammicrobench_nasm_storehoistsched.asm to create clammicrobench_nasm_storehoistsched.obj</Message>
+   <Outputs Condition="'$(Configuration)|$(Platform)' == 'Debug|x64'">clammicrobench_nasm_storehoistsched.obj</Outputs>
+    <BuildInParallel Condition="'$(Configuration)|$(Platform)' == 'Debug|x64'">true</BuildInParallel>
+
+  </CustomBuild>
+</ItemGroup>
+<ItemGroup>
+  <CustomBuild Include="clammicrobench_nasm_fpstoredatansq.asm">
+    <FileType>Document</FileType>
+    <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)' == 'Release|x64'">false</ExcludedFromBuild>
+   <Command Condition="'$(Configuration)|$(Platform)' == 'Release|x64'">nasm -f win64 clammicrobench_nasm_fpstoredatansq.asm</Command>
+   <Message Condition="'$(Configuration)|$(Platform)' == 'Release|x64'">Running NASM for clammicrobench_nasm_fpstoredatansq.asm to create clammicrobench_nasm_fpstoredatansq.obj</Message>
+   <Outputs Condition="'$(Configuration)|$(Platform)' == 'Release|x64'">clammicrobench_nasm_fpstoredatansq.obj</Outputs>
+    <BuildInParallel Condition="'$(Configuration)|$(Platform)' == 'Release|x64'">true</BuildInParallel>
+
+    <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)' == 'Debug|x64'">false</ExcludedFromBuild>
+   <Command Condition="'$(Configuration)|$(Platform)' == 'Debug|x64'">nasm -f win64 clammicrobench_nasm_fpstoredatansq.asm</Command>
+   <Message Condition="'$(Configuration)|$(Platform)' == 'Debug|x64'">Running NASM for clammicrobench_nasm_fpstoredatansq.asm to create clammicrobench_nasm_fpstoredatansq.obj</Message>
+   <Outputs Condition="'$(Configuration)|$(Platform)' == 'Debug|x64'">clammicrobench_nasm_fpstoredatansq.obj</Outputs>
+    <BuildInParallel Condition="'$(Configuration)|$(Platform)' == 'Debug|x64'">true</BuildInParallel>
+
+  </CustomBuild>
+</ItemGroup>
+<ItemGroup>
+  <CustomBuild Include="clammicrobench_nasm_fpstoredataaddnsq.asm">
+    <FileType>Document</FileType>
+    <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)' == 'Release|x64'">false</ExcludedFromBuild>
+   <Command Condition="'$(Configuration)|$(Platform)' == 'Release|x64'">nasm -f win64 clammicrobench_nasm_fpstoredataaddnsq.asm</Command>
+   <Message Condition="'$(Configuration)|$(Platform)' == 'Release|x64'">Running NASM for clammicrobench_nasm_fpstoredataaddnsq.asm to create clammicrobench_nasm_fpstoredataaddnsq.obj</Message>
+   <Outputs Condition="'$(Configuration)|$(Platform)' == 'Release|x64'">clammicrobench_nasm_fpstoredataaddnsq.obj</Outputs>
+    <BuildInParallel Condition="'$(Configuration)|$(Platform)' == 'Release|x64'">true</BuildInParallel>
+
+    <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)' == 'Debug|x64'">false</ExcludedFromBuild>
+   <Command Condition="'$(Configuration)|$(Platform)' == 'Debug|x64'">nasm -f win64 clammicrobench_nasm_fpstoredataaddnsq.asm</Command>
+   <Message Condition="'$(Configuration)|$(Platform)' == 'Debug|x64'">Running NASM for clammicrobench_nasm_fpstoredataaddnsq.asm to create clammicrobench_nasm_fpstoredataaddnsq.obj</Message>
+   <Outputs Condition="'$(Configuration)|$(Platform)' == 'Debug|x64'">clammicrobench_nasm_fpstoredataaddnsq.obj</Outputs>
+    <BuildInParallel Condition="'$(Configuration)|$(Platform)' == 'Debug|x64'">true</BuildInParallel>
+
+  </CustomBuild>
+</ItemGroup>
+<ItemGroup>
+  <CustomBuild Include="clammicrobench_nasm_jmpnsq.asm">
+    <FileType>Document</FileType>
+    <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)' == 'Release|x64'">false</ExcludedFromBuild>
+   <Command Condition="'$(Configuration)|$(Platform)' == 'Release|x64'">nasm -f win64 clammicrobench_nasm_jmpnsq.asm</Command>
+   <Message Condition="'$(Configuration)|$(Platform)' == 'Release|x64'">Running NASM for clammicrobench_nasm_jmpnsq.asm to create clammicrobench_nasm_jmpnsq.obj</Message>
+   <Outputs Condition="'$(Configuration)|$(Platform)' == 'Release|x64'">clammicrobench_nasm_jmpnsq.obj</Outputs>
+    <BuildInParallel Condition="'$(Configuration)|$(Platform)' == 'Release|x64'">true</BuildInParallel>
+
+    <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)' == 'Debug|x64'">false</ExcludedFromBuild>
+   <Command Condition="'$(Configuration)|$(Platform)' == 'Debug|x64'">nasm -f win64 clammicrobench_nasm_jmpnsq.asm</Command>
+   <Message Condition="'$(Configuration)|$(Platform)' == 'Debug|x64'">Running NASM for clammicrobench_nasm_jmpnsq.asm to create clammicrobench_nasm_jmpnsq.obj</Message>
+   <Outputs Condition="'$(Configuration)|$(Platform)' == 'Debug|x64'">clammicrobench_nasm_jmpnsq.obj</Outputs>
+    <BuildInParallel Condition="'$(Configuration)|$(Platform)' == 'Debug|x64'">true</BuildInParallel>
+
+  </CustomBuild>
+</ItemGroup>
+<ItemGroup>
+  <CustomBuild Include="clammicrobench_nasm_btssched.asm">
+    <FileType>Document</FileType>
+    <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)' == 'Release|x64'">false</ExcludedFromBuild>
+   <Command Condition="'$(Configuration)|$(Platform)' == 'Release|x64'">nasm -f win64 clammicrobench_nasm_btssched.asm</Command>
+   <Message Condition="'$(Configuration)|$(Platform)' == 'Release|x64'">Running NASM for clammicrobench_nasm_btssched.asm to create clammicrobench_nasm_btssched.obj</Message>
+   <Outputs Condition="'$(Configuration)|$(Platform)' == 'Release|x64'">clammicrobench_nasm_btssched.obj</Outputs>
+    <BuildInParallel Condition="'$(Configuration)|$(Platform)' == 'Release|x64'">true</BuildInParallel>
+
+    <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)' == 'Debug|x64'">false</ExcludedFromBuild>
+   <Command Condition="'$(Configuration)|$(Platform)' == 'Debug|x64'">nasm -f win64 clammicrobench_nasm_btssched.asm</Command>
+   <Message Condition="'$(Configuration)|$(Platform)' == 'Debug|x64'">Running NASM for clammicrobench_nasm_btssched.asm to create clammicrobench_nasm_btssched.obj</Message>
+   <Outputs Condition="'$(Configuration)|$(Platform)' == 'Debug|x64'">clammicrobench_nasm_btssched.obj</Outputs>
+    <BuildInParallel Condition="'$(Configuration)|$(Platform)' == 'Debug|x64'">true</BuildInParallel>
+
+  </CustomBuild>
+</ItemGroup>
+<ItemGroup>
+  <CustomBuild Include="clammicrobench_nasm_mixrorbtssched.asm">
+    <FileType>Document</FileType>
+    <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)' == 'Release|x64'">false</ExcludedFromBuild>
+   <Command Condition="'$(Configuration)|$(Platform)' == 'Release|x64'">nasm -f win64 clammicrobench_nasm_mixrorbtssched.asm</Command>
+   <Message Condition="'$(Configuration)|$(Platform)' == 'Release|x64'">Running NASM for clammicrobench_nasm_mixrorbtssched.asm to create clammicrobench_nasm_mixrorbtssched.obj</Message>
+   <Outputs Condition="'$(Configuration)|$(Platform)' == 'Release|x64'">clammicrobench_nasm_mixrorbtssched.obj</Outputs>
+    <BuildInParallel Condition="'$(Configuration)|$(Platform)' == 'Release|x64'">true</BuildInParallel>
+
+    <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)' == 'Debug|x64'">false</ExcludedFromBuild>
+   <Command Condition="'$(Configuration)|$(Platform)' == 'Debug|x64'">nasm -f win64 clammicrobench_nasm_mixrorbtssched.asm</Command>
+   <Message Condition="'$(Configuration)|$(Platform)' == 'Debug|x64'">Running NASM for clammicrobench_nasm_mixrorbtssched.asm to create clammicrobench_nasm_mixrorbtssched.obj</Message>
+   <Outputs Condition="'$(Configuration)|$(Platform)' == 'Debug|x64'">clammicrobench_nasm_mixrorbtssched.obj</Outputs>
+    <BuildInParallel Condition="'$(Configuration)|$(Platform)' == 'Debug|x64'">true</BuildInParallel>
+
+  </CustomBuild>
+</ItemGroup>
+<ItemGroup>
+  <CustomBuild Include="clammicrobench_nasm_leasched.asm">
+    <FileType>Document</FileType>
+    <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)' == 'Release|x64'">false</ExcludedFromBuild>
+   <Command Condition="'$(Configuration)|$(Platform)' == 'Release|x64'">nasm -f win64 clammicrobench_nasm_leasched.asm</Command>
+   <Message Condition="'$(Configuration)|$(Platform)' == 'Release|x64'">Running NASM for clammicrobench_nasm_leasched.asm to create clammicrobench_nasm_leasched.obj</Message>
+   <Outputs Condition="'$(Configuration)|$(Platform)' == 'Release|x64'">clammicrobench_nasm_leasched.obj</Outputs>
+    <BuildInParallel Condition="'$(Configuration)|$(Platform)' == 'Release|x64'">true</BuildInParallel>
+
+    <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)' == 'Debug|x64'">false</ExcludedFromBuild>
+   <Command Condition="'$(Configuration)|$(Platform)' == 'Debug|x64'">nasm -f win64 clammicrobench_nasm_leasched.asm</Command>
+   <Message Condition="'$(Configuration)|$(Platform)' == 'Debug|x64'">Running NASM for clammicrobench_nasm_leasched.asm to create clammicrobench_nasm_leasched.obj</Message>
+   <Outputs Condition="'$(Configuration)|$(Platform)' == 'Debug|x64'">clammicrobench_nasm_leasched.obj</Outputs>
+    <BuildInParallel Condition="'$(Configuration)|$(Platform)' == 'Debug|x64'">true</BuildInParallel>
+
+  </CustomBuild>
+</ItemGroup>
+<ItemGroup>
+  <CustomBuild Include="clammicrobench_nasm_mixmulbtssched.asm">
+    <FileType>Document</FileType>
+    <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)' == 'Release|x64'">false</ExcludedFromBuild>
+   <Command Condition="'$(Configuration)|$(Platform)' == 'Release|x64'">nasm -f win64 clammicrobench_nasm_mixmulbtssched.asm</Command>
+   <Message Condition="'$(Configuration)|$(Platform)' == 'Release|x64'">Running NASM for clammicrobench_nasm_mixmulbtssched.asm to create clammicrobench_nasm_mixmulbtssched.obj</Message>
+   <Outputs Condition="'$(Configuration)|$(Platform)' == 'Release|x64'">clammicrobench_nasm_mixmulbtssched.obj</Outputs>
+    <BuildInParallel Condition="'$(Configuration)|$(Platform)' == 'Release|x64'">true</BuildInParallel>
+
+    <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)' == 'Debug|x64'">false</ExcludedFromBuild>
+   <Command Condition="'$(Configuration)|$(Platform)' == 'Debug|x64'">nasm -f win64 clammicrobench_nasm_mixmulbtssched.asm</Command>
+   <Message Condition="'$(Configuration)|$(Platform)' == 'Debug|x64'">Running NASM for clammicrobench_nasm_mixmulbtssched.asm to create clammicrobench_nasm_mixmulbtssched.obj</Message>
+   <Outputs Condition="'$(Configuration)|$(Platform)' == 'Debug|x64'">clammicrobench_nasm_mixmulbtssched.obj</Outputs>
+    <BuildInParallel Condition="'$(Configuration)|$(Platform)' == 'Debug|x64'">true</BuildInParallel>
+
+  </CustomBuild>
+</ItemGroup>
+<ItemGroup>
+  <CustomBuild Include="clammicrobench_nasm_mixleamulsched.asm">
+    <FileType>Document</FileType>
+    <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)' == 'Release|x64'">false</ExcludedFromBuild>
+   <Command Condition="'$(Configuration)|$(Platform)' == 'Release|x64'">nasm -f win64 clammicrobench_nasm_mixleamulsched.asm</Command>
+   <Message Condition="'$(Configuration)|$(Platform)' == 'Release|x64'">Running NASM for clammicrobench_nasm_mixleamulsched.asm to create clammicrobench_nasm_mixleamulsched.obj</Message>
+   <Outputs Condition="'$(Configuration)|$(Platform)' == 'Release|x64'">clammicrobench_nasm_mixleamulsched.obj</Outputs>
+    <BuildInParallel Condition="'$(Configuration)|$(Platform)' == 'Release|x64'">true</BuildInParallel>
+
+    <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)' == 'Debug|x64'">false</ExcludedFromBuild>
+   <Command Condition="'$(Configuration)|$(Platform)' == 'Debug|x64'">nasm -f win64 clammicrobench_nasm_mixleamulsched.asm</Command>
+   <Message Condition="'$(Configuration)|$(Platform)' == 'Debug|x64'">Running NASM for clammicrobench_nasm_mixleamulsched.asm to create clammicrobench_nasm_mixleamulsched.obj</Message>
+   <Outputs Condition="'$(Configuration)|$(Platform)' == 'Debug|x64'">clammicrobench_nasm_mixleamulsched.obj</Outputs>
+    <BuildInParallel Condition="'$(Configuration)|$(Platform)' == 'Debug|x64'">true</BuildInParallel>
+
+  </CustomBuild>
+</ItemGroup>
+<ItemGroup>
+  <CustomBuild Include="clammicrobench_nasm_pdepsched.asm">
+    <FileType>Document</FileType>
+    <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)' == 'Release|x64'">false</ExcludedFromBuild>
+   <Command Condition="'$(Configuration)|$(Platform)' == 'Release|x64'">nasm -f win64 clammicrobench_nasm_pdepsched.asm</Command>
+   <Message Condition="'$(Configuration)|$(Platform)' == 'Release|x64'">Running NASM for clammicrobench_nasm_pdepsched.asm to create clammicrobench_nasm_pdepsched.obj</Message>
+   <Outputs Condition="'$(Configuration)|$(Platform)' == 'Release|x64'">clammicrobench_nasm_pdepsched.obj</Outputs>
+    <BuildInParallel Condition="'$(Configuration)|$(Platform)' == 'Release|x64'">true</BuildInParallel>
+
+    <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)' == 'Debug|x64'">false</ExcludedFromBuild>
+   <Command Condition="'$(Configuration)|$(Platform)' == 'Debug|x64'">nasm -f win64 clammicrobench_nasm_pdepsched.asm</Command>
+   <Message Condition="'$(Configuration)|$(Platform)' == 'Debug|x64'">Running NASM for clammicrobench_nasm_pdepsched.asm to create clammicrobench_nasm_pdepsched.obj</Message>
+   <Outputs Condition="'$(Configuration)|$(Platform)' == 'Debug|x64'">clammicrobench_nasm_pdepsched.obj</Outputs>
+    <BuildInParallel Condition="'$(Configuration)|$(Platform)' == 'Debug|x64'">true</BuildInParallel>
+
+  </CustomBuild>
+</ItemGroup>
+<ItemGroup>
+  <CustomBuild Include="clammicrobench_nasm_mixpdepleasched.asm">
+    <FileType>Document</FileType>
+    <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)' == 'Release|x64'">false</ExcludedFromBuild>
+   <Command Condition="'$(Configuration)|$(Platform)' == 'Release|x64'">nasm -f win64 clammicrobench_nasm_mixpdepleasched.asm</Command>
+   <Message Condition="'$(Configuration)|$(Platform)' == 'Release|x64'">Running NASM for clammicrobench_nasm_mixpdepleasched.asm to create clammicrobench_nasm_mixpdepleasched.obj</Message>
+   <Outputs Condition="'$(Configuration)|$(Platform)' == 'Release|x64'">clammicrobench_nasm_mixpdepleasched.obj</Outputs>
+    <BuildInParallel Condition="'$(Configuration)|$(Platform)' == 'Release|x64'">true</BuildInParallel>
+
+    <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)' == 'Debug|x64'">false</ExcludedFromBuild>
+   <Command Condition="'$(Configuration)|$(Platform)' == 'Debug|x64'">nasm -f win64 clammicrobench_nasm_mixpdepleasched.asm</Command>
+   <Message Condition="'$(Configuration)|$(Platform)' == 'Debug|x64'">Running NASM for clammicrobench_nasm_mixpdepleasched.asm to create clammicrobench_nasm_mixpdepleasched.obj</Message>
+   <Outputs Condition="'$(Configuration)|$(Platform)' == 'Debug|x64'">clammicrobench_nasm_mixpdepleasched.obj</Outputs>
+    <BuildInParallel Condition="'$(Configuration)|$(Platform)' == 'Debug|x64'">true</BuildInParallel>
+
+  </CustomBuild>
+</ItemGroup>
+<ItemGroup>
+  <CustomBuild Include="clammicrobench_nasm_mixpdepmulsched.asm">
+    <FileType>Document</FileType>
+    <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)' == 'Release|x64'">false</ExcludedFromBuild>
+   <Command Condition="'$(Configuration)|$(Platform)' == 'Release|x64'">nasm -f win64 clammicrobench_nasm_mixpdepmulsched.asm</Command>
+   <Message Condition="'$(Configuration)|$(Platform)' == 'Release|x64'">Running NASM for clammicrobench_nasm_mixpdepmulsched.asm to create clammicrobench_nasm_mixpdepmulsched.obj</Message>
+   <Outputs Condition="'$(Configuration)|$(Platform)' == 'Release|x64'">clammicrobench_nasm_mixpdepmulsched.obj</Outputs>
+    <BuildInParallel Condition="'$(Configuration)|$(Platform)' == 'Release|x64'">true</BuildInParallel>
+
+    <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)' == 'Debug|x64'">false</ExcludedFromBuild>
+   <Command Condition="'$(Configuration)|$(Platform)' == 'Debug|x64'">nasm -f win64 clammicrobench_nasm_mixpdepmulsched.asm</Command>
+   <Message Condition="'$(Configuration)|$(Platform)' == 'Debug|x64'">Running NASM for clammicrobench_nasm_mixpdepmulsched.asm to create clammicrobench_nasm_mixpdepmulsched.obj</Message>
+   <Outputs Condition="'$(Configuration)|$(Platform)' == 'Debug|x64'">clammicrobench_nasm_mixpdepmulsched.obj</Outputs>
+    <BuildInParallel Condition="'$(Configuration)|$(Platform)' == 'Debug|x64'">true</BuildInParallel>
+
+  </CustomBuild>
+</ItemGroup>
+<ItemGroup>
+  <CustomBuild Include="clammicrobench_nasm_noploop.asm">
+    <FileType>Document</FileType>
+    <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)' == 'Release|x64'">false</ExcludedFromBuild>
+   <Command Condition="'$(Configuration)|$(Platform)' == 'Release|x64'">nasm -f win64 clammicrobench_nasm_noploop.asm</Command>
+   <Message Condition="'$(Configuration)|$(Platform)' == 'Release|x64'">Running NASM for clammicrobench_nasm_noploop.asm to create clammicrobench_nasm_noploop.obj</Message>
+   <Outputs Condition="'$(Configuration)|$(Platform)' == 'Release|x64'">clammicrobench_nasm_noploop.obj</Outputs>
+    <BuildInParallel Condition="'$(Configuration)|$(Platform)' == 'Release|x64'">true</BuildInParallel>
+
+    <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)' == 'Debug|x64'">false</ExcludedFromBuild>
+   <Command Condition="'$(Configuration)|$(Platform)' == 'Debug|x64'">nasm -f win64 clammicrobench_nasm_noploop.asm</Command>
+   <Message Condition="'$(Configuration)|$(Platform)' == 'Debug|x64'">Running NASM for clammicrobench_nasm_noploop.asm to create clammicrobench_nasm_noploop.obj</Message>
+   <Outputs Condition="'$(Configuration)|$(Platform)' == 'Debug|x64'">clammicrobench_nasm_noploop.obj</Outputs>
+    <BuildInParallel Condition="'$(Configuration)|$(Platform)' == 'Debug|x64'">true</BuildInParallel>
+
+  </CustomBuild>
+</ItemGroup>
+<ItemGroup>
+  <CustomBuild Include="indirectbranch_2targets.asm">
+    <FileType>Document</FileType>
+    <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)' == 'Release|x64'">false</ExcludedFromBuild>
+   <Command Condition="'$(Configuration)|$(Platform)' == 'Release|x64'">nasm -f win64 indirectbranch_2targets.asm</Command>
+   <Message Condition="'$(Configuration)|$(Platform)' == 'Release|x64'">Running NASM for indirectbranch_2targets.asm to create indirectbranch_2targets.obj</Message>
+   <Outputs Condition="'$(Configuration)|$(Platform)' == 'Release|x64'">indirectbranch_2targets.obj</Outputs>
+    <BuildInParallel Condition="'$(Configuration)|$(Platform)' == 'Release|x64'">true</BuildInParallel>
+
+    <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)' == 'Debug|x64'">false</ExcludedFromBuild>
+   <Command Condition="'$(Configuration)|$(Platform)' == 'Debug|x64'">nasm -f win64 indirectbranch_2targets.asm</Command>
+   <Message Condition="'$(Configuration)|$(Platform)' == 'Debug|x64'">Running NASM for indirectbranch_2targets.asm to create indirectbranch_2targets.obj</Message>
+   <Outputs Condition="'$(Configuration)|$(Platform)' == 'Debug|x64'">indirectbranch_2targets.obj</Outputs>
+    <BuildInParallel Condition="'$(Configuration)|$(Platform)' == 'Debug|x64'">true</BuildInParallel>
+
+  </CustomBuild>
+</ItemGroup>
+<ItemGroup>
+  <CustomBuild Include="indirectbranch_4targets.asm">
+    <FileType>Document</FileType>
+    <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)' == 'Release|x64'">false</ExcludedFromBuild>
+   <Command Condition="'$(Configuration)|$(Platform)' == 'Release|x64'">nasm -f win64 indirectbranch_4targets.asm</Command>
+   <Message Condition="'$(Configuration)|$(Platform)' == 'Release|x64'">Running NASM for indirectbranch_4targets.asm to create indirectbranch_4targets.obj</Message>
+   <Outputs Condition="'$(Configuration)|$(Platform)' == 'Release|x64'">indirectbranch_4targets.obj</Outputs>
+    <BuildInParallel Condition="'$(Configuration)|$(Platform)' == 'Release|x64'">true</BuildInParallel>
+
+    <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)' == 'Debug|x64'">false</ExcludedFromBuild>
+   <Command Condition="'$(Configuration)|$(Platform)' == 'Debug|x64'">nasm -f win64 indirectbranch_4targets.asm</Command>
+   <Message Condition="'$(Configuration)|$(Platform)' == 'Debug|x64'">Running NASM for indirectbranch_4targets.asm to create indirectbranch_4targets.obj</Message>
+   <Outputs Condition="'$(Configuration)|$(Platform)' == 'Debug|x64'">indirectbranch_4targets.obj</Outputs>
+    <BuildInParallel Condition="'$(Configuration)|$(Platform)' == 'Debug|x64'">true</BuildInParallel>
+
+  </CustomBuild>
+</ItemGroup>
+<ItemGroup>
+  <CustomBuild Include="indirectbranch_8targets.asm">
+    <FileType>Document</FileType>
+    <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)' == 'Release|x64'">false</ExcludedFromBuild>
+   <Command Condition="'$(Configuration)|$(Platform)' == 'Release|x64'">nasm -f win64 indirectbranch_8targets.asm</Command>
+   <Message Condition="'$(Configuration)|$(Platform)' == 'Release|x64'">Running NASM for indirectbranch_8targets.asm to create indirectbranch_8targets.obj</Message>
+   <Outputs Condition="'$(Configuration)|$(Platform)' == 'Release|x64'">indirectbranch_8targets.obj</Outputs>
+    <BuildInParallel Condition="'$(Configuration)|$(Platform)' == 'Release|x64'">true</BuildInParallel>
+
+    <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)' == 'Debug|x64'">false</ExcludedFromBuild>
+   <Command Condition="'$(Configuration)|$(Platform)' == 'Debug|x64'">nasm -f win64 indirectbranch_8targets.asm</Command>
+   <Message Condition="'$(Configuration)|$(Platform)' == 'Debug|x64'">Running NASM for indirectbranch_8targets.asm to create indirectbranch_8targets.obj</Message>
+   <Outputs Condition="'$(Configuration)|$(Platform)' == 'Debug|x64'">indirectbranch_8targets.obj</Outputs>
+    <BuildInParallel Condition="'$(Configuration)|$(Platform)' == 'Debug|x64'">true</BuildInParallel>
+
+  </CustomBuild>
+</ItemGroup>
+<ItemGroup>
+  <CustomBuild Include="indirectbranch_12targets.asm">
+    <FileType>Document</FileType>
+    <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)' == 'Release|x64'">false</ExcludedFromBuild>
+   <Command Condition="'$(Configuration)|$(Platform)' == 'Release|x64'">nasm -f win64 indirectbranch_12targets.asm</Command>
+   <Message Condition="'$(Configuration)|$(Platform)' == 'Release|x64'">Running NASM for indirectbranch_12targets.asm to create indirectbranch_12targets.obj</Message>
+   <Outputs Condition="'$(Configuration)|$(Platform)' == 'Release|x64'">indirectbranch_12targets.obj</Outputs>
+    <BuildInParallel Condition="'$(Configuration)|$(Platform)' == 'Release|x64'">true</BuildInParallel>
+
+    <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)' == 'Debug|x64'">false</ExcludedFromBuild>
+   <Command Condition="'$(Configuration)|$(Platform)' == 'Debug|x64'">nasm -f win64 indirectbranch_12targets.asm</Command>
+   <Message Condition="'$(Configuration)|$(Platform)' == 'Debug|x64'">Running NASM for indirectbranch_12targets.asm to create indirectbranch_12targets.obj</Message>
+   <Outputs Condition="'$(Configuration)|$(Platform)' == 'Debug|x64'">indirectbranch_12targets.obj</Outputs>
+    <BuildInParallel Condition="'$(Configuration)|$(Platform)' == 'Debug|x64'">true</BuildInParallel>
+
+  </CustomBuild>
+</ItemGroup>
+<ItemGroup>
+  <CustomBuild Include="indirectbranch_16targets.asm">
+    <FileType>Document</FileType>
+    <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)' == 'Release|x64'">false</ExcludedFromBuild>
+   <Command Condition="'$(Configuration)|$(Platform)' == 'Release|x64'">nasm -f win64 indirectbranch_16targets.asm</Command>
+   <Message Condition="'$(Configuration)|$(Platform)' == 'Release|x64'">Running NASM for indirectbranch_16targets.asm to create indirectbranch_16targets.obj</Message>
+   <Outputs Condition="'$(Configuration)|$(Platform)' == 'Release|x64'">indirectbranch_16targets.obj</Outputs>
+    <BuildInParallel Condition="'$(Configuration)|$(Platform)' == 'Release|x64'">true</BuildInParallel>
+
+    <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)' == 'Debug|x64'">false</ExcludedFromBuild>
+   <Command Condition="'$(Configuration)|$(Platform)' == 'Debug|x64'">nasm -f win64 indirectbranch_16targets.asm</Command>
+   <Message Condition="'$(Configuration)|$(Platform)' == 'Debug|x64'">Running NASM for indirectbranch_16targets.asm to create indirectbranch_16targets.obj</Message>
+   <Outputs Condition="'$(Configuration)|$(Platform)' == 'Debug|x64'">indirectbranch_16targets.obj</Outputs>
+    <BuildInParallel Condition="'$(Configuration)|$(Platform)' == 'Debug|x64'">true</BuildInParallel>
+
+  </CustomBuild>
+</ItemGroup>
+<ItemGroup>
+  <CustomBuild Include="indirectbranch_24targets.asm">
+    <FileType>Document</FileType>
+    <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)' == 'Release|x64'">false</ExcludedFromBuild>
+   <Command Condition="'$(Configuration)|$(Platform)' == 'Release|x64'">nasm -f win64 indirectbranch_24targets.asm</Command>
+   <Message Condition="'$(Configuration)|$(Platform)' == 'Release|x64'">Running NASM for indirectbranch_24targets.asm to create indirectbranch_24targets.obj</Message>
+   <Outputs Condition="'$(Configuration)|$(Platform)' == 'Release|x64'">indirectbranch_24targets.obj</Outputs>
+    <BuildInParallel Condition="'$(Configuration)|$(Platform)' == 'Release|x64'">true</BuildInParallel>
+
+    <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)' == 'Debug|x64'">false</ExcludedFromBuild>
+   <Command Condition="'$(Configuration)|$(Platform)' == 'Debug|x64'">nasm -f win64 indirectbranch_24targets.asm</Command>
+   <Message Condition="'$(Configuration)|$(Platform)' == 'Debug|x64'">Running NASM for indirectbranch_24targets.asm to create indirectbranch_24targets.obj</Message>
+   <Outputs Condition="'$(Configuration)|$(Platform)' == 'Debug|x64'">indirectbranch_24targets.obj</Outputs>
+    <BuildInParallel Condition="'$(Configuration)|$(Platform)' == 'Debug|x64'">true</BuildInParallel>
+
+  </CustomBuild>
+</ItemGroup>
+<ItemGroup>
+  <CustomBuild Include="indirectbranch_32targets.asm">
+    <FileType>Document</FileType>
+    <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)' == 'Release|x64'">false</ExcludedFromBuild>
+   <Command Condition="'$(Configuration)|$(Platform)' == 'Release|x64'">nasm -f win64 indirectbranch_32targets.asm</Command>
+   <Message Condition="'$(Configuration)|$(Platform)' == 'Release|x64'">Running NASM for indirectbranch_32targets.asm to create indirectbranch_32targets.obj</Message>
+   <Outputs Condition="'$(Configuration)|$(Platform)' == 'Release|x64'">indirectbranch_32targets.obj</Outputs>
+    <BuildInParallel Condition="'$(Configuration)|$(Platform)' == 'Release|x64'">true</BuildInParallel>
+
+    <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)' == 'Debug|x64'">false</ExcludedFromBuild>
+   <Command Condition="'$(Configuration)|$(Platform)' == 'Debug|x64'">nasm -f win64 indirectbranch_32targets.asm</Command>
+   <Message Condition="'$(Configuration)|$(Platform)' == 'Debug|x64'">Running NASM for indirectbranch_32targets.asm to create indirectbranch_32targets.obj</Message>
+   <Outputs Condition="'$(Configuration)|$(Platform)' == 'Debug|x64'">indirectbranch_32targets.obj</Outputs>
+    <BuildInParallel Condition="'$(Configuration)|$(Platform)' == 'Debug|x64'">true</BuildInParallel>
+
+  </CustomBuild>
+</ItemGroup>
+<ItemGroup>
+  <CustomBuild Include="indirectbranch_48targets.asm">
+    <FileType>Document</FileType>
+    <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)' == 'Release|x64'">false</ExcludedFromBuild>
+   <Command Condition="'$(Configuration)|$(Platform)' == 'Release|x64'">nasm -f win64 indirectbranch_48targets.asm</Command>
+   <Message Condition="'$(Configuration)|$(Platform)' == 'Release|x64'">Running NASM for indirectbranch_48targets.asm to create indirectbranch_48targets.obj</Message>
+   <Outputs Condition="'$(Configuration)|$(Platform)' == 'Release|x64'">indirectbranch_48targets.obj</Outputs>
+    <BuildInParallel Condition="'$(Configuration)|$(Platform)' == 'Release|x64'">true</BuildInParallel>
+
+    <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)' == 'Debug|x64'">false</ExcludedFromBuild>
+   <Command Condition="'$(Configuration)|$(Platform)' == 'Debug|x64'">nasm -f win64 indirectbranch_48targets.asm</Command>
+   <Message Condition="'$(Configuration)|$(Platform)' == 'Debug|x64'">Running NASM for indirectbranch_48targets.asm to create indirectbranch_48targets.obj</Message>
+   <Outputs Condition="'$(Configuration)|$(Platform)' == 'Debug|x64'">indirectbranch_48targets.obj</Outputs>
+    <BuildInParallel Condition="'$(Configuration)|$(Platform)' == 'Debug|x64'">true</BuildInParallel>
+
+  </CustomBuild>
+</ItemGroup>
+<ItemGroup>
+  <CustomBuild Include="indirectbranch_64targets.asm">
+    <FileType>Document</FileType>
+    <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)' == 'Release|x64'">false</ExcludedFromBuild>
+   <Command Condition="'$(Configuration)|$(Platform)' == 'Release|x64'">nasm -f win64 indirectbranch_64targets.asm</Command>
+   <Message Condition="'$(Configuration)|$(Platform)' == 'Release|x64'">Running NASM for indirectbranch_64targets.asm to create indirectbranch_64targets.obj</Message>
+   <Outputs Condition="'$(Configuration)|$(Platform)' == 'Release|x64'">indirectbranch_64targets.obj</Outputs>
+    <BuildInParallel Condition="'$(Configuration)|$(Platform)' == 'Release|x64'">true</BuildInParallel>
+
+    <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)' == 'Debug|x64'">false</ExcludedFromBuild>
+   <Command Condition="'$(Configuration)|$(Platform)' == 'Debug|x64'">nasm -f win64 indirectbranch_64targets.asm</Command>
+   <Message Condition="'$(Configuration)|$(Platform)' == 'Debug|x64'">Running NASM for indirectbranch_64targets.asm to create indirectbranch_64targets.obj</Message>
+   <Outputs Condition="'$(Configuration)|$(Platform)' == 'Debug|x64'">indirectbranch_64targets.obj</Outputs>
+    <BuildInParallel Condition="'$(Configuration)|$(Platform)' == 'Debug|x64'">true</BuildInParallel>
+
+  </CustomBuild>
+</ItemGroup>
+<ItemGroup>
+  <CustomBuild Include="indirectbranch_96targets.asm">
+    <FileType>Document</FileType>
+    <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)' == 'Release|x64'">false</ExcludedFromBuild>
+   <Command Condition="'$(Configuration)|$(Platform)' == 'Release|x64'">nasm -f win64 indirectbranch_96targets.asm</Command>
+   <Message Condition="'$(Configuration)|$(Platform)' == 'Release|x64'">Running NASM for indirectbranch_96targets.asm to create indirectbranch_96targets.obj</Message>
+   <Outputs Condition="'$(Configuration)|$(Platform)' == 'Release|x64'">indirectbranch_96targets.obj</Outputs>
+    <BuildInParallel Condition="'$(Configuration)|$(Platform)' == 'Release|x64'">true</BuildInParallel>
+
+    <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)' == 'Debug|x64'">false</ExcludedFromBuild>
+   <Command Condition="'$(Configuration)|$(Platform)' == 'Debug|x64'">nasm -f win64 indirectbranch_96targets.asm</Command>
+   <Message Condition="'$(Configuration)|$(Platform)' == 'Debug|x64'">Running NASM for indirectbranch_96targets.asm to create indirectbranch_96targets.obj</Message>
+   <Outputs Condition="'$(Configuration)|$(Platform)' == 'Debug|x64'">indirectbranch_96targets.obj</Outputs>
+    <BuildInParallel Condition="'$(Configuration)|$(Platform)' == 'Debug|x64'">true</BuildInParallel>
+
+  </CustomBuild>
+</ItemGroup>
+<ItemGroup>
+  <CustomBuild Include="indirectbranch_128targets.asm">
+    <FileType>Document</FileType>
+    <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)' == 'Release|x64'">false</ExcludedFromBuild>
+   <Command Condition="'$(Configuration)|$(Platform)' == 'Release|x64'">nasm -f win64 indirectbranch_128targets.asm</Command>
+   <Message Condition="'$(Configuration)|$(Platform)' == 'Release|x64'">Running NASM for indirectbranch_128targets.asm to create indirectbranch_128targets.obj</Message>
+   <Outputs Condition="'$(Configuration)|$(Platform)' == 'Release|x64'">indirectbranch_128targets.obj</Outputs>
+    <BuildInParallel Condition="'$(Configuration)|$(Platform)' == 'Release|x64'">true</BuildInParallel>
+
+    <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)' == 'Debug|x64'">false</ExcludedFromBuild>
+   <Command Condition="'$(Configuration)|$(Platform)' == 'Debug|x64'">nasm -f win64 indirectbranch_128targets.asm</Command>
+   <Message Condition="'$(Configuration)|$(Platform)' == 'Debug|x64'">Running NASM for indirectbranch_128targets.asm to create indirectbranch_128targets.obj</Message>
+   <Outputs Condition="'$(Configuration)|$(Platform)' == 'Debug|x64'">indirectbranch_128targets.obj</Outputs>
+    <BuildInParallel Condition="'$(Configuration)|$(Platform)' == 'Debug|x64'">true</BuildInParallel>
+
+  </CustomBuild>
+</ItemGroup>
+
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
   </ImportGroup>

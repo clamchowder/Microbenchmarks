@@ -84,6 +84,7 @@ namespace AsmGen
             tests.Add(new MixPdepMulSchedTest(4, 80, 1));
             tests.Add(new JumpAddSchedTest(4, 120, 1));
             tests.Add(new LdmTest(4, 120, 1));
+            tests.Add(new NopLoopTest(512, 1));
 
             StringBuilder cSourceFile = new StringBuilder();
             StringBuilder vsCSourceFile = new StringBuilder();
