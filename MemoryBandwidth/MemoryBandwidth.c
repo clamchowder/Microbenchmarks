@@ -61,6 +61,7 @@ int main(int argc, char *argv[]) {
     int shared = 1;
     int sleepTime = 0;
     int methodSet = 0, testInstructionBandwidth = 0, nopBytes = 8;
+    int singleSize = 0;
     bw_func = asm_read;
     for (int argIdx = 1; argIdx < argc; argIdx++) {
         if (*(argv[argIdx]) == '-') {
@@ -79,6 +80,10 @@ int main(int argc, char *argv[]) {
             } else if (strncmp(arg, "private", 7) == 0) {
                 shared = 0;
                 fprintf(stderr, "Using private array for each thread\n");
+            } else if (strncmp(arg, "sizekb", 6) == 0) {
+                argIdx++;
+		singleSize = atoi(argv[argIdx]);
+                fprintf(stderr, "Testing %d KB\n", singleSize);
             } else if (strncmp(arg, "method", 6) == 0) {
                 methodSet = 1;
                 argIdx++;
@@ -88,11 +93,11 @@ int main(int argc, char *argv[]) {
                 } else if (strncmp(argv[argIdx], "asm", 3) == 0) {
                     bw_func = asm_read;
                     fprintf(stderr, "Using ASM code (AVX or NEON)\n");
-                } else if (strncmp(argv[argIdx], "instr8", 7) == 0) {
+                } else if (strncmp(argv[argIdx], "instr8", 6) == 0) {
                     testInstructionBandwidth = 1; 
 		    nopBytes = 8;
                     fprintf(stderr, "Testing instruction fetch bandwidth with 8 byte instructions. Threads/shared/private args will be ignored\n");
-                } else if (strncmp(argv[argIdx], "instr4", 7) == 0) {
+                } else if (strncmp(argv[argIdx], "instr4", 6) == 0) {
                     testInstructionBandwidth = 1; 
 		    nopBytes = 4;
                     fprintf(stderr, "Testing instruction fetch bandwidth with 4 byte instructions. Threads/shared/private args will be ignored\n");
@@ -110,7 +115,7 @@ int main(int argc, char *argv[]) {
             }
         } else {
             fprintf(stderr, "Expected - parameter\n");
-            fprintf(stderr, "Usage: [-threads <thread count>] [-private] [-method <scalar/asm/avx512>] [-sleep <time in seconds>]\n");
+            fprintf(stderr, "Usage: [-threads <thread count>] [-private] [-method <scalar/asm/avx512>] [-sleep <time in seconds>] [-sizekb <single test size>]\n");
         }
     }
 
@@ -141,18 +146,31 @@ int main(int argc, char *argv[]) {
 #endif
 
     if (testInstructionBandwidth) {
-        for (int i = 0; i < sizeof(default_test_sizes) / sizeof(int); i++)
-        {
-            printf("%d,%f\n", default_test_sizes[i], MeasureInstructionBw(default_test_sizes[i], GetIterationCount(default_test_sizes[i], threads), nopBytes));
-            if (sleepTime > 0) sleep(sleepTime);
-        } 
+        if (singleSize == 0) {
+            for (int i = 0; i < sizeof(default_test_sizes) / sizeof(int); i++)
+            {
+                printf("%d,%f\n", default_test_sizes[i], MeasureInstructionBw(default_test_sizes[i], GetIterationCount(default_test_sizes[i], threads), nopBytes));
+                if (sleepTime > 0) sleep(sleepTime);
+            } 
+	}
+	else 
+	{
+	    printf("%d,%f\n", singleSize, MeasureInstructionBw(singleSize, GetIterationCount(singleSize, threads), nopBytes));
+	}
     } else {
         printf("Using %d threads\n", threads);
-        for (int i = 0; i < sizeof(default_test_sizes) / sizeof(int); i++)
-        {
-            printf("%d,%f\n", default_test_sizes[i], MeasureBw(default_test_sizes[i], GetIterationCount(default_test_sizes[i], threads), threads, shared));
-            if (sleepTime > 0) sleep(sleepTime);
-        }
+	if (singleSize == 0) 
+	{
+            for (int i = 0; i < sizeof(default_test_sizes) / sizeof(int); i++)
+            {
+                printf("%d,%f\n", default_test_sizes[i], MeasureBw(default_test_sizes[i], GetIterationCount(default_test_sizes[i], threads), threads, shared));
+                if (sleepTime > 0) sleep(sleepTime);
+            }
+	}
+	else
+	{
+	    printf("%d,%f\n", singleSize, MeasureBw(singleSize, GetIterationCount(singleSize, threads), threads, shared));
+	}
     }
 
     return 0;
@@ -167,8 +185,8 @@ uint64_t GetIterationCount(uint64_t testSize, uint64_t threads)
 {
     uint64_t gbToTransfer = 512;
     if (testSize > 64) gbToTransfer = 64;
-    if (testSize > 512) gbToTransfer = 32;
-    if (testSize > 8192) gbToTransfer = 16;
+    if (testSize > 512) gbToTransfer = 64;
+    if (testSize > 8192) gbToTransfer = 64;
     uint64_t iterations = gbToTransfer * 1024 * 1024 / testSize;
 
     if (iterations < 8) return 8; // set a minimum to reduce noise

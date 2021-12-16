@@ -282,7 +282,7 @@ float RunTlbTest(uint32_t size_kb, uint32_t iterations) {
     if (memoryUsedKb == 0) memoryUsedKb = 1;
     float cacheLatency = RunTest(memoryUsedKb, iterations);
 
-    //fprintf(stderr, "Memory used - %u KB, ref latency: %f\n", memoryUsedKb, cacheLatency);
+    //fprintf(stderr, "Memory used - %u KB, latency: %f, ref latency: %f\n", memoryUsedKb, latency, cacheLatency);
     return latency - cacheLatency;
 }
  
