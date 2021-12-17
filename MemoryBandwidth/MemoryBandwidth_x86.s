@@ -1,6 +1,7 @@
 .text
 
 .global asm_read
+.global asm_write
 .global sse_read
 .global avx512_read
 
@@ -52,6 +53,56 @@ asm_avx_test_iteration_count:
   pop %rdi 
   pop %rsi 
   ret 
+
+asm_write:
+  push %rsi
+  push %rdi
+  push %rbx
+  push %r15
+  push %r14
+  mov $256, %r15 /* load in blocks of 256 bytes */
+  sub $128, %rdx /* last iteration: rsi == rdx. rsi > rdx = break */
+  mov %r9, %rsi  /* assume we're passed in an aligned start location O.o */
+  xor %rbx, %rbx
+  lea (%rcx,%rsi,4), %rdi
+  mov %rdi, %r14
+  vmovaps (%rcx), %ymm0
+avx_asm_write_pass_loop:
+  vmovaps %ymm0, (%rdi)
+  vmovaps %ymm0, 32(%rdi)
+  vmovaps %ymm0, 64(%rdi)
+  vmovaps %ymm0, 96(%rdi)
+  vmovaps %ymm0, 128(%rdi)
+  vmovaps %ymm0, 160(%rdi)
+  vmovaps %ymm0, 192(%rdi)
+  vmovaps %ymm0, 224(%rdi)
+  add $64, %rsi
+  add %r15, %rdi
+  vmovaps %ymm0, (%rdi)
+  vmovaps %ymm0, 32(%rdi)
+  vmovaps %ymm0, 64(%rdi)
+  vmovaps %ymm0, 96(%rdi)
+  vmovaps %ymm0, 128(%rdi)
+  vmovaps %ymm0, 160(%rdi)
+  vmovaps %ymm0, 192(%rdi)
+  vmovaps %ymm0, 224(%rdi) 
+  add $64, %rsi
+  add %r15, %rdi 
+  cmp %rsi, %rdx
+  jge asm_avx_write_iteration_count
+  mov %rbx, %rsi
+  lea (%rcx,%rsi,4), %rdi /* back to start */
+asm_avx_write_iteration_count:
+  cmp %rsi, %r9
+  jnz avx_asm_write_pass_loop /* skip iteration decrement if we're not back to start */
+  dec %r8
+  jnz avx_asm_write_pass_loop
+  pop %r14 
+  pop %r15 
+  pop %rbx 
+  pop %rdi 
+  pop %rsi 
+  ret  
 
 sse_read:
   push %rsi

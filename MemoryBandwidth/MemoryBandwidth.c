@@ -18,6 +18,8 @@
 #include <sys/mman.h>
 #include <errno.h>
 
+#pragma GCC diagnostic ignored "-Wattributes"
+
 // make mingw happy
 #ifdef __MINGW32__
 #define aligned_alloc(align, size) _aligned_malloc(size, align)
@@ -41,16 +43,16 @@ float MeasureBw(uint64_t sizeKb, uint64_t iterations, uint64_t threads, int shar
 #ifdef __x86_64
 #include <cpuid.h>
 float scalar_read(float* arr, uint64_t arr_length, uint64_t iterations, uint64_t start) __attribute((ms_abi));
-extern float asm_read(float* arr, uint64_t arr_length, uint64_t iterations, uint64_t start) __attribute__((ms_abi));
 extern float sse_read(float* arr, uint64_t arr_length, uint64_t iterations, uint64_t start) __attribute__((ms_abi));
 extern float avx512_read(float* arr, uint64_t arr_length, uint64_t iterations, uint64_t start) __attribute__((ms_abi));
 float (*bw_func)(float*, uint64_t, uint64_t, uint64_t start) __attribute__((ms_abi)); 
 #else
 float scalar_read(float* arr, uint64_t arr_length, uint64_t iterations, uint64_t start);
-extern float asm_read(float* arr, uint64_t arr_length, uint64_t iterations, uint64_t start);
 float (*bw_func)(float*, uint64_t, uint64_t, uint64_t start); 
 #endif
 
+extern float asm_read(float* arr, uint64_t arr_length, uint64_t iterations, uint64_t start) __attribute__((ms_abi));
+extern float asm_write(float* arr, uint64_t arr_length, uint64_t iterations, uint64_t start) __attribute__((ms_abi));
 float MeasureInstructionBw(uint64_t sizeKb, uint64_t iterations, int nopSize); 
 uint64_t GetIterationCount(uint64_t testSize, uint64_t threads);
 void *ReadBandwidthTestThread(void *param);
@@ -93,6 +95,9 @@ int main(int argc, char *argv[]) {
                 } else if (strncmp(argv[argIdx], "asm", 3) == 0) {
                     bw_func = asm_read;
                     fprintf(stderr, "Using ASM code (AVX or NEON)\n");
+                } else if (strncmp(argv[argIdx], "write", 5) == 0) {
+                    bw_func = asm_write;
+                    fprintf(stderr, "Using ASM code (AVX or NEON), testing write bw instead of read\n");
                 } else if (strncmp(argv[argIdx], "instr8", 6) == 0) {
                     testInstructionBandwidth = 1; 
 		    nopBytes = 8;
