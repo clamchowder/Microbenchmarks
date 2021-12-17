@@ -31,6 +31,7 @@ float avx_read(float* arr, uint64_t arr_length, uint64_t iterations, uint64_t st
 float MeasureBw(uint64_t sizeKb, uint64_t iterations, uint64_t threads, int shared);
 extern "C" float sse_asm_read(float* arr, uint64_t arr_length, uint64_t iterations, uint64_t start);
 extern "C" float avx_asm_read(float* arr, uint64_t arr_length, uint64_t iterations, uint64_t start);
+extern "C" float avx_asm_write(float* arr, uint64_t arr_length, uint64_t iterations, uint64_t start);
 extern "C" float avx512_asm_read(float* arr, uint64_t arr_length, uint64_t iterations, uint64_t start);
 uint64_t GetIterationCount(uint64_t testSize, uint64_t threads);
 DWORD WINAPI ReadBandwidthTestThread(LPVOID param);
@@ -83,6 +84,10 @@ int main(int argc, char *argv[]) {
                 else if (_strnicmp(argv[argIdx], "avx", 3) == 0) {
                     bw_func = avx_read;
                     fprintf(stderr, "Using AVX intrinsics\n");
+                }
+                else if (_strnicmp(argv[argIdx], "write_asm_avx", 14) == 0) {
+                    bw_func = avx_asm_write;
+                    fprintf(stderr, "Using AVX assembly, writing instead of reading\n");
                 }
                 else if (_strnicmp(argv[argIdx], "asm_avx", 7) == 0) {
                     bw_func = avx_asm_read;
