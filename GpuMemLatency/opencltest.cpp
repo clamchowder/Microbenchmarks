@@ -8,6 +8,8 @@
 #include <CL/cl.h>
 #define MAX_SOURCE_SIZE (0x100000)
 
+#define CACHELINE_SIZE 4
+
 int default_test_sizes[] = { 2, 4, 8, 16, 24, 32, 48, 64, 96, 128, 192, 256, 384, 512, 600, 768, 1024, 1536, 2048, 3072, 4096, 5120, 6144, 8192, 16384, 32768, 65536, 98304, 131072, 196608, 262144, 524288, 1048576 };
 
 // lining this up with nemes's VK bw test sizes
@@ -293,6 +295,24 @@ int main(int argc, char* argv[]) {
     return 0;
 }
 
+// Fills an array using Sattolo's algo
+void FillPatternArr(uint32_t* pattern_arr, uint32_t list_size, uint32_t byte_increment) {
+    uint32_t increment = byte_increment / sizeof(uint32_t);
+    uint32_t element_count = list_size / increment;
+    for (int i = 0; i < element_count; i++) {
+        pattern_arr[i * increment] = i * increment;
+    }
+
+    int iter = element_count;
+    while (iter > 1) {
+        iter -= 1;
+        int j = iter - 1 == 0 ? 0 : rand() % (iter - 1);
+        uint32_t tmp = pattern_arr[iter * increment];
+        pattern_arr[iter * increment] = pattern_arr[j * increment];
+        pattern_arr[j * increment] = tmp;
+    }
+}
+
 float int_atomic_latency_test(cl_context context,
     cl_command_queue command_queue,
     cl_kernel kernel,
@@ -504,7 +524,6 @@ float bw_test(cl_context context,
         }
     }
 
-
     //fprintf(stderr, "Finished reading result. Sum: %d\n", result[0]);
 
 cleanup:
@@ -534,22 +553,11 @@ float latency_test(cl_context context,
     int64_t time_diff_ms;
     uint32_t result;
     uint32_t stride = 1211;
-    int* A = (int*)malloc(sizeof(int) * list_size);
+    uint32_t element_count = list_size / CACHELINE_SIZE;
+    uint32_t increment = CACHELINE_SIZE / sizeof(uint32_t);
+    uint32_t* A = (uint32_t*)malloc(sizeof(uint32_t) * list_size);
     if (sattolo) {
-        for (int i = 0; i < list_size; i++)
-        {
-            A[i] = i;
-        }
-
-        int iter = list_size;
-        while (iter > 1)
-        {
-            iter -= 1;
-            int j = iter - 1 == 0 ? 0 : rand() % (iter - 1);
-            uint32_t tmp = A[iter];
-            A[iter] = A[j];
-            A[j] = tmp;
-        }
+        FillPatternArr((uint32_t *)A, list_size, 64);
     } else {
         for (int i = 0; i < list_size; i++)
         {
