@@ -30,7 +30,69 @@ namespace AsmGen
             indepLoads[1] = "  mov (%r8), %r14";
             indepLoads[2] = "  mov (%r8), %r13";
             indepLoads[3] = "  mov (%r8), %r12";
-            UarchTestHelpers.GenerateX86AsmNsqTestFuncs(sb, this.high, this.Counts, this.Prefix, dependentLoads, indepLoads, true);
+
+            for (int i = 0; i < this.Counts.Length; i++)
+            {
+                string funcName = this.Prefix + this.Counts[i];
+                sb.AppendLine("\n" + funcName + ":");
+                sb.AppendLine("  push %rsi");
+                sb.AppendLine("  push %rdi");
+                sb.AppendLine("  push %r15");
+                sb.AppendLine("  push %r14");
+                sb.AppendLine("  push %r13");
+                sb.AppendLine("  push %r12");
+                sb.AppendLine("  push %r11");
+                sb.AppendLine("  push %r8");
+                sb.AppendLine("  push %rcx");
+                sb.AppendLine("  push %rdx");
+
+                // arguments are in RDI, RSI, RDX, RCX, R8, and R9
+                // move them into familiar windows argument regs (rcx, rdx, r8)
+                sb.AppendLine("  mov %rdx, %r8"); // r8 <- rdx
+                sb.AppendLine("  mov %rsi, %rdx"); // rdx <- rsi
+                sb.AppendLine("  mov %rdi, %rcx"); // rcx <- rdi
+
+                sb.AppendLine("  xor %r15, %r15");
+                sb.AppendLine("  mov $0x1, %r14");
+                sb.AppendLine("  mov $0x2, %r13");
+                sb.AppendLine("  mov $0x3, %r12");
+                sb.AppendLine("  mov $0x4, %r11");
+
+                sb.AppendLine("  xor %rdi, %rdi");
+                sb.AppendLine("  mov $0x40, %esi");
+                sb.AppendLine("  mov (%rdx,%rdi,4), %edi");
+                sb.AppendLine("  mov (%rdx,%rsi,4), %esi");
+                sb.AppendLine("\n" + funcName + "start:");
+                sb.AppendLine("  mov (%rdx,%rdi,4), %edi");
+                int sqInstrs = this.Counts[i] - 2;
+                for (int fillerIdx = 0; fillerIdx < this.high; fillerIdx++)
+                {
+                    if (fillerIdx < sqInstrs)
+                    {
+                        sb.AppendLine($"  mov {fillerIdx + 1}(%r8, %rdi), %r15");
+                    }
+                    else
+                    {
+                        sb.AppendLine($"  mov {fillerIdx - sqInstrs + 1}(%r8), %r15");
+                    }
+                }
+
+                sb.AppendLine("  mov (%rdx,%rsi,4), %esi");
+                sb.AppendLine("  lfence");
+                sb.AppendLine("  dec %rcx");
+                sb.AppendLine("  jne " + funcName + "start");
+                sb.AppendLine("  pop %rdx");
+                sb.AppendLine("  pop %rcx");
+                sb.AppendLine("  pop %r8");
+                sb.AppendLine("  pop %r11");
+                sb.AppendLine("  pop %r12");
+                sb.AppendLine("  pop %r13");
+                sb.AppendLine("  pop %r14");
+                sb.AppendLine("  pop %r15");
+                sb.AppendLine("  pop %rdi");
+                sb.AppendLine("  pop %rsi");
+                sb.AppendLine("  ret\n\n");
+            }
         }
 
         public override void GenerateX86NasmAsm(StringBuilder sb)

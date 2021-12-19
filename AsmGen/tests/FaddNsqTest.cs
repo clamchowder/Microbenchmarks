@@ -20,7 +20,7 @@ namespace AsmGen
         public override void GenerateX86GccAsm(StringBuilder sb)
         {
             // xmm0 is dependent on ptr chasing load
-            string initInstrs = "  vzeroupper\n  cvtsi2ss %r11, %xmm3\n";
+            string initInstrs = "  cvtsi2ss %r11, %xmm3\n";
             string postLoadInstr = "  cvtsi2ss %rdi, %xmm0";
             string[] depAdds = new string[2];
             depAdds[0] = "  addss %xmm0, %xmm1";

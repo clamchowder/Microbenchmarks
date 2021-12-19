@@ -18,7 +18,7 @@ namespace AsmGen
 
         public override void GenerateX86GccAsm(StringBuilder sb)
         {
-            string initInstrs = "  vzeroupper\n  pxor %xmm3, %xmm3\n  pxor %xmm4, %xmm4\n  movq %r15, %xmm5\n";
+            string initInstrs = "  pxor %xmm3, %xmm3\n  pxor %xmm4, %xmm4\n  movq %r15, %xmm5\n";
             string postLoadInstr = "  movq %rdi, %xmm0\n";
             //string postLoadInstr2 = "  movq %rsi, %xmm0\n  pshufd $0, %xmm0, %xmm0\n";
             // xmm0 is dependent on ptr chasing load
@@ -35,7 +35,7 @@ namespace AsmGen
 
         public override void GenerateX86NasmAsm(StringBuilder sb)
         {
-            string initInstrs = "  vzeroupper\n  pxor xmm3, xmm3\n  pxor xmm4, xmm4\n  movq r15, xmm5\n";
+            string initInstrs = "  pxor xmm3, xmm3\n  pxor xmm4, xmm4\n  movq r15, xmm5\n";
             string postLoadInstr = "  movq xmm0, rdi";
             //string postLoadInstr2 = "  movq xmm0, rsi";
 
