@@ -79,7 +79,10 @@ int main(int argc, char* argv[]) {
     {
         if ((maxTestSizeMb == 0) || (default_test_sizes[i] <= maxTestSizeMb * 1024))
             printf("%d,%f\n", default_test_sizes[i], testFunc(default_test_sizes[i], ITERATIONS));
-        else fprintf(stderr, "Test size %u KB exceeds max test size of %u KB\n", default_test_sizes[i], maxTestSizeMb * 1024);
+        else {
+            fprintf(stderr, "Test size %u KB exceeds max test size of %u KB\n", default_test_sizes[i], maxTestSizeMb * 1024);
+            break;
+        }
     }
 
     return 0;
