@@ -17,6 +17,7 @@ avx_asm_read:
   push r14
   mov r15, 256 ; load in blocks of 256 bytes
   sub rdx, 128 ; last iteration: rsi == rdx. rsi > rdx = break
+  xor r9, r9   ; not doing start anymore, too lazy to clean up code
   mov rsi, r9  ; assume we're passed in an aligned start location O.o
   xor rbx, rbx
   lea rdi, [rcx + rsi * 4]
@@ -67,6 +68,7 @@ avx_asm_write:
   push r14
   mov r15, 256 ; load in blocks of 256 bytes
   sub rdx, 128 ; last iteration: rsi == rdx. rsi > rdx = break
+  xor r9, r9   ; not doing start anymore, too lazy to clean up code
   mov rsi, r9  ; assume we're passed in an aligned start location O.o
   xor rbx, rbx
   lea rdi, [rcx + rsi * 4]
@@ -117,6 +119,7 @@ avx512_asm_read:
   push r14
   mov r15, 256 ; load in blocks of 256 bytes
   sub rdx, 128 ; last iteration: rsi == rdx. rsi > rdx = break
+  xor r9, r9   ; not doing start anymore, too lazy to clean up code
   mov rsi, r9  ; assume we're passed in an aligned start location O.o
   xor rbx, rbx
   lea rdi, [rcx + rsi * 4]
