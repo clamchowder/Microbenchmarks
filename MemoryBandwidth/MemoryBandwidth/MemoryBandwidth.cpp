@@ -25,18 +25,21 @@ struct BandwidthTestThreadData {
 uint32_t dataGb = 512;
 //__int32 dataGb = 32;
 
-float _fastcall scalar_read(float* arr, uint32_t arr_length, uint32_t iterations);
+// array length = number of 4 byte elements
+float _fastcall scalar_read(void* arr, uint32_t arr_length, uint32_t iterations);
 
 #ifdef _WIN64
-extern "C" float sse_asm_read(float* arr, uint64_t arr_length, uint64_t iterations);
-extern "C" float avx_asm_read(float* arr, uint64_t arr_length, uint64_t iterations);
-extern "C" float avx_asm_write(float* arr, uint64_t arr_length, uint64_t iterations);
-extern "C" float avx512_asm_read(float* arr, uint64_t arr_length, uint64_t iterations);
-float (*bw_func)(float*, uint64_t, uint64_t) = sse_asm_read;
+extern "C" float sse_asm_read(void* arr, uint64_t arr_length, uint64_t iterations);
+extern "C" float avx_asm_read(void* arr, uint64_t arr_length, uint64_t iterations);
+extern "C" float avx_asm_write(void* arr, uint64_t arr_length, uint64_t iterations);
+extern "C" float avx512_asm_read(void* arr, uint64_t arr_length, uint64_t iterations);
+float (*bw_func)(void*, uint64_t, uint64_t) = sse_asm_read;
+
 #else
-extern "C" float __fastcall sse_asm_read32(float* arr, uint32_t arr_length, uint32_t iterations);
-extern "C" float __fastcall dummy(float* arr, uint32_t arr_length, uint32_t iterations);
-float(_fastcall *bw_func)(float*, uint32_t, uint32_t) = dummy;
+extern "C" float __fastcall mmx_asm_read32(void* arr, uint32_t arr_length, uint32_t iterations);
+extern "C" float __fastcall sse_asm_read32(void* arr, uint32_t arr_length, uint32_t iterations);
+extern "C" float __fastcall dummy(void* arr, uint32_t arr_length, uint32_t iterations);
+float(_fastcall *bw_func)(void*, uint32_t, uint32_t) = dummy;
 #endif
 
 float MeasureBw(uint32_t sizeKb, uint32_t iterations, uint32_t threads, int shared);
@@ -92,9 +95,13 @@ int main(int argc, char *argv[]) {
                     bw_func = scalar_read;
                     fprintf(stderr, "Using scalar C code\n");
                 }
-                else if (_strnicmp(argv[argIdx], "sse32", 7) == 0) {
+                else if (_strnicmp(argv[argIdx], "sse", 3) == 0) {
                     bw_func = sse_asm_read32;
-                    fprintf(stderr, "Using AVX assembly\n");
+                    fprintf(stderr, "Using SSE assembly\n");
+                }
+                else if (_strnicmp(argv[argIdx], "mmx", 3) == 0) {
+                    bw_func = mmx_asm_read32;
+                    fprintf(stderr, "Using MMX assembly\n");
                 }
 #endif
                 else {
@@ -120,7 +127,6 @@ int main(int argc, char *argv[]) {
             bw_func = sse_asm_read;
 #else
             bw_func = sse_asm_read32;
-            //bw_func = dummy;
             //bw_func = scalar_read;
 #endif
         }
@@ -252,12 +258,13 @@ float MeasureBw(uint32_t sizeKb, uint32_t iterations, uint32_t threads, int shar
     return bw;
 }
 
-float __fastcall scalar_read(float* arr, uint32_t arr_length, uint32_t iterations)  {
+float __fastcall scalar_read(void* a, uint32_t arr_length, uint32_t iterations)  {
     float sum = 0;
     if (16 >= arr_length) return 0;
 
     uint32_t iter_idx = 0, i = 0;
     float s1 = 0, s2 = 1, s3 = 0, s4 = 1, s5 = 0, s6 = 1, s7 = 0, s8 = 1;
+    float* arr = (float*)a;
     while (iter_idx < iterations) {
         s1 += arr[i];
         s2 *= arr[i + 1];

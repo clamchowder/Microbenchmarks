@@ -3,6 +3,7 @@ section .text
 bits 32
 
 global @sse_asm_read32@12
+global @mmx_asm_read32@12
 global @dummy@12
 
 @dummy@12:
@@ -78,4 +79,70 @@ sse_read32_pass_loop:
   mov eax, [esp]
   mov [esp + 4], eax
   add esp, 4
+  ret
+
+@mmx_asm_read32@12:
+  mov eax, [esp + 4]
+  push ecx
+  push edx
+  push esi
+  push edi
+  sub edx, 64 ; last iteration: rsi == rdx. rsi > rdx = break
+  xor esi, esi ; index into array = 0
+  lea edi, [ecx + esi * 4]
+mmx_read32_pass_loop:
+  movq mm0, [edi]
+  movq mm1, [edi + 8]
+  movq mm2, [edi + 16]
+  movq mm3, [edi + 24]
+  movq mm4, [edi + 32]
+  movq mm5, [edi + 40]
+  movq mm6, [edi + 48]
+  movq mm7, [edi + 56]
+
+  movq mm0, [edi + 64]
+  movq mm1, [edi + 72]
+  movq mm2, [edi + 80]
+  movq mm3, [edi + 88]
+  movq mm4, [edi + 96]
+  movq mm5, [edi + 104]
+  movq mm6, [edi + 112]
+  movq mm7, [edi + 120]
+
+  movq mm0, [edi + 128]
+  movq mm1, [edi + 136]
+  movq mm2, [edi + 144]
+  movq mm3, [edi + 152]
+  movq mm4, [edi + 160]
+  movq mm5, [edi + 168]
+  movq mm6, [edi + 176]
+  movq mm7, [edi + 184]
+
+  movq mm0, [edi + 192]
+  movq mm1, [edi + 200]
+  movq mm2, [edi + 208]
+  movq mm3, [edi + 216]
+  movq mm4, [edi + 224]
+  movq mm5, [edi + 232]
+  movq mm6, [edi + 240]
+  movq mm7, [edi + 248]
+  add esi, 64
+  add edi, 256
+  cmp edx, esi              ; bounds check, expects size to be multiple of 64 elements
+  jge mmx_read32_pass_loop
+
+  ; zero the index, get back to start, decrement iteration count
+  xor esi, esi              
+  lea edi, [ecx + esi * 4]  
+  dec eax                   
+  jnz mmx_read32_pass_loop
+  pop edi
+  pop esi
+  pop edx
+  pop ecx
+
+  mov eax, [esp]
+  mov [esp + 4], eax
+  add esp, 4
+  fld1
   ret
