@@ -3,7 +3,11 @@ section .text
 bits 32
 
 global @sse_asm_read32@12
+global sse_asm_read32
 global @mmx_asm_read32@12
+global mmx_asm_read32
+global @scalar_asm_read32@12
+global scalar_asm_read32
 global @dummy@12
 
 @dummy@12:
@@ -15,6 +19,7 @@ global @dummy@12
 ; ecx = ptr to float array
 ; edx = arr length
 ; [esp + 4] = iterations, put this into eax
+sse_asm_read32:
 @sse_asm_read32@12:
   mov eax, [esp + 4]
   push ecx
@@ -81,6 +86,7 @@ sse_read32_pass_loop:
   add esp, 4
   ret
 
+mmx_asm_read32:
 @mmx_asm_read32@12:
   mov eax, [esp + 4]
   push ecx
@@ -140,6 +146,74 @@ mmx_read32_pass_loop:
   pop esi
   pop edx
   pop ecx
+
+  mov eax, [esp]
+  mov [esp + 4], eax
+  add esp, 4
+  fld1
+  ret
+
+; [esp + 4] = iterations
+scalar_asm_read32:
+@scalar_asm_read32@12:
+  push ebx
+  push ecx
+  push edx
+  push esi
+  push edi
+  sub edx, 32 ; last iteration: rsi == rdx. rsi > rdx = break
+  xor esi, esi ; index into array = 0
+  lea edi, [ecx + esi * 4]
+scalar_read32_pass_loop:
+  mov eax, [edi]
+  mov ebx, [edi + 4]
+  mov eax, [edi + 8]
+  mov ebx, [edi + 12]
+  mov eax, [edi + 16]
+  mov ebx, [edi + 20]
+  mov eax, [edi + 24]
+  mov ebx, [edi + 28]
+  mov eax, [edi + 32]
+  mov ebx, [edi + 36]
+  mov eax, [edi + 40]
+  mov ebx, [edi + 44]
+  mov eax, [edi + 48]
+  mov ebx, [edi + 52]
+  mov eax, [edi + 56]
+  mov ebx, [edi + 60]
+
+  mov eax, [edi + 64]
+  mov ebx, [edi + 68]
+  mov eax, [edi + 72]
+  mov ebx, [edi + 76]
+  mov eax, [edi + 80]
+  mov ebx, [edi + 84]
+  mov eax, [edi + 88]
+  mov ebx, [edi + 92]
+  mov eax, [edi + 96]
+  mov ebx, [edi + 100]
+  mov eax, [edi + 104]
+  mov ebx, [edi + 108]
+  mov eax, [edi + 112]
+  mov ebx, [edi + 116]
+  mov eax, [edi + 120]
+  mov ebx, [edi + 124]
+
+  add esi, 32
+  add edi, 128
+  cmp edx, esi              ; bounds check, expects size to be multiple of 64 elements
+  jge scalar_read32_pass_loop
+
+  ; zero the index, get back to start, decrement iteration count
+  xor esi, esi              
+  lea edi, [ecx + esi * 4]  
+  dec dword [esp + 24]               
+  jnz scalar_read32_pass_loop
+  pop edi
+  pop esi
+  pop edx
+  pop ecx
+  pop ebx
 
   mov eax, [esp]
   mov [esp + 4], eax

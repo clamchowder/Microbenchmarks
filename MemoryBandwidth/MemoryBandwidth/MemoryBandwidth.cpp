@@ -36,6 +36,7 @@ extern "C" float avx512_asm_read(void* arr, uint64_t arr_length, uint64_t iterat
 float (*bw_func)(void*, uint64_t, uint64_t) = sse_asm_read;
 
 #else
+extern "C" float __fastcall scalar_asm_read32(void* arr, uint32_t arr_length, uint32_t iterations);
 extern "C" float __fastcall mmx_asm_read32(void* arr, uint32_t arr_length, uint32_t iterations);
 extern "C" float __fastcall sse_asm_read32(void* arr, uint32_t arr_length, uint32_t iterations);
 extern "C" float __fastcall dummy(void* arr, uint32_t arr_length, uint32_t iterations);
@@ -92,16 +93,16 @@ int main(int argc, char *argv[]) {
                 }
 #else
                 if (_strnicmp(argv[argIdx], "scalar", 6) == 0) {
-                    bw_func = scalar_read;
-                    fprintf(stderr, "Using scalar C code\n");
+                    bw_func = scalar_asm_read32;
+                    fprintf(stderr, "Using scalar MOV r <- mem32\n");
                 }
                 else if (_strnicmp(argv[argIdx], "sse", 3) == 0) {
                     bw_func = sse_asm_read32;
-                    fprintf(stderr, "Using SSE assembly\n");
+                    fprintf(stderr, "Using SSE MOVAPS xmm <- mem128\n");
                 }
                 else if (_strnicmp(argv[argIdx], "mmx", 3) == 0) {
                     bw_func = mmx_asm_read32;
-                    fprintf(stderr, "Using MMX assembly\n");
+                    fprintf(stderr, "Using MMX MOVQ mm <- mem64\n");
                 }
 #endif
                 else {
@@ -118,20 +119,15 @@ int main(int argc, char *argv[]) {
     }
 
     if (!methodSet) {
-        // check for sse/avx
+        // cpuid_data[0] = eax, [1] = ebx, [2] = ecx, [3] = edx
         __cpuidex(cpuid_data, 1, 0);
+#ifdef _WIN64
         // EDX bit 25 = SSE
         if (cpuid_data[3] & (1UL << 25)) {
             fprintf(stderr, "SSE supported\n");
-#ifdef _WIN64
             bw_func = sse_asm_read;
-#else
-            bw_func = sse_asm_read32;
-            //bw_func = scalar_read;
-#endif
         }
 
-#ifdef _WIN64
         if (cpuid_data[2] & (1UL << 28)) {
             fprintf(stderr, "AVX supported\n");
             bw_func = avx_asm_read;
@@ -142,6 +138,24 @@ int main(int argc, char *argv[]) {
             fprintf(stderr, "AVX512 supported\n");
             bw_func = avx512_asm_read;
         }
+#else
+        int choice = 0;
+        printf("Pick something:\n");
+        printf("1. SSE movaps xmm <- mem128");
+        if (cpuid_data[3] & (1UL << 25)) printf(" (looks supported)\n");
+        else printf(" (looks unsupported)\n");
+
+        printf("2. MMX movq mm <- mem64");
+        if (cpuid_data[3] & (1UL << 23)) printf("  (looks supported\n");
+        else printf("  (looks unsupported\n");
+
+        printf("3. mov gpr <- mem32 (better work)\n");
+        printf("Your choice: ");
+        scanf_s("%d", &choice);
+        if (choice == 1) bw_func = sse_asm_read32;
+        else if (choice == 2) bw_func = mmx_asm_read32;
+        else if (choice == 3) bw_func = scalar_asm_read32;
+        else { printf("Bye\n"); return 0; }
 #endif
     }
 
