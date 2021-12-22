@@ -20,13 +20,6 @@
 
 #pragma GCC diagnostic ignored "-Wattributes"
 
-// make mingw happy
-#ifdef __MINGW32__
-#define aligned_alloc(align, size) _aligned_malloc(size, align)
-#endif
-
-#pragma GCC diagnostic ignored "-Wattributes"
-
 int default_test_sizes[39] = { 2, 4, 8, 12, 16, 24, 32, 48, 64, 96, 128, 192, 256, 512, 600, 768, 1024, 1536, 2048,
                                3072, 4096, 5120, 6144, 8192, 10240, 12288, 16384, 24567, 32768, 65536, 98304,
                                131072, 262144, 393216, 524288, 1048576, 1572864, 2097152, 3145728 };
@@ -227,8 +220,7 @@ float MeasureInstructionBw(uint64_t sizeKb, uint64_t iterations, int nopSize) {
 
     // nops, dec rcx (3 bytes), jump if zero flag set to 32-bit displacement (6 bytes), ret (1 byte)
     //nops = (uint64_t *)malloc(funcLen);
-    posix_memalign((void **)(&nops), 4096, funcLen);
-    if (nops == NULL) {
+    if (0 != posix_memalign((void **)(&nops), 4096, funcLen)) {
         fprintf(stderr, "Failed to allocate memory for size %lu\n", sizeKb);
         return 0;
     }
@@ -300,11 +292,11 @@ float MeasureBw(uint64_t sizeKb, uint64_t iterations, uint64_t threads, int shar
     // make array and fill it with something, if shared
     float* testArr = NULL;
     if (shared){ 
-        testArr = (float*)aligned_alloc(64, elements * sizeof(float));
-        if (testArr == NULL) {
+        //testArr = (float*)aligned_alloc(64, elements * sizeof(float));
+	if (0 != posix_memalign((void **)(&testArr), 64, elements * sizeof(float))) {
             fprintf(stderr, "Could not allocate memory\n");
             return 0;
-        }
+	}
 
         for (uint64_t i = 0; i < elements; i++) {
             testArr[i] = i + 0.5f;
@@ -327,8 +319,8 @@ float MeasureBw(uint64_t sizeKb, uint64_t iterations, uint64_t threads, int shar
         }
         else
         {
-            threadData[i].arr = (float*)aligned_alloc(64, elements * sizeof(float));
-            if (threadData[i].arr == NULL)
+            //threadData[i].arr = (float*)aligned_alloc(64, elements * sizeof(float));
+	    if (0 != posix_memalign((void **)(&(threadData[i].arr)), 64, elements * sizeof(float)))
             {
                 fprintf(stderr, "Could not allocate memory for thread %ld\n", i);
                 return 0;
