@@ -16,7 +16,7 @@ namespace AsmGen
 
         public override void GenerateX86GccAsm(StringBuilder sb)
         {
-            string initInstrs = "  vzeroupper\n  vpcmpeqd %xmm2, %xmm2, %xmm2\n  vpxor %xmm2, %xmm3, %xmm3\n  cvtsi2ss %r11, %xmm3\n movss %xmm3, %xmm4\n  movss %xmm3, %xmm5\n  movss %xmm3, %xmm6";
+            string initInstrs = "  cvtsi2ss %r11, %xmm3\n movss %xmm3, %xmm4\n  movss %xmm3, %xmm5\n  movss %xmm3, %xmm6";
             string postLoadInstr = "  movups (%rdx, %rdi, 2), %xmm1";
             string[] dependentStores = new string[4];
             dependentStores[0] = "  movups %xmm1, (%r8)";

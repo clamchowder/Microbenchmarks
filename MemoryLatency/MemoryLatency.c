@@ -79,7 +79,10 @@ int main(int argc, char* argv[]) {
     {
         if ((maxTestSizeMb == 0) || (default_test_sizes[i] <= maxTestSizeMb * 1024))
             printf("%d,%f\n", default_test_sizes[i], testFunc(default_test_sizes[i], ITERATIONS));
-        else fprintf(stderr, "Test size %u KB exceeds max test size of %u KB\n", default_test_sizes[i], maxTestSizeMb * 1024);
+        else {
+            fprintf(stderr, "Test size %u KB exceeds max test size of %u KB\n", default_test_sizes[i], maxTestSizeMb * 1024);
+            break;
+        }
     }
 
     return 0;
@@ -95,6 +98,41 @@ uint64_t scale_iterations(uint32_t size_kb, uint32_t iterations) {
     return 10 * iterations / pow(size_kb, 1.0 / 4.0);
 }
 
+// Fills an array using Sattolo's algo
+void FillPatternArr(uint32_t *pattern_arr, uint32_t list_size, uint32_t byte_increment) {
+    uint32_t increment = byte_increment / sizeof(uint32_t);
+    uint32_t element_count = list_size / increment;
+    for (int i = 0; i < element_count; i++) {
+        pattern_arr[i * increment] = i * increment;
+    }
+
+    int iter = element_count;
+    while (iter > 1) {
+        iter -= 1;
+        int j = iter - 1 == 0 ? 0 : rand() % (iter - 1);
+        uint32_t tmp = pattern_arr[iter * increment];
+        pattern_arr[iter * increment] = pattern_arr[j * increment];
+        pattern_arr[j * increment] = tmp;
+    } 
+}
+
+void FillPatternArr64(uint64_t *pattern_arr, uint64_t list_size, uint64_t byte_increment) {
+    uint32_t increment = byte_increment / sizeof(uint64_t);
+    uint32_t element_count = list_size / increment;
+    for (int i = 0; i < element_count; i++) {
+        pattern_arr[i * increment] = i * increment;
+    }
+
+    int iter = element_count;
+    while (iter > 1) {
+        iter -= 1;
+        int j = iter - 1 == 0 ? 0 : rand() % (iter - 1);
+        uint64_t tmp = pattern_arr[iter * increment];
+        pattern_arr[iter * increment] = pattern_arr[j * increment];
+        pattern_arr[j * increment] = tmp;
+    } 
+}
+
 float RunTest(uint32_t size_kb, uint32_t iterations) {
     struct timeval startTv, endTv;
     struct timezone startTz, endTz;
@@ -107,19 +145,8 @@ float RunTest(uint32_t size_kb, uint32_t iterations) {
         fprintf(stderr, "Failed to allocate memory for %u KB test\n", size_kb);
         return 0;
     }
-
-    for (int i = 0; i < list_size; i++) {
-        A[i] = i;
-    }
-
-    int iter = list_size;
-    while (iter > 1) {
-        iter -= 1;
-        int j = iter - 1 == 0 ? 0 : rand() % (iter - 1);
-        uint32_t tmp = A[iter];
-        A[iter] = A[j];
-        A[j] = tmp;
-    }
+    
+    FillPatternArr(A, list_size, CACHELINE_SIZE);
 
     uint32_t scaled_iterations = scale_iterations(size_kb, iterations);
 
@@ -160,18 +187,13 @@ float RunAsmTest(uint32_t size_kb, uint32_t iterations) {
         return 0;
     }
 
-    for (int i = 0; i < list_size; i++) {
-        A[i] = i;
-    }
+    memset(A, 0, POINTER_SIZE * list_size);
 
-    int iter = list_size;
-    while (iter > 1) {
-        iter -= 1;
-        int j = iter - 1 == 0 ? 0 : rand() % (iter - 1);
-        POINTER_INT tmp = A[iter];
-        A[iter] = A[j];
-        A[j] = tmp;
-    }
+#ifdef __i686
+    FillPatternArr(A, list_size, CACHELINE_SIZE);
+#else
+    FillPatternArr64(A, list_size, CACHELINE_SIZE);
+#endif
 
     preplatencyarr(A, list_size);
 
@@ -188,6 +210,8 @@ float RunAsmTest(uint32_t size_kb, uint32_t iterations) {
     if (sum == 0) printf("sum == 0 (?)\n");
     return latency;
 }
+
+
 
 float RunTlbTest(uint32_t size_kb, uint32_t iterations) {
     struct timeval startTv, endTv;
@@ -261,7 +285,7 @@ float RunTlbTest(uint32_t size_kb, uint32_t iterations) {
     if (memoryUsedKb == 0) memoryUsedKb = 1;
     float cacheLatency = RunTest(memoryUsedKb, iterations);
 
-    //fprintf(stderr, "Memory used - %u KB, ref latency: %f\n", memoryUsedKb, cacheLatency);
+    //fprintf(stderr, "Memory used - %u KB, latency: %f, ref latency: %f\n", memoryUsedKb, latency, cacheLatency);
     return latency - cacheLatency;
 }
  

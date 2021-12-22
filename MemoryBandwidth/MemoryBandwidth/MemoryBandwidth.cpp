@@ -16,26 +16,36 @@ int default_test_sizes[39] = { 2, 4, 8, 12, 16, 24, 32, 48, 64, 96, 128, 192, 25
                                131072, 262144, 393216, 524288, 1048576, 1572864, 2097152, 3145728 };
 
 struct BandwidthTestThreadData {
-    uint64_t iterations;
-    uint64_t arr_length;
-    uint64_t start;
+    uint32_t iterations;
+    uint32_t arr_length;
     float* arr;
     float bw; // written to by the thread
 };
 
 uint32_t dataGb = 512;
+//__int32 dataGb = 32;
 
-float scalar_read(float* arr, uint64_t arr_length, uint64_t iterations, uint64_t start);
-float sse_read(float* arr, uint64_t arr_length, uint64_t iterations, uint64_t start);
-float avx_read(float* arr, uint64_t arr_length, uint64_t iterations, uint64_t start);
-float MeasureBw(uint64_t sizeKb, uint64_t iterations, uint64_t threads, int shared);
-extern "C" float sse_asm_read(float* arr, uint64_t arr_length, uint64_t iterations, uint64_t start);
-extern "C" float avx_asm_read(float* arr, uint64_t arr_length, uint64_t iterations, uint64_t start);
-extern "C" float avx512_asm_read(float* arr, uint64_t arr_length, uint64_t iterations, uint64_t start);
-uint64_t GetIterationCount(uint64_t testSize, uint64_t threads);
+// array length = number of 4 byte elements
+float _fastcall scalar_read(void* arr, uint32_t arr_length, uint32_t iterations);
+
+#ifdef _WIN64
+extern "C" float sse_asm_read(void* arr, uint64_t arr_length, uint64_t iterations);
+extern "C" float avx_asm_read(void* arr, uint64_t arr_length, uint64_t iterations);
+extern "C" float avx_asm_write(void* arr, uint64_t arr_length, uint64_t iterations);
+extern "C" float avx512_asm_read(void* arr, uint64_t arr_length, uint64_t iterations);
+float (*bw_func)(void*, uint64_t, uint64_t) = sse_asm_read;
+
+#else
+extern "C" float __fastcall scalar_asm_read32(void* arr, uint32_t arr_length, uint32_t iterations);
+extern "C" float __fastcall mmx_asm_read32(void* arr, uint32_t arr_length, uint32_t iterations);
+extern "C" float __fastcall sse_asm_read32(void* arr, uint32_t arr_length, uint32_t iterations);
+extern "C" float __fastcall dummy(void* arr, uint32_t arr_length, uint32_t iterations);
+float(_fastcall *bw_func)(void*, uint32_t, uint32_t) = dummy;
+#endif
+
+float MeasureBw(uint32_t sizeKb, uint32_t iterations, uint32_t threads, int shared);
+uint32_t GetIterationCount(uint32_t testSize, uint32_t threads);
 DWORD WINAPI ReadBandwidthTestThread(LPVOID param);
-
-float (*bw_func)(float*, uint64_t, uint64_t, uint64_t start) = scalar_read;
 
 int main(int argc, char *argv[]) {
     int threads = 1, shared = 1, methodSet = 0;
@@ -64,30 +74,37 @@ int main(int argc, char *argv[]) {
             else if (_strnicmp(arg, "method", 6) == 0) {
                 methodSet = 1;
                 argIdx++;
-                if (_strnicmp(argv[argIdx], "scalar", 6) == 0) {
-                    bw_func = scalar_read;
-                    fprintf(stderr, "Using scalar C code\n");
+#ifdef _WIN64
+                if (_strnicmp(argv[argIdx], "asm_sse", 7) == 0) {
+                    bw_func = sse_asm_read;
+                    fprintf(stderr, "Using SSE assembly\n");
                 }
                 else if (_strnicmp(argv[argIdx], "asm_avx512", 10) == 0) {
                     bw_func = avx512_asm_read;
                     fprintf(stderr, "Using AVX512 assembly\n");
                 }
-                else if (_strnicmp(argv[argIdx], "sse", 3) == 0) {
-                    bw_func = sse_read;
-                    fprintf(stderr, "Using SSE intrinsics\n");
-                }
-                else if (_strnicmp(argv[argIdx], "asm_sse", 7) == 0) {
-                    bw_func = sse_asm_read;
-                    fprintf(stderr, "Using SSE assembly\n");
-                }
-                else if (_strnicmp(argv[argIdx], "avx", 3) == 0) {
-                    bw_func = avx_read;
-                    fprintf(stderr, "Using AVX intrinsics\n");
+                else if (_strnicmp(argv[argIdx], "write_asm_avx", 14) == 0) {
+                    bw_func = avx_asm_write;
+                    fprintf(stderr, "Using AVX assembly, writing instead of reading\n");
                 }
                 else if (_strnicmp(argv[argIdx], "asm_avx", 7) == 0) {
                     bw_func = avx_asm_read;
                     fprintf(stderr, "Using AVX assembly\n");
                 }
+#else
+                if (_strnicmp(argv[argIdx], "scalar", 6) == 0) {
+                    bw_func = scalar_asm_read32;
+                    fprintf(stderr, "Using scalar MOV r <- mem32\n");
+                }
+                else if (_strnicmp(argv[argIdx], "sse", 3) == 0) {
+                    bw_func = sse_asm_read32;
+                    fprintf(stderr, "Using SSE MOVAPS xmm <- mem128\n");
+                }
+                else if (_strnicmp(argv[argIdx], "mmx", 3) == 0) {
+                    bw_func = mmx_asm_read32;
+                    fprintf(stderr, "Using MMX MOVQ mm <- mem64\n");
+                }
+#endif
                 else {
                     methodSet = 0;
                     fprintf(stderr, "I'm so confused. Gonna use whatever the CPU supports I guess\n");
@@ -102,12 +119,13 @@ int main(int argc, char *argv[]) {
     }
 
     if (!methodSet) {
-        // check for sse/avx
+        // cpuid_data[0] = eax, [1] = ebx, [2] = ecx, [3] = edx
         __cpuidex(cpuid_data, 1, 0);
+#ifdef _WIN64
         // EDX bit 25 = SSE
         if (cpuid_data[3] & (1UL << 25)) {
             fprintf(stderr, "SSE supported\n");
-            bw_func = sse_read;
+            bw_func = sse_asm_read;
         }
 
         if (cpuid_data[2] & (1UL << 28)) {
@@ -120,6 +138,25 @@ int main(int argc, char *argv[]) {
             fprintf(stderr, "AVX512 supported\n");
             bw_func = avx512_asm_read;
         }
+#else
+        int choice = 0;
+        printf("Pick something:\n");
+        printf("1. SSE movaps xmm <- mem128");
+        if (cpuid_data[3] & (1UL << 25)) printf(" (looks supported)\n");
+        else printf(" (looks unsupported)\n");
+
+        printf("2. MMX movq mm <- mem64");
+        if (cpuid_data[3] & (1UL << 23)) printf("  (looks supported\n");
+        else printf("  (looks unsupported\n");
+
+        printf("3. mov gpr <- mem32 (better work)\n");
+        printf("Your choice: ");
+        scanf_s("%d", &choice);
+        if (choice == 1) bw_func = sse_asm_read32;
+        else if (choice == 2) bw_func = mmx_asm_read32;
+        else if (choice == 3) bw_func = scalar_asm_read32;
+        else { printf("Bye\n"); return 0; }
+#endif
     }
 
     printf("Using %d threads\n", threads);
@@ -135,31 +172,31 @@ int main(int argc, char *argv[]) {
 /// </summary>
 /// <param name="testSize">test size in KB</param>
 /// <returns>Iterations per thread</returns>
-uint64_t GetIterationCount(uint64_t testSize, uint64_t threads)
+uint32_t GetIterationCount(uint32_t testSize, uint32_t threads)
 {
     uint32_t gbToTransfer = dataGb;
     if (testSize > 64) gbToTransfer = dataGb / 2;
     if (testSize > 512) gbToTransfer = dataGb / 4;
     if (testSize > 8192) gbToTransfer = dataGb / 8;
-    uint64_t iterations = gbToTransfer * 1024 * 1024 / testSize;
+    uint32_t iterations = gbToTransfer * 1024 * 1024 / testSize;
 
     if (iterations < 8) return 8; // set a minimum to reduce noise
     else return iterations;
 }
 
-float MeasureBw(uint64_t sizeKb, uint64_t iterations, uint64_t threads, int shared) {
+float MeasureBw(uint32_t sizeKb, uint32_t iterations, uint32_t threads, int shared) {
     struct timeb start, end;
     float bw = 0;
-    uint64_t elements = sizeKb * 1024 / sizeof(float);
+    uint32_t elements = sizeKb * 1024 / sizeof(float);
     //uint64_t private_elements = (uint64_t)ceil(((double)sizeKb * 1024 / sizeof(float)) / (double)threads);
-    uint64_t private_elements = ceil((double)sizeKb / (double)threads) * 256;
+    uint32_t private_elements = ceil((double)sizeKb / (double)threads) * 256;
 
     if (!shared) elements = private_elements;
 
     //fprintf(stderr, "%llu elements per thread\n", elements);
 
     if (!shared && sizeKb < threads) {
-        fprintf(stderr, "Too many threads for this size, continuing\n");
+        //fprintf(stderr, "Too many threads for this size, continuing\n");
         return 0;
     }
 
@@ -172,7 +209,7 @@ float MeasureBw(uint64_t sizeKb, uint64_t iterations, uint64_t threads, int shar
             return 0;
         }
 
-        for (uint64_t i = 0; i < elements; i++) {
+        for (uint32_t i = 0; i < elements; i++) {
             testArr[i] = i + 0.5f;
         }
     }
@@ -203,7 +240,6 @@ float MeasureBw(uint64_t sizeKb, uint64_t iterations, uint64_t threads, int shar
 
         threadData[i].arr_length = elements;
         threadData[i].bw = 0;
-        threadData[i].start = 0;
         testThreads[i] = CreateThread(NULL, 0, ReadBandwidthTestThread, threadData + i, CREATE_SUSPENDED, tids + i);
 
         // turns out setting affinity makes no difference, and it's easier to set affinity via start /affinity <mask> anyway
@@ -211,14 +247,15 @@ float MeasureBw(uint64_t sizeKb, uint64_t iterations, uint64_t threads, int shar
     }
 
     ftime(&start);
-    for (uint64_t i = 0; i < threads; i++) ResumeThread(testThreads[i]);
+    for (uint32_t i = 0; i < threads; i++) ResumeThread(testThreads[i]);
     WaitForMultipleObjects((DWORD)threads, testThreads, TRUE, INFINITE);
     ftime(&end);
 
     int64_t time_diff_ms = 1000 * (end.time - start.time) + (end.millitm - start.millitm);
-    double gbTransferred = iterations * sizeof(float) * elements * threads / (double)1e9;
+    double gbTransferred = (uint64_t)iterations * sizeof(float) * elements * threads / (double)1e9;
     bw = 1000 * gbTransferred / (double)time_diff_ms;
     if (!shared) bw = bw * threads;
+    //printf("%u iterations\n", iterations);
     //printf("%f GB, %lu ms\n", gbTransferred, time_diff_ms);
 
     free(testThreads);
@@ -235,12 +272,13 @@ float MeasureBw(uint64_t sizeKb, uint64_t iterations, uint64_t threads, int shar
     return bw;
 }
 
-float scalar_read(float* arr, uint64_t arr_length, uint64_t iterations, uint64_t start) {
+float __fastcall scalar_read(void* a, uint32_t arr_length, uint32_t iterations)  {
     float sum = 0;
-    if (start + 16 >= arr_length) return 0;
+    if (16 >= arr_length) return 0;
 
-    uint64_t iter_idx = 0, i = start;
+    uint32_t iter_idx = 0, i = 0;
     float s1 = 0, s2 = 1, s3 = 0, s4 = 1, s5 = 0, s6 = 1, s7 = 0, s8 = 1;
+    float* arr = (float*)a;
     while (iter_idx < iterations) {
         s1 += arr[i];
         s2 *= arr[i + 1];
@@ -252,7 +290,7 @@ float scalar_read(float* arr, uint64_t arr_length, uint64_t iterations, uint64_t
         s8 *= arr[i + 7];
         i += 8;
         if (i + 7 >= arr_length) i = 0;
-        if (i == start) iter_idx++;
+        if (i == 0) iter_idx++;
     }
         
     sum += s1 + s2 + s3 + s4 + s5 + s6 + s7 + s8;
@@ -261,7 +299,7 @@ float scalar_read(float* arr, uint64_t arr_length, uint64_t iterations, uint64_t
 }
 
 // return sum of array
-float sse_read(float* arr, uint64_t arr_length, uint64_t iterations, uint64_t start) {
+float sse_read(float* arr, uint64_t arr_length, uint64_t iterations) {
     float sum = 0;
     float iterSum = 0;
     // zero two sums
@@ -275,7 +313,7 @@ float sse_read(float* arr, uint64_t arr_length, uint64_t iterations, uint64_t st
     __m128 s8 = _mm_loadu_ps(arr);
     __m128 zero = _mm_setzero_ps();
 
-    uint64_t iter_idx = 0, i = start;
+    uint64_t iter_idx = 0, i = 0;
     while (iter_idx < iterations) {
         __m128 e1 = _mm_loadu_ps(arr + i);
         __m128 e2 = _mm_loadu_ps(arr + i + 4);
@@ -295,7 +333,7 @@ float sse_read(float* arr, uint64_t arr_length, uint64_t iterations, uint64_t st
         s8 = _mm_mul_ps(s8, e8);
         i += 32;
         if (i + 31 >= arr_length) i = 0;
-        if (i == start) iter_idx++;
+        if (i == 0) iter_idx++;
     }
 
     iterSum = _mm_cvtss_f32(s1) + _mm_cvtss_f32(s2) + _mm_cvtss_f32(s3) + _mm_cvtss_f32(s4) + 
@@ -304,7 +342,7 @@ float sse_read(float* arr, uint64_t arr_length, uint64_t iterations, uint64_t st
     return sum;
 }
 
-float avx_read(float* arr, uint64_t arr_length, uint64_t iterations, uint64_t start) {
+float avx_read(float* arr, uint64_t arr_length, uint64_t iterations) {
     float sum = 0;
     float iterSum = 0;
     __m256 s1 = _mm256_setzero_ps();
@@ -315,7 +353,7 @@ float avx_read(float* arr, uint64_t arr_length, uint64_t iterations, uint64_t st
     __m256 s6 = _mm256_loadu_ps(arr);
     __m256 s7 = _mm256_loadu_ps(arr);
     __m256 s8 = _mm256_loadu_ps(arr);
-    uint64_t iter_idx = 0, i = start;
+    uint64_t iter_idx = 0, i = 0;
 
     while (iter_idx < iterations) {
         __m256 e1 = _mm256_loadu_ps(arr + i);
@@ -336,7 +374,7 @@ float avx_read(float* arr, uint64_t arr_length, uint64_t iterations, uint64_t st
         s8 = _mm256_mul_ps(s8, e8);
         i += 64;
         if (i + 63 >= arr_length) i = 0;
-        if (i == start) iter_idx++;
+        if (i == 0) iter_idx++;
     }
 
     // sink the result somehow
@@ -349,7 +387,7 @@ float avx_read(float* arr, uint64_t arr_length, uint64_t iterations, uint64_t st
 
 DWORD WINAPI ReadBandwidthTestThread(LPVOID param) {
     BandwidthTestThreadData* bwTestData = (BandwidthTestThreadData*)param;
-    float sum = bw_func(bwTestData->arr, bwTestData->arr_length, bwTestData->iterations, bwTestData->start);
+    float sum = bw_func(bwTestData->arr, bwTestData->arr_length, bwTestData->iterations);
     if (sum == 0) printf("woohoo\n");
     return 0;
 }
