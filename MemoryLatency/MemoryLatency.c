@@ -29,6 +29,7 @@ extern uint32_t latencytest(uint64_t iterations, uint64_t *arr);
 float RunTest(uint32_t size_kb, uint32_t iterations);
 float RunAsmTest(uint32_t size_kb, uint32_t iterations);
 float RunTlbTest(uint32_t size_kb, uint32_t iterations);
+float RunMlpTest(uint32_t size_kb, uint32_t iterations, uint32_t parallelism);
 
 float (*testFunc)(uint32_t, uint32_t) = RunTest;
 
@@ -36,6 +37,8 @@ uint32_t ITERATIONS = 100000000;
 
 int main(int argc, char* argv[]) {
     uint32_t maxTestSizeMb = 0;
+    uint32_t testSizeCount = sizeof(default_test_sizes) / sizeof(int);
+    int mlpTest = 0;  // if > 0, run MLP test with (value) levels of parallelism max
     for (int argIdx = 1; argIdx < argc; argIdx++) {
         if (*(argv[argIdx]) == '-') {
             char *arg = argv[argIdx] + 1; 
@@ -51,6 +54,9 @@ int main(int argc, char* argv[]) {
                 } else if (strncmp(testType, "c", 1) == 0) {
                     testFunc = RunTest;
                     fprintf(stderr, "Using simple C test\n");
+                } else if (strncmp(testType, "mlp", 3) == 0) {
+                    mlpTest = 64;
+                    fprintf(stderr, "Running memory parallelism test\n");
                 } else {
                     fprintf(stderr, "Unrecognized test type: %s\n", testType);
                     fprintf(stderr, "Valid test types: c, asm, tlb\n");
@@ -71,18 +77,45 @@ int main(int argc, char* argv[]) {
     }
 
     if (argc == 1) {
-        fprintf(stderr, "Usage: [-test <c/asm/tlb>] [-maxsizemb <max test size in MB>] [-iter <base iterations, default 100000000]\n");
+        fprintf(stderr, "Usage: [-test <c/asm/tlb/mlp>] [-maxsizemb <max test size in MB>] [-iter <base iterations, default 100000000]\n");
     }
 
-    printf("Region,Latency (ns)\n");
-    for (int i = 0; i < sizeof(default_test_sizes) / sizeof(int); i++)
-    {
-        if ((maxTestSizeMb == 0) || (default_test_sizes[i] <= maxTestSizeMb * 1024))
-            printf("%d,%f\n", default_test_sizes[i], testFunc(default_test_sizes[i], ITERATIONS));
-        else {
-            fprintf(stderr, "Test size %u KB exceeds max test size of %u KB\n", default_test_sizes[i], maxTestSizeMb * 1024);
-            break;
+    if (!mlpTest) {
+        printf("Region,Latency (ns)\n");
+        for (int i = 0; i < testSizeCount; i++) {
+            if ((maxTestSizeMb == 0) || (default_test_sizes[i] <= maxTestSizeMb * 1024))
+                printf("%d,%f\n", default_test_sizes[i], testFunc(default_test_sizes[i], ITERATIONS));
+            else {
+                fprintf(stderr, "Test size %u KB exceeds max test size of %u KB\n", default_test_sizes[i], maxTestSizeMb * 1024);
+                break;
+            }
         }
+    } else {
+        printf("Running memory level parallelism test\n");
+        // allocate arr to hold results
+        float *results = (float *)malloc(testSizeCount * mlpTest);
+        for (int size_idx = 0; size_idx < testSizeCount; size_idx++) {
+            for (int parallelism = 0; parallelism < mlpTest; parallelism++) {
+                results[size_idx * mlpTest + parallelism] = RunMlpTest(default_test_sizes[size_idx], ITERATIONS, parallelism + 1);
+                printf("%d KB, %dx parallelism, %f MB/s\n", default_test_sizes[size_idx], parallelism + 1, results[size_idx * mlpTest + parallelism]);
+            }
+        }
+
+        for (int size_idx = 0; size_idx < testSizeCount; size_idx++) {
+            printf(",%d", default_test_sizes[size_idx]);
+        }
+
+        printf("\n");
+
+        for (int parallelism = 0; parallelism < mlpTest; parallelism++) {
+            printf("%d", parallelism);
+            for (int size_idx = 0; size_idx < default_test_sizes[size_idx]; size_idx++) {
+                printf(",%f", results[size_idx * mlpTest + parallelism]);
+            }
+            printf("\n");
+        }
+
+        free(results);
     }
 
     return 0;
@@ -164,6 +197,50 @@ float RunTest(uint32_t size_kb, uint32_t iterations) {
 
     if (sum == 0) printf("sum == 0 (?)\n");
     return latency;
+}
+
+// Tests memory level parallelism. Returns achieved BW in MB/s using specified number of 
+// independent pointer chasing chains
+float RunMlpTest(uint32_t size_kb, uint32_t iterations, uint32_t parallelism) {
+    struct timeval startTv, endTv;
+    struct timezone startTz, endTz;
+    uint32_t list_size = size_kb * 1024 / 4;
+    uint32_t sum = 0, current;
+
+    if (parallelism < 1) return 0;
+
+    // Fill list to create random access pattern, and hold temporary data
+    int* A = (int*)malloc(sizeof(int) * list_size);
+    int *offsets = (int*)malloc(sizeof(int) * parallelism);
+    if (!A || !offsets) {
+        fprintf(stderr, "Failed to allocate memory for %u KB test\n", size_kb);
+        return 0;
+    }
+    
+    FillPatternArr(A, list_size, CACHELINE_SIZE);
+    for (int i = 0; i < parallelism; i++) offsets[i] = i * (CACHELINE_SIZE / sizeof(int));
+    uint32_t scaled_iterations = scale_iterations(size_kb, iterations) / parallelism;
+
+    // Run test
+    gettimeofday(&startTv, &startTz);
+    for (int i = 0; i < scaled_iterations; i++) {
+        for (int j = 0; j < parallelism; j++)
+        {
+            offsets[j] = A[offsets[j]];
+        }
+    }
+    gettimeofday(&endTv, &endTz);
+    uint64_t time_diff_ms = 1000 * (endTv.tv_sec - startTv.tv_sec) + ((endTv.tv_usec - startTv.tv_usec) / 1000);
+    double mbTransferred = (scaled_iterations * parallelism * sizeof(int))  / (double)1e6;
+    float bw = 1000 * mbTransferred / (double)time_diff_ms; 
+
+    sum = 0;
+    for (int i = 0; i < parallelism; i++) sum += offsets[i];
+    if (sum == 0) printf("sum == 0 (?)\n");
+
+    free(A);
+    free (offsets);
+    return bw;
 }
 
 #ifdef __i686
