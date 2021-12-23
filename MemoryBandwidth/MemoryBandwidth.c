@@ -20,11 +20,6 @@
 
 #pragma GCC diagnostic ignored "-Wattributes"
 
-// make mingw happy
-#ifdef __MINGW32__
-#define aligned_alloc(align, size) _aligned_malloc(size, align)
-#endif
-
 int default_test_sizes[39] = { 2, 4, 8, 12, 16, 24, 32, 48, 64, 96, 128, 192, 256, 512, 600, 768, 1024, 1536, 2048,
                                3072, 4096, 5120, 6144, 8192, 10240, 12288, 16384, 24567, 32768, 65536, 98304,
                                131072, 262144, 393216, 524288, 1048576, 1572864, 2097152, 3145728 };
@@ -199,6 +194,7 @@ uint64_t GetIterationCount(uint64_t testSize, uint64_t threads)
 }
 
 float MeasureInstructionBw(uint64_t sizeKb, uint64_t iterations, int nopSize) {
+#ifdef __x86_64
     char nop8b[8] = { 0x0F, 0x1F, 0x84, 0x00, 0x00, 0x00, 0x00, 0x00 };
 
     // zen/piledriver optimization manual uses this pattern
@@ -206,19 +202,25 @@ float MeasureInstructionBw(uint64_t sizeKb, uint64_t iterations, int nopSize) {
 
     // athlon64 (K8) optimization manual pattern
     char k8_nop4b[8] = { 0x66, 0x66, 0x66, 0x90, 0x66, 0x66, 0x66, 0x90 };
-    
+#endif
+
+#ifdef __aarch64__
+    char nop4b[8] = { 0x1F, 0x20, 0x03, 0xD5, 0x1F, 0x20, 0x03, 0xD5 };
+    char *nop8b = nop4b;
+#endif
+
     struct timeval startTv, endTv;
     struct timezone startTz, endTz;
     float bw = 0; 
     uint64_t *nops;
     uint64_t elements = sizeKb * 1024 / 8;
-    size_t funcLen = sizeKb * 1024 + 1;
+    size_t funcLen = sizeKb * 1024 + 4;   // add 4 bytes to cover for aarch64 ret as well. doesn't hurt for x86
 
     void (*nopfunc)(uint64_t) __attribute((ms_abi));
 
     // nops, dec rcx (3 bytes), jump if zero flag set to 32-bit displacement (6 bytes), ret (1 byte)
-    nops = (uint64_t *)malloc(funcLen);
-    if (nops == NULL) {
+    //nops = (uint64_t *)malloc(funcLen);
+    if (0 != posix_memalign((void **)(&nops), 4096, funcLen)) {
         fprintf(stderr, "Failed to allocate memory for size %lu\n", sizeKb);
         return 0;
     }
@@ -234,9 +236,15 @@ float MeasureInstructionBw(uint64_t sizeKb, uint64_t iterations, int nopSize) {
         nops[nopIdx] = *nop8bptr;
     }
 
-    unsigned char *functionEnd = (unsigned char *)(nops + elements);
     // ret
+    #ifdef __x86_64 
+    unsigned char *functionEnd = (unsigned char *)(nops + elements);
     functionEnd[0] = 0xC3;
+    #endif
+    #ifdef __aarch64__ 
+    uint64_t *functionEnd = (uint64_t *)(nops + elements);
+    functionEnd[0] = 0XD65F03C0;
+    #endif
 
     uint64_t nopfuncPage = (~0xFFF) & (uint64_t)(nops);
     size_t mprotectLen = (0xFFF & (uint64_t)(nops)) + funcLen;
@@ -244,6 +252,11 @@ float MeasureInstructionBw(uint64_t sizeKb, uint64_t iterations, int nopSize) {
         fprintf(stderr, "mprotect failed, errno %d\n", errno); 
         return 0;
     }  
+
+    #ifdef __aarch64__
+    asm ("dsb sy");
+    asm ("isb sy");
+    #endif
 
     nopfunc = (__attribute((ms_abi)) void(*)(uint64_t))nops;
     gettimeofday(&startTv, &startTz);
@@ -279,11 +292,11 @@ float MeasureBw(uint64_t sizeKb, uint64_t iterations, uint64_t threads, int shar
     // make array and fill it with something, if shared
     float* testArr = NULL;
     if (shared){ 
-        testArr = (float*)aligned_alloc(64, elements * sizeof(float));
-        if (testArr == NULL) {
+        //testArr = (float*)aligned_alloc(64, elements * sizeof(float));
+	if (0 != posix_memalign((void **)(&testArr), 64, elements * sizeof(float))) {
             fprintf(stderr, "Could not allocate memory\n");
             return 0;
-        }
+	}
 
         for (uint64_t i = 0; i < elements; i++) {
             testArr[i] = i + 0.5f;
@@ -306,8 +319,8 @@ float MeasureBw(uint64_t sizeKb, uint64_t iterations, uint64_t threads, int shar
         }
         else
         {
-            threadData[i].arr = (float*)aligned_alloc(64, elements * sizeof(float));
-            if (threadData[i].arr == NULL)
+            //threadData[i].arr = (float*)aligned_alloc(64, elements * sizeof(float));
+	    if (0 != posix_memalign((void **)(&(threadData[i].arr)), 64, elements * sizeof(float)))
             {
                 fprintf(stderr, "Could not allocate memory for thread %ld\n", i);
                 return 0;
