@@ -55,7 +55,7 @@ int main(int argc, char* argv[]) {
                     testFunc = RunTest;
                     fprintf(stderr, "Using simple C test\n");
                 } else if (strncmp(testType, "mlp", 3) == 0) {
-                    mlpTest = 64;
+                    mlpTest = 32;
                     fprintf(stderr, "Running memory parallelism test\n");
                 } else {
                     fprintf(stderr, "Unrecognized test type: %s\n", testType);
@@ -93,7 +93,7 @@ int main(int argc, char* argv[]) {
     } else {
         printf("Running memory level parallelism test\n");
         // allocate arr to hold results
-        float *results = (float *)malloc(testSizeCount * mlpTest);
+        float *results = (float *)malloc(testSizeCount * mlpTest * sizeof(float));
         for (int size_idx = 0; size_idx < testSizeCount; size_idx++) {
             for (int parallelism = 0; parallelism < mlpTest; parallelism++) {
                 results[size_idx * mlpTest + parallelism] = RunMlpTest(default_test_sizes[size_idx], ITERATIONS, parallelism + 1);
@@ -108,7 +108,7 @@ int main(int argc, char* argv[]) {
         printf("\n");
 
         for (int parallelism = 0; parallelism < mlpTest; parallelism++) {
-            printf("%d", parallelism);
+            printf("%d", parallelism + 1);
             for (int size_idx = 0; size_idx < default_test_sizes[size_idx]; size_idx++) {
                 printf(",%f", results[size_idx * mlpTest + parallelism]);
             }
