@@ -48,7 +48,7 @@ float (*bw_func)(float*, uint64_t, uint64_t, uint64_t start);
 
 extern float asm_read(float* arr, uint64_t arr_length, uint64_t iterations, uint64_t start) __attribute__((ms_abi));
 extern float asm_write(float* arr, uint64_t arr_length, uint64_t iterations, uint64_t start) __attribute__((ms_abi));
-float MeasureInstructionBw(uint64_t sizeKb, uint64_t iterations, int nopSize); 
+float MeasureInstructionBw(uint64_t sizeKb, uint64_t iterations, int nopSize, int branchInterval); 
 uint64_t GetIterationCount(uint64_t testSize, uint64_t threads);
 void *ReadBandwidthTestThread(void *param);
 
@@ -57,7 +57,7 @@ int main(int argc, char *argv[]) {
     int cpuid_data[4];
     int shared = 1;
     int sleepTime = 0;
-    int methodSet = 0, testInstructionBandwidth = 0, nopBytes = 8;
+    int methodSet = 0, testInstructionBandwidth = 0, nopBytes = 8, branchInterval = 0;
     int singleSize = 0;
     bw_func = asm_read;
     for (int argIdx = 1; argIdx < argc; argIdx++) {
@@ -77,6 +77,10 @@ int main(int argc, char *argv[]) {
             } else if (strncmp(arg, "private", 7) == 0) {
                 shared = 0;
                 fprintf(stderr, "Using private array for each thread\n");
+            } else if (strncmp(arg, "branchinterval", 14) == 0) {
+                argIdx++;
+                branchInterval = atoi(argv[argIdx]);
+                fprintf(stderr, "Will add a branch roughly every %d bytes\n", branchInterval * 8);
             } else if (strncmp(arg, "sizekb", 6) == 0) {
                 argIdx++;
 		singleSize = atoi(argv[argIdx]);
@@ -149,13 +153,13 @@ int main(int argc, char *argv[]) {
         if (singleSize == 0) {
             for (int i = 0; i < sizeof(default_test_sizes) / sizeof(int); i++)
             {
-                printf("%d,%f\n", default_test_sizes[i], MeasureInstructionBw(default_test_sizes[i], GetIterationCount(default_test_sizes[i], threads), nopBytes));
+                printf("%d,%f\n", default_test_sizes[i], MeasureInstructionBw(default_test_sizes[i], GetIterationCount(default_test_sizes[i], threads), nopBytes, branchInterval));
                 if (sleepTime > 0) sleep(sleepTime);
             } 
 	}
 	else 
 	{
-	    printf("%d,%f\n", singleSize, MeasureInstructionBw(singleSize, GetIterationCount(singleSize, threads), nopBytes));
+	    printf("%d,%f\n", singleSize, MeasureInstructionBw(singleSize, GetIterationCount(singleSize, threads), nopBytes, branchInterval));
 	}
     } else {
         printf("Using %d threads\n", threads);
@@ -193,7 +197,7 @@ uint64_t GetIterationCount(uint64_t testSize, uint64_t threads)
     else return iterations;
 }
 
-float MeasureInstructionBw(uint64_t sizeKb, uint64_t iterations, int nopSize) {
+float MeasureInstructionBw(uint64_t sizeKb, uint64_t iterations, int nopSize, int branchInterval) {
 #ifdef __x86_64
     char nop8b[8] = { 0x0F, 0x1F, 0x84, 0x00, 0x00, 0x00, 0x00, 0x00 };
 
@@ -202,6 +206,7 @@ float MeasureInstructionBw(uint64_t sizeKb, uint64_t iterations, int nopSize) {
 
     // athlon64 (K8) optimization manual pattern
     char k8_nop4b[8] = { 0x66, 0x66, 0x66, 0x90, 0x66, 0x66, 0x66, 0x90 };
+    char nop4b_with_branch[8] = { 0x0F, 0x1F, 0x40, 0x00, 0xEB, 0x00, 0x66, 0x90 };
 #endif
 
 #ifdef __aarch64__
@@ -234,6 +239,10 @@ float MeasureInstructionBw(uint64_t sizeKb, uint64_t iterations, int nopSize) {
 
     for (uint64_t nopIdx = 0; nopIdx < elements; nopIdx++) {
         nops[nopIdx] = *nop8bptr;
+#ifdef __x86_64
+	uint64_t *nopBranchPtr = (uint64_t *)nop4b_with_branch;
+	if (branchInterval > 1 && nopIdx % branchInterval == 0) nops[nopIdx] = *nopBranchPtr;
+#endif
     }
 
     // ret
