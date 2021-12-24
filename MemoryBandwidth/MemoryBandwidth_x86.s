@@ -3,6 +3,7 @@
 .global asm_read
 .global asm_write
 .global sse_read
+.global sse_write
 .global avx512_read
 
 asm_read:
@@ -168,6 +169,77 @@ sse_test_iteration_count:
   pop %rdi 
   pop %rsi 
   ret  
+
+sse_write:
+  push %rsi
+  push %rdi
+  push %rbx
+  push %r15
+  push %r14
+  mov $256, %r15 /* load in blocks of 256 bytes */
+  sub $128, %rdx /* last iteration: rsi == rdx. rsi > rdx = break */
+  mov %r9, %rsi  /* assume we're passed in an aligned start location O.o */
+  xor %rbx, %rbx
+  lea (%rcx,%rsi,4), %rdi
+  mov %rdi, %r14
+  movaps (%rdi), %xmm0
+  movaps 16(%rdi), %xmm1
+  movaps 32(%rdi), %xmm2
+  movaps 48(%rdi), %xmm3
+sse_write_pass_loop:
+  movaps %xmm0, (%rdi)    
+  movaps %xmm1, 16(%rdi)  
+  movaps %xmm2, 32(%rdi)  
+  movaps %xmm3, 48(%rdi)  
+  movaps %xmm0, 64(%rdi)  
+  movaps %xmm1, 80(%rdi)  
+  movaps %xmm2, 96(%rdi)  
+  movaps %xmm3, 112(%rdi) 
+  movaps %xmm0, 128(%rdi) 
+  movaps %xmm1, 144(%rdi) 
+  movaps %xmm2, 160(%rdi) 
+  movaps %xmm3, 176(%rdi) 
+  movaps %xmm0, 192(%rdi) 
+  movaps %xmm1, 208(%rdi) 
+  movaps %xmm2, 224(%rdi) 
+  movaps %xmm3, 240(%rdi) 
+  add $64, %rsi
+  add %r15, %rdi
+  movaps %xmm0, (%rdi)    
+  movaps %xmm1, 16(%rdi)  
+  movaps %xmm2, 32(%rdi)  
+  movaps %xmm3, 48(%rdi)  
+  movaps %xmm0, 64(%rdi)  
+  movaps %xmm1, 80(%rdi)  
+  movaps %xmm2, 96(%rdi)  
+  movaps %xmm3, 112(%rdi) 
+  movaps %xmm0, 128(%rdi) 
+  movaps %xmm1, 144(%rdi) 
+  movaps %xmm2, 160(%rdi) 
+  movaps %xmm3, 176(%rdi) 
+  movaps %xmm0, 192(%rdi) 
+  movaps %xmm1, 208(%rdi) 
+  movaps %xmm2, 224(%rdi) 
+  movaps %xmm3, 240(%rdi)  
+  add $64, %rsi
+  add %r15, %rdi  
+  cmp %rsi, %rdx
+  jge sse_write_iteration_count
+  mov %rbx, %rsi
+  lea (%rcx,%rsi,4), %rdi /* back to start */
+sse_write_iteration_count:
+  cmp %rsi, %r9
+  jnz sse_write_pass_loop /* skip iteration decrement if we're not back to start */
+  dec %r8
+  jnz sse_write_pass_loop
+  movaps (%rcx), %xmm0
+  pop %r14 
+  pop %r15 
+  pop %rbx 
+  pop %rdi 
+  pop %rsi 
+  ret  
+
 
 avx512_read:
   push %rsi

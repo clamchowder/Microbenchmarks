@@ -39,6 +39,7 @@ float MeasureBw(uint64_t sizeKb, uint64_t iterations, uint64_t threads, int shar
 #include <cpuid.h>
 float scalar_read(float* arr, uint64_t arr_length, uint64_t iterations, uint64_t start) __attribute((ms_abi));
 extern float sse_read(float* arr, uint64_t arr_length, uint64_t iterations, uint64_t start) __attribute__((ms_abi));
+extern float sse_write(float* arr, uint64_t arr_length, uint64_t iterations, uint64_t start) __attribute__((ms_abi));
 extern float avx512_read(float* arr, uint64_t arr_length, uint64_t iterations, uint64_t start) __attribute__((ms_abi));
 float (*bw_func)(float*, uint64_t, uint64_t, uint64_t start) __attribute__((ms_abi)); 
 #else
@@ -111,8 +112,12 @@ int main(int argc, char *argv[]) {
                     bw_func = avx512_read;
                     fprintf(stderr, "Using ASM code, AVX512\n");
                 }
-                else if (strncmp(argv[argIdx], "sse", 3) == 0) {
+                else if (strncmp(argv[argIdx], "sse_write", 9) == 0) {
                     bw_func = sse_read;
+                    fprintf(stderr, "Using SSE to test write bandwidth\n");
+                }
+                else if (strncmp(argv[argIdx], "sse", 3) == 0) {
+                    bw_func = sse_write;
                     fprintf(stderr, "Using ASM code, SSE\n");
                 }
                 #endif
