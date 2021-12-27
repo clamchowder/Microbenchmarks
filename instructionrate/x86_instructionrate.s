@@ -49,6 +49,8 @@
 .global latfma128
 .global mul256fp
 .global add256fp
+.global add128fp
+.global mul128fp
 .global latmul64
 .global latmul16
 .global mul16
@@ -62,6 +64,8 @@
 .global mixaddmul128int
 .global mixmul16mul64
 .global mixmul16mul64_21
+.global add128int
+.global mul128int
 
 .global pdeptest
 .global pexttest
@@ -1034,7 +1038,7 @@ add256int:
   push %r8
   mov $20, %r9
   movq %r9, %xmm1
-  vpbroadcastq %xmm1, %ymm0
+  //vpbroadcastq %xmm1, %ymm0
   vmovdqu %ymm0, %ymm1
   vmovdqu %ymm0, %ymm2
   vmovdqu %ymm0, %ymm3
@@ -1344,7 +1348,7 @@ latmul256int:
   push %r11
   mov $20, %r9
   movq %r9, %xmm1
-  vpbroadcastd %xmm1, %ymm0
+  //vpbroadcastd %xmm1, %ymm0
   vmovdqu %ymm0, %ymm1
   vmovdqu %ymm0, %ymm2
   vmovdqu %ymm0, %ymm3
@@ -1386,10 +1390,9 @@ latmul256int_loop:
 
 latadd128int:
   push %r9
-  vzeroupper
   mov $20, %r9
   movq %r9, %xmm1
-  vpbroadcastq %xmm1, %xmm0
+  //vpbroadcastq %xmm1, %xmm0
 latadd128int_loop:
   paddq %xmm0, %xmm0
   paddq %xmm0, %xmm0
@@ -1417,12 +1420,75 @@ latadd128int_loop:
   pop %r9
   ret
 
-latmul128int:
+add128int:
   push %r9
-  vzeroupper
   mov $20, %r9
   movq %r9, %xmm1
-  vpbroadcastd %xmm1, %xmm0
+  //vpbroadcastq %xmm1, %xmm0
+add128int_loop:
+  paddq %xmm0, %xmm0
+  paddq %xmm1, %xmm1
+  paddq %xmm2, %xmm2
+  paddq %xmm3, %xmm3
+  paddq %xmm4, %xmm4
+  paddq %xmm0, %xmm0
+  paddq %xmm1, %xmm1
+  paddq %xmm2, %xmm2
+  paddq %xmm3, %xmm3
+  paddq %xmm4, %xmm4
+  paddq %xmm0, %xmm0
+  paddq %xmm1, %xmm1
+  paddq %xmm2, %xmm2
+  paddq %xmm3, %xmm3
+  paddq %xmm4, %xmm4
+  paddq %xmm0, %xmm0
+  paddq %xmm1, %xmm1
+  paddq %xmm2, %xmm2
+  paddq %xmm3, %xmm3
+  paddq %xmm4, %xmm4
+  sub %r9, %rdi
+  jnz add128int_loop
+  movq %xmm1, %rax
+  pop %r9
+  ret 
+
+mul128int:
+  push %r9
+  mov $20, %r9
+  movq %r9, %xmm1
+  //vpbroadcastd %xmm1, %xmm0
+mul128int_loop:
+  pmulld %xmm0, %xmm0
+  pmulld %xmm1, %xmm1
+  pmulld %xmm2, %xmm2
+  pmulld %xmm3, %xmm3
+  pmulld %xmm4, %xmm4
+  pmulld %xmm0, %xmm0
+  pmulld %xmm1, %xmm1
+  pmulld %xmm2, %xmm2
+  pmulld %xmm3, %xmm3
+  pmulld %xmm4, %xmm4
+  pmulld %xmm0, %xmm0
+  pmulld %xmm1, %xmm1
+  pmulld %xmm2, %xmm2
+  pmulld %xmm3, %xmm3
+  pmulld %xmm4, %xmm4
+  pmulld %xmm0, %xmm0
+  pmulld %xmm1, %xmm1
+  pmulld %xmm2, %xmm2
+  pmulld %xmm3, %xmm3
+  pmulld %xmm4, %xmm4
+  sub %r9, %rdi
+  jnz mul128int_loop
+  movq %xmm1, %rax
+  pop %r9
+  ret  
+
+latmul128int:
+  push %r9
+  mov $20, %r9
+  movq %r9, %xmm1
+  //vpbroadcastd %xmm1, %xmm0
 latmul128int_loop:
   pmulld %xmm0, %xmm0
   pmulld %xmm0, %xmm0
@@ -1452,10 +1518,9 @@ latmul128int_loop:
 
 mixaddmul128int:
   push %r9
-  vzeroupper
   mov $20, %r9
   movq %r9, %xmm1
-  vpbroadcastd %xmm1, %xmm0
+  //vpbroadcastd %xmm1, %xmm0
   movdqa %xmm0, %xmm1
   movdqa %xmm0, %xmm2
   movdqa %xmm0, %xmm3
@@ -2151,7 +2216,7 @@ latadd128fp:
   mov $20, %r9
   movq %r9, %xmm1
   cvtsi2ss %r9, %xmm6
-  vbroadcastss %xmm6, %xmm6
+  //vbroadcastss %xmm6, %xmm6
 latadd128fp_loop:
   addps %xmm6, %xmm6
   addps %xmm6, %xmm6
@@ -2176,7 +2241,6 @@ latadd128fp_loop:
   sub %r9, %rdi
   jnz latadd128fp_loop
   movq %xmm1, %rax
-  vzeroupper
   pop %r8
   pop %r9
   ret 
@@ -2187,7 +2251,7 @@ latmul128fp:
   mov $20, %r9
   movq %r9, %xmm1
   cvtsi2ss %r9, %xmm6
-  vbroadcastss %xmm6, %xmm6
+  //vbroadcastss %xmm6, %xmm6
 latmul128fp_loop:
   mulps %xmm6, %xmm6
   mulps %xmm6, %xmm6
@@ -2212,10 +2276,83 @@ latmul128fp_loop:
   sub %r9, %rdi
   jnz latmul128fp_loop
   movq %xmm1, %rax
-  vzeroupper
   pop %r8
   pop %r9
   ret 
+
+mul128fp:
+  push %r9
+  push %r8
+  mov $20, %r9
+  cvtsi2ss %r9, %xmm4
+  cvtsi2ss %r9, %xmm3
+  cvtsi2ss %r9, %xmm2
+  cvtsi2ss %r9, %xmm1
+  cvtsi2ss %r9, %xmm0
+mul128fp_loop:
+  mulps %xmm0, %xmm0
+  mulps %xmm1, %xmm1
+  mulps %xmm2, %xmm2
+  mulps %xmm3, %xmm3
+  mulps %xmm4, %xmm4
+  mulps %xmm0, %xmm0
+  mulps %xmm1, %xmm1
+  mulps %xmm2, %xmm2
+  mulps %xmm3, %xmm3
+  mulps %xmm4, %xmm4
+  mulps %xmm0, %xmm0
+  mulps %xmm1, %xmm1
+  mulps %xmm2, %xmm2
+  mulps %xmm3, %xmm3
+  mulps %xmm4, %xmm4
+  mulps %xmm0, %xmm0
+  mulps %xmm1, %xmm1
+  mulps %xmm2, %xmm2
+  mulps %xmm3, %xmm3
+  mulps %xmm4, %xmm4
+  sub %r9, %rdi
+  jnz mul128fp_loop
+  movq %xmm1, %rax
+  pop %r8
+  pop %r9
+  ret  
+
+add128fp:
+  push %r9
+  push %r8
+  mov $20, %r9
+  cvtsi2ss %r9, %xmm4
+  cvtsi2ss %r9, %xmm3
+  cvtsi2ss %r9, %xmm2
+  cvtsi2ss %r9, %xmm1
+  cvtsi2ss %r9, %xmm0
+add128fp_loop:
+  addps %xmm0, %xmm0
+  addps %xmm1, %xmm1
+  addps %xmm2, %xmm2
+  addps %xmm3, %xmm3
+  addps %xmm4, %xmm4
+  addps %xmm0, %xmm0
+  addps %xmm1, %xmm1
+  addps %xmm2, %xmm2
+  addps %xmm3, %xmm3
+  addps %xmm4, %xmm4
+  addps %xmm0, %xmm0
+  addps %xmm1, %xmm1
+  addps %xmm2, %xmm2
+  addps %xmm3, %xmm3
+  addps %xmm4, %xmm4
+  addps %xmm0, %xmm0
+  addps %xmm1, %xmm1
+  addps %xmm2, %xmm2
+  addps %xmm3, %xmm3
+  addps %xmm4, %xmm4
+  sub %r9, %rdi
+  jnz add128fp_loop
+  movq %xmm1, %rax
+  pop %r8
+  pop %r9
+  ret   
 
 latmul64:
   push %rbx
@@ -2631,7 +2768,6 @@ spacedload128:
   push %rcx
   push %r8
   push %r9
-  vzeroupper
   mov $20, %r9
 spacedload128_loop:
   movdqa (%rsi), %xmm10
@@ -2667,7 +2803,6 @@ load128:
   push %rcx
   push %r8
   push %r9
-  vzeroupper
   mov $20, %r9
 load128_loop:
   movdqa (%rsi), %xmm10
@@ -2738,7 +2873,6 @@ store128:
   push %rcx
   push %r8
   push %r9
-  vzeroupper
   movdqa (%rsi), %xmm10
   movdqa %xmm10, %xmm11
   movdqa %xmm10, %xmm12

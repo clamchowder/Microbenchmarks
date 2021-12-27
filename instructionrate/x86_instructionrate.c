@@ -44,6 +44,10 @@ extern uint64_t latadd128fp(uint64_t iterations) __attribute((sysv_abi));
 extern uint64_t latmul128fp(uint64_t iterations) __attribute((sysv_abi)); 
 extern uint64_t latfma256(uint64_t iterations) __attribute((sysv_abi));
 extern uint64_t latfma128(uint64_t iterations) __attribute((sysv_abi));
+extern uint64_t add128int(uint64_t iterations) __attribute((sysv_abi));
+extern uint64_t mul128int(uint64_t iterations) __attribute((sysv_abi));
+extern uint64_t add128fp(uint64_t iterations) __attribute((sysv_abi));
+extern uint64_t mul128fp(uint64_t iterations) __attribute((sysv_abi));
 extern uint64_t fma256(uint64_t iterations) __attribute((sysv_abi));
 extern uint64_t fma128(uint64_t iterations) __attribute((sysv_abi));
 extern uint64_t mixfmafadd256(uint64_t iterations) __attribute((sysv_abi));
@@ -102,6 +106,7 @@ int main(int argc, char *argv[]) {
   uint64_t time_diff_ms;
   float latency, opsPerNs, clockSpeedGhz;
   uint64_t intTestArrLength = 1024;
+  int avxSupported = 0, avx2Supported = 0, bmi2Supported = 0;
 
   intTestArr = aligned_alloc(64, sizeof(int) * intTestArrLength);
   for (uint64_t i = 0; i < intTestArrLength; i++) {
@@ -112,6 +117,22 @@ int main(int argc, char *argv[]) {
     iterationsHigh =  1500000000 * (uint64_t)atol(argv[2]);
     printf("setting %lu iterations\n", iterationsHigh);
   }
+
+  if (__builtin_cpu_supports("avx")) {
+    fprintf(stderr, "avx supported\n");
+    avxSupported = 1;
+  }
+
+  if (__builtin_cpu_supports("avx2")) {
+    fprintf(stderr, "avx2 supported\n");
+    avx2Supported = 1;
+  }
+
+  if (__builtin_cpu_supports("bmi2")) {
+    fprintf(stderr, "bmi2 supported\n");
+    bmi2Supported = 1;
+  }
+
   
   if (argc == 1) {
     // figure out clock speed
@@ -161,9 +182,9 @@ int main(int argc, char *argv[]) {
     printf("taken jmp per clk: %.2f\n", measureFunction(iterationsHigh, clockSpeedGhz, jmptest)); 
   if (argc == 1 || argc > 1 && strncmp(argv[1], "ntjmp", 5) == 0) 
     printf("nt jmp per clk: %.2f\n", measureFunction(iterationsHigh, clockSpeedGhz, ntjmptest)); 
-  if (argc == 1 || argc > 1 && strncmp(argv[1], "pdep", 4) == 0) 
+  if (bmi2Supported && (argc == 1 || argc > 1 && strncmp(argv[1], "pdep", 4) == 0)) 
     printf("pdep per clk: %.4f\n", measureFunction(iterationsHigh, clockSpeedGhz, pdeptest)); 
-  if (argc == 1 || argc > 1 && strncmp(argv[1], "pext", 4) == 0) 
+  if (bmi2Supported && (argc == 1 || argc > 1 && strncmp(argv[1], "pext", 4) == 0))
     printf("pext per clk: %.4f\n", measureFunction(iterationsHigh, clockSpeedGhz, pexttest));  
   if (argc == 1 || argc > 1 && strncmp(argv[1], "ror", 3) == 0) 
     printf("ror r,1 per clk: %.4f\n", measureFunction(iterationsHigh, clockSpeedGhz, rortest));  
@@ -181,56 +202,65 @@ int main(int argc, char *argv[]) {
     printf("1:1 lea r+r*8/mul per clk: %.4f\n", measureFunction(iterationsHigh, clockSpeedGhz, leamultest));  
 
   // vector and FP
-  if (argc == 1 || argc > 1 && strncmp(argv[1], "avx256int", 9) == 0) 
+  if (avx2Supported && (argc == 1 || argc > 1 && strncmp(argv[1], "avx256int", 9) == 0)) 
     printf("256-bit avx integer add per clk: %.2f\n", measureFunction(iterationsHigh, clockSpeedGhz, add256int));
-  if (argc == 1 || argc > 1 && strncmp(argv[1], "mixavx256int", 12) == 0) 
+  if (avx2Supported && (argc == 1 || argc > 1 && strncmp(argv[1], "mixavx256int", 12) == 0)) 
     printf("2:1 scalar add/256-bit avx integer add per clk: %.2f\n", measureFunction(iterationsHigh, clockSpeedGhz, mixadd256int));
-  if (argc == 1 || argc > 1 && strncmp(argv[1], "mix11avx256int", 14) == 0) 
+  if (avx2Supported && (argc == 1 || argc > 1 && strncmp(argv[1], "mix11avx256int", 14) == 0))
     printf("1:1 scalar add/256-bit avx integer add per clk: %.2f\n", measureFunction(iterationsHigh, clockSpeedGhz, mixadd256int11));
-  if (argc == 1 || argc > 1 && strncmp(argv[1], "mixavx256fpint", 14) == 0) 
+  if (avx2Supported && (argc == 1 || argc > 1 && strncmp(argv[1], "mixavx256fpint", 14) == 0))
     printf("1:1 256-bit avx int add/avx fadd per clk: %.2f\n", measureFunction(iterationsHigh, clockSpeedGhz, mixadd256fpint));
-  if (argc == 1 || argc > 1 && strncmp(argv[1], "mix256fp", 8) == 0) 
+  if (avxSupported && (argc == 1 || argc > 1 && strncmp(argv[1], "mix256fp", 8) == 0)) 
     printf("1:1 256-bit avx fp mul/add per clk: %.2f\n", measureFunction(iterationsHigh, clockSpeedGhz, mix256fp));
-  if (argc == 1 || argc > 1 && strncmp(argv[1], "latadd256int", 12) == 0) 
+  if (avx2Supported && (argc == 1 || argc > 1 && strncmp(argv[1], "latadd256int", 12) == 0)) 
     printf("256-bit avx2 integer add latency: %.2f clocks\n", 1 / measureFunction(iterationsHigh, clockSpeedGhz, latadd256int));
-  if (argc == 1 || argc > 1 && strncmp(argv[1], "latmul256int", 12) == 0) 
+  if (avx2Supported && (argc == 1 || argc > 1 && strncmp(argv[1], "latmul256int", 12) == 0))
     printf("256-bit avx2 integer multiply latency: %.2f clocks\n", 1 / measureFunction(iterations, clockSpeedGhz, latmul256int));
   if (argc == 1 || argc > 1 && strncmp(argv[1], "latadd128int", 12) == 0) 
     printf("128-bit sse integer add latency: %.2f clocks\n", 1 / measureFunction(iterationsHigh, clockSpeedGhz, latadd128int));
   if (argc == 1 || argc > 1 && strncmp(argv[1], "latmul128int", 12) == 0) 
     printf("128-bit sse integer multiply latency: %.2f clocks\n", 1 / measureFunction(iterations, clockSpeedGhz, latmul128int)); 
-  if (argc == 1 || argc > 1 && strncmp(argv[1], "latadd256fp", 11) == 0) 
+  if (avxSupported && (argc == 1 || argc > 1 && strncmp(argv[1], "latadd256fp", 11) == 0))
     printf("256-bit avx fadd latency: %.2f clocks\n", 1 / measureFunction(iterations, clockSpeedGhz, latadd256fp));
-  if (argc == 1 || argc > 1 && strncmp(argv[1], "latmul256fp", 11) == 0) 
+  if (avxSupported && (argc == 1 || argc > 1 && strncmp(argv[1], "latmul256fp", 11) == 0))
     printf("256-bit avx fmul latency: %.2f clocks\n", 1 / measureFunction(iterations, clockSpeedGhz, latmul256fp));
   if (argc == 1 || argc > 1 && strncmp(argv[1], "latadd128fp", 11) == 0) 
     printf("128-bit sse fadd latency: %.2f clocks\n", 1 / measureFunction(iterations, clockSpeedGhz, latadd128fp));
   if (argc == 1 || argc > 1 && strncmp(argv[1], "latmul128fp", 11) == 0) 
     printf("128-bit sse fmul latency: %.2f clocks\n", 1 / measureFunction(iterations, clockSpeedGhz, latmul128fp));
-  // zhaoxin does not support FMA
-  if (argc == 1 || argc > 1 && strncmp(argv[1], "fma256", 6) == 0) 
+  if (argc == 1 || argc > 1 && strncmp(argv[1], "add128fp", 8) == 0) 
+    printf("128-bit sse fadd per clk: %.2f\n", measureFunction(iterationsHigh, clockSpeedGhz, add128fp));
+  if (argc == 1 || argc > 1 && strncmp(argv[1], "mul128fp", 8) == 0) 
+    printf("128-bit sse fmul per clk: %.2f\n", measureFunction(iterationsHigh, clockSpeedGhz, mul128fp));
+  if (argc == 1 || argc > 1 && strncmp(argv[1], "add128int", 9) == 0) 
+    printf("128-bit sse int add per clk: %.2f\n", measureFunction(iterationsHigh, clockSpeedGhz, add128int));
+  if (argc == 1 || argc > 1 && strncmp(argv[1], "mul128int", 9) == 0) 
+    printf("128-bit sse int mul per clk: %.2f\n", measureFunction(iterationsHigh, clockSpeedGhz, mul128int));
+  
+	// zhaoxin does not support FMA
+  if (avx2Supported && (argc == 1 || argc > 1 && strncmp(argv[1], "fma256", 6) == 0)) 
     printf("256-bit FMA per clk: %.2f\n", measureFunction(iterations, clockSpeedGhz, fma256));
-  if (argc == 1 || argc > 1 && strncmp(argv[1], "fma128", 6) == 0) 
+  if (avx2Supported && (argc == 1 || argc > 1 && strncmp(argv[1], "fma128", 6) == 0))
     printf("128-bit FMA per clk: %.2f\n", measureFunction(iterations, clockSpeedGhz, fma128));
-  if (argc == 1 || argc > 1 && strncmp(argv[1], "latfma256", 9) == 0)
+  if (avx2Supported && (argc == 1 || argc > 1 && strncmp(argv[1], "latfma256", 9) == 0))
     printf("256-bit FMA latency: %.2f clocks\n", 1 / measureFunction(iterations, clockSpeedGhz, latfma256));
-  if (argc == 1 || argc > 1 && strncmp(argv[1], "latfma128", 9) == 0)
+  if (avx2Supported && (argc == 1 || argc > 1 && strncmp(argv[1], "latfma128", 9) == 0))
     printf("128-bit FMA latency: %.2f clocks\n", 1 / measureFunction(iterations, clockSpeedGhz, latfma128));
-  if (argc == 1 || argc > 1 && strncmp(argv[1], "fadd256", 6) == 0) 
+  if (avx2Supported && (argc == 1 || argc > 1 && strncmp(argv[1], "fadd256", 6) == 0))
     printf("256-bit FADD per clk: %.2f\n", measureFunction(iterations, clockSpeedGhz, add256fp));
-  if (argc == 1 || argc > 1 && strncmp(argv[1], "fmul256", 6) == 0) 
+  if (avx2Supported && (argc == 1 || argc > 1 && strncmp(argv[1], "fmul256", 6) == 0)) 
     printf("256-bit FMUL per clk: %.2f\n", measureFunction(iterations, clockSpeedGhz, mul256fp));
-  if (argc == 1 || argc > 1 && strncmp(argv[1], "mixfmafadd256", 12) == 0) 
+  if (avx2Supported && (argc == 1 || argc > 1 && strncmp(argv[1], "mixfmafadd256", 12) == 0))
     printf("1:2 256b FMA:FADD per clk: %.2f\n", measureFunction(iterations * 22, clockSpeedGhz, mixfmafadd256));
-  if (argc == 1 || argc > 1 && strncmp(argv[1], "mixfmaadd256", 11) == 0) 
+  if (avx2Supported && (argc == 1 || argc > 1 && strncmp(argv[1], "mixfmaadd256", 11) == 0))
     printf("1:2 256b FMA:PADDQ per clk: %.2f\n", measureFunction(iterations * 22, clockSpeedGhz, mixfmaadd256));
-  if (argc == 1 || argc > 1 && strncmp(argv[1], "mixfmaandmem256", 14) == 0) 
+  if (avx2Supported && (argc == 1 || argc > 1 && strncmp(argv[1], "mixfmaandmem256", 14) == 0))
     printf("1:2 256b FMA:PADDQ load-op per clk: %.2f\n", measureFunction(iterations * 22, clockSpeedGhz, mixfmaaddmem256wrapper));
-  if (argc == 1 || argc > 1 && strncmp(argv[1], "mixfmaand256", 11) == 0) 
+  if (avx2Supported && (argc == 1 || argc > 1 && strncmp(argv[1], "mixfmaand256", 11) == 0))
     printf("1:2 256b FMA:PAND per clk: %.2f\n", measureFunction(iterations * 22, clockSpeedGhz, mixfmaand256));
-  if (argc == 1 || argc > 1 && strncmp(argv[1], "mixfmaandmem256", 14) == 0) 
+  if (avx2Supported && (argc == 1 || argc > 1 && strncmp(argv[1], "mixfmaandmem256", 14) == 0))
     printf("1:2 256b FMA:PAND load-op per clk: %.2f\n", measureFunction(iterations * 22, clockSpeedGhz, mixfmaandmem256wrapper));
-  if (argc == 1 || argc > 1 && strncmp(argv[1], "nemesfpumix21", 13) == 0) 
+  if (avx2Supported && (argc == 1 || argc > 1 && strncmp(argv[1], "nemesfpumix21", 13) == 0))
     printf("1:2 256b FMA:FADD per clk (nemes): %.2f\n", measureFunction(iterations * 22, clockSpeedGhz, nemesfpumix21));
 
   // integer multiply. zhaoxin appears to handle 16-bit and 64-bit multiplies differntly
@@ -253,13 +283,13 @@ int main(int argc, char *argv[]) {
     printf("128-bit loads per clk: %.2f\n", measureFunction(iterations, clockSpeedGhz, load128wrapper));
   if (argc == 1 || argc > 1 && strncmp(argv[1], "spacedload128", 13) == 0) 
     printf("128-bit loads (spaced) per clk: %.2f\n", measureFunction(iterations, clockSpeedGhz, spacedload128wrapper)); 
-  if (argc == 1 || argc > 1 && strncmp(argv[1], "load256", 7) == 0) 
+  if (avxSupported && (argc == 1 || argc > 1 && strncmp(argv[1], "load256", 7) == 0)) 
     printf("256-bit loads per clk: %.2f\n", measureFunction(iterations, clockSpeedGhz, load256wrapper));
   if (argc == 1 || argc > 1 && strncmp(argv[1], "spacedstorescalar", 13) == 0) 
     printf("scalar stores (spaced) per clk: %.2f\n", measureFunction(iterations, clockSpeedGhz, spacedstorescalarwrapper)); 
   if (argc == 1 || argc > 1 && strncmp(argv[1], "store128", 7) == 0) 
     printf("128-bit stores per clk: %.2f\n", measureFunction(iterations, clockSpeedGhz, store128wrapper));
-  if (argc == 1 || argc > 1 && strncmp(argv[1], "store256", 7) == 0) 
+  if (avxSupported && (argc == 1 || argc > 1 && strncmp(argv[1], "store256", 7) == 0)) 
     printf("256-bit stores per clk: %.2f\n", measureFunction(iterations, clockSpeedGhz, store256wrapper));
   if (argc == 1 || argc > 1 && strncmp(argv[1], "mixaddmul128int", 15) == 0) 
     printf("1:1 mixed 128-bit vec add/mul per clk: %.2f\n", measureFunction(iterations, clockSpeedGhz, mixaddmul128int));
