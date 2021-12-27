@@ -8,7 +8,7 @@ namespace AsmGen
         {
             this.Counts = UarchTestHelpers.GenerateCountArray(low, high, step);
             this.Prefix = "fadd256sched";
-            this.Description = "256-bit FADD Scheduler Capacity Test - x86 only";
+            this.Description = "256-bit FADD Scheduler Capacity Test, 128-bit on ARM";
             this.FunctionDefinitionParameters = "uint64_t iterations, int *arr, float *floatArr";
             this.GetFunctionCallParameters = "structIterations, A, fpArr";
             this.DivideTimeByCount = false;
@@ -39,10 +39,10 @@ namespace AsmGen
         public override void GenerateArmAsm(StringBuilder sb)
         {
             string[] unrolledAdds = new string[4];
-            unrolledAdds[0] = "  fadd s17, s17, s16";
-            unrolledAdds[1] = "  fadd s18, s18, s16";
-            unrolledAdds[2] = "  fadd s19, s19, s16";
-            unrolledAdds[3] = "  fadd s20, s20, s16";
+            unrolledAdds[0] = "  fadd v20.4s, v15.4s, v16.4s";
+            unrolledAdds[1] = "  fadd v17.4s, v15.4s, v16.4s";
+            unrolledAdds[2] = "  fadd v18.4s, v15.4s, v16.4s";
+            unrolledAdds[3] = "  fadd v19.4s, v15.4s, v16.4s";
             UarchTestHelpers.GenerateArmAsmFpSchedTestFuncs(sb, this.Counts, this.Prefix, unrolledAdds, unrolledAdds);
         }
     }

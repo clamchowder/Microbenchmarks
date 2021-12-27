@@ -29,7 +29,7 @@ namespace AsmGen
             tests.Add(new FmulSchedTest(1, 256, 1));
             tests.Add(new Fadd256SchedTest(1, 128, 1));
             tests.Add(new MixFaddFmulSchedTest(2, 128, 1));
-            tests.Add(new JumpSchedTest(4, 128, 1));
+            tests.Add(new JumpSchedTest(4, 32, 1));
             tests.Add(new RobTest1(4, 512, 1));
             tests.Add(new MixIntFpRfTest(4, 256, 1));
             tests.Add(new LoadSchedTest(4, 128, 1));
@@ -56,7 +56,7 @@ namespace AsmGen
             tests.Add(new MixJmpMulSchedTest(2, 128, 1));
             tests.Add(new MixMulRorSchedTest(2, 128, 1));
             tests.Add(new BranchHistoryTest());
-            tests.Add(new IndirectBranchTest());
+            //tests.Add(new IndirectBranchTest());
             tests.Add(new MxcsrTest(1, 32, 1));
             tests.Add(new MaskRfTest(1, 256, 1));
             tests.Add(new NotIntRfTest(1, 450, 1));
@@ -82,9 +82,14 @@ namespace AsmGen
             tests.Add(new PdepSchedTest(4, 80, 1));
             tests.Add(new PdepLeaSchedTest(4, 80, 1));
             tests.Add(new MixPdepMulSchedTest(4, 80, 1));
-            tests.Add(new JumpAddSchedTest(4, 120, 1));
+            tests.Add(new JumpAddSchedTest(4, 32, 1));
             tests.Add(new LdmTest(4, 120, 1));
             tests.Add(new NopLoopTest(512, 1));
+            tests.Add(new LoadDivSchedTest(4, 64, 1));
+            tests.Add(new LoadDivNsqTest(4, 64, 1));
+            tests.Add(new MixLoadStoreDivSchedTest(4, 64, 1));
+            tests.Add(new MmxRfTest(4, 256, 1));
+            tests.Add(new MxcsrFeTest(4, 256, 1));
 
             StringBuilder cSourceFile = new StringBuilder();
             StringBuilder vsCSourceFile = new StringBuilder();

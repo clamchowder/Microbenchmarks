@@ -39,7 +39,8 @@ namespace AsmGen
         {
             string[] unrolledJumps = new string[1];
             unrolledJumps[0] = "  cmp x25, x26\n  b.eq jumpsched_reallybadthing";
-            UarchTestHelpers.GenerateArmAsmStructureTestFuncs(sb, this.Counts, this.Prefix, unrolledJumps, unrolledJumps, false);
+            UarchTestHelpers.GenerateArmAsmStructureTestFuncs(
+                sb, this.Counts, this.Prefix, unrolledJumps, unrolledJumps, false);
 
             sb.AppendLine("jumpsched_reallybadthing:");
             sb.AppendLine("  .word 0xf7f0a000");
