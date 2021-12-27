@@ -113,11 +113,11 @@ int main(int argc, char *argv[]) {
                     fprintf(stderr, "Using ASM code, AVX512\n");
                 }
                 else if (strncmp(argv[argIdx], "sse_write", 9) == 0) {
-                    bw_func = sse_read;
+                    bw_func = sse_write;
                     fprintf(stderr, "Using SSE to test write bandwidth\n");
                 }
                 else if (strncmp(argv[argIdx], "sse", 3) == 0) {
-                    bw_func = sse_write;
+                    bw_func = sse_read;
                     fprintf(stderr, "Using ASM code, SSE\n");
                 }
                 #endif
