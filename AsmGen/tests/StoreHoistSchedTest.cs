@@ -60,7 +60,7 @@ namespace AsmGen
             dependentStores1[1] = "  str w15, [x2, w26, uxtw #2]";
             dependentStores1[2] = "  str w15, [x2, w26, uxtw #2]";
             dependentStores1[3] = "  str w15, [x2, w26, uxtw #2]";
-            UarchTestHelpers.GenerateArmAsmDivStructureTestFuncs(sb, this.Counts, this.Prefix, dependentStores, dependentStores1, false);
+            UarchTestHelpers.GenerateArmAsmStructureTestFuncs(sb, this.Counts, this.Prefix, dependentStores, dependentStores1, false);
         }
     }
 }

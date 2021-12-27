@@ -60,7 +60,7 @@ namespace AsmGen
                 // count dec, jnz as instructions in the loop
                 for (int nopIdx = 0; nopIdx < this.Counts[i] - 2; nopIdx++) sb.AppendLine("  nop");
                 sb.AppendLine("  sub x0, x0, 1");
-                sb.AppendLine("  cbnz x0, " + funcName + "start");
+                sb.AppendLine("  cbnz x0, " + funcName);
                 sb.AppendLine("  ret");
             }
         }

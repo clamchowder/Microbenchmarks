@@ -11,9 +11,17 @@
 #include <immintrin.h>
 #include <windows.h>
 
+#ifdef _WIN64
 int default_test_sizes[39] = { 2, 4, 8, 12, 16, 24, 32, 48, 64, 96, 128, 192, 256, 512, 600, 768, 1024, 1536, 2048,
                                3072, 4096, 5120, 6144, 8192, 10240, 12288, 16384, 24567, 32768, 65536, 98304,
                                131072, 262144, 393216, 524288, 1048576, 1572864, 2097152, 3145728 };
+#else
+int default_test_sizes[35] = { 2, 4, 8, 12, 16, 24, 32, 48, 64, 96, 128, 192, 256, 512, 600, 768, 1024, 1536, 2048,
+                               3072, 4096, 5120, 6144, 8192, 10240, 12288, 16384, 24567, 32768, 65536, 98304,
+                               131072, 262144, 393216, 524288 };
+#endif
+
+enum NopSize { None, FourByte, EightByte, K8_FourByte };
 
 struct BandwidthTestThreadData {
     uint32_t iterations;
@@ -22,7 +30,11 @@ struct BandwidthTestThreadData {
     float bw; // written to by the thread
 };
 
+#ifdef _WIN64
 uint32_t dataGb = 512;
+#else
+uint32_t dataGb = 96;
+#endif
 //__int32 dataGb = 32;
 
 // array length = number of 4 byte elements
@@ -44,15 +56,17 @@ float(_fastcall *bw_func)(void*, uint32_t, uint32_t) = dummy;
 #endif
 
 float MeasureBw(uint32_t sizeKb, uint32_t iterations, uint32_t threads, int shared);
+float MeasureInstructionBw(uint64_t sizeKb, uint64_t iterations, enum NopSize nopSize);
 uint32_t GetIterationCount(uint32_t testSize, uint32_t threads);
 DWORD WINAPI ReadBandwidthTestThread(LPVOID param);
 
 int main(int argc, char *argv[]) {
-    int threads = 1, shared = 1, methodSet = 0;
+    int threads = 1, shared = 0, methodSet = 0;
+    enum NopSize instr = None;
     int cpuid_data[4];
 
     if (argc == 1) {
-        printf("Usage: [-threads <thread count>] [-method <scalar/sse/avx/asm_avx/asm_avx512>] [-shared] [-private] [-data <base GB to transfer, default = 512>]\n");
+        printf("Usage: [-threads <thread count>] [-method <scalar/sse/avx/asm_avx/asm_avx512>] [-shared] [-private] [-data <base GB to transfer, default = %d>]\n", dataGb);
     }
 
     for (int argIdx = 1; argIdx < argc; argIdx++) {
@@ -105,6 +119,18 @@ int main(int argc, char *argv[]) {
                     fprintf(stderr, "Using MMX MOVQ mm <- mem64\n");
                 }
 #endif
+                else if (_strnicmp(argv[argIdx], "instr8", 6) == 0) {
+                    instr = EightByte;
+                    fprintf(stderr, "Using 8B NOPs\n");
+                }
+                else if (_strnicmp(argv[argIdx], "instr4", 6) == 0) {
+                    instr = FourByte;
+                    fprintf(stderr, "Using 4B NOPs\n");
+                }
+                else if (_strnicmp(argv[argIdx], "instrk8_4", 6) == 0) {
+                    instr = K8_FourByte;
+                    fprintf(stderr, "Using 4B NOPs, with encoding recommended in the Athlon optimization manual\n");
+                }
                 else {
                     methodSet = 0;
                     fprintf(stderr, "I'm so confused. Gonna use whatever the CPU supports I guess\n");
@@ -140,28 +166,44 @@ int main(int argc, char *argv[]) {
         }
 #else
         int choice = 0;
-        printf("Pick something:\n");
+        printf("Pick a method. Choose wisely:\n");
         printf("1. SSE movaps xmm <- mem128");
         if (cpuid_data[3] & (1UL << 25)) printf(" (looks supported)\n");
         else printf(" (looks unsupported)\n");
 
         printf("2. MMX movq mm <- mem64");
-        if (cpuid_data[3] & (1UL << 23)) printf("  (looks supported\n");
+        if (cpuid_data[3] & (1UL << 23)) printf("  (looks supported)\n");
         else printf("  (looks unsupported\n");
 
         printf("3. mov gpr <- mem32 (better work)\n");
+        printf("4. instruction side, 8B NOPs (0F 1F 84 00 00 00 00 00)\n");
+        printf("5. instruction side, 4B NOPs (0F 1F 40 00)\n");
+        printf("6. instruction side, 4B NOPs (66 66 66 90)\n");
         printf("Your choice: ");
         scanf_s("%d", &choice);
         if (choice == 1) bw_func = sse_asm_read32;
         else if (choice == 2) bw_func = mmx_asm_read32;
         else if (choice == 3) bw_func = scalar_asm_read32;
+        else if (choice == 4) instr = EightByte;
+        else if (choice == 5) instr = FourByte;
+        else if (choice == 6) instr = K8_FourByte;
         else { printf("Bye\n"); return 0; }
 #endif
     }
 
-    printf("Using %d threads\n", threads);
-    for (int i = 0; i < sizeof(default_test_sizes) / sizeof(int); i++) {
-        printf("%d,%f\n", default_test_sizes[i], MeasureBw(default_test_sizes[i], GetIterationCount(default_test_sizes[i], threads), threads, shared));
+    if (instr) {
+        printf("Testing instruction bandwidth, multithreading not supported\n");
+        for (int i = 0; i < sizeof(default_test_sizes) / sizeof(int); i++) {
+            float bw = MeasureInstructionBw(default_test_sizes[i], GetIterationCount(default_test_sizes[i], threads), instr);
+            if (bw > 0) printf("%d,%f\n", default_test_sizes[i], bw);
+        }
+    }
+    else {
+        printf("Using %d threads\n", threads);
+        for (int i = 0; i < sizeof(default_test_sizes) / sizeof(int); i++) {
+            float bw = MeasureBw(default_test_sizes[i], GetIterationCount(default_test_sizes[i], threads), threads, shared);
+            if (bw > 0) printf("%d,%f\n", default_test_sizes[i], bw);
+        }
     }
 
     return 0;
@@ -188,7 +230,6 @@ float MeasureBw(uint32_t sizeKb, uint32_t iterations, uint32_t threads, int shar
     struct timeb start, end;
     float bw = 0;
     uint32_t elements = sizeKb * 1024 / sizeof(float);
-    //uint64_t private_elements = (uint64_t)ceil(((double)sizeKb * 1024 / sizeof(float)) / (double)threads);
     uint32_t private_elements = ceil((double)sizeKb / (double)threads) * 256;
 
     if (!shared) elements = private_elements;
@@ -269,6 +310,61 @@ float MeasureBw(uint32_t sizeKb, uint32_t iterations, uint32_t threads, int shar
     }
 
     free(threadData);
+    return bw;
+}
+
+float MeasureInstructionBw(uint64_t sizeKb, uint64_t iterations, enum NopSize nopSize) {
+    struct timeb start, end;
+    char nop8b[8] = { 0x0F, 0x1F, 0x84, 0x00, 0x00, 0x00, 0x00, 0x00 };
+
+    // zen/piledriver optimization manual uses this pattern
+    char nop4b[8] = { 0x0F, 0x1F, 0x40, 0x00, 0x0F, 0x1F, 0x40, 0x00 };
+
+    // athlon64 (K8) optimization manual pattern
+    char k8_nop4b[8] = { 0x66, 0x66, 0x66, 0x90, 0x66, 0x66, 0x66, 0x90 };
+
+    float bw = 0;
+    uint64_t* nops;
+    uint64_t elements = sizeKb * 1024 / 8;
+    size_t funcLen = sizeKb * 1024 + 1;
+
+    void (*nopfunc)(uint64_t);
+
+    // nops, dec rcx (3 bytes), jump if zero flag set to 32-bit displacement (6 bytes), ret (1 byte)
+    nops = (uint64_t *)VirtualAlloc(NULL, funcLen, MEM_COMMIT | MEM_RESERVE, PAGE_EXECUTE_READWRITE);
+    if (nops == NULL) {
+        fprintf(stderr, "Failed to allocate memory for size %lu\n", sizeKb);
+        return 0;
+    }
+
+    uint64_t* nopPtr;
+    if (nopSize == EightByte) nopPtr = (uint64_t*)(nop8b);
+    else if (nopSize == FourByte) nopPtr = (uint64_t*)(nop4b);
+    else if (nopSize == K8_FourByte) nopPtr = (uint64_t*)(k8_nop4b);
+    else {
+        fprintf(stderr, "%d (enum value) NOP size isn't supported :(\n", nopSize);
+        return 0;
+    }
+
+    for (uint64_t nopIdx = 0; nopIdx < elements; nopIdx++) {
+        nops[nopIdx] = *nopPtr;
+    }
+
+    unsigned char* functionEnd = (unsigned char*)(nops + elements);
+    // ret
+    functionEnd[0] = 0xC3;
+
+    nopfunc = (void(*)(uint64_t))nops;
+    ftime(&start);
+    for (int iterIdx = 0; iterIdx < iterations; iterIdx++) nopfunc(iterations);
+    ftime(&end);
+
+    int64_t time_diff_ms = 1000 * (end.time - start.time) + (end.millitm - start.millitm);
+    double gbTransferred = (iterations * 8 * elements + 1) / (double)1e9;
+    //fprintf(stderr, "%lf GB transferred in %ld ms\n", gbTransferred, time_diff_ms);
+    bw = 1000 * gbTransferred / (double)time_diff_ms;
+
+    if (!VirtualFree(nops, 0, MEM_RELEASE)) fprintf(stderr, "VirtualFree failed, last error = %u. Watch for mem leaks\n", GetLastError());
     return bw;
 }
 

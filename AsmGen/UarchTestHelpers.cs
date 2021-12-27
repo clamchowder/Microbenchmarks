@@ -187,11 +187,13 @@ namespace AsmGen
                 sb.AppendLine("  push %r12");
                 sb.AppendLine("  push %r11");
                 sb.AppendLine("  push %r8");
+                sb.AppendLine("  push %r9");
                 sb.AppendLine("  push %rcx");
                 sb.AppendLine("  push %rdx");
 
                 // arguments are in RDI, RSI, RDX, RCX, R8, and R9
                 // move them into familiar windows argument regs (rcx, rdx, r8)
+                sb.AppendLine("  mov %rcx, %r9"); // r9 <- rcx
                 sb.AppendLine("  mov %rdx, %r8"); // r8 <- rdx
                 sb.AppendLine("  mov %rsi, %rdx"); // rdx <- rsi
                 sb.AppendLine("  mov %rdi, %rcx"); // rcx <- rdi
@@ -258,6 +260,7 @@ namespace AsmGen
                 sb.AppendLine("  jne " + funcName + "start");
                 sb.AppendLine("  pop %rdx");
                 sb.AppendLine("  pop %rcx");
+                sb.AppendLine("  pop %r9");
                 sb.AppendLine("  pop %r8");
                 sb.AppendLine("  pop %r11");
                 sb.AppendLine("  pop %r12");
@@ -1180,6 +1183,7 @@ namespace AsmGen
         /// <param name="fillerInstrs1"></param>
         /// <param name="fillerInstrs2"></param>
         /// <param name="includePtrChasingLoads"></param>
+        /// <param name="dsb">use dsb as lfence</param>
         public static void GenerateArmAsmStructureTestFuncs(StringBuilder sb, 
             int[] counts, 
             string funcNamePrefix, 
@@ -1188,7 +1192,8 @@ namespace AsmGen
             bool includePtrChasingLoads = false, 
             string initInstrs = null, 
             string postLoadInstrs1 = null, 
-            string postLoadInstrs2 = null)
+            string postLoadInstrs2 = null,
+            bool dsb = true)
         {
             for (int i = 0; i < counts.Length; i++)
             {
@@ -1221,11 +1226,19 @@ namespace AsmGen
                 }
 
                 sb.AppendLine("  ldr w26, [x1, w26, uxtw #2]");
-                if (postLoadInstrs2 != null) sb.AppendLine(postLoadInstrs2);
-                for (int nopIdx = 0, addIdx = 0; nopIdx < fillerInstrCount; nopIdx++)
+                if (dsb)
                 {
-                    sb.AppendLine(fillerInstrs2[addIdx]);
-                    addIdx = (addIdx + 1) % fillerInstrs2.Length;
+                    sb.AppendLine("  dsb sy");
+                    sb.AppendLine("  isb sy");
+                }
+                else
+                {
+                    if (postLoadInstrs2 != null) sb.AppendLine(postLoadInstrs2);
+                    for (int nopIdx = 0, addIdx = 0; nopIdx < fillerInstrCount; nopIdx++)
+                    {
+                        sb.AppendLine(fillerInstrs2[addIdx]);
+                        addIdx = (addIdx + 1) % fillerInstrs2.Length;
+                    }
                 }
 
                 sb.AppendLine("  sub x0, x0, 1");

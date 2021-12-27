@@ -41,11 +41,13 @@ namespace AsmGen
 
         public override void GenerateArmAsm(StringBuilder sb)
         {
-            string[] unrolledJumps = new string[1];
-            unrolledJumps[0] = "  cmp x25, x26\n  b.eq jumpsched_reallybadthing";
+            string[] unrolledJumps = new string[2];
+            //string initInstrs = "jumpsched_reallybadthing_jadd:";
+            unrolledJumps[0] = "  cmp x25, x26\n  b.eq jumpsched_reallybadthing_jadd";
+            unrolledJumps[1] = "  add w14, w13, w25";
             UarchTestHelpers.GenerateArmAsmStructureTestFuncs(sb, this.Counts, this.Prefix, unrolledJumps, unrolledJumps, false);
 
-            sb.AppendLine("jumpsched_reallybadthing:");
+            sb.AppendLine("jumpsched_reallybadthing_jadd:");
             sb.AppendLine("  .word 0xf7f0a000");
         }
     }
