@@ -2,6 +2,7 @@
 
 .global latencytest
 .global preplatencyarr
+.global stlftest
 
 /* ms_abi specified in source file, so
    rcx = ptr to arr
@@ -39,4 +40,31 @@ latencytest_loop:
   dec %rcx
   jnz latencytest_loop
   pop %r15
+  ret
+
+/* rcx = iterations
+   rdx = ptr to array. first two 32-bit ints in array are store and load offsets respectively */
+stlftest:
+  push %rsi
+  push %rdi
+  mov (%rdx), %rax   /* just get some value into rax (store value */
+  mov (%rdx), %esi
+  mov 4(%rdx), %edi
+  add %rdx, %rsi     /* rsi = store ptr */
+  add %rdx, %rdi     /* rdi = load ptr */
+stlftest_loop:
+  mov %rax, (%rsi)   /* store */
+  mov (%rdi), %eax   /* load that possibly gets forwarded result */
+  mov %rax, (%rsi)
+  mov (%rdi), %eax
+  mov %rax, (%rsi)
+  mov (%rdi), %eax 
+  mov %rax, (%rsi)
+  mov (%rdi), %eax 
+  mov %rax, (%rsi)
+  mov (%rdi), %eax 
+  sub $5, %rcx
+  jg stlftest_loop
+  pop %rdi
+  pop %rsi
   ret

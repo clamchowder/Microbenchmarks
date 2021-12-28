@@ -18,18 +18,22 @@ int default_test_sizes[37] = { 2, 4, 8, 12, 16, 24, 32, 48, 64, 96, 128, 192, 25
 #ifdef __x86_64
 extern void preplatencyarr(uint64_t *arr, uint32_t len) __attribute__((ms_abi));
 extern uint32_t latencytest(uint64_t iterations, uint64_t *arr) __attribute((ms_abi));
+extern void stlftest(uint64_t iterations, uint32_t *arr) __attribute((ms_abi));
 #elif __i686
 extern void preplatencyarr(uint32_t *arr, uint32_t len) __attribute__((fastcall));
 extern uint32_t latencytest(uint32_t iterations, uint32_t *arr) __attribute((fastcall));
+extern void stlftest(uint32_t iterations, uint32_t *arr) __attribute((fastcall));
 #else
 extern void preplatencyarr(uint64_t *arr, uint32_t len);
 extern uint32_t latencytest(uint64_t iterations, uint64_t *arr);
+extern void stlftest(uint64_t iterations, uint32_t *arr);
 #endif
 
 float RunTest(uint32_t size_kb, uint32_t iterations);
 float RunAsmTest(uint32_t size_kb, uint32_t iterations);
 float RunTlbTest(uint32_t size_kb, uint32_t iterations);
 float RunMlpTest(uint32_t size_kb, uint32_t iterations, uint32_t parallelism);
+void RunStlfTest(uint32_t iterations);
 
 float (*testFunc)(uint32_t, uint32_t) = RunTest;
 
@@ -39,6 +43,7 @@ int main(int argc, char* argv[]) {
     uint32_t maxTestSizeMb = 0;
     uint32_t testSizeCount = sizeof(default_test_sizes) / sizeof(int);
     int mlpTest = 0;  // if > 0, run MLP test with (value) levels of parallelism max
+    int stlf = 0;
     for (int argIdx = 1; argIdx < argc; argIdx++) {
         if (*(argv[argIdx]) == '-') {
             char *arg = argv[argIdx] + 1; 
@@ -57,6 +62,9 @@ int main(int argc, char* argv[]) {
                 } else if (strncmp(testType, "mlp", 3) == 0) {
                     mlpTest = 32;
                     fprintf(stderr, "Running memory parallelism test\n");
+                } else if (strncmp(testType, "stlf", 4) == 0) {
+                    stlf = 1;
+                    fprintf(stderr, "Running store to load forwarding test\n");
                 } else {
                     fprintf(stderr, "Unrecognized test type: %s\n", testType);
                     fprintf(stderr, "Valid test types: c, asm, tlb\n");
@@ -80,18 +88,7 @@ int main(int argc, char* argv[]) {
         fprintf(stderr, "Usage: [-test <c/asm/tlb/mlp>] [-maxsizemb <max test size in MB>] [-iter <base iterations, default 100000000]\n");
     }
 
-    if (!mlpTest) {
-        printf("Region,Latency (ns)\n");
-        for (int i = 0; i < testSizeCount; i++) {
-            if ((maxTestSizeMb == 0) || (default_test_sizes[i] <= maxTestSizeMb * 1024))
-                printf("%d,%f\n", default_test_sizes[i], testFunc(default_test_sizes[i], ITERATIONS));
-            else {
-                fprintf(stderr, "Test size %u KB exceeds max test size of %u KB\n", default_test_sizes[i], maxTestSizeMb * 1024);
-                break;
-            }
-        }
-    } else {
-        printf("Running memory level parallelism test\n");
+    if (mlpTest) {
         // allocate arr to hold results
         float *results = (float *)malloc(testSizeCount * mlpTest * sizeof(float));
         for (int size_idx = 0; size_idx < testSizeCount; size_idx++) {
@@ -116,7 +113,19 @@ int main(int argc, char* argv[]) {
         }
 
         free(results);
-    }
+    } else if (stlf) {
+        RunStlfTest(ITERATIONS); 
+    } else {
+        printf("Region,Latency (ns)\n");
+        for (int i = 0; i < testSizeCount; i++) {
+            if ((maxTestSizeMb == 0) || (default_test_sizes[i] <= maxTestSizeMb * 1024))
+                printf("%d,%f\n", default_test_sizes[i], testFunc(default_test_sizes[i], ITERATIONS));
+            else {
+                fprintf(stderr, "Test size %u KB exceeds max test size of %u KB\n", default_test_sizes[i], maxTestSizeMb * 1024);
+                break;
+            }
+        }
+    } 
 
     return 0;
 }
@@ -288,8 +297,9 @@ float RunAsmTest(uint32_t size_kb, uint32_t iterations) {
     return latency;
 }
 
-
-
+// Tries to isolate virtual to physical address translation latency by accessing
+// one element per page, and checking latency difference between that and hitting the same amount of "hot"
+// cachelines using a normal latency test.. 4 KB pages are assumed. 
 float RunTlbTest(uint32_t size_kb, uint32_t iterations) {
     struct timeval startTv, endTv;
     struct timezone startTz, endTz;
@@ -365,4 +375,55 @@ float RunTlbTest(uint32_t size_kb, uint32_t iterations) {
     //fprintf(stderr, "Memory used - %u KB, latency: %f, ref latency: %f\n", memoryUsedKb, latency, cacheLatency);
     return latency - cacheLatency;
 }
- 
+
+// Run store to load forwarding test, as described in https://blog.stuffedcow.net/2014/01/x86-memory-disambiguation/
+// uses 4B loads and 8B stores to see when/if store forwarding can succeed when sizes are not matched
+void RunStlfTest(uint32_t iterations) {
+    struct timeval startTv, endTv;
+    struct timezone startTz, endTz; 
+    uint64_t time_diff_ms;
+    float latency;
+    float stlfResults[64][64];
+    int *arr;
+  
+    // obtain a couple of cachelines, assuming 64B cacheline size
+#ifdef _WIN32
+    arr = (int *)_aligned_malloc(128, 64);
+    if (arr == NULL) {
+        fprintf(stderr, "Could not obtain aligned memory\n");
+        return;
+    }
+#else 
+    if (0 != posix_memalign((void **)(&arr), 64, 128)) {
+        fprintf(stderr, "Could not obtain aligned memory\n");
+        return;
+    }
+#endif
+
+    for (int storeOffset = 0; storeOffset < 64; storeOffset++)
+        for (int loadOffset = 0; loadOffset < 64; loadOffset++) {
+            arr[0] = storeOffset;
+            arr[1] = loadOffset;
+            gettimeofday(&startTv, &startTz);
+            stlftest(iterations, arr);
+            gettimeofday(&endTv, &endTz);
+            time_diff_ms = 1e6 * (endTv.tv_sec - startTv.tv_sec) + (endTv.tv_usec - startTv.tv_usec);
+            latency = 1e3 * (float) time_diff_ms / (float) iterations;
+            stlfResults[storeOffset][loadOffset] = latency;
+            fprintf(stderr, "Store offset %d, load offset %d: %f ns\n", storeOffset, loadOffset, latency);
+        }
+
+    // output as CSV
+    for (int loadOffset = 0; loadOffset < 64; loadOffset++) printf(",%d", loadOffset);
+    printf("\n");
+    for (int storeOffset = 0; storeOffset < 64; storeOffset++) {
+        printf("%d", storeOffset);
+        for (int loadOffset = 0; loadOffset < 64; loadOffset++) {
+            printf(",%f", stlfResults[storeOffset][loadOffset]);
+        }
+        printf("\n");
+    }
+
+    free(arr);
+    return;
+}

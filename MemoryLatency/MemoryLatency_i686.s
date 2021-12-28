@@ -2,6 +2,10 @@
 
 .global @latencytest@8
 .global @preplatencyarr@8
+.global @stlftest@8
+.global latencytest
+.global preplatencyarr
+.global stlftest
 
 /* fastcall specified in source file, so
    ecx = ptr to arr
@@ -10,6 +14,7 @@
    there has to be a way to make C do this but high level
    programming languages suck and make simple things harder than they should be
 */
+preplatencyarr:
 @preplatencyarr@8:
   push %eax
   push %esi
@@ -29,6 +34,7 @@ preplatencyarr_loop:
    edx = ptr to arr 
    do pointer chasing for specified iteration count
 */
+latencytest:
 @latencytest@8:
   push %esi
   mov (%edx), %esi
@@ -38,5 +44,35 @@ latencytest_loop:
   add %esi, %eax
   dec %ecx
   jnz latencytest_loop
+  pop %esi
+  ret
+
+/* ecx = iterations
+   edx = ptr to array. first two 32-bit ints in array are store and load offsets respectively 
+   mismatch load and store sizes by using 16-bit loads and 32-bit stores
+*/
+stlftest:
+@stlftest@8:
+  push %esi
+  push %edi
+  mov (%edx), %eax   /* just get some value into rax (store value */
+  mov (%edx), %esi
+  mov 4(%edx), %edi
+  add %edx, %esi     /* esi = store ptr */
+  add %edx, %edi     /* edi = load ptr */
+stlftest_loop:
+  mov %eax, (%esi)   /* 32-bit store */
+  mov (%edi), %ax   /* 16-bit load that possibly gets forwarded result */
+  mov %eax, (%esi)
+  mov (%edi), %ax
+  mov %eax, (%esi)
+  mov (%edi), %ax 
+  mov %eax, (%esi)
+  mov (%edi), %ax 
+  mov %eax, (%esi)
+  mov (%edi), %ax 
+  sub $5, %ecx
+  jg stlftest_loop
+  pop %edi
   pop %esi
   ret
