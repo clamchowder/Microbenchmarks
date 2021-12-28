@@ -423,7 +423,10 @@ void RunStlfTest(uint32_t iterations) {
         }
         printf("\n");
     }
-
+#ifdef _WIN32
+    _aligned_free(arr);
+#else
     free(arr);
+#endif
     return;
 }
