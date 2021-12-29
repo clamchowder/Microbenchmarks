@@ -3,6 +3,7 @@
 .global latencytest
 .global preplatencyarr
 .global stlftest
+.global stlftest32
 
 /* ms_abi specified in source file, so
    rcx = ptr to arr
@@ -68,3 +69,28 @@ stlftest_loop:
   pop %rdi
   pop %rsi
   ret
+
+stlftest32:
+  push %rsi
+  push %rdi
+  mov (%rdx), %rax   /* just get some value into rax (store value */
+  mov (%rdx), %esi
+  mov 4(%rdx), %edi
+  add %rdx, %rsi     /* rsi = store ptr */
+  add %rdx, %rdi     /* rdi = load ptr */
+stlftest32_loop:
+  mov %eax, (%rsi)   /* store */
+  mov (%rdi), %ax    /* load that possibly gets forwarded result */
+  mov %eax, (%rsi)
+  mov (%rdi), %ax
+  mov %eax, (%rsi)
+  mov (%rdi), %ax 
+  mov %eax, (%rsi)
+  mov (%rdi), %ax 
+  mov %eax, (%rsi)
+  mov (%rdi), %ax 
+  sub $5, %rcx
+  jg stlftest32_loop
+  pop %rdi
+  pop %rsi
+  ret 

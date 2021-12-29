@@ -19,6 +19,7 @@ int default_test_sizes[37] = { 2, 4, 8, 12, 16, 24, 32, 48, 64, 96, 128, 192, 25
 extern void preplatencyarr(uint64_t *arr, uint32_t len) __attribute__((ms_abi));
 extern uint32_t latencytest(uint64_t iterations, uint64_t *arr) __attribute((ms_abi));
 extern void stlftest(uint64_t iterations, uint32_t *arr) __attribute((ms_abi));
+extern void stlftest32(uint64_t iterations, uint32_t *arr) __attribute((ms_abi));
 #elif __i686
 extern void preplatencyarr(uint32_t *arr, uint32_t len) __attribute__((fastcall));
 extern uint32_t latencytest(uint32_t iterations, uint32_t *arr) __attribute((fastcall));
@@ -33,7 +34,7 @@ float RunTest(uint32_t size_kb, uint32_t iterations);
 float RunAsmTest(uint32_t size_kb, uint32_t iterations);
 float RunTlbTest(uint32_t size_kb, uint32_t iterations);
 float RunMlpTest(uint32_t size_kb, uint32_t iterations, uint32_t parallelism);
-void RunStlfTest(uint32_t iterations);
+void RunStlfTest(uint32_t iterations, int mode);
 
 float (*testFunc)(uint32_t, uint32_t) = RunTest;
 
@@ -65,7 +66,15 @@ int main(int argc, char* argv[]) {
                 } else if (strncmp(testType, "stlf", 4) == 0) {
                     stlf = 1;
                     fprintf(stderr, "Running store to load forwarding test\n");
-                } else {
+                } 
+                #ifdef  __x86_64
+                else if (strncmp(testType, "dword_stlf", 9) == 0) {
+                    stlf = 2;
+                    fprintf(stderr, "Running store to load forwarding test, with 32-bit stores\n");
+                } 
+                #else
+                #endif
+                else {
                     fprintf(stderr, "Unrecognized test type: %s\n", testType);
                     fprintf(stderr, "Valid test types: c, asm, tlb\n");
                 }
@@ -114,7 +123,7 @@ int main(int argc, char* argv[]) {
 
         free(results);
     } else if (stlf) {
-        RunStlfTest(ITERATIONS); 
+        RunStlfTest(ITERATIONS, stlf); 
     } else {
         printf("Region,Latency (ns)\n");
         for (int i = 0; i < testSizeCount; i++) {
@@ -378,7 +387,7 @@ float RunTlbTest(uint32_t size_kb, uint32_t iterations) {
 
 // Run store to load forwarding test, as described in https://blog.stuffedcow.net/2014/01/x86-memory-disambiguation/
 // uses 4B loads and 8B stores to see when/if store forwarding can succeed when sizes are not matched
-void RunStlfTest(uint32_t iterations) {
+void RunStlfTest(uint32_t iterations, int mode) {
     struct timeval startTv, endTv;
     struct timezone startTz, endTz; 
     uint64_t time_diff_ms;
@@ -405,7 +414,12 @@ void RunStlfTest(uint32_t iterations) {
             arr[0] = storeOffset;
             arr[1] = loadOffset;
             gettimeofday(&startTv, &startTz);
+            #ifdef __x86_64
+            if (mode == 1) stlftest(iterations, arr);
+            else if (mode == 2) stlftest32(iterations, arr);
+            #else
             stlftest(iterations, arr);
+            #endif
             gettimeofday(&endTv, &endTz);
             time_diff_ms = 1e6 * (endTv.tv_sec - startTv.tv_sec) + (endTv.tv_usec - startTv.tv_usec);
             latency = 1e3 * (float) time_diff_ms / (float) iterations;
