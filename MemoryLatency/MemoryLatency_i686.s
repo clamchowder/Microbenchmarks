@@ -3,9 +3,11 @@
 .global @latencytest@8
 .global @preplatencyarr@8
 .global @stlftest@8
+.global @matchedstlftest@8
 .global latencytest
 .global preplatencyarr
 .global stlftest
+.global matchedstlftest
 
 /* fastcall specified in source file, so
    ecx = ptr to arr
@@ -76,3 +78,29 @@ stlftest_loop:
   pop %edi
   pop %esi
   ret
+
+matchedstlftest:
+@matchedstlftest@8:
+  push %esi
+  push %edi
+  mov (%edx), %eax   /* just get some value into rax (store value */
+  mov (%edx), %esi
+  mov 4(%edx), %edi
+  add %edx, %esi     /* esi = store ptr */
+  add %edx, %edi     /* edi = load ptr */
+matchedstlftest_loop:
+  mov %eax, (%esi)   
+  mov (%edi), %eax  
+  mov %eax, (%esi)
+  mov (%edi), %eax
+  mov %eax, (%esi)
+  mov (%edi), %eax 
+  mov %eax, (%esi)
+  mov (%edi), %eax 
+  mov %eax, (%esi)
+  mov (%edi), %eax 
+  sub $5, %ecx
+  jg matchedstlftest_loop
+  pop %edi
+  pop %esi
+  ret 

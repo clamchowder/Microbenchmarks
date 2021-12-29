@@ -4,6 +4,7 @@
 .global preplatencyarr
 .global stlftest
 .global stlftest32
+.global matchedstlftest
 
 /* ms_abi specified in source file, so
    rcx = ptr to arr
@@ -91,6 +92,31 @@ stlftest32_loop:
   mov (%rdi), %ax 
   sub $5, %rcx
   jg stlftest32_loop
+  pop %rdi
+  pop %rsi
+  ret 
+
+matchedstlftest:
+  push %rsi
+  push %rdi
+  mov (%rdx), %rax   /* just get some value into rax (store value */
+  mov (%rdx), %esi
+  mov 4(%rdx), %edi
+  add %rdx, %rsi     /* rsi = store ptr */
+  add %rdx, %rdi     /* rdi = load ptr */
+matchedstlftest_loop:
+  mov %rax, (%rsi)   /* store */
+  mov (%rdi), %rax   /* load that possibly gets forwarded result */
+  mov %rax, (%rsi)
+  mov (%rdi), %rax
+  mov %rax, (%rsi)
+  mov (%rdi), %rax 
+  mov %rax, (%rsi)
+  mov (%rdi), %rax 
+  mov %rax, (%rsi)
+  mov (%rdi), %rax 
+  sub $5, %rcx
+  jg matchedstlftest_loop
   pop %rdi
   pop %rsi
   ret 

@@ -19,15 +19,21 @@ int default_test_sizes[37] = { 2, 4, 8, 12, 16, 24, 32, 48, 64, 96, 128, 192, 25
 extern void preplatencyarr(uint64_t *arr, uint32_t len) __attribute__((ms_abi));
 extern uint32_t latencytest(uint64_t iterations, uint64_t *arr) __attribute((ms_abi));
 extern void stlftest(uint64_t iterations, uint32_t *arr) __attribute((ms_abi));
+extern void matchedstlftest(uint64_t iterations, uint32_t *arr) __attribute((ms_abi));
 extern void stlftest32(uint64_t iterations, uint32_t *arr) __attribute((ms_abi));
+void (*stlfFunc)(uint64_t, uint32_t *) __attribute__((ms_abi)) = stlftest;
 #elif __i686
 extern void preplatencyarr(uint32_t *arr, uint32_t len) __attribute__((fastcall));
 extern uint32_t latencytest(uint32_t iterations, uint32_t *arr) __attribute((fastcall));
 extern void stlftest(uint32_t iterations, uint32_t *arr) __attribute((fastcall));
+extern void matchedstlftest(uint32_t iterations, uint32_t *arr) __attribute((fastcall));
+void (*stlfFunc)(uint32_t, uint32_t *) __attribute__((fastcall)) = stlftest;
 #else
 extern void preplatencyarr(uint64_t *arr, uint32_t len);
 extern uint32_t latencytest(uint64_t iterations, uint64_t *arr);
+extern void matchedstlftest(uint64_t iterations, uint32_t *arr);
 extern void stlftest(uint64_t iterations, uint32_t *arr);
+void (*stlfFunc)(uint64_t, uint32_t *) = stlftest;
 #endif
 
 float RunTest(uint32_t size_kb, uint32_t iterations);
@@ -66,6 +72,10 @@ int main(int argc, char* argv[]) {
                 } else if (strncmp(testType, "stlf", 4) == 0) {
                     stlf = 1;
                     fprintf(stderr, "Running store to load forwarding test\n");
+                } else if (strncmp(testType, "matched_stlf", 4) == 0) {
+                    stlf = 1;
+                    stlfFunc = matchedstlftest;
+                    fprintf(stderr, "Running store to load forwarding test, with matched load/store sizes\n");
                 } 
                 #ifdef  __x86_64
                 else if (strncmp(testType, "dword_stlf", 9) == 0) {
@@ -414,12 +424,7 @@ void RunStlfTest(uint32_t iterations, int mode) {
             arr[0] = storeOffset;
             arr[1] = loadOffset;
             gettimeofday(&startTv, &startTz);
-            #ifdef __x86_64
-            if (mode == 1) stlftest(iterations, arr);
-            else if (mode == 2) stlftest32(iterations, arr);
-            #else
-            stlftest(iterations, arr);
-            #endif
+            stlfFunc(iterations, arr);
             gettimeofday(&endTv, &endTz);
             time_diff_ms = 1e6 * (endTv.tv_sec - startTv.tv_sec) + (endTv.tv_usec - startTv.tv_usec);
             latency = 1e3 * (float) time_diff_ms / (float) iterations;
