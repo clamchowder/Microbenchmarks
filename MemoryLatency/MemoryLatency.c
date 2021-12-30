@@ -80,6 +80,7 @@ int main(int argc, char* argv[]) {
                 #ifdef  __x86_64
                 else if (strncmp(testType, "dword_stlf", 9) == 0) {
                     stlf = 2;
+                    stlfFunc = stlftest32;
                     fprintf(stderr, "Running store to load forwarding test, with 32-bit stores\n");
                 } 
                 #else
