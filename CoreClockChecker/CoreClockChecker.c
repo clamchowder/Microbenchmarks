@@ -9,16 +9,23 @@
 #include <sys/time.h>
 #include <unistd.h>
 #include <fcntl.h>
+#include <math.h>
 
-#define ITERATIONS 
+#define MSR_RAPL_PWR_UNIT 0xC0010299
+#define HWCR 0xC0010015
+#define MSR_CORE_ENERGY_STAT 0xC001029A
+#define MSR_PKG_ENERGY_STAT 0xC001029B  
 
-extern uint64_t clktest(uint64_t iteratoins) __attribute((sysv_abi));
+extern uint64_t clktest(uint64_t iterations) __attribute((sysv_abi));
 
 void setBoost(int on); 
 void setAffinity(int core);
 int openMsr(int core);
 uint64_t readMsr(int fd, uint32_t addr);
 void writeMsr(int fd, uint32_t addr, uint64_t value); 
+float getEnergyStatusUnits(); 
+uint64_t getCoreEnergyStat(int core);
+uint64_t getPkgEnergyStat(int core);
 int *msrFds;
 
 int main(int argc, char *argv[]) {
@@ -37,8 +44,32 @@ int main(int argc, char *argv[]) {
         setBoost(0);
     } else if (argc > 1 && strncmp(argv[1], "enableboost", 11) == 0) {
         setBoost(1);
-    }
-    else {
+    } else if (argc > 1 && strncmp(argv[1], "power", 5) == 0) {
+        iterationsHigh *= 2; // try for more accuracy
+	float energyUnits = getEnergyStatusUnits();
+	uint64_t startEnergy, endEnergy, startPkgEnergy, endPkgEnergy;
+	printf("Core, Core Power, Package Power\n");
+        for (int i = 0; i < numProcs; i++) {
+            setAffinity(i);
+
+            gettimeofday(&startTv, NULL);  
+            startEnergy = getCoreEnergyStat(i);
+            startPkgEnergy = getPkgEnergyStat(i);
+            clktest(iterationsHigh);
+            endPkgEnergy = getPkgEnergyStat(i);
+	    endEnergy = getCoreEnergyStat(i);
+            gettimeofday(&endTv, NULL); 
+
+            time_diff_ms = 1000 * (endTv.tv_sec - startTv.tv_sec) + ((endTv.tv_usec - startTv.tv_usec) / 1000);
+            latency = 1e6 * (float)time_diff_ms / (float)iterationsHigh; 
+            clockSpeedGhz = 1 / latency;
+            //printf("runtime: %llu ms\n", time_diff_ms);
+            //printf("%d, %f GHz\n", i, clockSpeedGhz);
+	    printf("%d, %f, %f\n", i, 
+	        ((endEnergy - startEnergy) * energyUnits) / (time_diff_ms / 1000),
+	        ((endPkgEnergy - startPkgEnergy) * energyUnits) / (time_diff_ms / 1000));
+        }
+    } else {
         for (int i = 0; i < numProcs; i++) {
             setAffinity(i);
 
@@ -46,7 +77,6 @@ int main(int argc, char *argv[]) {
             clktest(iterationsHigh);
             gettimeofday(&endTv, NULL);  
             time_diff_ms = 1000 * (endTv.tv_sec - startTv.tv_sec) + ((endTv.tv_usec - startTv.tv_usec) / 1000);
-            //time_diff_ms = 1e6 * (endTv.tv_sec - startTv.tv_sec) + (endTv.tv_usec - startTv.tv_usec);
             latency = 1e6 * (float)time_diff_ms / (float)iterationsHigh; 
             clockSpeedGhz = 1 / latency;
             //printf("runtime: %llu ms\n", time_diff_ms);
@@ -104,7 +134,6 @@ void writeMsr(int fd, uint32_t addr, uint64_t value) {
     }
 }
 
-#define HWCR 0xC0010015
 void setBoost(int on) {
     uint64_t hwcrValue;
     int numProcs = get_nprocs();
@@ -112,9 +141,33 @@ void setBoost(int on) {
         setAffinity(i);
 	if (!msrFds[i]) msrFds[i] = openMsr(i);
 	hwcrValue = readMsr(msrFds[i], HWCR);
-        if (on) hwcrValue &= ~(1UL << 25);  // unset bit to request CPB on
-	else hwcrValue |= (1UL << 25);      // set bit to disable CPB
+        if (on) {
+	    hwcrValue &= ~(1UL << 25);  // unset bit to request CPB on
+	    //fprintf(stderr, "Requesting CPB on (unsetting bit 25 in HWCR): 0x%08x\n", hwcrValue);
+	} else { 
+	    hwcrValue |= (1UL << 25);      // set bit to disable CPB
+	    //fprintf(stderr, "Requesting CPB off (setting bit 25 in HWCR): 0x%08x\n", hwcrValue);
+	}
+
 	writeMsr(msrFds[i], HWCR, hwcrValue);
     }
 }
 
+float getEnergyStatusUnits() {
+    uint64_t energyUnits, raplPwrUnit;
+    setAffinity(0);
+    if (!msrFds[0]) msrFds[0] = openMsr(0);
+    raplPwrUnit = readMsr(msrFds[0], MSR_RAPL_PWR_UNIT);
+    energyUnits = (raplPwrUnit >> 8) & 0x1F;
+    return (float)pow(0.5, (double)energyUnits);
+}
+
+uint64_t getCoreEnergyStat(int core) {
+    if (!msrFds[core]) msrFds[core] = openMsr(core);
+    return readMsr(msrFds[core], MSR_CORE_ENERGY_STAT);
+}
+
+uint64_t getPkgEnergyStat(int core) {
+    if (!msrFds[core]) msrFds[core] = openMsr(core);
+    return readMsr(msrFds[core], MSR_PKG_ENERGY_STAT);
+}
