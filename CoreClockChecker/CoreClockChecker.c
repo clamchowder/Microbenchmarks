@@ -16,7 +16,7 @@ int main(int argc, char *argv[]) {
     struct timeval startTv, endTv;
     time_t time_diff_ms;
     float latency, clockSpeedGhz;
-    uint64_t iterationsHigh = 2e9;
+    uint64_t iterationsHigh = 8e9;
     int numProcs, rc;
     cpu_set_t cpuset;
     pthread_t thread = pthread_self();
