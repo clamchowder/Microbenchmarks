@@ -1,11 +1,12 @@
 #define _GNU_SOURCE
 #include <stdio.h>
-#include <sys/time.h>
 #include <time.h>
 #include <stdint.h>
 #include <stdlib.h>
 #include <string.h> 
 #include <pthread.h>
+#include <sys/sysinfo.h>
+#include <sys/time.h>
 
 #define ITERATIONS 
 
@@ -16,7 +17,7 @@ int main(int argc, char *argv[]) {
     time_t time_diff_ms;
     float latency, clockSpeedGhz;
     uint64_t iterationsHigh = 2e9;
-    int numProcs;
+    int numProcs, rc;
     cpu_set_t cpuset;
     pthread_t thread = pthread_self();
   
@@ -26,6 +27,11 @@ int main(int argc, char *argv[]) {
     for (int i = 0; i < numProcs; i++) {
         CPU_ZERO(&cpuset);
         CPU_SET(i, &cpuset);
+        rc = pthread_setaffinity_np(thread, sizeof(cpuset), &cpuset);
+        if (rc != 0) {
+            fprintf(stderr, "unable to set thread affinity to %d\n", i);
+            return 0;
+        }
 
         gettimeofday(&startTv, NULL);  
         clktest(iterationsHigh);
