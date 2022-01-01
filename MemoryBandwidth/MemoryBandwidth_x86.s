@@ -5,6 +5,7 @@
 .global sse_read
 .global sse_write
 .global avx512_read
+.global readbankconflict
 
 asm_read:
   push %rsi
@@ -280,4 +281,96 @@ avx512_test_iteration_count:
   pop %rbx 
   pop %rdi 
   pop %rsi 
-  ret  
+  ret 
+
+/* Tests for cache bank conflicts by reading from two locations, spaced by some
+   number of bytes
+   rcx = ptr to array. first 32-bit int = increment step, because I'm too lazy to mess with the stack
+   rdx = array length, in bytes
+   r8 = load spacing, in bytes
+   r9 = iter count (number of loads to execute) */
+readbankconflict:
+   push %rbx
+   push %rdi
+   push %rsi
+   push %r10
+   push %r11
+   push %r12
+   mov $1, %rax
+   cmp %r8, %rdx  /* basic check - subtract load spacing from array len */
+   jle readbankconflict_end /* exit immediately if we don't have enough space to iterate */
+   xor %rax, %rax
+   mov %rcx, %rdi
+   mov %rcx, %rsi
+   mov %rcx, %r12
+   add %rdx, %r12  /* set end location */
+   sub $10, %r12   /* we're reading 10B ahead */
+   add %r8, %rsi   /* rdi = first load location, rsi = second load location */
+   mov (%rcx), %rbx  /* rbx = increment */
+readbankconflict_loop:
+   mov (%rdi), %r10
+   mov (%rsi), %r11
+   inc %rdi
+   inc %rsi
+   
+   mov (%rdi), %r10
+   mov (%rsi), %r11
+   inc %rdi
+   inc %rsi
+   
+   mov (%rdi), %r10
+   mov (%rsi), %r11
+   inc %rdi
+   inc %rsi
+   
+   mov (%rdi), %r10
+   mov (%rsi), %r11
+   inc %rdi
+   inc %rsi
+   
+   mov (%rdi), %r10
+   mov (%rsi), %r11
+   inc %rdi
+   inc %rsi
+
+   mov (%rdi), %r10
+   mov (%rsi), %r11
+   inc %rdi
+   inc %rsi 
+   
+   mov (%rdi), %r10
+   mov (%rsi), %r11
+   inc %rdi
+   inc %rsi   
+
+   mov (%rdi), %r10
+   mov (%rsi), %r11
+   inc %rdi
+   inc %rsi 
+   
+   mov (%rdi), %r10
+   mov (%rsi), %r11
+   inc %rdi
+   inc %rsi    
+ 
+   mov (%rdi), %r10
+   mov (%rsi), %r11
+   inc %rdi
+   inc %rsi     
+
+   sub $20, %r9
+   jl readbankconflict_end
+   cmp %rsi, %r12  /* subtract leading location from end location */
+   jg readbankconflict_loop /* if positive or equal, continue loop */
+   mov %rcx, %rdi  /* reset to start */
+   mov %rcx, %rsi
+   add %r8, %rsi
+   jmp readbankconflict_loop
+readbankconflict_end:
+   pop %r12
+   pop %r11
+   pop %r10
+   pop %rsi
+   pop %rdi
+   pop %rbx
+   ret

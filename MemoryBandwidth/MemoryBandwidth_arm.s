@@ -2,7 +2,8 @@
 .text
 
 .global asm_read
-.global asm_write
+.global asm_write 
+.global readbankconflict
 
 /* x0 = ptr to array (was rcx)
  * x1 = arr length (was rdx)
@@ -13,7 +14,7 @@ asm_read:
   sub sp, sp, #0x30
   stp x14, x15, [sp, #0x10]
   stp x12, x13, [sp, #0x20]
-  sub x1, x1, 128 /* last iteration: rsi == rdx. rsi > rdx = break */
+  sub x1, x1, 128 
   mov x14, x3     /* set x14 = index into array to start location (x3) */
   eor x13, x13, x13 /* x13 = 0 (for comparison) */
 asm_read_pass_loop:
@@ -145,3 +146,90 @@ asm_write_pass_loop:
   ldp x14, x15, [sp, #0x10]
   add sp, sp, #0x30
   ret 
+
+
+/* Tests for cache bank conflicts by reading from two locations, spaced by some
+   number of bytes
+   x0 = ptr to array. first 32-bit int = increment step, because I'm too lazy to mess with the stack
+   x1 = array length, in bytes
+   x2 = load spacing, in bytes
+   x3 = iter count (number of loads to execute) */
+readbankconflict:
+   sub sp, sp, #0x40
+   stp x14, x15, [sp, #0x10]
+   stp x12, x13, [sp, #0x20]
+   stp x10, x11, [sp, #0x30]
+   cmp x1, x2               /* basic check - subtract load spacing from array len */
+   b.le readbankconflict_end /* exit immediately if we don't have enough space to iterate */
+   sub x12, x1, 20          /* use x12 to check bytes remaining */
+   mov x14, x0
+   add x13, x0, x2           /* x14 = first load location, x13 = second load location */
+   sub x12, x12, 20          /* we're reading 20B ahead */
+   ldr x11, [x0]   /* increment, not used right now */
+readbankconflict_loop:
+   ldr x10, [x14]
+   ldr x15, [x13]
+   add x14, x14, 1
+   add x13, x13, 1
+   
+   ldr x10, [x14]
+   ldr x15, [x13]
+   add x14, x14, 1
+   add x13, x13, 1   
+   
+   ldr x10, [x14]
+   ldr x15, [x13]
+   add x14, x14, 1
+   add x13, x13, 1 
+   
+   ldr x10, [x14]
+   ldr x15, [x13]
+   add x14, x14, 1
+   add x13, x13, 1 
+   
+   ldr x10, [x14]
+   ldr x15, [x13]
+   add x14, x14, 1
+   add x13, x13, 1 
+   
+   ldr x10, [x14]
+   ldr x15, [x13]
+   add x14, x14, 1
+   add x13, x13, 1 
+   
+   ldr x10, [x14]
+   ldr x15, [x13]
+   add x14, x14, 1
+   add x13, x13, 1 
+   
+   ldr x10, [x14]
+   ldr x15, [x13]
+   add x14, x14, 1
+   add x13, x13, 1 
+   
+   ldr x10, [x14]
+   ldr x15, [x13]
+   add x14, x14, 1
+   add x13, x13, 1 
+   
+   ldr x10, [x14]
+   ldr x15, [x13]
+   add x14, x14, 1
+   add x13, x13, 1 
+   
+   sub x12, x12, 20
+   sub x3, x3, 20 
+   cmp x3, 0
+   b.le readbankconflict_end  /* iteration count = exit condition */
+   cmp x12, 0                 /* check bytes remaining */
+   b.ge readbankconflict_loop /* if positive or equal, continue loop */
+   sub x12, x1, 20     /* reset bytes remaining */
+   mov x14, x1
+   add x13, x1, x2     
+   b readbankconflict_loop
+readbankconflict_end:
+   ldp x10, x11, [sp, #0x30]
+   ldp x12, x13, [sp, #0x20]
+   ldp x14, x15, [sp, #0x10]
+   add sp, sp, #0x40
+   ret
