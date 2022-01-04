@@ -5,6 +5,7 @@
 .global sse_read
 .global sse_write
 .global avx512_read
+.global avx512_write
 .global readbankconflict
 
 asm_read:
@@ -276,6 +277,48 @@ avx512_test_iteration_count:
   jnz avx512_read_pass_loop /* skip iteration decrement if we're not back to start */
   dec %r8
   jnz avx512_read_pass_loop
+  pop %r14 
+  pop %r15 
+  pop %rbx 
+  pop %rdi 
+  pop %rsi 
+  ret 
+
+avx512_write:
+  push %rsi
+  push %rdi
+  push %rbx
+  push %r15
+  push %r14
+  mov $256, %r15 /* load in blocks of 256 bytes */
+  sub $128, %rdx /* last iteration: rsi == rdx. rsi > rdx = break */
+  mov %r9, %rsi  /* assume we're passed in an aligned start location O.o */
+  xor %rbx, %rbx
+  lea (%rcx,%rsi,4), %rdi
+  mov %rdi, %r14
+  vmovaps (%rdi), %zmm0
+avx512_write_pass_loop:
+  vmovaps %zmm0, (%rdi)
+  vmovaps %zmm1, 64(%rdi)
+  vmovaps %zmm2, 128(%rdi)
+  vmovaps %zmm3, 192(%rdi)
+  add $64, %rsi
+  add %r15, %rdi
+  vmovaps %zmm0, (%rdi)
+  vmovaps %zmm1, 64(%rdi)
+  vmovaps %zmm2, 128(%rdi)
+  vmovaps %zmm3, 192(%rdi) 
+  add $64, %rsi
+  add %r15, %rdi 
+  cmp %rsi, %rdx
+  jge avx512_write_iteration_count
+  mov %rbx, %rsi
+  lea (%rcx,%rsi,4), %rdi /* back to start */
+avx512_write_iteration_count:
+  cmp %rsi, %r9
+  jnz avx512_write_pass_loop /* skip iteration decrement if we're not back to start */
+  dec %r8
+  jnz avx512_write_pass_loop
   pop %r14 
   pop %r15 
   pop %rbx 

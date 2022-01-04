@@ -41,6 +41,7 @@ float scalar_read(float* arr, uint64_t arr_length, uint64_t iterations, uint64_t
 extern float sse_read(float* arr, uint64_t arr_length, uint64_t iterations, uint64_t start) __attribute__((ms_abi));
 extern float sse_write(float* arr, uint64_t arr_length, uint64_t iterations, uint64_t start) __attribute__((ms_abi));
 extern float avx512_read(float* arr, uint64_t arr_length, uint64_t iterations, uint64_t start) __attribute__((ms_abi));
+extern float avx512_write(float* arr, uint64_t arr_length, uint64_t iterations, uint64_t start) __attribute__((ms_abi));
 extern uint32_t readbankconflict(uint32_t *arr, uint64_t arr_length, uint64_t spacing, uint64_t iterations) __attribute__((ms_abi));
 float (*bw_func)(float*, uint64_t, uint64_t, uint64_t start) __attribute__((ms_abi)); 
 #else
@@ -64,6 +65,23 @@ int main(int argc, char *argv[]) {
     int sleepTime = 0;
     int methodSet = 0, testInstructionBandwidth = 0, nopBytes = 8, branchInterval = 0, testBankConflict = 0;
     int singleSize = 0;
+    
+#ifdef __x86_64
+    int sseSupported = 0, avxSupported = 0, avx512Supported = 0;
+    sseSupported = __builtin_cpu_supports("sse");
+    if (sseSupported) fprintf(stderr, "SSE supported\n");
+    avxSupported = __builtin_cpu_supports("avx");
+    if (avxSupported) fprintf(stderr, "AVX supported\n");
+    // gcc has no __builtin_cpu_supports for avx512, so check by hand.
+    // eax = 7 -> extended features, bit 16 of ebx = avx512f 
+    uint32_t cpuidEax, cpuidEbx, cpuidEcx, cpuidEdx;
+    __cpuid_count(7, 0, cpuidEax, cpuidEbx, cpuidEcx, cpuidEdx);
+    if (cpuidEbx & (1UL << 16)) { 
+        fprintf(stderr, "AVX512 supported\n");
+        avx512Supported = 1;
+    } 
+#endif
+
     bw_func = asm_read;
     for (int argIdx = 1; argIdx < argc; argIdx++) {
         if (*(argv[argIdx]) == '-') {
@@ -102,6 +120,12 @@ int main(int argc, char *argv[]) {
                 } else if (strncmp(argv[argIdx], "write", 5) == 0) {
                     bw_func = asm_write;
                     fprintf(stderr, "Using ASM code (AVX or NEON), testing write bw instead of read\n");
+                    #ifdef __x86_64
+                    if (avx512Supported) {
+                        fprintf(stderr, "Using AVX-512 because that's supported\n");
+                        bw_func = avx512_write;
+                    }
+                    #endif
                 } else if (strncmp(argv[argIdx], "instr8", 6) == 0) {
                     testInstructionBandwidth = 1; 
 		    nopBytes = 8;
@@ -140,22 +164,16 @@ int main(int argc, char *argv[]) {
     // for aarch64 we'll just use NEON because SVE basically doesn't exist
     if (!methodSet) {
         bw_func = scalar_read;
-        if (__builtin_cpu_supports("sse")) {
-            fprintf(stderr, "SSE supported\n");
+        if (sseSupported) {
             bw_func = sse_read;
         }
 
-        if (__builtin_cpu_supports("avx")) {
-            fprintf(stderr, "AVX supported\n");
+        if (avxSupported) {
             bw_func = asm_read;
         }
 
-        // gcc has no __builtin_cpu_supports for avx512, so check by hand.
-        // eax = 7 -> extended features, bit 16 of ebx = avx512f
-        uint32_t cpuidEax, cpuidEbx, cpuidEcx, cpuidEdx;
-        __cpuid_count(7, 0, cpuidEax, cpuidEbx, cpuidEcx, cpuidEdx);
-        if (cpuidEbx & (1UL << 16)) {
-            fprintf(stderr, "AVX512 supported\n");
+
+        if (avx512Supported) {
             bw_func = avx512_read;
         }
     }
@@ -179,11 +197,11 @@ int main(int argc, char *argv[]) {
         printf("Using %d threads\n", threads);
 	if (singleSize == 0) 
 	{
-            for (int i = 0; i < sizeof(default_test_sizes) / sizeof(int); i++)
-            {
-                printf("%d,%f\n", default_test_sizes[i], MeasureBw(default_test_sizes[i], GetIterationCount(default_test_sizes[i], threads), threads, shared));
-                if (sleepTime > 0) sleep(sleepTime);
-            }
+      for (int i = 0; i < sizeof(default_test_sizes) / sizeof(int); i++)
+      {
+          printf("%d,%f\n", default_test_sizes[i], MeasureBw(default_test_sizes[i], GetIterationCount(default_test_sizes[i], threads), threads, shared));
+          if (sleepTime > 0) sleep(sleepTime);
+      }
 	}
 	else
 	{
