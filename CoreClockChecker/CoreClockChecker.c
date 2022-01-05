@@ -1,4 +1,5 @@
 #define _GNU_SOURCE
+#include <cpuid.h>
 #include <stdio.h>
 #include <time.h>
 #include <stdint.h>
@@ -16,8 +17,13 @@
 #define MSR_CORE_ENERGY_STAT 0xC001029A
 #define MSR_PKG_ENERGY_STAT 0xC001029B  
 
+#define INTEL_MSR_RAPL_PWR_UNIT 0x606
+#define INTEL_MSR_PP0_ENERGY_STATUS 0x639
+#define INTEL_MSR_PKG_ENERGY_STATUS 0x611
+
 extern uint64_t clktest(uint64_t iterations) __attribute((sysv_abi));
 
+void detectCpuMaker();
 void setBoost(int on); 
 void setAffinity(int core);
 int openMsr(int core);
@@ -27,14 +33,17 @@ float getEnergyStatusUnits();
 uint64_t getCoreEnergyStat(int core);
 uint64_t getPkgEnergyStat(int core);
 int *msrFds;
+int amdCpu = 1;
 
 int main(int argc, char *argv[]) {
     struct timeval startTv, endTv;
     time_t time_diff_ms;
-    float latency, clockSpeedGhz;
+    float latency, clockSpeedGhz, energyUnits;
+    uint64_t startEnergy, endEnergy, startPkgEnergy, endPkgEnergy;
     uint64_t iterationsHigh = 8e9;
     int numProcs;
   
+    detectCpuMaker();
     numProcs = get_nprocs();
     fprintf(stderr, "Number of CPUs: %u\n", numProcs);
     msrFds = (int *)malloc(sizeof(int) * numProcs);
@@ -46,8 +55,7 @@ int main(int argc, char *argv[]) {
         setBoost(1);
     } else if (argc > 1 && strncmp(argv[1], "power", 5) == 0) {
         iterationsHigh *= 2; // try for more accuracy
-	float energyUnits = getEnergyStatusUnits();
-	uint64_t startEnergy, endEnergy, startPkgEnergy, endPkgEnergy;
+	energyUnits = getEnergyStatusUnits();
 	printf("Core, Core Power, Package Power\n");
         for (int i = 0; i < numProcs; i++) {
             setAffinity(i);
@@ -69,7 +77,29 @@ int main(int argc, char *argv[]) {
 	        ((endEnergy - startEnergy) * energyUnits) / (time_diff_ms / 1000),
 	        ((endPkgEnergy - startPkgEnergy) * energyUnits) / (time_diff_ms / 1000));
         }
-    } else {
+    } else if (argc > 2 && strncmp(argv[1], "measurecmd", 9) == 0) {
+        int rc;
+	float coreJoules, pkgJoules;
+        fprintf(stderr, "argv[2] is %s\nOnly handling Intel at the moment\n", argv[2]);
+	energyUnits = getEnergyStatusUnits();
+	
+	gettimeofday(&startTv, NULL);
+	startEnergy = getCoreEnergyStat(0);
+	startPkgEnergy = getPkgEnergyStat(0);
+	rc = system(argv[2]);
+	endEnergy = getCoreEnergyStat(0);
+	endPkgEnergy = getPkgEnergyStat(0);
+	gettimeofday(&endTv, NULL);
+	fprintf(stderr, "system() returned %d\n", rc);
+
+        time_diff_ms = 1000 * (endTv.tv_sec - startTv.tv_sec) + ((endTv.tv_usec - startTv.tv_usec) / 1000);
+	coreJoules = (endEnergy - startEnergy) * energyUnits;
+	pkgJoules = (endPkgEnergy - startPkgEnergy) * energyUnits;
+	printf("Core Joules: %f\n", coreJoules);
+	printf("Package Joules: %f\n", pkgJoules);
+	printf("Elapsed time, seconds: %f\n", (double)time_diff_ms / 1000);
+    }
+    else {
         for (int i = 0; i < numProcs; i++) {
             setAffinity(i);
 
@@ -88,16 +118,37 @@ int main(int argc, char *argv[]) {
     return 0;
 }
 
+void detectCpuMaker() {
+    uint32_t cpuidEax, cpuidEbx, cpuidEcx, cpuidEdx;
+    uint32_t *uintPtr;
+    char cpuName[13];
+    amdCpu = 0;
+    __cpuid_count(0, 0, cpuidEax, cpuidEbx, cpuidEcx, cpuidEdx);
+    uintPtr = (uint32_t *)cpuName;
+    uintPtr[0] = cpuidEbx;
+    uintPtr[1] = cpuidEdx;
+    uintPtr[2] = cpuidEcx;
+    cpuName[12] = 0;
+    fprintf(stderr, "CPU name: %s\n", cpuName);
+    if (memcmp(cpuName, "GenuineIntel", 12) == 0) {
+        amdCpu = 0;
+	fprintf(stderr, "Looks like Intel\n");
+    } else if (memcmp(cpuName, "AuthenticAMD", 12) == 0) {
+        amdCpu = 1;
+	fprintf(stderr, "Looks like AMD\n");
+    }
+}
+
 void setAffinity(int core) {
-   int rc;
-   cpu_set_t cpuset;
-   pthread_t thread = pthread_self();
-   CPU_ZERO(&cpuset);
-   CPU_SET(core, &cpuset);
-   rc = pthread_setaffinity_np(thread, sizeof(cpuset), &cpuset);
-   if (rc != 0) {
-       fprintf(stderr, "unable to set thread affinity to %d\n", core);
-   } 
+    int rc;
+    cpu_set_t cpuset;
+    pthread_t thread = pthread_self();
+    CPU_ZERO(&cpuset);
+    CPU_SET(core, &cpuset);
+    rc = pthread_setaffinity_np(thread, sizeof(cpuset), &cpuset);
+    if (rc != 0) {
+        fprintf(stderr, "unable to set thread affinity to %d\n", core);
+    } 
 }
 
 int openMsr(int core) {
@@ -157,17 +208,32 @@ float getEnergyStatusUnits() {
     uint64_t energyUnits, raplPwrUnit;
     setAffinity(0);
     if (!msrFds[0]) msrFds[0] = openMsr(0);
-    raplPwrUnit = readMsr(msrFds[0], MSR_RAPL_PWR_UNIT);
+
+    if (amdCpu) {
+        raplPwrUnit = readMsr(msrFds[0], MSR_RAPL_PWR_UNIT);
+    } 
+    else 
+    {
+        raplPwrUnit = readMsr(msrFds[0], INTEL_MSR_RAPL_PWR_UNIT);
+    }
+
     energyUnits = (raplPwrUnit >> 8) & 0x1F;
     return (float)pow(0.5, (double)energyUnits);
 }
 
 uint64_t getCoreEnergyStat(int core) {
     if (!msrFds[core]) msrFds[core] = openMsr(core);
-    return readMsr(msrFds[core], MSR_CORE_ENERGY_STAT);
+
+    if (amdCpu) 
+        return readMsr(msrFds[core], MSR_CORE_ENERGY_STAT);
+    else
+        return readMsr(msrFds[core], INTEL_MSR_PP0_ENERGY_STATUS);
 }
 
 uint64_t getPkgEnergyStat(int core) {
     if (!msrFds[core]) msrFds[core] = openMsr(core);
-    return readMsr(msrFds[core], MSR_PKG_ENERGY_STAT);
+    if (amdCpu) 
+        return readMsr(msrFds[core], MSR_PKG_ENERGY_STAT);
+    else 
+        return readMsr(msrFds[core], INTEL_MSR_PKG_ENERGY_STATUS);
 }
