@@ -28,12 +28,18 @@ extern uint32_t latencytest(uint32_t iterations, uint32_t *arr) __attribute((fas
 extern void stlftest(uint32_t iterations, uint32_t *arr) __attribute((fastcall));
 extern void matchedstlftest(uint32_t iterations, uint32_t *arr) __attribute((fastcall));
 void (*stlfFunc)(uint32_t, uint32_t *) __attribute__((fastcall)) = stlftest;
-#else
+#define BITS_32
+#elif __aarch64__
 extern void preplatencyarr(uint64_t *arr, uint32_t len);
 extern uint32_t latencytest(uint64_t iterations, uint64_t *arr);
 extern void matchedstlftest(uint64_t iterations, uint32_t *arr);
 extern void stlftest(uint64_t iterations, uint32_t *arr);
+extern void stlftest32(uint64_t iterations, uint32_t *arr);
 void (*stlfFunc)(uint64_t, uint32_t *) = stlftest;
+#else 
+#define UNKNOWN_ARCH 1
+extern uint32_t latencytest(uint64_t iterations, uint64_t *arr);
+void (*stlfFunc)(uint64_t, uint32_t *) = NULL;
 #endif
 
 float RunTest(uint32_t size_kb, uint32_t iterations);
@@ -57,18 +63,21 @@ int main(int argc, char* argv[]) {
             if (strncmp(arg, "test", 4) == 0) {
                 argIdx++;
                 char *testType = argv[argIdx];
-                if (strncmp(testType, "asm", 3) == 0) {
-                    testFunc = RunAsmTest;
-                    fprintf(stderr, "Using ASM (simple address) test\n");
+                
+		if (strncmp(testType, "c", 1) == 0) {
+                    testFunc = RunTest;
+                    fprintf(stderr, "Using simple C test\n");
                 } else if (strncmp(testType, "tlb", 3) == 0) {
                     testFunc = RunTlbTest;
                     fprintf(stderr, "Testing TLB with one element accessed per 4K page\n");
-                } else if (strncmp(testType, "c", 1) == 0) {
-                    testFunc = RunTest;
-                    fprintf(stderr, "Using simple C test\n");
                 } else if (strncmp(testType, "mlp", 3) == 0) {
                     mlpTest = 32;
                     fprintf(stderr, "Running memory parallelism test\n");
+                } 
+                #ifndef UNKNOWN_ARCH
+                else if (strncmp(testType, "asm", 3) == 0) {
+                    testFunc = RunAsmTest;
+                    fprintf(stderr, "Using ASM (simple address) test\n");
                 } else if (strncmp(testType, "stlf", 4) == 0) {
                     stlf = 1;
                     fprintf(stderr, "Running store to load forwarding test\n");
@@ -76,18 +85,22 @@ int main(int argc, char* argv[]) {
                     stlf = 1;
                     stlfFunc = matchedstlftest;
                     fprintf(stderr, "Running store to load forwarding test, with matched load/store sizes\n");
-                } 
-                #ifdef  __x86_64
+                }
+		#ifndef BITS_32
                 else if (strncmp(testType, "dword_stlf", 9) == 0) {
                     stlf = 2;
                     stlfFunc = stlftest32;
                     fprintf(stderr, "Running store to load forwarding test, with 32-bit stores\n");
-                } 
-                #else
-                #endif
+                }
+		#endif
+		#endif
                 else {
                     fprintf(stderr, "Unrecognized test type: %s\n", testType);
-                    fprintf(stderr, "Valid test types: c, asm, tlb\n");
+                    fprintf(stderr, "Valid test types: c, tlb, mlp");
+		    #ifndef UNKNOWN_ARCH
+		    fprintf(stderr, ", asm, stlf, matched_stlf, dword_stlf");
+		    #endif
+		    fprintf(stderr, "\n");
                 }
             } else if (strncmp(arg, "maxsizemb", 9) == 0) {
                 argIdx++;
