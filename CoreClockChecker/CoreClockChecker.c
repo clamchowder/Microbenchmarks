@@ -32,8 +32,10 @@ void writeMsr(int fd, uint32_t addr, uint64_t value);
 float getEnergyStatusUnits(); 
 uint64_t getCoreEnergyStat(int core);
 uint64_t getPkgEnergyStat(int core);
+uint64_t getTotalCoreEnergy();
 int *msrFds;
 int amdCpu = 1;
+int numProcs = 0;
 
 int main(int argc, char *argv[]) {
     struct timeval startTv, endTv;
@@ -41,7 +43,6 @@ int main(int argc, char *argv[]) {
     float latency, clockSpeedGhz, energyUnits;
     uint64_t startEnergy, endEnergy, startPkgEnergy, endPkgEnergy;
     uint64_t iterationsHigh = 8e9;
-    int numProcs;
   
     detectCpuMaker();
     numProcs = get_nprocs();
@@ -84,10 +85,10 @@ int main(int argc, char *argv[]) {
 	energyUnits = getEnergyStatusUnits();
 	
 	gettimeofday(&startTv, NULL);
-	startEnergy = getCoreEnergyStat(0);
+	startEnergy = getTotalCoreEnergy();
 	startPkgEnergy = getPkgEnergyStat(0);
 	rc = system(argv[2]);
-	endEnergy = getCoreEnergyStat(0);
+	endEnergy = getTotalCoreEnergy();
 	endPkgEnergy = getPkgEnergyStat(0);
 	gettimeofday(&endTv, NULL);
 	fprintf(stderr, "system() returned %d\n", rc);
@@ -187,7 +188,6 @@ void writeMsr(int fd, uint32_t addr, uint64_t value) {
 
 void setBoost(int on) {
     uint64_t hwcrValue;
-    int numProcs = get_nprocs();
     for (int i = 0; i < numProcs; i++) {
         setAffinity(i);
 	if (!msrFds[i]) msrFds[i] = openMsr(i);
@@ -236,4 +236,22 @@ uint64_t getPkgEnergyStat(int core) {
         return readMsr(msrFds[core], MSR_PKG_ENERGY_STAT);
     else 
         return readMsr(msrFds[core], INTEL_MSR_PKG_ENERGY_STATUS);
+}
+
+uint64_t getTotalCoreEnergy() {
+    if (amdCpu) {
+        uint64_t totalCoreEnergy = 0;
+
+	// only testing the 5950X and 3950X for now, and physical cores
+	// are 0-15 on linux. hack around this until I have time to
+	// programatically figure out SMT siblings
+        for (int i = 0; i < 16; i++) {
+            totalCoreEnergy += getCoreEnergyStat(i);
+        }
+
+	return totalCoreEnergy;
+    } else {
+        // intel does not track power per core
+        return getCoreEnergyStat(0);
+    }
 }
