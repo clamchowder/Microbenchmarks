@@ -6,6 +6,8 @@
 #include <math.h>
 #include <sys/time.h>
 #include <unistd.h>
+#include <sys/mman.h>
+#include <errno.h>
 
 // TODO: possibly get this programatically
 #define PAGE_SIZE 4096
@@ -42,13 +44,13 @@ extern uint32_t latencytest(uint64_t iterations, uint64_t *arr);
 void (*stlfFunc)(uint64_t, uint32_t *) = NULL;
 #endif
 
-float RunTest(uint32_t size_kb, uint32_t iterations);
-float RunAsmTest(uint32_t size_kb, uint32_t iterations);
-float RunTlbTest(uint32_t size_kb, uint32_t iterations);
+float RunTest(uint32_t size_kb, uint32_t iterations, uint32_t *preallocatedArr);
+float RunAsmTest(uint32_t size_kb, uint32_t iterations, uint32_t *preallocatedArr);
+float RunTlbTest(uint32_t size_kb, uint32_t iterations, uint32_t *preallocatedArr);
 float RunMlpTest(uint32_t size_kb, uint32_t iterations, uint32_t parallelism);
 void RunStlfTest(uint32_t iterations, int mode);
 
-float (*testFunc)(uint32_t, uint32_t) = RunTest;
+float (*testFunc)(uint32_t, uint32_t, uint32_t *) = RunTest;
 
 uint32_t ITERATIONS = 100000000;
 
@@ -56,7 +58,8 @@ int main(int argc, char* argv[]) {
     uint32_t maxTestSizeMb = 0;
     uint32_t testSizeCount = sizeof(default_test_sizes) / sizeof(int);
     int mlpTest = 0;  // if > 0, run MLP test with (value) levels of parallelism max
-    int stlf = 0;
+    int stlf = 0, hugePages = 0;
+    uint32_t *hugePagesArr = NULL;
     for (int argIdx = 1; argIdx < argc; argIdx++) {
         if (*(argv[argIdx]) == '-') {
             char *arg = argv[argIdx] + 1; 
@@ -110,7 +113,11 @@ int main(int argc, char* argv[]) {
                 argIdx++;
                 ITERATIONS = atoi(argv[argIdx]);
                 fprintf(stderr, "Base iterations: %u\n", ITERATIONS);
-            }
+            } else if (strncmp(arg, "hugepages", 9) == 0) {
+	        argIdx++;
+		hugePages = 1;
+		fprintf(stderr, "If applicable, will use huge pages. Will allocate max memory at start, make sure system has enough memory.\n");
+	    }
             else {
                 fprintf(stderr, "Unrecognized option: %s\n", arg);
             }
@@ -119,6 +126,19 @@ int main(int argc, char* argv[]) {
 
     if (argc == 1) {
         fprintf(stderr, "Usage: [-test <c/asm/tlb/mlp>] [-maxsizemb <max test size in MB>] [-iter <base iterations, default 100000000]\n");
+    }
+
+    if (hugePages) {
+       size_t hugePageSize = 1 << 21;
+       size_t maxMemRequired = default_test_sizes[testSizeCount - 1] * 1024;
+       if (maxMemRequired > maxTestSizeMb * 1024 * 1024) maxMemRequired = maxTestSizeMb * 1024 * 1024;
+
+       maxMemRequired = (((maxMemRequired - 1) / hugePageSize) + 1) * hugePageSize;
+       hugePagesArr = mmap(NULL, default_test_sizes[testSizeCount - 1] * 1024, PROT_READ | PROT_WRITE, MAP_PRIVATE | MAP_ANONYMOUS | MAP_HUGETLB, -1, 0);
+       if (hugePagesArr == (void *)-1) { // on failure, mmap will return MAP_FAILED, or (void *)-1
+           fprintf(stderr, "Failed to mmap huge pages, errno %d = %s\nWill not use huge pages\n", errno, strerror(errno));
+	   hugePagesArr = NULL;
+       }
     }
 
     if (mlpTest) {
@@ -152,7 +172,7 @@ int main(int argc, char* argv[]) {
         printf("Region,Latency (ns)\n");
         for (int i = 0; i < testSizeCount; i++) {
             if ((maxTestSizeMb == 0) || (default_test_sizes[i] <= maxTestSizeMb * 1024))
-                printf("%d,%f\n", default_test_sizes[i], testFunc(default_test_sizes[i], ITERATIONS));
+                printf("%d,%f\n", default_test_sizes[i], testFunc(default_test_sizes[i], ITERATIONS, hugePagesArr));
             else {
                 fprintf(stderr, "Test size %u KB exceeds max test size of %u KB\n", default_test_sizes[i], maxTestSizeMb * 1024);
                 break;
@@ -208,17 +228,22 @@ void FillPatternArr64(uint64_t *pattern_arr, uint64_t list_size, uint64_t byte_i
     } 
 }
 
-float RunTest(uint32_t size_kb, uint32_t iterations) {
+float RunTest(uint32_t size_kb, uint32_t iterations, uint32_t *preallocatedArr) {
     struct timeval startTv, endTv;
     struct timezone startTz, endTz;
     uint32_t list_size = size_kb * 1024 / 4;
     uint32_t sum = 0, current;
 
     // Fill list to create random access pattern
-    int* A = (int*)malloc(sizeof(int) * list_size);
-    if (!A) {
-        fprintf(stderr, "Failed to allocate memory for %u KB test\n", size_kb);
-        return 0;
+    int *A;
+    if (preallocatedArr == NULL) {
+        A = (int*)malloc(sizeof(int) * list_size);
+        if (!A) {
+            fprintf(stderr, "Failed to allocate memory for %u KB test\n", size_kb);
+            return 0;
+        }
+    } else {
+        A = preallocatedArr;
     }
     
     FillPatternArr(A, list_size, CACHELINE_SIZE);
@@ -293,17 +318,22 @@ float RunMlpTest(uint32_t size_kb, uint32_t iterations, uint32_t parallelism) {
 #define POINTER_INT uint64_t
 #endif
 
-float RunAsmTest(uint32_t size_kb, uint32_t iterations) {
+float RunAsmTest(uint32_t size_kb, uint32_t iterations, uint32_t *preallocatedArr) {
     struct timeval startTv, endTv;
     struct timezone startTz, endTz;
     uint32_t list_size = size_kb * 1024 / POINTER_SIZE; // using 32-bit pointers
     uint32_t sum = 0, current;
 
     // Fill list to create random access pattern
-    POINTER_INT *A = (POINTER_INT *)malloc(POINTER_SIZE * list_size);
-    if (!A) {
-        fprintf(stderr, "Failed to allocate memory for %u KB test\n", size_kb);
-        return 0;
+    POINTER_INT *A;
+    if (preallocatedArr == NULL) {
+        A = (POINTER_INT *)malloc(POINTER_SIZE * list_size);
+        if (!A) {
+            fprintf(stderr, "Failed to allocate memory for %u KB test\n", size_kb);
+            return 0;
+	}
+    } else {
+        A = (POINTER_INT *)preallocatedArr;
     }
 
     memset(A, 0, POINTER_SIZE * list_size);
@@ -333,7 +363,7 @@ float RunAsmTest(uint32_t size_kb, uint32_t iterations) {
 // Tries to isolate virtual to physical address translation latency by accessing
 // one element per page, and checking latency difference between that and hitting the same amount of "hot"
 // cachelines using a normal latency test.. 4 KB pages are assumed. 
-float RunTlbTest(uint32_t size_kb, uint32_t iterations) {
+float RunTlbTest(uint32_t size_kb, uint32_t iterations, uint32_t *preallocatedArr) {
     struct timeval startTv, endTv;
     struct timezone startTz, endTz;
     uint32_t element_count = size_kb / 4;
@@ -345,10 +375,15 @@ float RunTlbTest(uint32_t size_kb, uint32_t iterations) {
     //fprintf(stderr, "Element count for size %u: %u\n", size_kb, element_count);
 
     // create access pattern first, then fill it into the test array spaced by page size
-    uint32_t* pattern_arr = (uint32_t*)malloc(sizeof(uint32_t) * element_count);
-    if (!pattern_arr) {
-        fprintf(stderr, "Failed to allocate memory for %u KB test (offset array)\n", size_kb);
-        return 0;
+    uint32_t *pattern_arr;
+    if (preallocatedArr == NULL) {
+        pattern_arr = (uint32_t*)malloc(sizeof(uint32_t) * element_count);
+        if (!pattern_arr) {
+            fprintf(stderr, "Failed to allocate memory for %u KB test (offset array)\n", size_kb);
+            return 0;
+        }
+    } else {
+        pattern_arr = preallocatedArr;
     }
 
     for (int i = 0; i < element_count; i++) {
@@ -403,7 +438,7 @@ float RunTlbTest(uint32_t size_kb, uint32_t iterations) {
     // Get a reference timing for the size, to isolate TLB latency from cache latency
     uint32_t memoryUsedKb = (element_count * CACHELINE_SIZE) / 1024;
     if (memoryUsedKb == 0) memoryUsedKb = 1;
-    float cacheLatency = RunTest(memoryUsedKb, iterations);
+    float cacheLatency = RunTest(memoryUsedKb, iterations, preallocatedArr);
 
     //fprintf(stderr, "Memory used - %u KB, latency: %f, ref latency: %f\n", memoryUsedKb, latency, cacheLatency);
     return latency - cacheLatency;
