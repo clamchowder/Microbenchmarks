@@ -114,11 +114,9 @@ int main(int argc, char* argv[]) {
                 ITERATIONS = atoi(argv[argIdx]);
                 fprintf(stderr, "Base iterations: %u\n", ITERATIONS);
             } else if (strncmp(arg, "hugepages", 9) == 0) {
-	        argIdx++;
-		hugePages = 1;
-		fprintf(stderr, "If applicable, will use huge pages. Will allocate max memory at start, make sure system has enough memory.\n");
-	    }
-            else {
+	              hugePages = 1;
+	              fprintf(stderr, "If applicable, will use huge pages. Will allocate max memory at start, make sure system has enough memory.\n");
+	          } else {
                 fprintf(stderr, "Unrecognized option: %s\n", arg);
             }
         }
@@ -131,10 +129,10 @@ int main(int argc, char* argv[]) {
     if (hugePages) {
        size_t hugePageSize = 1 << 21;
        size_t maxMemRequired = default_test_sizes[testSizeCount - 1] * 1024;
-       if (maxMemRequired > maxTestSizeMb * 1024 * 1024) maxMemRequired = maxTestSizeMb * 1024 * 1024;
-
+       if (maxTestSizeMb > 0 && maxMemRequired > maxTestSizeMb * 1024 * 1024) maxMemRequired = maxTestSizeMb * 1024 * 1024;
        maxMemRequired = (((maxMemRequired - 1) / hugePageSize) + 1) * hugePageSize;
-       hugePagesArr = mmap(NULL, default_test_sizes[testSizeCount - 1] * 1024, PROT_READ | PROT_WRITE, MAP_PRIVATE | MAP_ANONYMOUS | MAP_HUGETLB, -1, 0);
+       fprintf(stderr, "mmap-ing %lu bytes\n", maxMemRequired);
+       hugePagesArr = mmap(NULL, maxMemRequired, PROT_READ | PROT_WRITE, MAP_PRIVATE | MAP_ANONYMOUS | MAP_HUGETLB, -1, 0);
        if (hugePagesArr == (void *)-1) { // on failure, mmap will return MAP_FAILED, or (void *)-1
            fprintf(stderr, "Failed to mmap huge pages, errno %d = %s\nWill not use huge pages\n", errno, strerror(errno));
 	   hugePagesArr = NULL;
@@ -260,7 +258,7 @@ float RunTest(uint32_t size_kb, uint32_t iterations, uint32_t *preallocatedArr) 
     gettimeofday(&endTv, &endTz);
     uint64_t time_diff_ms = 1000 * (endTv.tv_sec - startTv.tv_sec) + ((endTv.tv_usec - startTv.tv_usec) / 1000);
     float latency = 1e6 * (float)time_diff_ms / (float)scaled_iterations;
-    free(A);
+    if (preallocatedArr == NULL) free(A);
 
     if (sum == 0) printf("sum == 0 (?)\n");
     return latency;
@@ -331,7 +329,7 @@ float RunAsmTest(uint32_t size_kb, uint32_t iterations, uint32_t *preallocatedAr
         if (!A) {
             fprintf(stderr, "Failed to allocate memory for %u KB test\n", size_kb);
             return 0;
-	}
+	      }
     } else {
         A = (POINTER_INT *)preallocatedArr;
     }
@@ -354,7 +352,7 @@ float RunAsmTest(uint32_t size_kb, uint32_t iterations, uint32_t *preallocatedAr
     gettimeofday(&endTv, &endTz);
     uint64_t time_diff_ms = 1000 * (endTv.tv_sec - startTv.tv_sec) + ((endTv.tv_usec - startTv.tv_usec) / 1000);
     float latency = 1e6 * (float)time_diff_ms / (float)scaled_iterations;
-    free(A);
+    if (preallocatedArr == NULL) free(A);
 
     if (sum == 0) printf("sum == 0 (?)\n");
     return latency;
@@ -375,17 +373,12 @@ float RunTlbTest(uint32_t size_kb, uint32_t iterations, uint32_t *preallocatedAr
     //fprintf(stderr, "Element count for size %u: %u\n", size_kb, element_count);
 
     // create access pattern first, then fill it into the test array spaced by page size
-    uint32_t *pattern_arr;
-    if (preallocatedArr == NULL) {
-        pattern_arr = (uint32_t*)malloc(sizeof(uint32_t) * element_count);
-        if (!pattern_arr) {
-            fprintf(stderr, "Failed to allocate memory for %u KB test (offset array)\n", size_kb);
-            return 0;
-        }
-    } else {
-        pattern_arr = preallocatedArr;
+    uint32_t *pattern_arr = (uint32_t*)malloc(sizeof(uint32_t) * element_count);
+    if (!pattern_arr) {
+        fprintf(stderr, "Failed to allocate memory for %u KB test (offset array)\n", size_kb);
+        return 0;
     }
-
+    
     for (int i = 0; i < element_count; i++) {
         pattern_arr[i] = i;
     }
@@ -401,10 +394,16 @@ float RunTlbTest(uint32_t size_kb, uint32_t iterations, uint32_t *preallocatedAr
 
     // translate offsets and fill the test array
     // [offset-------page-------][offset-----page------....etc
-    uint32_t *A = (uint32_t *)malloc(sizeof(uint32_t) * list_size);
-    if (!A) {
-        fprintf(stderr, "Failed to allocate memory for %u KB test (pointer array)\n", size_kb);
+    uint32_t *A; 
+    if (preallocatedArr == NULL) {
+        uint32_t *A = (uint32_t *)malloc(sizeof(uint32_t) * list_size);
+        if (!A) {
+            fprintf(stderr, "Failed to allocate memory for %u KB test (pointer array)\n", size_kb);
+        }
+    } else {
+        A = preallocatedArr;
     }
+    
     memset(A, INT_MAX, list_size); // catch any bad accesses immediately
     int pageIncrement = PAGE_SIZE / sizeof(uint32_t);
     for (int i = 0;i < element_count; i++) {
@@ -431,7 +430,7 @@ float RunTlbTest(uint32_t size_kb, uint32_t iterations, uint32_t *preallocatedAr
     gettimeofday(&endTv, &endTz);
     uint64_t time_diff_ms = 1000 * (endTv.tv_sec - startTv.tv_sec) + ((endTv.tv_usec - startTv.tv_usec) / 1000);
     float latency = 1e6 * (float)time_diff_ms / (float)scaled_iterations;
-    free(A);
+    if (preallocatedArr == NULL) free(A);
 
     if (element_count > 1 && sum == 0) printf("sum == 0 (?)\n");
 
