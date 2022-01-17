@@ -1,3 +1,4 @@
+#define _GNU_SOURCE
 #include <stdio.h>
 #include <stdint.h>
 #include <stdlib.h>
@@ -8,6 +9,8 @@
 #include <unistd.h>
 #include <sys/mman.h>
 #include <errno.h>
+#include <sched.h>
+#include <numa.h>
 
 // TODO: possibly get this programatically
 #define PAGE_SIZE 4096
@@ -16,6 +19,9 @@
 int default_test_sizes[37] = { 2, 4, 8, 12, 16, 24, 32, 48, 64, 96, 128, 192, 256, 384, 512, 600, 768, 1024, 1536, 2048,
                                3072, 4096, 5120, 6144, 8192, 10240, 12288, 16384, 24567, 32768, 65536, 98304,
                                131072, 262144, 393216, 524288, 1048576 };
+
+int numa_nodes[4] = {0, 1, 2, 3};
+int test_cores[16] = { 0, 8, 16, 27, 30, 41, 46, 56, 61, 68, 76, 85, 94, 101, 110, 119 };
 
 #ifdef __x86_64
 extern void preplatencyarr(uint64_t *arr, uint32_t len) __attribute__((ms_abi));
@@ -56,7 +62,7 @@ uint32_t ITERATIONS = 100000000;
 
 int main(int argc, char* argv[]) {
     uint32_t maxTestSizeMb = 0;
-    uint32_t singleSize = 0;
+    uint32_t singleSize = 0, oneoff_numa = 1;
     uint32_t testSizeCount = sizeof(default_test_sizes) / sizeof(int);
     int mlpTest = 0;  // if > 0, run MLP test with (value) levels of parallelism max
     int stlf = 0, hugePages = 0;
@@ -121,7 +127,10 @@ int main(int argc, char* argv[]) {
                 argIdx++;
                 singleSize = atoi(argv[argIdx]);
                 fprintf(stderr, "Testing %u KB only\n", singleSize);
-            }
+            } else if (strncmp(arg, "numa", 4) == 0) {
+		oneoff_numa = 1;   
+		fprintf(stderr, "Doing one-off numa test\n");
+	    }
             else {
                 fprintf(stderr, "Unrecognized option: %s\n", arg);
             }
@@ -172,6 +181,40 @@ int main(int argc, char* argv[]) {
         free(results);
     } else if (stlf) {
         RunStlfTest(ITERATIONS, stlf); 
+    } else if (oneoff_numa) {
+	// use hugepages arr
+	if (hugePagesArr != NULL) {
+	    fprintf(stderr, "will attempt to use huge pages via madvise, don't specify it\n");
+	    return 0;
+	}
+
+	size_t memSize = default_test_sizes[testSizeCount - 1] * 1024;
+	for (int node_idx = 0; node_idx < sizeof(numa_nodes) / sizeof(int); node_idx++) {
+	    printf(",%d", node_idx);
+	}	
+	printf("\n");
+	
+	for (int ccd_idx = 0;ccd_idx < sizeof(test_cores) / sizeof(int); ccd_idx++) {
+	    cpu_set_t cpu_set;
+	    CPU_ZERO(&cpu_set);
+	    CPU_SET(test_cores[ccd_idx], &cpu_set);
+	    if (sched_setaffinity(getpid(), sizeof(cpu_set), &cpu_set) == -1) {
+	        fprintf(stderr, "could not set affinity to CPU %d", test_cores[ccd_idx]);
+	    }
+
+	    printf("%d", ccd_idx);
+	    for (int node_idx = 0; node_idx < sizeof(numa_nodes) / sizeof(int); node_idx++) {
+	        int ccd = test_cores[ccd_idx];
+		int node = numa_nodes[node_idx];
+		hugePagesArr = numa_alloc_onnode(memSize, node);
+		madvise(hugePagesArr, memSize, MADV_HUGEPAGE);
+                float result = testFunc(memSize / 1024, ITERATIONS, hugePagesArr);
+		printf(",%f", result);
+		numa_free(hugePagesArr, memSize);
+	    }
+
+	    printf("\n");
+	}
     } else {
         if (singleSize == 0) {
         printf("Region,Latency (ns)\n");
