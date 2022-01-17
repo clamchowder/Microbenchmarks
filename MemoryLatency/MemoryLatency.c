@@ -56,6 +56,7 @@ uint32_t ITERATIONS = 100000000;
 
 int main(int argc, char* argv[]) {
     uint32_t maxTestSizeMb = 0;
+    uint32_t singleSize = 0;
     uint32_t testSizeCount = sizeof(default_test_sizes) / sizeof(int);
     int mlpTest = 0;  // if > 0, run MLP test with (value) levels of parallelism max
     int stlf = 0, hugePages = 0;
@@ -116,7 +117,12 @@ int main(int argc, char* argv[]) {
             } else if (strncmp(arg, "hugepages", 9) == 0) {
 	              hugePages = 1;
 	              fprintf(stderr, "If applicable, will use huge pages. Will allocate max memory at start, make sure system has enough memory.\n");
-	          } else {
+	          } else if (strncmp(arg, "sizekb", 6) == 0) {
+                argIdx++;
+                singleSize = atoi(argv[argIdx]);
+                fprintf(stderr, "Testing %u KB only\n", singleSize);
+            }
+            else {
                 fprintf(stderr, "Unrecognized option: %s\n", arg);
             }
         }
@@ -167,14 +173,18 @@ int main(int argc, char* argv[]) {
     } else if (stlf) {
         RunStlfTest(ITERATIONS, stlf); 
     } else {
+        if (singleSize == 0) {
         printf("Region,Latency (ns)\n");
-        for (int i = 0; i < testSizeCount; i++) {
-            if ((maxTestSizeMb == 0) || (default_test_sizes[i] <= maxTestSizeMb * 1024))
-                printf("%d,%f\n", default_test_sizes[i], testFunc(default_test_sizes[i], ITERATIONS, hugePagesArr));
-            else {
-                fprintf(stderr, "Test size %u KB exceeds max test size of %u KB\n", default_test_sizes[i], maxTestSizeMb * 1024);
-                break;
+            for (int i = 0; i < testSizeCount; i++) {
+                if ((maxTestSizeMb == 0) || (default_test_sizes[i] <= maxTestSizeMb * 1024))
+                    printf("%d,%f\n", default_test_sizes[i], testFunc(default_test_sizes[i], ITERATIONS, hugePagesArr));
+                else {
+                    fprintf(stderr, "Test size %u KB exceeds max test size of %u KB\n", default_test_sizes[i], maxTestSizeMb * 1024);
+                    break;
+                }
             }
+        } else {
+            printf("%d,%f\n", singleSize, testFunc(singleSize, ITERATIONS, hugePagesArr));
         }
     } 
 
