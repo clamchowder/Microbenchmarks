@@ -1,6 +1,7 @@
 // MemoryBandwidth.c : Version for linux (x86 and ARM)
 // Mostly the same as the x86-only VS version, but a bit more manual
 
+#define _GNU_SOURCE
 #include <stdio.h>
 #include <stdlib.h>
 #include <stdint.h>
@@ -17,12 +18,14 @@
 #include <math.h>
 #include <sys/mman.h>
 #include <errno.h>
+#include <sched.h>
+#include <numa.h>
 
 #pragma GCC diagnostic ignored "-Wattributes"
 
-int default_test_sizes[39] = { 2, 4, 8, 12, 16, 24, 32, 48, 64, 96, 128, 192, 256, 512, 600, 768, 1024, 1536, 2048,
+int default_test_sizes[] = { 2, 4, 8, 12, 16, 24, 32, 48, 64, 96, 128, 192, 256, 512, 600, 768, 1024, 1536, 2048,
                                3072, 4096, 5120, 6144, 8192, 10240, 12288, 16384, 24567, 32768, 65536, 98304,
-                               131072, 262144, 393216, 524288, 1048576, 1572864, 2097152, 3145728 };
+                               131072, 262144, 393216, 524288, 655360, 786432, 1048576, 1572864, 2097152, 3145728, 4194304, 6291456};
 
 typedef struct BandwidthTestThreadData {
     uint64_t iterations;
@@ -57,6 +60,8 @@ float MeasureInstructionBw(uint64_t sizeKb, uint64_t iterations, int nopSize, in
 void TestBankConflicts(); 
 uint64_t GetIterationCount(uint64_t testSize, uint64_t threads);
 void *ReadBandwidthTestThread(void *param);
+
+int numahack = 0;
 
 int main(int argc, char *argv[]) {
     int threads = 1;
@@ -108,7 +113,11 @@ int main(int argc, char *argv[]) {
                 argIdx++;
 		singleSize = atoi(argv[argIdx]);
                 fprintf(stderr, "Testing %d KB\n", singleSize);
-            } else if (strncmp(arg, "method", 6) == 0) {
+            } else if (strncmp(arg, "numa", 4) == 0) {
+		    fprintf(stderr, "Doing one-off numa hack\n");
+		    numahack = 1;
+	    } 
+	    else if (strncmp(arg, "method", 6) == 0) {
                 methodSet = 1;
                 argIdx++;
                 if (strncmp(argv[argIdx], "scalar", 6) == 0) {
@@ -407,11 +416,18 @@ float MeasureBw(uint64_t sizeKb, uint64_t iterations, uint64_t threads, int shar
         else
         {
             //threadData[i].arr = (float*)aligned_alloc(64, elements * sizeof(float));
-	    if (0 != posix_memalign((void **)(&(threadData[i].arr)), 64, elements * sizeof(float)))
-            {
-                fprintf(stderr, "Could not allocate memory for thread %ld\n", i);
-                return 0;
-            }
+	    if (threads == 60 && numahack) {
+	        int node;
+		if (i <= 29) node = 0;
+		else node = 1;
+	        threadData[i].arr = numa_alloc_onnode(elements * sizeof(float), node);
+	    } else {
+	        if (0 != posix_memalign((void **)(&(threadData[i].arr)), 64, elements * sizeof(float)))
+                {
+                    fprintf(stderr, "Could not allocate memory for thread %ld\n", i);
+                    return 0;
+                }
+	    }
 
             for (uint64_t arr_idx = 0; arr_idx < elements; arr_idx++) {
                 threadData[i].arr[arr_idx] = arr_idx + i + 0.5f;
@@ -428,7 +444,19 @@ float MeasureBw(uint64_t sizeKb, uint64_t iterations, uint64_t threads, int shar
     }
 
     gettimeofday(&startTv, &startTz);
-    for (uint64_t i = 0; i < threads; i++) pthread_create(testThreads + i, NULL, ReadBandwidthTestThread, (void *)(threadData + i));
+    for (uint64_t i = 0; i < threads; i++) {
+        if (threads == 60 && numahack) {
+	    cpu_set_t cpus;
+	    pthread_attr_t attr;
+	    pthread_attr_init(&attr);
+
+	    CPU_ZERO(&cpus);
+	    CPU_SET(i, &cpus);
+	    pthread_attr_setaffinity_np(&attr, sizeof(cpu_set_t), &cpus);
+	    pthread_create(testThreads + i, &attr, ReadBandwidthTestThread, (void *)(threadData + i));
+	}
+	else pthread_create(testThreads + i, NULL, ReadBandwidthTestThread, (void *)(threadData + i));
+    }
     for (uint64_t i = 0; i < threads; i++) pthread_join(testThreads[i], NULL);
     gettimeofday(&endTv, &endTz);
 
@@ -443,7 +471,8 @@ float MeasureBw(uint64_t sizeKb, uint64_t iterations, uint64_t threads, int shar
 
     if (!shared) {
         for (uint64_t i = 0; i < threads; i++) {
-            free(threadData[i].arr);
+	    if (threads == 60 && numahack) numa_free(threadData[i].arr, elements * sizeof(float));
+	    else free(threadData[i].arr);
         }
     }
 
