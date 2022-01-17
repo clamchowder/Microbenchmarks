@@ -398,7 +398,6 @@ float MeasureBw(uint64_t sizeKb, uint64_t iterations, uint64_t threads, int shar
     pthread_t* testThreads = (pthread_t*)malloc(threads * sizeof(pthread_t));
     struct BandwidthTestThreadData* threadData = (struct BandwidthTestThreadData*)malloc(threads * sizeof(struct BandwidthTestThreadData));
 
-    gettimeofday(&startTv, &startTz);
     for (uint64_t i = 0; i < threads; i++) {
         if (shared) 
         {
@@ -424,10 +423,12 @@ float MeasureBw(uint64_t sizeKb, uint64_t iterations, uint64_t threads, int shar
         threadData[i].arr_length = elements;
         threadData[i].bw = 0;
         threadData[i].start = 0;
-        if (elements > 8192 * 1024) threadData[i].start = 4096 * i; // must be multiple of 128 because of unrolling
-        int pthreadRc = pthread_create(testThreads + i, NULL, ReadBandwidthTestThread, (void *)(threadData + i));
+        //if (elements > 8192 * 1024) threadData[i].start = 4096 * i; // must be multiple of 128 because of unrolling
+        //int pthreadRc = pthread_create(testThreads + i, NULL, ReadBandwidthTestThread, (void *)(threadData + i));
     }
 
+    gettimeofday(&startTv, &startTz);
+    for (uint64_t i = 0; i < threads; i++) pthread_create(testThreads + i, NULL, ReadBandwidthTestThread, (void *)(threadData + i));
     for (uint64_t i = 0; i < threads; i++) pthread_join(testThreads[i], NULL);
     gettimeofday(&endTv, &endTz);
 
