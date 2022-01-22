@@ -8,7 +8,7 @@
 #include <CL/cl.h>
 #define MAX_SOURCE_SIZE (0x100000)
 
-#define CACHELINE_SIZE 4
+#define CACHELINE_SIZE 64
 
 int default_test_sizes[] = { 2, 4, 8, 16, 24, 32, 48, 64, 96, 128, 192, 256, 384, 512, 600, 768, 1024, 1536, 2048, 3072, 4096, 5120, 6144, 8192, 16384, 32768, 65536, 98304, 131072, 196608, 262144, 524288, 1048576 };
 
@@ -557,7 +557,7 @@ float latency_test(cl_context context,
     uint32_t increment = CACHELINE_SIZE / sizeof(uint32_t);
     uint32_t* A = (uint32_t*)malloc(sizeof(uint32_t) * list_size);
     if (sattolo) {
-        FillPatternArr((uint32_t *)A, list_size, 64);
+        FillPatternArr((uint32_t *)A, list_size, CACHELINE_SIZE);
     } else {
         for (int i = 0; i < list_size; i++)
         {
