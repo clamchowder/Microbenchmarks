@@ -44,6 +44,8 @@ float _fastcall scalar_read(void* arr, uint32_t arr_length, uint32_t iterations)
 extern "C" float sse_asm_read(void* arr, uint64_t arr_length, uint64_t iterations);
 extern "C" float avx_asm_read(void* arr, uint64_t arr_length, uint64_t iterations);
 extern "C" float avx_asm_write(void* arr, uint64_t arr_length, uint64_t iterations);
+extern "C" float avx_asm_copy(void* arr, uint64_t arr_length, uint64_t iterations);
+extern "C" float avx_asm_cflip(void* arr, uint64_t arr_length, uint64_t iterations);
 extern "C" float avx512_asm_read(void* arr, uint64_t arr_length, uint64_t iterations);
 float (*bw_func)(void*, uint64_t, uint64_t) = sse_asm_read;
 
@@ -104,6 +106,14 @@ int main(int argc, char *argv[]) {
                 else if (_strnicmp(argv[argIdx], "asm_avx", 7) == 0) {
                     bw_func = avx_asm_read;
                     fprintf(stderr, "Using AVX assembly\n");
+                }
+                else if (_strnicmp(argv[argIdx], "copy_asm_avx", 7) == 0) {
+                    bw_func = avx_asm_copy;
+                    fprintf(stderr, "Using AVX assembly, copying one half of array to the other\n");
+                }
+                else if (_strnicmp(argv[argIdx], "cflip_asm_avx", 7) == 0) {
+                    bw_func = avx_asm_copy;
+                    fprintf(stderr, "Using AVX assembly, flipping order of vec sized elements within a cacheline\n");
                 }
 #else
                 if (_strnicmp(argv[argIdx], "scalar", 6) == 0) {

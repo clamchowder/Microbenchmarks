@@ -5,6 +5,8 @@ bits 64
 global sse_asm_read
 global avx_asm_read
 global avx_asm_write
+global avx_asm_copy
+global avx_asm_cflip
 global avx512_asm_read
 
 ; rcx = float ptr to arr, rdx = fp32 elements in arr, r8 = iterations, r9 = start index
@@ -110,6 +112,128 @@ asm_avx_write_iteration_count:
   pop rdi
   pop rsi
   ret
+
+; rcx = ptr to arr
+; rdx = arr_length
+; r8 = iterations 
+avx_asm_copy:
+  push rsi
+  push rdi
+  push rbx
+  push r15
+  push r14
+  push r13
+  xor rsi, rsi
+  mov r9, rdx
+  shr r9, 1    ; start destination at array + length / 2 
+  mov r15, 256 ; load in blocks of 128 bytes 
+  mov r13, r9
+  sub r13, 64
+  lea rdi, [rcx + rsi * 4]
+  lea r14, [rcx + r9 * 4]
+avx_copy_pass_loop:
+  vmovaps ymm0, [rdi]
+  vmovaps ymm1, [rdi + 32]
+  vmovaps ymm2, [rdi + 64]
+  vmovaps ymm3, [rdi + 96]
+  vmovaps ymm4, [rdi + 128]
+  vmovaps ymm5, [rdi + 160]
+  vmovaps ymm6, [rdi + 192]
+  vmovaps ymm7, [rdi + 224]
+  vmovaps [r14], ymm0
+  vmovaps [r14 + 32], ymm1
+  vmovaps [r14 + 64], ymm2
+  vmovaps [r14 + 96], ymm3
+  vmovaps [r14 + 128], ymm4
+  vmovaps [r14 + 160], ymm5
+  vmovaps [r14 + 192], ymm6
+  vmovaps [r14 + 224], ymm7
+  add rsi, 64
+  add rdi, r15  ; increment src/dst pointers
+  add r14, r15
+  cmp r13, rsi  ; end location is at half 
+  jge avx_copy_pass_loop
+  xor rsi, rsi
+  lea rdi, [rcx + rsi * 4] ; back to start
+  lea r14, [rcx + r9 * 4]
+  dec r8                  ; decrement iteration counter 
+  jnz avx_copy_pass_loop
+  pop r13
+  pop r14 
+  pop r15 
+  pop rbx 
+  pop rdi 
+  pop rsi 
+  ret 
+
+
+; changes the ordering of vector sized elements within a cacheline
+ avx_asm_cflip:
+  push rsi
+  push rdi
+  push rbx
+  push r15
+  push r14
+  mov r15, 256 ; load in blocks of 256 bytes
+  sub rdx, 128 ; last iteration: rsi == rdx. rsi > rdx = break. 128 elements per iteration
+  xor r9, r9   ; not doing start anymore, too lazy to clean up code
+  mov rsi, r9  ; assume we're passed in an aligned start location O.o
+  xor rbx, rbx
+  lea rdi, [rcx + rsi * 4]
+  mov r14, rdi
+avx_asm_cflip_pass_loop:
+  vmovaps ymm0, [rdi]
+  vmovaps ymm1, [rdi + 32]
+  vmovaps ymm2, [rdi + 64]
+  vmovaps ymm3, [rdi + 96]
+  vmovaps [rdi + 96], ymm0
+  vmovaps [rdi + 64], ymm1
+  vmovaps [rdi + 32], ymm2
+  vmovaps [rdi], ymm3
+  vmovaps ymm0, [rdi + 128]
+  vmovaps ymm1, [rdi + 160]
+  vmovaps ymm2, [rdi + 192]
+  vmovaps ymm3, [rdi + 224]
+  vmovaps [rdi + 224], ymm0
+  vmovaps [rdi + 192], ymm1
+  vmovaps [rdi + 160], ymm2
+  vmovaps [rdi + 128], ymm3
+  add rsi, 64
+  add rdi, r15
+  vmovaps ymm0, [rdi]
+  vmovaps ymm1, [rdi + 32]
+  vmovaps ymm2, [rdi + 64]
+  vmovaps ymm3, [rdi + 96]
+  vmovaps [rdi + 96], ymm0
+  vmovaps [rdi + 64], ymm1
+  vmovaps [rdi + 32], ymm2
+  vmovaps [rdi], ymm3
+  vmovaps ymm0, [rdi + 128]
+  vmovaps ymm1, [rdi + 160]
+  vmovaps ymm2, [rdi + 192]
+  vmovaps ymm3, [rdi + 224]
+  vmovaps [rdi + 224], ymm0
+  vmovaps [rdi + 192], ymm1
+  vmovaps [rdi + 160], ymm2
+  vmovaps [rdi + 128], ymm3
+  add rsi, 64
+  add rdi, r15
+  cmp rdx, rsi
+  jge asm_avx_cflip_iteration_count
+  mov rsi, rbx
+  lea rdi, [rcx + rsi * 4]  ; back to start
+asm_avx_cflip_iteration_count:
+  cmp r9, rsi
+  jnz avx_asm_cflip_pass_loop ; skip iteration decrement if we're not back to start
+  sub r8, 2
+  jnz avx_asm_cflip_pass_loop
+  pop r14
+  pop r15
+  pop rbx
+  pop rdi
+  pop rsi
+  ret
+
 
 avx512_asm_read:
   push rsi
