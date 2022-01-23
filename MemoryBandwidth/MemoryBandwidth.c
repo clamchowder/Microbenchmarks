@@ -52,11 +52,13 @@ extern uint32_t readbankconflict(uint32_t *arr, uint64_t arr_length, uint64_t sp
 
 extern float asm_read(float* arr, uint64_t arr_length, uint64_t iterations, uint64_t start) __attribute__((ms_abi));
 extern float asm_write(float* arr, uint64_t arr_length, uint64_t iterations, uint64_t start) __attribute__((ms_abi));
+extern float asm_copy(float *arr, uint64_t arr_length, uint64_t iterations, uint64_t start) __attribute__((ms_abi));
 
 float MeasureInstructionBw(uint64_t sizeKb, uint64_t iterations, int nopSize, int branchInterval); 
 void TestBankConflicts(); 
 uint64_t GetIterationCount(uint64_t testSize, uint64_t threads);
 void *ReadBandwidthTestThread(void *param);
+uint64_t gbToTransfer = 512;
 
 int main(int argc, char *argv[]) {
     int threads = 1;
@@ -106,9 +108,15 @@ int main(int argc, char *argv[]) {
                 fprintf(stderr, "Will add a branch roughly every %d bytes\n", branchInterval * 8);
             } else if (strncmp(arg, "sizekb", 6) == 0) {
                 argIdx++;
-		singleSize = atoi(argv[argIdx]);
+		        singleSize = atoi(argv[argIdx]);
                 fprintf(stderr, "Testing %d KB\n", singleSize);
-            } else if (strncmp(arg, "method", 6) == 0) {
+            } else if (strncmp(arg, "data", 4) == 0)
+            {
+                argIdx++;
+                gbToTransfer = atoi(argv[argIdx]);
+                fprintf(stderr, "Base GB to transfer: %lu\n", gbToTransfer);
+            }
+            else if (strncmp(arg, "method", 6) == 0) {
                 methodSet = 1;
                 argIdx++;
                 if (strncmp(argv[argIdx], "scalar", 6) == 0) {
@@ -126,7 +134,12 @@ int main(int argc, char *argv[]) {
                         bw_func = avx512_write;
                     }
                     #endif
-                } else if (strncmp(argv[argIdx], "instr8", 6) == 0) {
+                } else if (strncmp(argv[argIdx], "copy", 4) == 0) {
+                    bw_func = asm_copy;
+                    fprintf(stderr, "Using ASM code (AVX or NEON), testing copy bw instead of read\n");
+                }
+                
+                else if (strncmp(argv[argIdx], "instr8", 6) == 0) {
                     testInstructionBandwidth = 1; 
 		    nopBytes = 8;
                     fprintf(stderr, "Testing instruction fetch bandwidth with 8 byte instructions. Threads/shared/private args will be ignored\n");
@@ -219,7 +232,6 @@ int main(int argc, char *argv[]) {
 /// <returns>Iterations per thread</returns>
 uint64_t GetIterationCount(uint64_t testSize, uint64_t threads)
 {
-    uint64_t gbToTransfer = 512;
     if (testSize > 64) gbToTransfer = 64;
     if (testSize > 512) gbToTransfer = 64;
     if (testSize > 8192) gbToTransfer = 64;
@@ -374,8 +386,9 @@ float MeasureBw(uint64_t sizeKb, uint64_t iterations, uint64_t threads, int shar
     // make sure this is divisble by 512 bytes, since the unrolled asm loop depends on that
     // it's hard enough to get close to theoretical L1D BW as is, so we don't want additional cmovs or branches
     // in the hot loop
-    uint64_t private_elements = (uint64_t)ceil(((double)sizeKb * 1024 / sizeof(float)) / (double)threads);
-    //fprintf(stderr, "Actual data: %lu KB\n", private_elements * 4 * threads / 1024);
+    uint64_t private_elements = ceil((double)sizeKb / (double)threads) * 256;
+    //fprintf(stderr, "Actual data: %lu B\n", private_elements * 4 * threads);
+    //fprintf(stderr, "Data per thread: %lu B\n", private_elements * 4);
 
     // make array and fill it with something, if shared
     float* testArr = NULL;

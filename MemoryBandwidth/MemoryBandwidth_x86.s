@@ -2,6 +2,7 @@
 
 .global asm_read
 .global asm_write
+.global asm_copy
 .global sse_read
 .global sse_write
 .global avx512_read
@@ -20,7 +21,8 @@ asm_read:
   xor %rbx, %rbx
   lea (%rcx,%rsi,4), %rdi
   mov %rdi, %r14
-avx_asm_read_pass_loop:
+avx_asm_read_pass_loop:
+
   vmovaps (%rdi), %ymm0
   vmovaps 32(%rdi), %ymm1
   vmovaps 64(%rdi), %ymm2
@@ -45,7 +47,8 @@ avx_asm_read_pass_loop:
   jge asm_avx_test_iteration_count
   mov %rbx, %rsi
   lea (%rcx,%rsi,4), %rdi /* back to start */
-asm_avx_test_iteration_count:
+asm_avx_test_iteration_count:
+
   cmp %rsi, %r9
   jnz avx_asm_read_pass_loop /* skip iteration decrement if we're not back to start */
   dec %r8
@@ -70,7 +73,8 @@ asm_write:
   lea (%rcx,%rsi,4), %rdi
   mov %rdi, %r14
   vmovaps (%rcx), %ymm0
-avx_asm_write_pass_loop:
+avx_asm_write_pass_loop:
+
   vmovaps %ymm0, (%rdi)
   vmovaps %ymm0, 32(%rdi)
   vmovaps %ymm0, 64(%rdi)
@@ -95,7 +99,8 @@ avx_asm_write_pass_loop:
   jge asm_avx_write_iteration_count
   mov %rbx, %rsi
   lea (%rcx,%rsi,4), %rdi /* back to start */
-asm_avx_write_iteration_count:
+asm_avx_write_iteration_count:
+
   cmp %rsi, %r9
   jnz avx_asm_write_pass_loop /* skip iteration decrement if we're not back to start */
   dec %r8
@@ -106,6 +111,60 @@ asm_avx_write_iteration_count:
   pop %rdi 
   pop %rsi 
   ret  
+
+/* rcx = ptr to arr
+   rdx = arr_length
+   r8 = iterations */
+asm_copy:
+  push %rsi
+  push %rdi
+  push %rbx
+  push %r15
+  push %r14
+  push %r13
+  xor %rsi, %rsi
+  mov %rdx, %r9
+  shr $1, %r9    /* start destination at array + length / 2 */
+  mov $256, %r15 /* load in blocks of 128 bytes */
+  mov %r9, %r13
+  sub $64, %r13 /* place loop limit 256B before end */
+  lea (%rcx,%rsi,4), %rdi
+  lea (%rcx,%r9,4), %r14
+avx_asm_copy_pass_loop:
+
+  vmovaps (%rdi), %ymm0
+  vmovaps 32(%rdi), %ymm1
+  vmovaps 64(%rdi), %ymm2
+  vmovaps 96(%rdi), %ymm3
+  vmovaps 128(%rdi), %ymm4
+  vmovaps 160(%rdi), %ymm5
+  vmovaps 192(%rdi), %ymm6
+  vmovaps 224(%rdi), %ymm7
+  vmovaps %ymm0, (%r14)
+  vmovaps %ymm1, 32(%r14)
+  vmovaps %ymm2, 64(%r14)
+  vmovaps %ymm3, 96(%r14)
+  vmovaps %ymm4, 128(%r14)
+  vmovaps %ymm5, 160(%r14)
+  vmovaps %ymm6, 192(%r14)
+  vmovaps %ymm7, 224(%r14)
+  add $64, %rsi
+  add %r15, %rdi  /* increment src/dst pointers */
+  add %r15, %r14
+  cmp %rsi, %r13   /* end location is at half */
+  jge avx_asm_copy_pass_loop
+  xor %rsi, %rsi
+  lea (%rcx,%rsi,4), %rdi /* back to start */
+  lea (%rcx,%r9,4), %r14
+  dec %r8                 /* decrement iteration counter */
+  jnz avx_asm_copy_pass_loop
+  pop %r13
+  pop %r14 
+  pop %r15 
+  pop %rbx 
+  pop %rdi 
+  pop %rsi 
+  ret 
 
 sse_read:
   push %rsi
@@ -119,7 +178,8 @@ sse_read:
   xor %rbx, %rbx
   lea (%rcx,%rsi,4), %rdi
   mov %rdi, %r14
-sse_read_pass_loop:
+sse_read_pass_loop:
+
   movaps (%rdi), %xmm0
   movaps 16(%rdi), %xmm1
   movaps 32(%rdi), %xmm2
@@ -160,7 +220,8 @@ sse_read_pass_loop:
   jge sse_test_iteration_count
   mov %rbx, %rsi
   lea (%rcx,%rsi,4), %rdi /* back to start */
-sse_test_iteration_count:
+sse_test_iteration_count:
+
   cmp %rsi, %r9
   jnz sse_read_pass_loop /* skip iteration decrement if we're not back to start */
   dec %r8
@@ -188,7 +249,8 @@ sse_write:
   movaps 16(%rdi), %xmm1
   movaps 32(%rdi), %xmm2
   movaps 48(%rdi), %xmm3
-sse_write_pass_loop:
+sse_write_pass_loop:
+
   movaps %xmm0, (%rdi)    
   movaps %xmm1, 16(%rdi)  
   movaps %xmm2, 32(%rdi)  
@@ -229,7 +291,8 @@ sse_write_pass_loop:
   jge sse_write_iteration_count
   mov %rbx, %rsi
   lea (%rcx,%rsi,4), %rdi /* back to start */
-sse_write_iteration_count:
+sse_write_iteration_count:
+
   cmp %rsi, %r9
   jnz sse_write_pass_loop /* skip iteration decrement if we're not back to start */
   dec %r8
@@ -255,7 +318,8 @@ avx512_read:
   xor %rbx, %rbx
   lea (%rcx,%rsi,4), %rdi
   mov %rdi, %r14
-avx512_read_pass_loop:
+avx512_read_pass_loop:
+
   vmovaps (%rdi), %zmm0
   vmovaps 64(%rdi), %zmm1
   vmovaps 128(%rdi), %zmm2
@@ -272,7 +336,8 @@ avx512_read_pass_loop:
   jge avx512_test_iteration_count
   mov %rbx, %rsi
   lea (%rcx,%rsi,4), %rdi /* back to start */
-avx512_test_iteration_count:
+avx512_test_iteration_count:
+
   cmp %rsi, %r9
   jnz avx512_read_pass_loop /* skip iteration decrement if we're not back to start */
   dec %r8
@@ -314,7 +379,8 @@ avx512_write_pass_loop:
   jge avx512_write_iteration_count
   mov %rbx, %rsi
   lea (%rcx,%rsi,4), %rdi /* back to start */
-avx512_write_iteration_count:
+avx512_write_iteration_count:
+
   cmp %rsi, %r9
   jnz avx512_write_pass_loop /* skip iteration decrement if we're not back to start */
   dec %r8
