@@ -112,7 +112,7 @@ int main(int argc, char *argv[]) {
                     fprintf(stderr, "Using AVX assembly, copying one half of array to the other\n");
                 }
                 else if (_strnicmp(argv[argIdx], "cflip_asm_avx", 7) == 0) {
-                    bw_func = avx_asm_copy;
+                    bw_func = avx_asm_cflip;
                     fprintf(stderr, "Using AVX assembly, flipping order of vec sized elements within a cacheline\n");
                 }
 #else
@@ -254,7 +254,7 @@ float MeasureBw(uint32_t sizeKb, uint32_t iterations, uint32_t threads, int shar
     // make array and fill it with something
     float* testArr = NULL;
     if (shared) {
-        testArr = (float*)_aligned_malloc(elements * sizeof(float), 64);
+        testArr = (float*)_aligned_malloc(elements * sizeof(float), 4096);
         if (testArr == NULL) {
             fprintf(stderr, "Could not allocate memory\n");
             return 0;
