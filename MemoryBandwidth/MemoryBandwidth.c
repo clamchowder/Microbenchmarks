@@ -53,6 +53,7 @@ extern uint32_t readbankconflict(uint32_t *arr, uint64_t arr_length, uint64_t sp
 extern float asm_read(float* arr, uint64_t arr_length, uint64_t iterations, uint64_t start) __attribute__((ms_abi));
 extern float asm_write(float* arr, uint64_t arr_length, uint64_t iterations, uint64_t start) __attribute__((ms_abi));
 extern float asm_copy(float *arr, uint64_t arr_length, uint64_t iterations, uint64_t start) __attribute__((ms_abi));
+extern float asm_cflip(float *arr, uint64_t arr_length, uint64_t iterations, uint64_t start) __attribute__((ms_abi));
 
 float MeasureInstructionBw(uint64_t sizeKb, uint64_t iterations, int nopSize, int branchInterval); 
 void TestBankConflicts(); 
@@ -137,6 +138,9 @@ int main(int argc, char *argv[]) {
                 } else if (strncmp(argv[argIdx], "copy", 4) == 0) {
                     bw_func = asm_copy;
                     fprintf(stderr, "Using ASM code (AVX or NEON), testing copy bw instead of read\n");
+                } else if (strncmp(argv[argIdx], "cflip", 5) == 0) {
+                    bw_func = asm_cflip;
+                    fprintf(stderr, "Using ASM code (AVX or NEON), flipping order of elements within cacheline\n");
                 }
                 
                 else if (strncmp(argv[argIdx], "instr8", 6) == 0) {
