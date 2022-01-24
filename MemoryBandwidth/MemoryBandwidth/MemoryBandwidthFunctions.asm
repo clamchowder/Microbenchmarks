@@ -7,6 +7,7 @@ global avx_asm_read
 global avx_asm_write
 global avx_asm_copy
 global avx_asm_cflip
+global avx_asm_add
 global avx512_asm_read
 
 ; rcx = float ptr to arr, rdx = fp32 elements in arr, r8 = iterations, r9 = start index
@@ -234,6 +235,74 @@ asm_avx_cflip_iteration_count:
   pop rsi
   ret
 
+avx_asm_add:
+  push rsi
+  push rdi
+  push rbx
+  push r15
+  push r14
+  mov r15, 256 ; load in blocks of 256 bytes
+  sub rdx, 128 ; last iteration: rsi == rdx. rsi > rdx = break
+  xor r9, r9   ; not doing start anymore, too lazy to clean up code
+  mov rsi, r9  ; assume we're passed in an aligned start location O.o
+  xor rbx, rbx
+  lea rdi, [rcx + rsi * 4]
+  mov r14, rdi
+  vmovaps ymm4, [rdi]
+avx_asm_add_pass_loop:
+  ; xmm0 to 5 are considered volatile
+  vaddps ymm0, ymm4, [rdi]
+  vaddps ymm1, ymm4, [rdi + 32]
+  vaddps ymm2, ymm4, [rdi + 64]
+  vaddps ymm3, ymm4, [rdi + 96]
+  vmovaps [rdi], ymm0
+  vmovaps [rdi + 32], ymm1
+  vmovaps [rdi + 64], ymm2
+  vmovaps [rdi + 96], ymm3
+  vaddps ymm0, ymm4, [rdi + 128]
+  vaddps ymm1, ymm4, [rdi + 160]
+  vaddps ymm2, ymm4, [rdi + 192]
+  vaddps ymm3, ymm4, [rdi + 224]
+  vmovaps [rdi + 128], ymm0
+  vmovaps [rdi + 160], ymm1
+  vmovaps [rdi + 192], ymm2
+  vmovaps [rdi + 224], ymm3
+
+  add rsi, 64
+  add rdi, r15
+  vaddps ymm0, ymm4, [rdi]
+  vaddps ymm1, ymm4, [rdi + 32]
+  vaddps ymm2, ymm4, [rdi + 64]
+  vaddps ymm3, ymm4, [rdi + 96]
+  vmovaps [rdi], ymm0
+  vmovaps [rdi + 32], ymm1
+  vmovaps [rdi + 64], ymm2
+  vmovaps [rdi + 96], ymm3
+  vaddps ymm0, ymm4, [rdi + 128]
+  vaddps ymm1, ymm4, [rdi + 160]
+  vaddps ymm2, ymm4, [rdi + 192]
+  vaddps ymm3, ymm4, [rdi + 224]
+  vmovaps [rdi + 128], ymm0
+  vmovaps [rdi + 160], ymm1
+  vmovaps [rdi + 192], ymm2
+  vmovaps [rdi + 224], ymm3
+  add rsi, 64
+  add rdi, r15
+  cmp rdx, rsi
+  jge asm_avx_add_iteration_count
+  mov rsi, rbx
+  lea rdi, [rcx + rsi * 4]  ; back to start
+asm_avx_add_iteration_count:
+  cmp r9, rsi
+  jnz avx_asm_add_pass_loop ; skip iteration decrement if we're not back to start
+  sub r8, 2
+  jnz avx_asm_add_pass_loop
+  pop r14
+  pop r15
+  pop rbx
+  pop rdi
+  pop rsi
+  ret
 
 avx512_asm_read:
   push rsi
