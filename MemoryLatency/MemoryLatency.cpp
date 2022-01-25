@@ -2,10 +2,11 @@
 #include <stdint.h>
 #include <stdlib.h>
 #include <sys\timeb.h>
+#include <math.h>
 #include <windows.h>
 #include <tchar.h>
 
-#define ITERATIONS 100000000
+#define ITERATIONS 400000000
 
 int default_test_sizes[36] = { 2, 4, 8, 12, 16, 24, 32, 48, 64, 96, 128, 192, 256, 512, 600, 768, 1024, 1536, 2048, 
                                3072, 4096, 5120, 6144, 8192, 10240, 12288, 16384, 24567, 32768, 65536, 98304,
@@ -52,11 +53,7 @@ int main(int argc, char* argv[]) {
 /// <param name="iterations">base iterations</param>
 /// <returns>scaled iterations</returns>
 uint64_t scale_iterations(uint32_t size_kb, uint64_t iterations) {
-    uint64_t retval = iterations;
-    if (size_kb <= 512) retval *= 10;
-    if (size_kb > 4096) retval /= 10;
-    if (size_kb > 131072) retval /= 30;
-    return retval;
+    return 10 * iterations / pow(size_kb, 1.0 / 4.0);
 }
 
 void FillPatternArr(uint32_t* pattern_arr, uint32_t list_size, uint32_t byte_increment) {
