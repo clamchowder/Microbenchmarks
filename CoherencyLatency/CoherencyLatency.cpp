@@ -11,6 +11,8 @@ float RunOwnedTest(unsigned int processor1, unsigned int processor2, uint64_t it
 DWORD WINAPI LatencyTestThread(LPVOID param);
 DWORD WINAPI ReadLatencyTestThread(LPVOID param);
 
+LONG64* bouncy;
+
 typedef struct LatencyThreadData {
     uint64_t start;       // initial value to write into target
     uint64_t iterations;  // number of iterations to run
@@ -25,6 +27,11 @@ int main(int argc, char *argv[]) {
     float* latencies;
     uint64_t iter = ITERATIONS;
     float (*test)(unsigned int, unsigned int, uint64_t) = RunTest;
+
+    bouncy = (LONG64*)_aligned_malloc(sizeof(LONG64), sizeof(LONG64));
+    if (bouncy == NULL) {
+        fprintf(stderr, "Could not allocate aligned mem\n");
+    }
 
     GetSystemInfo(&sysInfo);
     numProcs = sysInfo.dwNumberOfProcessors;
@@ -69,6 +76,7 @@ int main(int argc, char *argv[]) {
     }
     
     free(latencies);
+    _aligned_free(bouncy);
     return 0;
 }
 
@@ -116,13 +124,7 @@ float TimeThreads(unsigned int processor1, unsigned int processor2, uint64_t ite
 /// <returns>latency per iteration in ns</returns>
 float RunTest(unsigned int processor1, unsigned int processor2, uint64_t iter) {
     LatencyData lat1, lat2;
-    LONG64* bouncy;
     float latency;
-
-    bouncy = (LONG64*)_aligned_malloc(sizeof(LONG64), sizeof(LONG64));
-    if (bouncy == NULL) {
-        fprintf(stderr, "Could not allocate aligned mem\n");
-    }
 
     *bouncy = 0;
     lat1.iterations = iter;
@@ -133,7 +135,6 @@ float RunTest(unsigned int processor1, unsigned int processor2, uint64_t iter) {
     lat2.target = bouncy;
 
     latency = TimeThreads(processor1, processor2, iter, lat1, lat2, LatencyTestThread);
-    _aligned_free(bouncy);
     return latency;
 }
 
