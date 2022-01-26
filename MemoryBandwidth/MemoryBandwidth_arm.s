@@ -3,6 +3,8 @@
 
 .global asm_read
 .global asm_write 
+.global asm_cflip
+.global asm_copy
 .global readbankconflict
 
 /* x0 = ptr to array (was rcx)
@@ -145,6 +147,183 @@ asm_write_pass_loop:
   ldp x12, x13, [sp, #0x20]
   ldp x14, x15, [sp, #0x10]
   add sp, sp, #0x30
+  ret 
+
+asm_cflip:
+  sub sp, sp, #0x30
+  stp x14, x15, [sp, #0x10]
+  stp x12, x13, [sp, #0x20]
+  sub x1, x1, 128 
+  mov x14, x3     /* set x14 = index into array to start location (x3) */
+  eor x13, x13, x13 /* x13 = 0 (for comparison) */
+asm_cflip_pass_loop:
+  lsl x12, x14, 2  /* x12 = x14 * 4, because float is 4B */
+  add x15, x0, x12 /* ptr (x15) to next element = x0 (base) + x12 (index *4) */
+  ldr q16, [x15]
+  ldr q17, [x15, 16]
+  ldr q18, [x15, 32]
+  ldr q19, [x15, 48]
+  str q16, [x15, 48]
+  str q17, [x15, 32]
+  str q18, [x15, 16]
+  str q19, [x15]
+  ldr q16, [x15, 64]
+  ldr q17, [x15, 80]
+  ldr q18, [x15, 96]
+  ldr q19, [x15, 112]
+  str q16, [x15, 112]
+  str q17, [x15, 96]
+  str q18, [x15, 80]
+  str q19, [x15, 64]
+
+  add x14, x14, 32
+  lsl x12, x14, 2  
+  add x15, x0, x12 
+  ldr q16, [x15]
+  ldr q17, [x15, 16]
+  ldr q18, [x15, 32]
+  ldr q19, [x15, 48]
+  str q16, [x15, 48]
+  str q17, [x15, 32]
+  str q18, [x15, 16]
+  str q19, [x15]
+  ldr q16, [x15, 64]
+  ldr q17, [x15, 80]
+  ldr q18, [x15, 96]
+  ldr q19, [x15, 112]
+  str q16, [x15, 112]
+  str q17, [x15, 96]
+  str q18, [x15, 80]
+  str q19, [x15, 64] 
+
+  add x14, x14, 32
+  lsl x12, x14, 2  
+  add x15, x0, x12 
+  ldr q16, [x15]
+  ldr q17, [x15, 16]
+  ldr q18, [x15, 32]
+  ldr q19, [x15, 48]
+  str q16, [x15, 48]
+  str q17, [x15, 32]
+  str q18, [x15, 16]
+  str q19, [x15]
+  ldr q16, [x15, 64]
+  ldr q17, [x15, 80]
+  ldr q18, [x15, 96]
+  ldr q19, [x15, 112]
+  str q16, [x15, 112]
+  str q17, [x15, 96]
+  str q18, [x15, 80]
+  str q19, [x15, 64]  
+
+  add x14, x14, 32
+  lsl x12, x14, 2  
+  add x15, x0, x12 
+  ldr q16, [x15]
+  ldr q17, [x15, 16]
+  ldr q18, [x15, 32]
+  ldr q19, [x15, 48]
+  str q16, [x15, 48]
+  str q17, [x15, 32]
+  str q18, [x15, 16]
+  str q19, [x15]
+  ldr q16, [x15, 64]
+  ldr q17, [x15, 80]
+  ldr q18, [x15, 96]
+  ldr q19, [x15, 112]
+  str q16, [x15, 112]
+  str q17, [x15, 96]
+  str q18, [x15, 80]
+  str q19, [x15, 64]   
+  
+  cmp x1, x14 /* if x1 (len - 128) - x14 < 0, loop back around */
+  csel x14, x13, x14, LT
+  cmp x14, x3
+  b.ne asm_cflip_pass_loop /* skip iteration decrement if we're not back to start */
+  sub x2, x2, 2
+  cbnz x2, asm_cflip_pass_loop
+  ins v0.4s[0], v16.4s[0]
+  ldp x12, x13, [sp, #0x20]
+  ldp x14, x15, [sp, #0x10]
+  add sp, sp, #0x30
+  ret 
+
+/* x0 = ptr to array (was rcx)
+ * x1 = arr length (was rdx)
+ * x2 = iterations (was r8)
+ * x3 = start (was r9)
+ */ 
+asm_copy:
+  sub sp, sp, #0x50
+  stp x14, x15, [sp, #0x10]
+  stp x12, x13, [sp, #0x20]
+  stp x10, x11, [sp, #0x30]
+  stp x8, x9, [sp, #0x40]
+  asr x11, x1, 1    /* x11 = destination index (length / 2) */
+  sub x1, x1, 128
+  mov x10, x11      /* use x10 as index into destination */
+  mov x14, x3     /* set x14 = index into array to start location (x3) */
+  eor x13, x13, x13 /* x13 = 0 (for comparison) */
+asm_copy_pass_loop:
+  lsl x12, x14, 2  /* x12 = x14 * 4, because float is 4B */
+  add x15, x0, x12 /* ptr (x15) to next element = x0 (base) + x12 (index *4) */
+  lsl x12, x10, 2  /* x12 = x10 * 4, to calculate destination */
+  add x9, x0, x12  /* x9 = ptr to destination */
+  ldr q16, [x15]
+  ldr q17, [x15, 16]
+  ldr q18, [x15, 32]
+  ldr q19, [x15, 48]
+  ldr q20, [x15, 64]
+  ldr q21, [x15, 80]
+  ldr q22, [x15, 96]
+  ldr q23, [x15, 112]
+  str q16, [x9]
+  str q17, [x9, 16]
+  str q18, [x9, 32]
+  str q19, [x9, 48]
+  str q20, [x9, 64]
+  str q21, [x9, 80]
+  str q22, [x9, 96]
+  str q23, [x9, 112] 
+  add x14, x14, 32
+  add x10, x10, 32
+
+  lsl x12, x14, 2  
+  add x15, x0, x12 
+  lsl x12, x10, 2  
+  add x9, x0, x12
+  ldr q16, [x15]
+  ldr q17, [x15, 16]
+  ldr q18, [x15, 32]
+  ldr q19, [x15, 48]
+  ldr q20, [x15, 64]
+  ldr q21, [x15, 80]
+  ldr q22, [x15, 96]
+  ldr q23, [x15, 112]
+  str q16, [x9]
+  str q17, [x9, 16]
+  str q18, [x9, 32]
+  str q19, [x9, 48]
+  str q20, [x9, 64]
+  str q21, [x9, 80]
+  str q22, [x9, 96]
+  str q23, [x9, 112]  
+  add x14, x14, 32
+  add x10, x10, 32
+  
+  cmp x1, x10 /* if destination hits end, loop around */
+  csel x14, x13, x14, LT
+  csel x10, x11, x10, LT
+  cmp x14, x3
+  b.ne asm_copy_pass_loop /* skip iteration decrement if we're not back to start */
+  sub x2, x2, 1
+  cbnz x2, asm_copy_pass_loop
+  ins v0.4s[0], v16.4s[0]
+  ldp x8, x9, [sp, #0x40]
+  ldp x10, x11, [sp, #0x30]
+  ldp x12, x13, [sp, #0x20]
+  ldp x14, x15, [sp, #0x10]
+  add sp, sp, #0x50
   ret 
 
 

@@ -240,6 +240,7 @@ uint64_t GetIterationCount(uint64_t testSize, uint64_t threads)
     if (testSize > 512) gbToTransfer = 64;
     if (testSize > 8192) gbToTransfer = 64;
     uint64_t iterations = gbToTransfer * 1024 * 1024 / testSize;
+    if (iterations % 2 != 0) iterations += 1;  // must be even
 
     if (iterations < 8) return 8; // set a minimum to reduce noise
     else return iterations;
