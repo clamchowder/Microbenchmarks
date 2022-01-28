@@ -42,6 +42,9 @@ float _fastcall scalar_read(void* arr, uint32_t arr_length, uint32_t iterations)
 
 #ifdef _WIN64
 extern "C" float sse_asm_read(void* arr, uint64_t arr_length, uint64_t iterations);
+extern "C" float sse_asm_write(void* arr, uint64_t arr_length, uint64_t iterations);
+extern "C" float sse_asm_copy(void* arr, uint64_t arr_length, uint64_t iterations);
+extern "C" float sse_asm_add(void* arr, uint64_t arr_length, uint64_t iterations);
 extern "C" float avx_asm_read(void* arr, uint64_t arr_length, uint64_t iterations);
 extern "C" float avx_asm_write(void* arr, uint64_t arr_length, uint64_t iterations);
 extern "C" float avx_asm_copy(void* arr, uint64_t arr_length, uint64_t iterations);
@@ -92,11 +95,11 @@ int main(int argc, char *argv[]) {
                 methodSet = 1;
                 argIdx++;
 #ifdef _WIN64
-                if (_strnicmp(argv[argIdx], "asm_sse", 7) == 0) {
+                if (_strnicmp(argv[argIdx], "read_asm_sse", 7) == 0) {
                     bw_func = sse_asm_read;
                     fprintf(stderr, "Using SSE assembly\n");
                 }
-                else if (_strnicmp(argv[argIdx], "asm_avx512", 10) == 0) {
+                else if (_strnicmp(argv[argIdx], "read_asm_avx512", 10) == 0) {
                     bw_func = avx512_asm_read;
                     fprintf(stderr, "Using AVX512 assembly\n");
                 }
@@ -104,7 +107,7 @@ int main(int argc, char *argv[]) {
                     bw_func = avx_asm_write;
                     fprintf(stderr, "Using AVX assembly, writing instead of reading\n");
                 }
-                else if (_strnicmp(argv[argIdx], "asm_avx", 7) == 0) {
+                else if (_strnicmp(argv[argIdx], "read_asm_avx", 7) == 0) {
                     bw_func = avx_asm_read;
                     fprintf(stderr, "Using AVX assembly\n");
                 }
@@ -119,6 +122,18 @@ int main(int argc, char *argv[]) {
                 else if (_strnicmp(argv[argIdx], "add_asm_avx", 7) == 0) {
                     bw_func = avx_asm_add;
                     fprintf(stderr, "Using AVX assembly, adding constant to array\n");
+                }
+                else if (_strnicmp(argv[argIdx], "copy_asm_sse", 7) == 0) {
+                    bw_func = sse_asm_copy;
+                    fprintf(stderr, "Using SSE assembly, copying one half of array to the other\n");
+                }
+                else if (_strnicmp(argv[argIdx], "write_asm_sse", 7) == 0) {
+                    bw_func = sse_asm_write;
+                    fprintf(stderr, "Using SSE assembly, writing\n");
+                }
+                else if (_strnicmp(argv[argIdx], "add_asm_sse", 7) == 0) {
+                    bw_func = sse_asm_add;
+                    fprintf(stderr, "Using SSE assembly, adding constant to array\n");
                 }
 #else
                 if (_strnicmp(argv[argIdx], "scalar", 6) == 0) {
@@ -236,6 +251,7 @@ uint32_t GetIterationCount(uint32_t testSize, uint32_t threads)
     if (testSize > 512) gbToTransfer = dataGb / 4;
     if (testSize > 8192) gbToTransfer = dataGb / 8;
     uint32_t iterations = gbToTransfer * 1024 * 1024 / testSize;
+    if (iterations % 2 != 0) iterations += 1;
 
     if (iterations < 8) return 8; // set a minimum to reduce noise
     else return iterations;

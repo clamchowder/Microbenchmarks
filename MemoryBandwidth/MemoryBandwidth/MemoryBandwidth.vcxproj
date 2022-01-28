@@ -147,6 +147,9 @@
       <Command Condition="'$(Configuration)|$(Platform)'=='Release|x64'">nasm -f win64 MemoryBandwidthFunctions.asm</Command>
       <Message Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Running NASM</Message>
       <Outputs Condition="'$(Configuration)|$(Platform)'=='Release|x64'">MemoryBandwidthFunctions.obj</Outputs>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">nasm -f win64 MemoryBandwidthFunctions.asm</Command>
+      <Message Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Running NASM</Message>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">MemoryBandwidthFunctions.obj</Outputs>
     </CustomBuild>
   </ItemGroup>
   <ItemGroup>

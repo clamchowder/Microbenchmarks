@@ -23,10 +23,8 @@
     <CustomBuild Include="MemoryBandwidthFunctions.asm">
       <Filter>Source Files</Filter>
     </CustomBuild>
-  </ItemGroup>
-  <ItemGroup>
-    <None Include="MemoryBandwidthFunctions32.asm">
+    <CustomBuild Include="MemoryBandwidthFunctions32.asm">
       <Filter>Source Files</Filter>
-    </None>
+    </CustomBuild>
   </ItemGroup>
 </Project>
