@@ -418,6 +418,7 @@ sse_test_iteration_count:
   pop rsi
   ret
 
+; rcx = float ptr to arr, rdx = fp32 elements in arr, r8 = iterations
 sse_asm_write:
   push rsi
   push rdi
@@ -426,6 +427,7 @@ sse_asm_write:
   push r14
   mov r15, 256 ; load in blocks of 256 bytes
   sub rdx, 128 ; last iteration: rsi == rdx. rsi > rdx = break
+  xor r9, r9
   xor rsi, rsi
   xor rbx, rbx
   lea rdi, [rcx + rsi * 4]
@@ -476,7 +478,7 @@ sse_write_iteration_count:
   cmp r9, rsi
   jnz sse_write_pass_loop ; skip iteration decrement if we're not back to start
   dec r8
-  jnz sse_write_pass_loop
+  jg sse_write_pass_loop
   pop r14
   pop r15
   pop rbx
@@ -685,7 +687,7 @@ sse_add_iteration_count:
   cmp r9, rsi
   jnz sse_add_pass_loop ; skip iteration decrement if we're not back to start
   sub r8, 2
-  jle sse_add_pass_loop
+  jg sse_add_pass_loop
   pop r14
   pop r15
   pop rbx
