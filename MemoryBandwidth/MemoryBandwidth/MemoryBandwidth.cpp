@@ -107,31 +107,31 @@ int main(int argc, char *argv[]) {
                     bw_func = avx_asm_write;
                     fprintf(stderr, "Using AVX assembly, writing instead of reading\n");
                 }
-                else if (_strnicmp(argv[argIdx], "read_asm_avx", 7) == 0) {
+                else if (_strnicmp(argv[argIdx], "read_asm_avx", 12) == 0) {
                     bw_func = avx_asm_read;
                     fprintf(stderr, "Using AVX assembly\n");
                 }
-                else if (_strnicmp(argv[argIdx], "copy_asm_avx", 7) == 0) {
+                else if (_strnicmp(argv[argIdx], "copy_asm_avx", 12) == 0) {
                     bw_func = avx_asm_copy;
                     fprintf(stderr, "Using AVX assembly, copying one half of array to the other\n");
                 }
-                else if (_strnicmp(argv[argIdx], "cflip_asm_avx", 7) == 0) {
+                else if (_strnicmp(argv[argIdx], "cflip_asm_avx", 13) == 0) {
                     bw_func = avx_asm_cflip;
                     fprintf(stderr, "Using AVX assembly, flipping order of vec sized elements within a cacheline\n");
                 }
-                else if (_strnicmp(argv[argIdx], "add_asm_avx", 7) == 0) {
+                else if (_strnicmp(argv[argIdx], "add_asm_avx", 11) == 0) {
                     bw_func = avx_asm_add;
                     fprintf(stderr, "Using AVX assembly, adding constant to array\n");
                 }
-                else if (_strnicmp(argv[argIdx], "copy_asm_sse", 7) == 0) {
+                else if (_strnicmp(argv[argIdx], "copy_asm_sse", 12) == 0) {
                     bw_func = sse_asm_copy;
                     fprintf(stderr, "Using SSE assembly, copying one half of array to the other\n");
                 }
-                else if (_strnicmp(argv[argIdx], "write_asm_sse", 7) == 0) {
+                else if (_strnicmp(argv[argIdx], "write_asm_sse", 13) == 0) {
                     bw_func = sse_asm_write;
                     fprintf(stderr, "Using SSE assembly, writing\n");
                 }
-                else if (_strnicmp(argv[argIdx], "add_asm_sse", 7) == 0) {
+                else if (_strnicmp(argv[argIdx], "add_asm_sse", 11) == 0) {
                     bw_func = sse_asm_add;
                     fprintf(stderr, "Using SSE assembly, adding constant to array\n");
                 }

@@ -360,6 +360,7 @@ sse_asm_read:
   push r14
   mov r15, 256 ; load in blocks of 256 bytes
   sub rdx, 128 ; last iteration: rsi == rdx. rsi > rdx = break
+  xor r9, r9
   xor rsi, rsi
   xor rbx, rbx
   lea rdi, [rcx + rsi * 4]
@@ -566,6 +567,7 @@ sse_asm_add:
   push r14
   mov r15, 256 ; load in blocks of 256 bytes
   sub rdx, 128 ; last iteration: rsi == rdx. rsi > rdx = break
+  xor r9, r9
   xor rsi, rsi
   xor rbx, rbx
   lea rdi, [rcx + rsi * 4]
