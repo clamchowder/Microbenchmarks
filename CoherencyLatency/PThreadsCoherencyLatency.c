@@ -25,6 +25,7 @@ typedef struct LatencyThreadData {
 
 void *LatencyTestThread(void *param);
 float RunTest(unsigned int processor1, unsigned int processor2, uint64_t iter); 
+uint64_t bouncy;
 
 int main(int argc, char *argv[]) {
     float *latencies;
@@ -92,7 +93,6 @@ float TimeThreads(unsigned int proc1,
 // test latency between two logical CPUs
 float RunTest(unsigned int processor1, unsigned int processor2, uint64_t iter) {
   LatencyData lat1, lat2;
-  uint64_t bouncy;
   float latency;
 
   bouncy = 0;
