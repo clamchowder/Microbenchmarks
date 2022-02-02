@@ -42,6 +42,8 @@ extern float sse_read(float* arr, uint64_t arr_length, uint64_t iterations, uint
 extern float sse_write(float* arr, uint64_t arr_length, uint64_t iterations, uint64_t start) __attribute__((ms_abi));
 extern float avx512_read(float* arr, uint64_t arr_length, uint64_t iterations, uint64_t start) __attribute__((ms_abi));
 extern float avx512_write(float* arr, uint64_t arr_length, uint64_t iterations, uint64_t start) __attribute__((ms_abi));
+extern float avx512_copy(float* arr, uint64_t arr_length, uint64_t iterations, uint64_t start) __attribute__((ms_abi));
+extern float avx512_add(float* arr, uint64_t arr_length, uint64_t iterations, uint64_t start) __attribute__((ms_abi));
 extern uint32_t readbankconflict(uint32_t *arr, uint64_t arr_length, uint64_t spacing, uint64_t iterations) __attribute__((ms_abi));
 float (*bw_func)(float*, uint64_t, uint64_t, uint64_t start) __attribute__((ms_abi)); 
 #else
@@ -54,6 +56,7 @@ extern float asm_read(float* arr, uint64_t arr_length, uint64_t iterations, uint
 extern float asm_write(float* arr, uint64_t arr_length, uint64_t iterations, uint64_t start) __attribute__((ms_abi));
 extern float asm_copy(float *arr, uint64_t arr_length, uint64_t iterations, uint64_t start) __attribute__((ms_abi));
 extern float asm_cflip(float *arr, uint64_t arr_length, uint64_t iterations, uint64_t start) __attribute__((ms_abi));
+extern float asm_add(float *arr, uint64_t arr_length, uint64_t iterations, uint64_t start) __attribute__((ms_abi));
 
 float MeasureInstructionBw(uint64_t sizeKb, uint64_t iterations, int nopSize, int branchInterval); 
 void TestBankConflicts(); 
@@ -138,10 +141,25 @@ int main(int argc, char *argv[]) {
                 } else if (strncmp(argv[argIdx], "copy", 4) == 0) {
                     bw_func = asm_copy;
                     fprintf(stderr, "Using ASM code (AVX or NEON), testing copy bw instead of read\n");
+                    #ifdef __x86_64
+                    if (avx512Supported) {
+                        fprintf(stderr, "Using AVX-512 because that's supported\n");
+                        bw_func = avx512_copy;
+                    }
+                    #endif 
                 } else if (strncmp(argv[argIdx], "cflip", 5) == 0) {
                     bw_func = asm_cflip;
                     fprintf(stderr, "Using ASM code (AVX or NEON), flipping order of elements within cacheline\n");
-                }
+                } else if (strncmp(argv[argIdx], "add", 3) == 0) {
+                    bw_func = asm_add;
+                    fprintf(stderr, "Using ASM code (AVX or NEON), adding constant to array\n");
+                    #ifdef __x86_64
+                    if (avx512Supported) {
+                        fprintf(stderr, "Using AVX-512 because that's supported\n");
+                        bw_func = avx512_add;
+                    }
+                    #endif  
+                } 
                 
                 else if (strncmp(argv[argIdx], "instr8", 6) == 0) {
                     testInstructionBandwidth = 1; 
