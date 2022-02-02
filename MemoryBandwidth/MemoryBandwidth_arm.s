@@ -5,6 +5,7 @@
 .global asm_write 
 .global asm_cflip
 .global asm_copy
+.global asm_add
 .global readbankconflict
 
 /* x0 = ptr to array (was rcx)
@@ -324,6 +325,145 @@ asm_copy_pass_loop:
   ldp x12, x13, [sp, #0x20]
   ldp x14, x15, [sp, #0x10]
   add sp, sp, #0x50
+  ret 
+
+/* x0 = ptr to array (was rcx)
+ * x1 = arr length (was rdx)
+ * x2 = iterations (was r8)
+ * x3 = start (was r9)
+ */
+asm_add:
+  sub sp, sp, #0x30
+  stp x14, x15, [sp, #0x10]
+  stp x12, x13, [sp, #0x20]
+  sub x1, x1, 128 
+  mov x14, x3     /* set x14 = index into array to start location (x3) */
+  eor x13, x13, x13 /* x13 = 0 (for comparison) */
+  ldr q15, [x0]
+asm_add_pass_loop:
+  lsl x12, x14, 2  /* x12 = x14 * 4, because float is 4B */
+  add x15, x0, x12 /* ptr (x15) to next element = x0 (base) + x12 (index *4) */
+  ldr q16, [x15]
+  ldr q17, [x15, 16]
+  ldr q18, [x15, 32]
+  ldr q19, [x15, 48]
+  ldr q20, [x15, 64]
+  ldr q21, [x15, 80]
+  ldr q22, [x15, 96]
+  ldr q23, [x15, 112]
+  add v16.4s, v16.4s, v15.4s
+  add v17.4s, v17.4s, v15.4s
+  add v18.4s, v18.4s, v15.4s
+  add v19.4s, v19.4s, v15.4s
+  add v20.4s, v20.4s, v15.4s
+  add v21.4s, v21.4s, v15.4s
+  add v22.4s, v22.4s, v15.4s
+  add v23.4s, v23.4s, v15.4s
+  str q16, [x15]
+  str q17, [x15, 16]
+  str q18, [x15, 32]
+  str q19, [x15, 48]
+  str q20, [x15, 64]
+  str q21, [x15, 80]
+  str q22, [x15, 96]
+  str q23, [x15, 112] 
+  add x14, x14, 32
+
+  lsl x12, x14, 2  
+  add x15, x0, x12 
+  ldr q16, [x15]
+  ldr q17, [x15, 16]
+  ldr q18, [x15, 32]
+  ldr q19, [x15, 48]
+  ldr q20, [x15, 64]
+  ldr q21, [x15, 80]
+  ldr q22, [x15, 96]
+  ldr q23, [x15, 112]
+  add v16.4s, v16.4s, v15.4s
+  add v17.4s, v17.4s, v15.4s
+  add v18.4s, v18.4s, v15.4s
+  add v19.4s, v19.4s, v15.4s
+  add v20.4s, v20.4s, v15.4s
+  add v21.4s, v21.4s, v15.4s
+  add v22.4s, v22.4s, v15.4s
+  add v23.4s, v23.4s, v15.4s
+  str q16, [x15]
+  str q17, [x15, 16]
+  str q18, [x15, 32]
+  str q19, [x15, 48]
+  str q20, [x15, 64]
+  str q21, [x15, 80]
+  str q22, [x15, 96]
+  str q23, [x15, 112]  
+  add x14, x14, 32
+
+  lsl x12, x14, 2  
+  add x15, x0, x12 
+  ldr q16, [x15]
+  ldr q17, [x15, 16]
+  ldr q18, [x15, 32]
+  ldr q19, [x15, 48]
+  ldr q20, [x15, 64]
+  ldr q21, [x15, 80]
+  ldr q22, [x15, 96]
+  ldr q23, [x15, 112]
+  add v16.4s, v16.4s, v15.4s
+  add v17.4s, v17.4s, v15.4s
+  add v18.4s, v18.4s, v15.4s
+  add v19.4s, v19.4s, v15.4s
+  add v20.4s, v20.4s, v15.4s
+  add v21.4s, v21.4s, v15.4s
+  add v22.4s, v22.4s, v15.4s
+  add v23.4s, v23.4s, v15.4s
+  str q16, [x15]
+  str q17, [x15, 16]
+  str q18, [x15, 32]
+  str q19, [x15, 48]
+  str q20, [x15, 64]
+  str q21, [x15, 80]
+  str q22, [x15, 96]
+  str q23, [x15, 112]   
+  add x14, x14, 32
+
+  lsl x12, x14, 2  
+  add x15, x0, x12 
+  ldr q16, [x15]
+  ldr q17, [x15, 16]
+  ldr q18, [x15, 32]
+  ldr q19, [x15, 48]
+  ldr q20, [x15, 64]
+  ldr q21, [x15, 80]
+  ldr q22, [x15, 96]
+  ldr q23, [x15, 112]
+  add v16.4s, v16.4s, v15.4s
+  add v17.4s, v17.4s, v15.4s
+  add v18.4s, v18.4s, v15.4s
+  add v19.4s, v19.4s, v15.4s
+  add v20.4s, v20.4s, v15.4s
+  add v21.4s, v21.4s, v15.4s
+  add v22.4s, v22.4s, v15.4s
+  add v23.4s, v23.4s, v15.4s
+  str q16, [x15]
+  str q17, [x15, 16]
+  str q18, [x15, 32]
+  str q19, [x15, 48]
+  str q20, [x15, 64]
+  str q21, [x15, 80]
+  str q22, [x15, 96]
+  str q23, [x15, 112]    
+  add x14, x14, 32
+  
+  cmp x1, x14 /* if x1 (len - 128) - x14 < 0, loop back around */
+  csel x14, x13, x14, LT
+  cmp x14, x3
+  b.ne asm_add_pass_loop /* skip iteration decrement if we're not back to start */
+  sub x2, x2, 2
+  cmp x2, 0
+  b.gt asm_add_pass_loop
+  ldr q0, [x0]
+  ldp x12, x13, [sp, #0x20]
+  ldp x14, x15, [sp, #0x10]
+  add sp, sp, #0x30
   ret 
 
 
