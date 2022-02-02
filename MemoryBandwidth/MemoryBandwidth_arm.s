@@ -6,6 +6,7 @@
 .global asm_cflip
 .global asm_copy
 .global asm_add
+.global flush_icache
 .global readbankconflict
 
 /* x0 = ptr to array (was rcx)
@@ -552,3 +553,31 @@ readbankconflict_end:
    ldp x14, x15, [sp, #0x10]
    add sp, sp, #0x40
    ret
+
+/* x0: ptr to array
+   x1: array size in bytes */
+flush_icache:
+  sub sp, sp, #0x20
+  stp x14, x15, [sp, #0x10]
+  asr x0, x0, 6   /* align to 64B cacheline */
+  lsl x0, x0, 6
+  mov x14, x0
+  mov x15, x1
+flush_icache_clean_dcache_loop:
+  dc civac, x14
+  add x14, x14, 64
+  sub x15, x15, 64
+  b.gt flush_icache_clean_dcache_loop
+  dsb ish
+  mov x14, x0
+  mov x15, x1
+flush_icache_clean_icache_loop:
+  ic ivau, x14
+  add x14, x14, 64
+  sub x15, x15, 64
+  b.gt flush_icache_clean_icache_loop
+  dsb ish
+  isb
+  ldp x14, x15, [sp, #0x10]
+  add sp, sp, #0x20
+  ret

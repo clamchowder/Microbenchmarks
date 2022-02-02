@@ -58,6 +58,11 @@ extern float asm_copy(float *arr, uint64_t arr_length, uint64_t iterations, uint
 extern float asm_cflip(float *arr, uint64_t arr_length, uint64_t iterations, uint64_t start) __attribute__((ms_abi));
 extern float asm_add(float *arr, uint64_t arr_length, uint64_t iterations, uint64_t start) __attribute__((ms_abi));
 
+
+#ifdef __aarch64__
+extern void flush_icache(void *arr, uint64_t length);
+#endif
+
 float MeasureInstructionBw(uint64_t sizeKb, uint64_t iterations, int nopSize, int branchInterval); 
 void TestBankConflicts(); 
 uint64_t GetIterationCount(uint64_t testSize, uint64_t threads);
@@ -367,6 +372,7 @@ float MeasureInstructionBw(uint64_t sizeKb, uint64_t iterations, int nopSize, in
     #ifdef __aarch64__ 
     uint64_t *functionEnd = (uint64_t *)(nops + elements);
     functionEnd[0] = 0XD65F03C0;
+    flush_icache((void *)nops, funcLen);
     #endif
 
     uint64_t nopfuncPage = (~0xFFF) & (uint64_t)(nops);
@@ -375,11 +381,6 @@ float MeasureInstructionBw(uint64_t sizeKb, uint64_t iterations, int nopSize, in
         fprintf(stderr, "mprotect failed, errno %d\n", errno); 
         return 0;
     }  
-
-    #ifdef __aarch64__
-    asm ("dsb sy");
-    asm ("isb sy");
-    #endif
 
     nopfunc = (__attribute((ms_abi)) void(*)(uint64_t))nops;
     gettimeofday(&startTv, &startTz);
