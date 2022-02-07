@@ -330,7 +330,12 @@ float MeasureInstructionBw(uint64_t sizeKb, uint64_t iterations, int nopSize, in
 
 #ifdef __aarch64__
     char nop4b[8] = { 0x1F, 0x20, 0x03, 0xD5, 0x1F, 0x20, 0x03, 0xD5 };
-    char *nop8b = nop4b;
+
+    // hack this to deal with graviton 1 / A72
+    // nop + add x0, x0, 0
+    char nop8b[9] = { 0x1F, 0x20, 0x03, 0xD5, 0x00, 0x00, 0x00, 0x91 }; 
+    // mov x0, 0 + add x10, x10, 0
+    char nop8b1[9] = { 0x00, 0x00, 0x80, 0xD2, 0x8c, 0x01, 0x00, 0x91 }; 
 #endif
 
     struct timeval startTv, endTv;
@@ -361,6 +366,10 @@ float MeasureInstructionBw(uint64_t sizeKb, uint64_t iterations, int nopSize, in
 #ifdef __x86_64
 	uint64_t *nopBranchPtr = (uint64_t *)nop4b_with_branch;
 	if (branchInterval > 1 && nopIdx % branchInterval == 0) nops[nopIdx] = *nopBranchPtr;
+#endif
+#ifdef __aarch64__
+        uint64_t *otherNops = (uint64_t *)nop8b1;
+        if (nopIdx & 1) nops[nopIdx] = *otherNops;
 #endif
     }
 
