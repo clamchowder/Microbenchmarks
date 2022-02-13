@@ -11,6 +11,7 @@ float RunOwnedTest(unsigned int processor1, unsigned int processor2, uint64_t it
 DWORD WINAPI LatencyTestThread(LPVOID param);
 DWORD WINAPI ReadLatencyTestThread(LPVOID param);
 
+LONG64* bouncyBase;
 LONG64* bouncy;
 
 typedef struct LatencyThreadData {
@@ -24,11 +25,36 @@ typedef struct LatencyThreadData {
 int main(int argc, char *argv[]) {
     SYSTEM_INFO sysInfo;
     DWORD numProcs;
-    float* latencies;
+    float** latencies;
     uint64_t iter = ITERATIONS;
+    int offsets = 1;
     float (*test)(unsigned int, unsigned int, uint64_t) = RunTest;
 
-    bouncy = (LONG64*)_aligned_malloc(sizeof(LONG64), sizeof(LONG64));
+    for (int argIdx = 1; argIdx < argc; argIdx++) {
+        if (*(argv[argIdx]) == '-') {
+            char* arg = argv[argIdx] + 1;
+            if (_strnicmp(arg, "iterations", 10) == 0) {
+                argIdx++;
+                iter = atoi(argv[argIdx]);
+                fprintf(stderr, "%lu iterations requested\n", iter);
+            }
+            else if (_strnicmp(arg, "bounce", 6) == 0) {
+                fprintf(stderr, "Bouncy\n");
+            }
+            else if (_strnicmp(arg, "owned", 5) == 0) {
+                test = RunOwnedTest;
+                fprintf(stderr, "Using separate cache lines for each thread to write to\n");
+            }
+            else if (_strnicmp(arg, "offset", 6) == 0) {
+                argIdx++;
+                offsets = atoi(argv[argIdx]);
+                fprintf(stderr, "Offsets: %d\n", offsets);
+            }
+        }
+    }
+
+    bouncyBase = (LONG64*)_aligned_malloc(64 * offsets, 4096);
+    bouncy = bouncyBase;
     if (bouncy == NULL) {
         fprintf(stderr, "Could not allocate aligned mem\n");
     }
@@ -36,47 +62,45 @@ int main(int argc, char *argv[]) {
     GetSystemInfo(&sysInfo);
     numProcs = sysInfo.dwNumberOfProcessors;
     fprintf(stderr, "Number of CPUs: %u\n", numProcs);
-    latencies = (float *)malloc(sizeof(float) * numProcs * numProcs);
+    latencies = (float **)malloc(sizeof(float*) * offsets);
     if (latencies == NULL) {
         fprintf(stderr, "couldn't allocate result array\n");
         return 0;
     }
 
-    if (argc > 1) {
-        iter = atol(argv[1]);
-        fprintf(stderr, "%lu iterations requested\n", iter);
-    }
-    else {
-        fprintf(stderr, "Usage: coherencylatency.exe [iterations] [bounce/owned]\n");
-    }
+    for (DWORD offsetIdx = 0; offsetIdx < offsets; offsetIdx++) {
+        bouncy = (LONG64*)((char*)bouncyBase + offsetIdx * 64);
+        latencies[offsetIdx] = (float*)malloc(sizeof(float) * numProcs * numProcs);
+        float* latenciesPtr = latencies[offsetIdx];
 
-    if (argc > 2) {
-        if (strncmp(argv[2], "owned", 5) == 0) {
-            test = RunOwnedTest;
-            fprintf(stderr, "Using separate cache lines for each thread to write to\n");
+        // Run all to all, skipping testing a core against itself ofc
+        // technically can skip the other way around (start j = i + 1) but meh
+        for (DWORD i = 0; i < numProcs; i++) {
+            for (DWORD j = 0; j < numProcs; j++) {
+                latenciesPtr[j + i * numProcs] = i == j ? 0 : test(i, j, iter);
+            }
         }
     }
 
-    // Run all to all, skipping testing a core against itself ofc
-    // technically can skip the other way around (start j = i + 1) but meh
-    for (DWORD i = 0; i < numProcs; i++) {
-        for (DWORD j = 0; j < numProcs; j++) {
-            latencies[j + i * numProcs] = i == j ? 0 : test(i, j, iter);
-        }
-    }
+    for (DWORD offsetIdx = 0; offsetIdx < offsets; offsetIdx++) {
+        printf("Cache line offset: %d\n", offsetIdx);
+        float* latenciesPtr = latencies[offsetIdx];
 
-    // print thing to copy to excel
-    for (DWORD i = 0; i < numProcs; i++) {
-        for (DWORD j = 0; j < numProcs; j++) {
-            if (j != 0) printf(",");
-            if (j == i) printf("x");
-            else printf("%f", latencies[j + i * numProcs]);
+        // print thing to copy to excel
+        for (DWORD i = 0; i < numProcs; i++) {
+            for (DWORD j = 0; j < numProcs; j++) {
+                if (j != 0) printf(",");
+                if (j == i) printf("x");
+                else printf("%f", latenciesPtr[j + i * numProcs]);
+            }
+            printf("\n");
         }
-        printf("\n");
+
+        free(latenciesPtr);
     }
     
     free(latencies);
-    _aligned_free(bouncy);
+    _aligned_free(bouncyBase);
     return 0;
 }
 
