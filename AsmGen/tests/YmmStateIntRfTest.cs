@@ -8,7 +8,7 @@ namespace AsmGen
         {
             this.Counts = UarchTestHelpers.GenerateCountArray(low, high, step);
             this.Prefix = "ymmstateintrf";
-            this.Description = "10:1 Integer/FP RF Test with YMM (AVX) state - x86 only";
+            this.Description = "10:1 Integer/FP RF Test with YMM (AVX) state - scalar FP with 2 128B on ARM";
             this.FunctionDefinitionParameters = "uint64_t iterations, int *arr, float *floatArr";
             this.GetFunctionCallParameters = "structIterations, A, fpArr";
             this.DivideTimeByCount = false;
@@ -89,12 +89,19 @@ namespace AsmGen
         // n/a for ARM
         public override void GenerateArmAsm(StringBuilder sb)
         {
+            string initInstrs = "  ldr q0, [x1]\n" +
+                "  ldr s1, [x1, #0x10]\n" +
+                "  ldr s2, [x1, #0x20]\n" +
+                "  ldr s3, [x1, #0x30]\n" +
+                "  ldr s4, [x1, #0x40]\n";
+            string postLoadInstr = "  add v4.4s, v4.4s, v4.4s\n  add v4.4s, v4.4s, v4.4s";
+
             string[] unrolledAdds = new string[4];
-            unrolledAdds[0] = "  add x15, x15, x11";
-            unrolledAdds[1] = "  add x14, x14, x11";
-            unrolledAdds[2] = "  add x13, x13, x11";
-            unrolledAdds[3] = "  add x12, x12, x11";
-            UarchTestHelpers.GenerateArmAsmStructureTestFuncs(sb, this.Counts, this.Prefix, unrolledAdds, unrolledAdds, true);
+            unrolledAdds[0] = "  fadd s0, s0, s0";
+            unrolledAdds[1] = "  fadd s1, s1, s1";
+            unrolledAdds[2] = "  fadd s2, s2, s2";
+            unrolledAdds[3] = "  fadd s3, s3, s3";
+            UarchTestHelpers.GenerateArmAsmStructureTestFuncs(sb, this.Counts, this.Prefix, unrolledAdds, unrolledAdds, false, initInstrs, postLoadInstrs1: postLoadInstr, postLoadInstrs2: postLoadInstr);
         }
     }
 }

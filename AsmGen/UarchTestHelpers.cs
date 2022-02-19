@@ -1228,7 +1228,7 @@ namespace AsmGen
                 sb.AppendLine("  ldr w26, [x1, w26, uxtw #2]");
                 if (dsb)
                 {
-                    sb.AppendLine("  dsb sy");
+                    //sb.AppendLine("  dsb sy");
                     sb.AppendLine("  isb sy");
                 }
                 else

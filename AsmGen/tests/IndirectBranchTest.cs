@@ -108,7 +108,7 @@ namespace AsmGen
 
                         // global history assist branches
                         // rax = index into jump table. make that correlate with global history
-                        sb.AppendLine("  mov x18, 1");
+                        /*sb.AppendLine("  mov x18, 1");
                         sb.AppendLine("  eor w12, w12, w12");
                         for (int eaxBits = 0; eaxBits < globalHistoryAssistBits; eaxBits++)
                         {
@@ -118,7 +118,7 @@ namespace AsmGen
                             sb.AppendLine("  nop");
                             sb.AppendLine($"{targetName}:");
                             sb.AppendLine("  lsl w18, w18, 1");
-                        }
+                        }*/
 
                         // branch on value of x17
                         sb.AppendLine($"  br x17");

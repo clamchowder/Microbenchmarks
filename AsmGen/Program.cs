@@ -45,7 +45,7 @@ namespace AsmGen
             tests.Add(new MixMulSchedTest(1, 48, 1));
             tests.Add(new TakenBranchBufferTest(1, 256, 1));
             tests.Add(new BranchBufferTest(1, 356, 1));
-            tests.Add(new YmmStateIntRfTest(1, 64, 1));
+            tests.Add(new YmmStateIntRfTest(1, 160, 1));
             tests.Add(new Add256RfTest(1, 256, 1));
             tests.Add(new Add256SchedTest(1, 256, 1));
             tests.Add(new Add128SchedTest(1, 256, 1));
@@ -53,11 +53,12 @@ namespace AsmGen
             tests.Add(new BtbTest(8, BtbTest.BranchType.Unconditional));
             tests.Add(new BtbTest(16, BtbTest.BranchType.Unconditional));
             tests.Add(new BtbTest(32, BtbTest.BranchType.Unconditional));
+            tests.Add(new BtbTest(64, BtbTest.BranchType.Unconditional));
             tests.Add(new MixJmpMulSchedTest(2, 128, 1));
             tests.Add(new MixMulRorSchedTest(2, 128, 1));
             tests.Add(new BranchHistoryTest());
             //tests.Add(new IndirectBranchTest());
-            tests.Add(new MxcsrTest(1, 32, 1));
+            tests.Add(new MxcsrTest(1, 128, 1));
             tests.Add(new MaskRfTest(1, 256, 1));
             tests.Add(new NotIntRfTest(1, 450, 1));
             tests.Add(new MovImmIntRfTest(1, 450, 1));

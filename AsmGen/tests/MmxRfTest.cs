@@ -8,7 +8,7 @@ namespace AsmGen
         {
             this.Counts = UarchTestHelpers.GenerateCountArray(low, high, step);
             this.Prefix = "mmxrf";
-            this.Description = "64-bit MMX RF Capacity Test. x86 only";
+            this.Description = "64-bit MMX RF Capacity Test. 1:1 mix of scalar/128 fp on ARM";
             this.FunctionDefinitionParameters = "uint64_t iterations, int *arr, int *arr2";
             this.GetFunctionCallParameters = "structIterations, A, B";
             this.DivideTimeByCount = false;
@@ -49,12 +49,18 @@ namespace AsmGen
 
         public override void GenerateArmAsm(StringBuilder sb)
         {
+            string initInstrs = "  ldr q0, [x1]\n" +
+                "  ldr s1, [x1, #0x10]\n" +
+                "  ldr s2, [x1, #0x20]\n" +
+                "  ldr s3, [x1, #0x30]\n" +
+                "  ldr s4, [x1, #0x40]\n";
+
             string[] unrolledAdds = new string[4];
-            unrolledAdds[0] = "  add v15.2s, v15.2s, v19.2s";
-            unrolledAdds[1] = "  add v16.2s, v16.2s, v19.2s";
-            unrolledAdds[2] = "  add v17.2s, v17.2s, v19.2s";
-            unrolledAdds[3] = "  add v18.2s, v18.2s, v19.2s";
-            UarchTestHelpers.GenerateArmAsmStructureTestFuncs(sb, this.Counts, this.Prefix, unrolledAdds, unrolledAdds);
+            unrolledAdds[0] = "  fadd v0.4s, v0.4s, v0.4s";
+            unrolledAdds[1] = "  fadd s1, s1, s1";
+            unrolledAdds[2] = "  fadd v2.4s, v2.4s, v2.4s";
+            unrolledAdds[3] = "  fadd s3, s3, s3";
+            UarchTestHelpers.GenerateArmAsmStructureTestFuncs(sb, this.Counts, this.Prefix, unrolledAdds, unrolledAdds, false, initInstrs);
         }
     }
 }

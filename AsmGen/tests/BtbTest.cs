@@ -36,7 +36,7 @@ namespace AsmGen
         /// <param name="conditional">If true, use conditional branches (still always taken)</param>
         public BtbTest(int spacing, BranchType branchType, bool varyspacing = false)
         {
-            this.Counts = new int[] { 1, 2, 4, 8, 16, 32, 64, 128, 256, 512, 1024, 1536, 2048,
+            this.Counts = new int[] { 1, 2, 4, 8, 16, 32, 64, 128, 256, 512, 500, 768, 1024, 1536, 2048,
                 3072, 4096, 4608, 5120, 6144, 7168, 8192, 10240, 16384, 32768 };
             this.Prefix = "btb" + spacing + (varyspacing ? "v" : "") + branchType;
             this.Description = $"Branch Target Buffer, " + branchType + $" branch every {spacing} bytes " + (varyspacing ? " (varied spacing)" : "");
@@ -169,22 +169,9 @@ namespace AsmGen
         {
             // things are 4 bytes on aarch64
             string paddingAlign = "";
-            if (spacing == 8)
+            for (int i = 1;i < spacing / 4; i++)
             {
-                paddingAlign = "  nop";
-            }
-            else if (spacing == 16)
-            {
-                paddingAlign = "  nop\n  nop\n  nop";
-            }
-            else if (spacing == 32)
-            {
-                paddingAlign = "  nop\n  nop\n  nop\n  nop\n  nop\n  nop\n  nop";
-            }
-            else if (spacing != 4)
-            {
-                Console.WriteLine($"Unsupported padding value {spacing}");
-                throw new NotImplementedException("Unsupported padding value");
+                paddingAlign += "  nop\n";
             }
 
             for (int i = 0; i < Counts.Length; i++)
