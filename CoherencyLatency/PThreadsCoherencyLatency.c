@@ -1,6 +1,7 @@
 #define _GNU_SOURCE
 
 #include <stdio.h>
+#include <string.h>
 #include <stdlib.h>
 #include <stdint.h>
 #include <sys/sysinfo.h>
@@ -25,38 +26,76 @@ typedef struct LatencyThreadData {
 
 void *LatencyTestThread(void *param);
 float RunTest(unsigned int processor1, unsigned int processor2, uint64_t iter); 
-uint64_t bouncy;
+uint64_t *bouncy;
+uint64_t *bouncyBase;
 
 int main(int argc, char *argv[]) {
-    float *latencies;
-    int numProcs;
+    float **latencies;
+    int numProcs, offsets = 1;
     uint64_t iter = ITERATIONS;
 
     numProcs = get_nprocs();
     fprintf(stderr, "Number of CPUs: %u\n", numProcs);
-    latencies = (float *)malloc(sizeof(float) * numProcs * numProcs);
+
+    if (0 != posix_memalign((void **)(&bouncyBase), 4096, 4096)) {
+        fprintf(stderr, "Could not allocate aligned mem\n");
+        return 0;
+    }
     
-    if (argc > 1) {
-        iter = atol(argv[1]);
-        fprintf(stderr, "%lu iterations requested\n", iter);
-    }
-
-    for (int i = 0;i < numProcs; i++) {
-        for (int j = 0;j < numProcs; j++) {
-            latencies[j + i * numProcs] = i == j ? 0 : RunTest(i, j, iter);
+    for (int argIdx = 1; argIdx < argc; argIdx++) {
+        if (*(argv[argIdx]) == '-') {
+            char* arg = argv[argIdx] + 1;
+            if (strncmp(arg, "iterations", 10) == 0) {
+                argIdx++;
+                iter = atoi(argv[argIdx]);
+                fprintf(stderr, "%lu iterations requested\n", iter);
+            }
+            else if (strncmp(arg, "bounce", 6) == 0) {
+                fprintf(stderr, "Bouncy\n");
+            }
+            else if (strncmp(arg, "offset", 6) == 0) {
+                argIdx++;
+                offsets = atoi(argv[argIdx]);
+                fprintf(stderr, "Offsets: %d\n", offsets);
+            }
         }
-    }
+    } 
 
-    for (int i = 0;i < numProcs; i++) {
-        for (int j = 0;j < numProcs; j++) { 
-            if (j != 0) printf(",");
-            if (j == i) printf("x");
-            // to maintain consistency, divide by 2 (see justification in windows version)
-            else printf("%f", latencies[j + i * numProcs] / 2);
+    latencies = (float **)malloc(sizeof(float *) * offsets);
+    memset(latencies, 0, sizeof(float) * offsets); 
+
+    for (int offsetIdx = 0; offsetIdx < offsets; offsetIdx++) {
+        latencies[offsetIdx] = (float *)malloc(sizeof(float) * numProcs * numProcs);
+        float *latenciesPtr = latencies[offsetIdx];
+        bouncy = (uint64_t *)((char *)bouncyBase + offsetIdx * 64);
+
+        for (int i = 0;i < numProcs; i++) {
+            for (int j = 0;j < numProcs; j++) {
+                latenciesPtr[j + i * numProcs] = i == j ? 0 : RunTest(i, j, iter);
+            }
         }
-        printf("\n");
+
+        free(latenciesPtr);
     }
 
+      for (int offsetIdx = 0; offsetIdx < offsets; offsetIdx++) {
+        float *latenciesPtr = latencies[offsetIdx];
+        printf("Cache line offset: %d\n", offsetIdx);
+        for (int i = 0;i < numProcs; i++) {
+            for (int j = 0;j < numProcs; j++) { 
+                if (j != 0) printf(",");
+                if (j == i) printf("x");
+                // to maintain consistency, divide by 2 (see justification in windows version)
+                else printf("%f", latenciesPtr[j + i * numProcs] / 2);
+            }
+            printf("\n");
+        }
+        
+        free(latenciesPtr);
+    }
+
+    free(latencies);
+    free(bouncyBase);
     return 0;
 }
 
@@ -95,14 +134,14 @@ float RunTest(unsigned int processor1, unsigned int processor2, uint64_t iter) {
   LatencyData lat1, lat2;
   float latency;
 
-  bouncy = 0;
+  *bouncy = 0;
   lat1.iterations = iter;
   lat1.start = 1;
-  lat1.target = &bouncy;
+  lat1.target = bouncy;
   lat1.processorIndex = processor1;
   lat2.iterations = iter;
   lat2.start = 2;
-  lat2.target = &bouncy;
+  lat2.target = bouncy;
   lat2.processorIndex = processor2;
   latency = TimeThreads(processor1, processor2, iter, &lat1, &lat2, LatencyTestThread);
   fprintf(stderr, "%d to %d: %f ns\n", processor1, processor2, latency);
