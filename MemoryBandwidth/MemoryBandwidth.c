@@ -58,7 +58,6 @@ extern float asm_copy(float *arr, uint64_t arr_length, uint64_t iterations, uint
 extern float asm_cflip(float *arr, uint64_t arr_length, uint64_t iterations, uint64_t start) __attribute__((ms_abi));
 extern float asm_add(float *arr, uint64_t arr_length, uint64_t iterations, uint64_t start) __attribute__((ms_abi));
 
-
 #ifdef __aarch64__
 extern void flush_icache(void *arr, uint64_t length);
 #endif
@@ -75,7 +74,8 @@ int main(int argc, char *argv[]) {
     int shared = 1;
     int sleepTime = 0;
     int methodSet = 0, testInstructionBandwidth = 0, nopBytes = 8, branchInterval = 0, testBankConflict = 0;
-    int singleSize = 0;
+    int singleSize = 0, autothreads = 0;
+    int testSizeCount = sizeof(default_test_sizes) / sizeof(int);
     
 #ifdef __x86_64
     int sseSupported = 0, avxSupported = 0, avx512Supported = 0;
@@ -103,7 +103,7 @@ int main(int argc, char *argv[]) {
                 fprintf(stderr, "Using %d threads\n", threads);
             } else if (strncmp(arg, "shared", 6) == 0) {
                 shared = 1;
-                fprintf(stderr, "Using sleep array\n");
+                fprintf(stderr, "Using shared array\n");
             } else if (strncmp(arg, "sleep", 5) == 0) {
                 argIdx++;
                 sleepTime = atoi(argv[argIdx]); 
@@ -119,11 +119,15 @@ int main(int argc, char *argv[]) {
                 argIdx++;
 		        singleSize = atoi(argv[argIdx]);
                 fprintf(stderr, "Testing %d KB\n", singleSize);
-            } else if (strncmp(arg, "data", 4) == 0)
-            {
+            } else if (strncmp(arg, "data", 4) == 0) {
                 argIdx++;
                 gbToTransfer = atoi(argv[argIdx]);
                 fprintf(stderr, "Base GB to transfer: %lu\n", gbToTransfer);
+            }
+            else if (strncmp(arg, "autothreads", 11) == 0) {
+                argIdx++;
+                autothreads = atoi(argv[argIdx]);
+                fprintf(stderr, "Testing bw scaling up to %d threads\n", autothreads);
             }
             else if (strncmp(arg, "method", 6) == 0) {
                 methodSet = 1;
@@ -168,11 +172,11 @@ int main(int argc, char *argv[]) {
                 
                 else if (strncmp(argv[argIdx], "instr8", 6) == 0) {
                     testInstructionBandwidth = 1; 
-		    nopBytes = 8;
+                    nopBytes = 8;
                     fprintf(stderr, "Testing instruction fetch bandwidth with 8 byte instructions. Threads/shared/private args will be ignored\n");
                 } else if (strncmp(argv[argIdx], "instr4", 6) == 0) {
                     testInstructionBandwidth = 1; 
-		    nopBytes = 4;
+                    nopBytes = 4;
                     fprintf(stderr, "Testing instruction fetch bandwidth with 4 byte instructions. Threads/shared/private args will be ignored\n");
                 } 
                 #ifdef __x86_64
@@ -221,32 +225,68 @@ int main(int argc, char *argv[]) {
 
     if (testInstructionBandwidth) {
         if (singleSize == 0) {
-            for (int i = 0; i < sizeof(default_test_sizes) / sizeof(int); i++)
+            for (int i = 0; i < testSizeCount; i++)
             {
                 printf("%d,%f\n", default_test_sizes[i], MeasureInstructionBw(default_test_sizes[i], GetIterationCount(default_test_sizes[i], threads), nopBytes, branchInterval));
                 if (sleepTime > 0) sleep(sleepTime);
             } 
-	}
-	else 
-	{
-	    printf("%d,%f\n", singleSize, MeasureInstructionBw(singleSize, GetIterationCount(singleSize, threads), nopBytes, branchInterval));
-	}
+        }
+        else 
+        {
+            printf("%d,%f\n", singleSize, MeasureInstructionBw(singleSize, GetIterationCount(singleSize, threads), nopBytes, branchInterval));
+        }
     } else if (testBankConflict) {
-       TestBankConflicts(); 
-    } else {
+        TestBankConflicts(); 
+    } else if (autothreads > 0) {
+        float *threadResults = (float *)malloc(sizeof(float) * autothreads * testSizeCount);
+        printf("Auto threads mode, up to %d threads\n", autothreads);
+        for (int threadIdx = 1; threadIdx <= autothreads; threadIdx++) {
+            if (singleSize != 0) {
+                threadResults[threadIdx - 1] = MeasureBw(singleSize, GetIterationCount(singleSize, threadIdx), threadIdx, shared);
+                fprintf(stderr, "%d threads: %f GB/s\n", threadIdx, threadResults[threadIdx - 1]);
+            } else {
+                for (int i = 0; i < testSizeCount; i++) {
+                    int currentTestSize = default_test_sizes[i];
+                    //fprintf(stderr, "Testing size %d\n", currentTestSize);
+                    threadResults[(threadIdx - 1) * testSizeCount + i] = MeasureBw(currentTestSize, GetIterationCount(currentTestSize, threadIdx), threadIdx, shared);
+                    fprintf(stderr, "%d threads, %d KB total: %f GB/s\n", threadIdx, currentTestSize, threadResults[(threadIdx - 1) * testSizeCount + i]);
+                }
+            }
+        }
+
+        if (singleSize != 0) {
+            printf("Threads, BW (GB/s)\n");
+            for (int i = 0;i < autothreads; i++) {
+                printf("%d,%f\n", i + 1, threadResults[i]);
+            }
+        } else {
+            printf("Test size down, threads across, value = GB/s\n");
+            for (int sizeIdx = 0; sizeIdx < testSizeCount; sizeIdx++) {
+                printf("%d", default_test_sizes[sizeIdx]);
+                for (int threadIdx = 1; threadIdx <= autothreads; threadIdx++) {
+                    printf(",%f", threadResults[(threadIdx - 1) * testSizeCount + sizeIdx]);
+                }
+
+                printf("\n");
+            }
+        }
+
+        free(threadResults);
+    }
+    else {
         printf("Using %d threads\n", threads);
-	if (singleSize == 0) 
-	{
-      for (int i = 0; i < sizeof(default_test_sizes) / sizeof(int); i++)
-      {
-          printf("%d,%f\n", default_test_sizes[i], MeasureBw(default_test_sizes[i], GetIterationCount(default_test_sizes[i], threads), threads, shared));
-          if (sleepTime > 0) sleep(sleepTime);
-      }
-	}
-	else
-	{
-	    printf("%d,%f\n", singleSize, MeasureBw(singleSize, GetIterationCount(singleSize, threads), threads, shared));
-	}
+        if (singleSize == 0) 
+        {
+            for (int i = 0; i < testSizeCount; i++)
+            {
+                printf("%d,%f\n", default_test_sizes[i], MeasureBw(default_test_sizes[i], GetIterationCount(default_test_sizes[i], threads), threads, shared));
+                if (sleepTime > 0) sleep(sleepTime);
+            }
+        }
+        else
+        {
+            printf("%d,%f\n", singleSize, MeasureBw(singleSize, GetIterationCount(singleSize, threads), threads, shared));
+        }
     }
 
     return 0;
