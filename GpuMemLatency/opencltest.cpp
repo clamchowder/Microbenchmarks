@@ -17,7 +17,7 @@ const uint64_t default_bw_test_sizes[] = {
     4096, 8192, 12288, 16384, 20480, 24576, 28672, 32768, 40960, 49152, 57344, 65536, 81920, 98304, 114688, 131072,
         196608, 262144, 393216, 458752, 524288, 786432, 1048576, 1572864, 2097152, 3145728, 4194304, 6291456, 8388608, 12582912, 16777216,
         25165824, 33554432, 41943040, 50331648, 58720256, 67108864, 100663296, 134217728, 201326592, 268435456, 402653184, 536870912, 805306368,
-        1073741824, 1610612736, 2147483648, 3221225472, 4294967296
+        1073741824, 1610579968, 2147483648, 3221225472, 4294967296
 };
 
 cl_device_id selected_device_id;
@@ -52,7 +52,7 @@ uint32_t scale_bw_iterations(uint32_t base_iterations, uint32_t size_kb);
 cl_ulong get_max_buffer_size();
 cl_ulong get_max_constant_buffer_size();
 
-enum TestType { GlobalMemLatency, ConstantMemLatency, GlobalAtomicLatency, LocalAtomicLatency, GlobalMemBandwidth };
+enum TestType { GlobalMemLatency, ConstantMemLatency, GlobalAtomicLatency, LocalAtomicLatency, GlobalMemBandwidth, MemBandwidthWorkgroupScaling };
 
 
 int main(int argc, char* argv[]) {
@@ -136,6 +136,12 @@ int main(int argc, char* argv[]) {
                     if (!thread_count_set) thread_count = 131072;
                     if (!local_size_set) local_size = 256;
                     if (!chase_iterations_set) chase_iterations = 500000;
+                }
+                else if (_strnicmp(argv[argIdx], "scaling", 7) == 0)
+                {
+                    testType = MemBandwidthWorkgroupScaling;
+                    fprintf(stderr, "Testing BW scaling with workgroups\n");
+                    if (!chase_iterations_set) chase_iterations = 20000000;
                 }
                 else {
                     fprintf(stderr, "I'm so confused. Unknown test type %s\n", argv[argIdx]);
@@ -257,7 +263,7 @@ int main(int argc, char* argv[]) {
         fprintf(stderr, "Using %u threads, %u local size, %u base iterations\n", thread_count, local_size, chase_iterations / 1000);
         printf("\nMemory bandwidth (up to %lld K):\n", max_global_test_size / 1024);
 
-        for (int size_idx = 0; size_idx < sizeof(default_bw_test_sizes) / sizeof(int); size_idx++) {
+        for (int size_idx = 0; size_idx < sizeof(default_bw_test_sizes) / sizeof(unsigned long long); size_idx++) {
             uint64_t testSizeKb = default_bw_test_sizes[size_idx] / 1024;
             if ((max_global_test_size / 1024) < testSizeKb) {
                 printf("%llu K would exceed device's max buffer size of %llu K, stopping here.\n", testSizeKb, max_global_test_size / 1024);
@@ -278,6 +284,64 @@ int main(int argc, char* argv[]) {
                 break;
             }
         }
+    }
+    else if (testType == MemBandwidthWorkgroupScaling)
+    {
+        cl_uint cuCount;
+        size_t cuCountLen = sizeof(cl_uint);
+        uint32_t testSizeCount = sizeof(default_bw_test_sizes) / sizeof(unsigned long long);
+        if (CL_SUCCESS != clGetDeviceInfo(selected_device_id, CL_DEVICE_MAX_COMPUTE_UNITS, cuCountLen, &cuCount, &cuCountLen))
+        {
+            fprintf(stderr, "Could not get number of compute units\n");
+            return 0;
+        }
+
+        fprintf(stderr, "Device has %u compute units\n", cuCount);
+        
+        float* scalingResults = (float*)malloc(sizeof(float) * cuCount * testSizeCount);
+        for (uint32_t workgroupCount = 1; workgroupCount <= cuCount; workgroupCount++)
+        {
+            for (int size_idx = 0; size_idx < testSizeCount; size_idx++)
+            {
+                uint64_t testSizeKb = default_bw_test_sizes[size_idx] / 1024;
+                fprintf(stderr, "Testing size %llu KB, %u workgroups\n", testSizeKb, workgroupCount);
+                if ((max_global_test_size / 1024) < testSizeKb) {
+                    printf("%llu K would exceed device's max buffer size of %llu K\n", testSizeKb, max_global_test_size / 1024);
+                    scalingResults[(workgroupCount - 1) * testSizeCount + size_idx] = 0;
+                    continue;
+                }
+
+                result = bw_test(context,
+                    command_queue,
+                    bw_kernel, 256 * testSizeKb,
+                    local_size * workgroupCount,
+                    local_size,
+                    skip,
+                    scale_bw_iterations(chase_iterations, testSizeKb));
+
+                scalingResults[(workgroupCount - 1) * testSizeCount + size_idx] = result;
+                fprintf(stderr, "%u workgroups, %llu KB = %f GB/s\n", workgroupCount, testSizeKb, result);
+            }
+        }
+
+        for (uint32_t workgroupCount = 1; workgroupCount <= cuCount; workgroupCount++)
+        {
+            printf(",%u", workgroupCount);
+        }
+        printf("\n");
+
+        for (int size_idx = 0; size_idx < testSizeCount; size_idx++)
+        {
+            printf("%llu", default_bw_test_sizes[size_idx] / 1024);
+            for (uint32_t workgroupCount = 1; workgroupCount <= cuCount; workgroupCount++)
+            {
+                printf(",%f", scalingResults[(workgroupCount - 1) * testSizeCount + size_idx]);
+            }
+
+            printf("\n");
+        }
+
+        free(scalingResults);
     }
 
     printf("If you didn't run this through cmd, now you can copy the results. And press ctrl+c to close");
@@ -437,6 +501,11 @@ float bw_test(cl_context context,
 
     float* A = (float*)malloc(sizeof(float) * list_size);
     float* result = (float*)malloc(sizeof(float) * thread_count);
+
+    if (!A || !result)
+    {
+        fprintf(stderr, "Failed to allocate memory for test size %llu KB\n", list_size);
+    }
 
     // assume that cl_uint size is 4 bytes, same as float size
     cl_uint* start_offsets = (cl_uint*)malloc(sizeof(cl_uint) * thread_count);
