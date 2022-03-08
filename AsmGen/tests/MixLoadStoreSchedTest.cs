@@ -52,16 +52,16 @@ namespace AsmGen
             // todo
             string[] dependentLoads = new string[4];
             dependentLoads[0] = "  ldr w15, [x2, w25, uxtw #2]";
-            dependentLoads[1] = "  ldr w14, [x2, w25, uxtw #2]";
+            dependentLoads[1] = "  str w14, [x2, w25, uxtw #2]";
             dependentLoads[2] = "  ldr w13, [x2, w25, uxtw #2]";
-            dependentLoads[3] = "  ldr w12, [x2, w25, uxtw #2]";
+            dependentLoads[3] = "  str w12, [x2, w25, uxtw #2]";
 
             string[] dependentLoads1 = new string[4];
             dependentLoads1[0] = "  ldr w15, [x2, w26, uxtw #2]";
-            dependentLoads1[1] = "  ldr w14, [x2, w26, uxtw #2]";
+            dependentLoads1[1] = "  str w14, [x2, w26, uxtw #2]";
             dependentLoads1[2] = "  ldr w13, [x2, w26, uxtw #2]";
-            dependentLoads1[3] = "  ldr w12, [x2, w26, uxtw #2]";
-            UarchTestHelpers.GenerateArmAsmStructureTestFuncs(sb, this.Counts, this.Prefix, dependentLoads, dependentLoads1, false);
+            dependentLoads1[3] = "  str w12, [x2, w26, uxtw #2]";
+            UarchTestHelpers.GenerateArmAsmDivStructureTestFuncs(sb, this.Counts, this.Prefix, dependentLoads, dependentLoads1, false);
         }
     }
 }
