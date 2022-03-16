@@ -7,6 +7,7 @@
 #include <stdint.h>
 #include <stdlib.h>
 #include <string.h>
+#include <cpuid.h>
 
 // make mingw happy for cross compiling
 #ifdef __MINGW32__
@@ -28,34 +29,46 @@ extern uint64_t addmultest(uint64_t iterations) __attribute((sysv_abi));
 extern uint64_t jmpmultest(uint64_t iterations) __attribute((sysv_abi)); 
 extern uint64_t jmptest(uint64_t iterations) __attribute((sysv_abi)); 
 extern uint64_t ntjmptest(uint64_t iterations) __attribute((sysv_abi)); 
-extern uint64_t add256int(uint64_t iterations) __attribute((sysv_abi)); 
 extern uint64_t mixadd256int(uint64_t iterations) __attribute((sysv_abi)); 
 extern uint64_t mixadd256int11(uint64_t iterations) __attribute((sysv_abi)); 
 extern uint64_t mixadd256fpint(uint64_t iterations) __attribute((sysv_abi)); 
 extern uint64_t mix256fp(uint64_t iterations) __attribute((sysv_abi)); 
 extern uint64_t mix256fp11(uint64_t iterations) __attribute((sysv_abi)); 
+extern uint64_t latadd512int(uint64_t iterations) __attribute((sysv_abi)); 
 extern uint64_t latadd256int(uint64_t iterations) __attribute((sysv_abi)); 
 extern uint64_t latadd128int(uint64_t iterations) __attribute((sysv_abi)); 
 extern uint64_t latadd256fp(uint64_t iterations) __attribute((sysv_abi)); 
 extern uint64_t latmul128int(uint64_t iterations) __attribute((sysv_abi)); 
 extern uint64_t latmul256int(uint64_t iterations) __attribute((sysv_abi)); 
+extern uint64_t latmul512int(uint64_t iterations) __attribute((sysv_abi)); 
+extern uint64_t latmulq512int(uint64_t iterations) __attribute((sysv_abi)); 
+extern uint64_t latmuldq512int(uint64_t iterations) __attribute((sysv_abi)); 
 extern uint64_t latmul256fp(uint64_t iterations) __attribute((sysv_abi)); 
 extern uint64_t latadd128fp(uint64_t iterations) __attribute((sysv_abi)); 
 extern uint64_t latmul128fp(uint64_t iterations) __attribute((sysv_abi)); 
+extern uint64_t latfma512(uint64_t iterations) __attribute((sysv_abi));
 extern uint64_t latfma256(uint64_t iterations) __attribute((sysv_abi));
 extern uint64_t latfma128(uint64_t iterations) __attribute((sysv_abi));
 extern uint64_t add128int(uint64_t iterations) __attribute((sysv_abi));
+extern uint64_t add256int(uint64_t iterations) __attribute((sysv_abi)); 
+extern uint64_t add512int(uint64_t iterations) __attribute((sysv_abi));
+extern uint64_t mul512int(uint64_t iterations) __attribute((sysv_abi));
+extern uint64_t muldq512int(uint64_t iterations) __attribute((sysv_abi));
 extern uint64_t mul128int(uint64_t iterations) __attribute((sysv_abi));
 extern uint64_t add128fp(uint64_t iterations) __attribute((sysv_abi));
 extern uint64_t mul128fp(uint64_t iterations) __attribute((sysv_abi));
+extern uint64_t fma512(uint64_t iterations) __attribute((sysv_abi));
 extern uint64_t fma256(uint64_t iterations) __attribute((sysv_abi));
 extern uint64_t fma128(uint64_t iterations) __attribute((sysv_abi));
 extern uint64_t mixfmafadd256(uint64_t iterations) __attribute((sysv_abi));
 extern uint64_t mixfmaadd256(uint64_t iterations) __attribute((sysv_abi));
+extern uint64_t mixfmaadd512(uint64_t iterations) __attribute((sysv_abi));
+extern uint64_t mixfma512add256(uint64_t iterations) __attribute((sysv_abi));
 extern uint64_t mixfmaand256(uint64_t iterations) __attribute((sysv_abi));
 extern uint64_t mixfmaandmem256(uint64_t iterations, float *arr) __attribute((sysv_abi));
 extern uint64_t mixfmaaddmem256(uint64_t iterations, float *arr) __attribute((sysv_abi));
 extern uint64_t nemesfpumix21(uint64_t iterations) __attribute((sysv_abi));
+extern uint64_t nemesfpu512mix21(uint64_t iterations) __attribute((sysv_abi));
 extern uint64_t mul256fp(uint64_t iterations) __attribute((sysv_abi));
 extern uint64_t add256fp(uint64_t iterations) __attribute((sysv_abi));
 extern uint64_t latmul64(uint64_t iterations) __attribute((sysv_abi));
@@ -65,8 +78,10 @@ extern uint64_t mul64(uint64_t iterations) __attribute((sysv_abi));
 extern uint64_t load128(uint64_t iterations, int *arr) __attribute((sysv_abi));
 extern uint64_t spacedload128(uint64_t iterations, int *arr) __attribute((sysv_abi));
 extern uint64_t load256(uint64_t iterations, float *arr) __attribute((sysv_abi));
+extern uint64_t load512(uint64_t iterations, float *arr) __attribute((sysv_abi));
 extern uint64_t store128(uint64_t iterations, int *arr, int *sink) __attribute((sysv_abi));
 extern uint64_t store256(uint64_t iterations, float *arr, float *sink) __attribute((sysv_abi));
+extern uint64_t store512(uint64_t iterations, float *arr, float *sink) __attribute((sysv_abi));
 extern uint64_t mixaddmul128int(uint64_t iterations) __attribute((sysv_abi));
 extern uint64_t mixmul16mul64(uint64_t iterations) __attribute((sysv_abi)); 
 extern uint64_t mixmul16mul64_21(uint64_t iterations) __attribute((sysv_abi)); 
@@ -81,6 +96,9 @@ extern uint64_t depinctest(uint64_t iterations) __attribute((sysv_abi));
 extern uint64_t depdectest(uint64_t iterations) __attribute((sysv_abi));
 extern uint64_t depaddimmtest(uint64_t iterations) __attribute((sysv_abi));
 extern uint64_t spacedstorescalar(uint64_t iterations, int *arr) __attribute((sysv_abi));
+extern uint64_t aesenc128(uint64_t iterations) __attribute((sysv_abi));
+extern uint64_t aesdec128(uint64_t iterations) __attribute((sysv_abi));
+extern uint64_t aesencadd128(uint64_t iterations) __attribute((sysv_abi));
 
 float fpTestArr[8] __attribute__ ((aligned (64))) = { 0.2, 1.5, 2.7, 3.14, 5.16, 6.3, 7.7, 9.45 };
 float fpSinkArr[8] __attribute__ ((aligned (64))) = { 2.1, 3.2, 4.3, 5.4, 6.2, 7.8, 8.3, 9.4 };
@@ -91,8 +109,10 @@ uint64_t load128wrapper(uint64_t iterations) __attribute((sysv_abi));
 uint64_t spacedload128wrapper(uint64_t iterations) __attribute((sysv_abi));
 uint64_t spacedstorescalarwrapper(uint64_t iterations) __attribute((sysv_abi));
 uint64_t load256wrapper(uint64_t iterations) __attribute((sysv_abi));
+uint64_t load512wrapper(uint64_t iterations) __attribute((sysv_abi));
 uint64_t store128wrapper(uint64_t iterations) __attribute((sysv_abi));
 uint64_t store256wrapper(uint64_t iterations) __attribute((sysv_abi));
+uint64_t store512wrapper(uint64_t iterations) __attribute((sysv_abi));
 uint64_t mixfmaandmem256wrapper(uint64_t iterations)  __attribute((sysv_abi));
 uint64_t mixfmaaddmem256wrapper(uint64_t iterations)  __attribute((sysv_abi));
 
@@ -106,7 +126,7 @@ int main(int argc, char *argv[]) {
   uint64_t time_diff_ms;
   float latency, opsPerNs, clockSpeedGhz;
   uint64_t intTestArrLength = 1024;
-  int avxSupported = 0, avx2Supported = 0, bmi2Supported = 0;
+  int avxSupported = 0, avx2Supported = 0, bmi2Supported = 0, avx512Supported = 0;
 
   intTestArr = aligned_alloc(64, sizeof(int) * intTestArrLength);
   for (uint64_t i = 0; i < intTestArrLength; i++) {
@@ -133,6 +153,12 @@ int main(int argc, char *argv[]) {
     bmi2Supported = 1;
   }
 
+  uint32_t cpuidEax, cpuidEbx, cpuidEcx, cpuidEdx;
+  __cpuid_count(7, 0, cpuidEax, cpuidEbx, cpuidEcx, cpuidEdx);
+  if (cpuidEbx & (1UL << 16)) { 
+      fprintf(stderr, "AVX512 supported\n");
+      avx512Supported = 1;
+  }  
   
   if (argc == 1) {
     // figure out clock speed
@@ -146,6 +172,47 @@ int main(int argc, char *argv[]) {
   } else clockSpeedGhz = 1.0f;
   
   printf("Estimated clock speed: %.2f GHz\n", clockSpeedGhz);
+
+  // avx-512 testing
+  if (avx512Supported) {
+    if (argc == 1 || argc > 1 && strncmp(argv[1], "fma512", 6) == 0) 
+      printf("512-bit FMA per clk: %.2f\n", measureFunction(iterations, clockSpeedGhz, fma512)); 
+    if (argc == 1 || argc > 1 && strncmp(argv[1], "latfma512", 9) == 0)
+      printf("512-bit FMA latency: %.2f clocks\n", 1 / measureFunction(iterations, clockSpeedGhz, latfma512)); 
+    if (argc == 1 || argc > 1 && strncmp(argv[1], "nemesfpumix21", 13) == 0)
+      printf("1:2 512b FMA:FADD per clk (nemes): %.2f\n", measureFunction(iterations * 22, clockSpeedGhz, nemesfpu512mix21));
+    if (argc == 1 || argc > 1 && strncmp(argv[1], "add512int", 9) == 0)
+      printf("512-bit int add per clk: %.2f\n", measureFunction(iterations, clockSpeedGhz, add512int)); 
+    if (argc == 1 || argc > 1 && strncmp(argv[1], "latadd512int", 12) == 0)
+      printf("512-bit int add latency: %.2f clocks\n", 1 / measureFunction(iterationsHigh, clockSpeedGhz, latadd256int));
+    if (argc == 1 || argc > 1 && strncmp(argv[1], "mul512int", 9) == 0)
+      printf("512-bit 32-bit int mul per clk: %.2f\n", measureFunction(iterations, clockSpeedGhz, mul512int));  
+    if (argc == 1 || argc > 1 && strncmp(argv[1], "muldq512int", 9) == 0)
+      printf("512-bit 32->64-bit int mul per clk: %.2f\n", measureFunction(iterations, clockSpeedGhz, muldq512int));   
+    if (argc == 1 || argc > 1 && strncmp(argv[1], "latmulq512int", 13) == 0)
+      printf("512-bit 64-bit int mul latency: %.2f clocks\n", 1 / measureFunction(iterationsHigh, clockSpeedGhz, latmulq512int));
+    if (argc == 1 || argc > 1 && strncmp(argv[1], "latmul512int", 12) == 0)
+      printf("512-bit 32-bit int mul latency: %.2f clocks\n", 1 / measureFunction(iterationsHigh, clockSpeedGhz, latmul512int));
+    if (argc == 1 || argc > 1 && strncmp(argv[1], "latmuldq512int", 13) == 0)
+      printf("512-bit 32->64-bit int mul latency: %.2f clocks\n", 1 / measureFunction(iterationsHigh, clockSpeedGhz, latmuldq512int)); 
+    if (argc == 1 || argc > 1 && strncmp(argv[1], "mixfmaadd512", 11) == 0)
+      printf("1:2 512b PADDQ:FMA per clk: %.2f\n", measureFunction(iterations * 22, clockSpeedGhz, mixfmaadd512)); 
+    if (argc == 1 || argc > 1 && strncmp(argv[1], "mixfma512add256", 11) == 0)
+      printf("1:2 256b PADDQ : 512b FMA per clk: %.2f\n", measureFunction(iterations * 22, clockSpeedGhz, mixfma512add256)); 
+
+
+    if (argc == 1 || argc > 1 && strncmp(argv[1], "load512", 7) == 0)
+      printf("512-bit loads per clk: %.2f\n", measureFunction(iterations, clockSpeedGhz, load512wrapper)); 
+    if (argc == 1 || argc > 1 && strncmp(argv[1], "store512", 7) == 0) 
+      printf("512-bit stores per clk: %.2f\n", measureFunction(iterations, clockSpeedGhz, store512wrapper)); 
+
+    if (argc == 1 || argc > 1 && strncmp(argv[1], "aesenc128", 9) == 0)
+      printf("aesenc per clk: %.2f\n", measureFunction(iterations, clockSpeedGhz, aesenc128));   
+    if (argc == 1 || argc > 1 && strncmp(argv[1], "aesdec128", 9) == 0)
+      printf("aesdec per clk: %.2f\n", measureFunction(iterations, clockSpeedGhz, aesdec128));   
+    if (argc == 1 || argc > 1 && strncmp(argv[1], "aesencadd128", 12) == 0)
+      printf("1:1 aesenc+paddd per clk: %.2f\n", measureFunction(iterations, clockSpeedGhz, aesencadd128));   
+  }
 
   // throughput
   if (argc == 1 || argc > 1 && strncmp(argv[1], "1bnop", 5) == 0) 
@@ -253,13 +320,13 @@ int main(int argc, char *argv[]) {
   if (avx2Supported && (argc == 1 || argc > 1 && strncmp(argv[1], "mixfmafadd256", 12) == 0))
     printf("1:2 256b FMA:FADD per clk: %.2f\n", measureFunction(iterations * 22, clockSpeedGhz, mixfmafadd256));
   if (avx2Supported && (argc == 1 || argc > 1 && strncmp(argv[1], "mixfmaadd256", 11) == 0))
-    printf("1:2 256b FMA:PADDQ per clk: %.2f\n", measureFunction(iterations * 22, clockSpeedGhz, mixfmaadd256));
+    printf("2:1 256b FMA:PADDQ per clk: %.2f\n", measureFunction(iterations * 22, clockSpeedGhz, mixfmaadd256));
   if (avx2Supported && (argc == 1 || argc > 1 && strncmp(argv[1], "mixfmaandmem256", 14) == 0))
-    printf("1:2 256b FMA:PADDQ load-op per clk: %.2f\n", measureFunction(iterations * 22, clockSpeedGhz, mixfmaaddmem256wrapper));
+    printf("2:1 256b FMA:PADDQ load-op per clk: %.2f\n", measureFunction(iterations * 22, clockSpeedGhz, mixfmaaddmem256wrapper));
   if (avx2Supported && (argc == 1 || argc > 1 && strncmp(argv[1], "mixfmaand256", 11) == 0))
-    printf("1:2 256b FMA:PAND per clk: %.2f\n", measureFunction(iterations * 22, clockSpeedGhz, mixfmaand256));
+    printf("2:1 256b FMA:PAND per clk: %.2f\n", measureFunction(iterations * 22, clockSpeedGhz, mixfmaand256));
   if (avx2Supported && (argc == 1 || argc > 1 && strncmp(argv[1], "mixfmaandmem256", 14) == 0))
-    printf("1:2 256b FMA:PAND load-op per clk: %.2f\n", measureFunction(iterations * 22, clockSpeedGhz, mixfmaandmem256wrapper));
+    printf("2:1 256b FMA:PAND load-op per clk: %.2f\n", measureFunction(iterations * 22, clockSpeedGhz, mixfmaandmem256wrapper));
   if (avx2Supported && (argc == 1 || argc > 1 && strncmp(argv[1], "nemesfpumix21", 13) == 0))
     printf("1:2 256b FMA:FADD per clk (nemes): %.2f\n", measureFunction(iterations * 22, clockSpeedGhz, nemesfpumix21));
 
@@ -330,6 +397,10 @@ __attribute((sysv_abi)) uint64_t load256wrapper(uint64_t iterations) {
   return load256(iterations, fpTestArr);
 }
 
+__attribute((sysv_abi)) uint64_t load512wrapper(uint64_t iterations) {
+  return load512(iterations, fpTestArr);
+} 
+
 __attribute((sysv_abi)) uint64_t spacedload256wrapper(uint64_t iterations) {
   return spacedload128(iterations, intTestArr);
 }
@@ -341,6 +412,10 @@ __attribute((sysv_abi)) uint64_t store128wrapper(uint64_t iterations) {
 __attribute((sysv_abi)) uint64_t store256wrapper(uint64_t iterations) {
   return store256(iterations, fpTestArr, fpSinkArr);
 }
+
+__attribute((sysv_abi)) uint64_t store512wrapper(uint64_t iterations) {
+  return store512(iterations, fpTestArr, fpSinkArr);
+} 
 
 __attribute((sysv_abi)) uint64_t mixfmaandmem256wrapper(uint64_t iterations) {
   return mixfmaandmem256(iterations, fpTestArr); 

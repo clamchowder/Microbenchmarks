@@ -24,6 +24,9 @@
 .global noptest
 .global noptest1b
 .global add256int
+.global add512int
+.global mul512int
+.global muldq512int
 .global mixadd256int
 .global mixadd256int11
 .global mixadd256fpint
@@ -31,20 +34,28 @@
 .global latadd256int
 .global latadd128int
 .global latmul256int
+.global latmul512int
+.global latmulq512int
+.global latmuldq512int
 .global latmul128int
 .global latadd256int
 .global latmul256fp
 .global latadd256fp
 .global latmul128fp
 .global latadd128fp
+.global fma512
 .global fma256
 .global fma128
 .global mixfmafadd256
 .global mixfmaadd256
+.global mixfmaadd512
+.global mixfma512add256
 .global mixfmaand256
 .global nemesfpumix21
+.global nemesfpu512mix21
 .global mixfmaandmem256
 .global mixfmaaddmem256
+.global latfma512
 .global latfma256
 .global latfma128
 .global mul256fp
@@ -58,8 +69,10 @@
 .global load128
 .global spacedload128
 .global load256
+.global load512
 .global store128
 .global store256
+.global store512
 .global spacedstorescalar
 .global mixaddmul128int
 .global mixmul16mul64
@@ -69,6 +82,10 @@
 
 .global pdeptest
 .global pexttest
+
+.global aesenc128
+.global aesdec128
+.global aesencadd128
 
 /*
   %rdi = arg0 = iteration count
@@ -1073,6 +1090,126 @@ add256int_loop:
   pop %r9
   ret
 
+mul512int:
+  push %r9
+  push %r8
+  mov $20, %r9
+  movq %r9, %xmm1
+  vpbroadcastq %xmm1, %zmm0
+  vmovdqu64 %zmm0, %zmm1
+  vmovdqu64 %zmm0, %zmm2
+  vmovdqu64 %zmm0, %zmm3
+  vmovdqu64 %zmm0, %zmm4
+  vmovdqu64 %zmm0, %zmm5
+mul512int_loop:
+  vpmulld %zmm0, %zmm1, %zmm1
+  vpmulld %zmm0, %zmm2, %zmm2
+  vpmulld %zmm0, %zmm3, %zmm3
+  vpmulld %zmm0, %zmm4, %zmm4
+  vpmulld %zmm0, %zmm5, %zmm5
+  vpmulld %zmm0, %zmm1, %zmm1
+  vpmulld %zmm0, %zmm2, %zmm2
+  vpmulld %zmm0, %zmm3, %zmm3
+  vpmulld %zmm0, %zmm4, %zmm4
+  vpmulld %zmm0, %zmm5, %zmm5
+  vpmulld %zmm0, %zmm1, %zmm1
+  vpmulld %zmm0, %zmm2, %zmm2
+  vpmulld %zmm0, %zmm3, %zmm3
+  vpmulld %zmm0, %zmm4, %zmm4
+  vpmulld %zmm0, %zmm5, %zmm5 
+  vpmulld %zmm0, %zmm1, %zmm1
+  vpmulld %zmm0, %zmm2, %zmm2
+  vpmulld %zmm0, %zmm3, %zmm3
+  vpmulld %zmm0, %zmm4, %zmm4
+  vpmulld %zmm0, %zmm5, %zmm5 
+  sub %r9, %rdi
+  jnz mul512int_loop
+  movq %xmm1, %rax
+  vzeroupper
+  pop %r8
+  pop %r9
+  ret  
+
+muldq512int:
+  push %r9
+  push %r8
+  mov $20, %r9
+  movq %r9, %xmm1
+  vpbroadcastq %xmm1, %zmm0
+  vmovdqu64 %zmm0, %zmm1
+  vmovdqu64 %zmm0, %zmm2
+  vmovdqu64 %zmm0, %zmm3
+  vmovdqu64 %zmm0, %zmm4
+  vmovdqu64 %zmm0, %zmm5
+muldq512int_loop:
+  vpmuldq %zmm0, %zmm1, %zmm1
+  vpmuldq %zmm0, %zmm2, %zmm2
+  vpmuldq %zmm0, %zmm3, %zmm3
+  vpmuldq %zmm0, %zmm4, %zmm4
+  vpmuldq %zmm0, %zmm5, %zmm5
+  vpmuldq %zmm0, %zmm1, %zmm1
+  vpmuldq %zmm0, %zmm2, %zmm2
+  vpmuldq %zmm0, %zmm3, %zmm3
+  vpmuldq %zmm0, %zmm4, %zmm4
+  vpmuldq %zmm0, %zmm5, %zmm5
+  vpmuldq %zmm0, %zmm1, %zmm1
+  vpmuldq %zmm0, %zmm2, %zmm2
+  vpmuldq %zmm0, %zmm3, %zmm3
+  vpmuldq %zmm0, %zmm4, %zmm4
+  vpmuldq %zmm0, %zmm5, %zmm5 
+  vpmuldq %zmm0, %zmm1, %zmm1
+  vpmuldq %zmm0, %zmm2, %zmm2
+  vpmuldq %zmm0, %zmm3, %zmm3
+  vpmuldq %zmm0, %zmm4, %zmm4
+  vpmuldq %zmm0, %zmm5, %zmm5 
+  sub %r9, %rdi
+  jnz muldq512int_loop
+  movq %xmm1, %rax
+  vzeroupper
+  pop %r8
+  pop %r9
+  ret   
+
+add512int:
+  push %r9
+  push %r8
+  mov $20, %r9
+  movq %r9, %xmm1
+  vpbroadcastq %xmm1, %zmm0
+  vmovdqu64 %zmm0, %zmm1
+  vmovdqu64 %zmm0, %zmm2
+  vmovdqu64 %zmm0, %zmm3
+  vmovdqu64 %zmm0, %zmm4
+  vmovdqu64 %zmm0, %zmm5
+add512int_loop:
+  vpaddq %zmm0, %zmm1, %zmm1
+  vpaddq %zmm0, %zmm2, %zmm2
+  vpaddq %zmm0, %zmm3, %zmm3
+  vpaddq %zmm0, %zmm4, %zmm4
+  vpaddq %zmm0, %zmm5, %zmm5
+  vpaddq %zmm0, %zmm1, %zmm1
+  vpaddq %zmm0, %zmm2, %zmm2
+  vpaddq %zmm0, %zmm3, %zmm3
+  vpaddq %zmm0, %zmm4, %zmm4
+  vpaddq %zmm0, %zmm5, %zmm5
+  vpaddq %zmm0, %zmm1, %zmm1
+  vpaddq %zmm0, %zmm2, %zmm2
+  vpaddq %zmm0, %zmm3, %zmm3
+  vpaddq %zmm0, %zmm4, %zmm4
+  vpaddq %zmm0, %zmm5, %zmm5 
+  vpaddq %zmm0, %zmm1, %zmm1
+  vpaddq %zmm0, %zmm2, %zmm2
+  vpaddq %zmm0, %zmm3, %zmm3
+  vpaddq %zmm0, %zmm4, %zmm4
+  vpaddq %zmm0, %zmm5, %zmm5 
+  sub %r9, %rdi
+  jnz add512int_loop
+  movq %xmm1, %rax
+  vzeroupper
+  pop %r8
+  pop %r9
+  ret 
+
 mixadd256fpint:
   push %r9
   push %r8
@@ -1338,6 +1475,206 @@ latadd256int_loop:
   pop %r9
   ret 
 
+latadd512int:
+  push %r9
+  push %r8
+  push %r15
+  push %r14
+  push %r13
+  push %r12
+  push %r11
+  mov $20, %r9
+  movq %r9, %xmm1
+  vpbroadcastq %xmm1, %zmm0
+  vmovdqa64 %zmm0, %zmm1
+  vmovdqa64 %zmm0, %zmm2
+  vmovdqa64 %zmm0, %zmm3
+  vmovdqa64 %zmm0, %zmm4
+  vmovdqa64 %zmm0, %zmm5
+latadd51a2int_loop:
+  vpaddq %zmm0, %zmm0, %zmm0
+  vpaddq %zmm0, %zmm0, %zmm0
+  vpaddq %zmm0, %zmm0, %zmm0
+  vpaddq %zmm0, %zmm0, %zmm0
+  vpaddq %zmm0, %zmm0, %zmm0
+  vpaddq %zmm0, %zmm0, %zmm0
+  vpaddq %zmm0, %zmm0, %zmm0
+  vpaddq %zmm0, %zmm0, %zmm0
+  vpaddq %zmm0, %zmm0, %zmm0
+  vpaddq %zmm0, %zmm0, %zmm0
+  vpaddq %zmm0, %zmm0, %zmm0
+  vpaddq %zmm0, %zmm0, %zmm0
+  vpaddq %zmm0, %zmm0, %zmm0
+  vpaddq %zmm0, %zmm0, %zmm0
+  vpaddq %zmm0, %zmm0, %zmm0
+  vpaddq %zmm0, %zmm0, %zmm0
+  vpaddq %zmm0, %zmm0, %zmm0
+  vpaddq %zmm0, %zmm0, %zmm0
+  vpaddq %zmm0, %zmm0, %zmm0
+  vpaddq %zmm0, %zmm0, %zmm0
+  sub %r9, %rdi
+  jnz latadd256int_loop
+  movq %xmm1, %rax
+  vzeroupper
+  pop %r11
+  pop %r12
+  pop %r13
+  pop %r14
+  pop %r15
+  pop %r8
+  pop %r9
+  ret  
+
+latmul512int:
+  push %r9
+  push %r8
+  push %r15
+  push %r14
+  push %r13
+  push %r12
+  push %r11
+  mov $20, %r9
+  movq %r9, %xmm1
+  vpbroadcastd %xmm1, %zmm0
+  vmovdqu64 %zmm0, %zmm1
+  vmovdqu64 %zmm0, %zmm2
+  vmovdqu64 %zmm0, %zmm3
+  vmovdqu64 %zmm0, %zmm4
+  vmovdqu64 %zmm0, %zmm5
+latmul512int_loop:
+  vpmulld %zmm0, %zmm0, %zmm0
+  vpmulld %zmm0, %zmm0, %zmm0
+  vpmulld %zmm0, %zmm0, %zmm0
+  vpmulld %zmm0, %zmm0, %zmm0
+  vpmulld %zmm0, %zmm0, %zmm0
+  vpmulld %zmm0, %zmm0, %zmm0
+  vpmulld %zmm0, %zmm0, %zmm0
+  vpmulld %zmm0, %zmm0, %zmm0
+  vpmulld %zmm0, %zmm0, %zmm0
+  vpmulld %zmm0, %zmm0, %zmm0
+  vpmulld %zmm0, %zmm0, %zmm0
+  vpmulld %zmm0, %zmm0, %zmm0
+  vpmulld %zmm0, %zmm0, %zmm0
+  vpmulld %zmm0, %zmm0, %zmm0
+  vpmulld %zmm0, %zmm0, %zmm0
+  vpmulld %zmm0, %zmm0, %zmm0
+  vpmulld %zmm0, %zmm0, %zmm0
+  vpmulld %zmm0, %zmm0, %zmm0
+  vpmulld %zmm0, %zmm0, %zmm0
+  vpmulld %zmm0, %zmm0, %zmm0
+  sub %r9, %rdi
+  jnz latmul512int_loop
+  movq %xmm1, %rax
+  vzeroupper
+  pop %r11
+  pop %r12
+  pop %r13
+  pop %r14
+  pop %r15
+  pop %r8
+  pop %r9
+  ret   
+
+latmuldq512int:
+  push %r9
+  push %r8
+  push %r15
+  push %r14
+  push %r13
+  push %r12
+  push %r11
+  mov $20, %r9
+  movq %r9, %xmm1
+  vpbroadcastd %xmm1, %zmm0
+  vmovdqu64 %zmm0, %zmm1
+  vmovdqu64 %zmm0, %zmm2
+  vmovdqu64 %zmm0, %zmm3
+  vmovdqu64 %zmm0, %zmm4
+  vmovdqu64 %zmm0, %zmm5
+latmuldq512int_loop:
+  vpmuldq %zmm0, %zmm0, %zmm0
+  vpmuldq %zmm0, %zmm0, %zmm0
+  vpmuldq %zmm0, %zmm0, %zmm0
+  vpmuldq %zmm0, %zmm0, %zmm0
+  vpmuldq %zmm0, %zmm0, %zmm0
+  vpmuldq %zmm0, %zmm0, %zmm0
+  vpmuldq %zmm0, %zmm0, %zmm0
+  vpmuldq %zmm0, %zmm0, %zmm0
+  vpmuldq %zmm0, %zmm0, %zmm0
+  vpmuldq %zmm0, %zmm0, %zmm0
+  vpmuldq %zmm0, %zmm0, %zmm0
+  vpmuldq %zmm0, %zmm0, %zmm0
+  vpmuldq %zmm0, %zmm0, %zmm0
+  vpmuldq %zmm0, %zmm0, %zmm0
+  vpmuldq %zmm0, %zmm0, %zmm0
+  vpmuldq %zmm0, %zmm0, %zmm0
+  vpmuldq %zmm0, %zmm0, %zmm0
+  vpmuldq %zmm0, %zmm0, %zmm0
+  vpmuldq %zmm0, %zmm0, %zmm0
+  vpmuldq %zmm0, %zmm0, %zmm0
+  sub %r9, %rdi
+  jnz latmuldq512int_loop
+  movq %xmm1, %rax
+  vzeroupper
+  pop %r11
+  pop %r12
+  pop %r13
+  pop %r14
+  pop %r15
+  pop %r8
+  pop %r9
+  ret    
+
+latmulq512int:
+  push %r9
+  push %r8
+  push %r15
+  push %r14
+  push %r13
+  push %r12
+  push %r11
+  mov $20, %r9
+  movq %r9, %xmm1
+  vpbroadcastd %xmm1, %zmm0
+  vmovdqu64 %zmm0, %zmm1
+  vmovdqu64 %zmm0, %zmm2
+  vmovdqu64 %zmm0, %zmm3
+  vmovdqu64 %zmm0, %zmm4
+  vmovdqu64 %zmm0, %zmm5
+latmulq512int_loop:
+  vpmullq %zmm0, %zmm0, %zmm0
+  vpmullq %zmm0, %zmm0, %zmm0
+  vpmullq %zmm0, %zmm0, %zmm0
+  vpmullq %zmm0, %zmm0, %zmm0
+  vpmullq %zmm0, %zmm0, %zmm0
+  vpmullq %zmm0, %zmm0, %zmm0
+  vpmullq %zmm0, %zmm0, %zmm0
+  vpmullq %zmm0, %zmm0, %zmm0
+  vpmullq %zmm0, %zmm0, %zmm0
+  vpmullq %zmm0, %zmm0, %zmm0
+  vpmullq %zmm0, %zmm0, %zmm0
+  vpmullq %zmm0, %zmm0, %zmm0
+  vpmullq %zmm0, %zmm0, %zmm0
+  vpmullq %zmm0, %zmm0, %zmm0
+  vpmullq %zmm0, %zmm0, %zmm0
+  vpmullq %zmm0, %zmm0, %zmm0
+  vpmullq %zmm0, %zmm0, %zmm0
+  vpmullq %zmm0, %zmm0, %zmm0
+  vpmullq %zmm0, %zmm0, %zmm0
+  vpmullq %zmm0, %zmm0, %zmm0
+  sub %r9, %rdi
+  jnz latmulq512int_loop
+  movq %xmm1, %rax
+  vzeroupper
+  pop %r11
+  pop %r12
+  pop %r13
+  pop %r14
+  pop %r15
+  pop %r8
+  pop %r9
+  ret    
+
 latmul256int:
   push %r9
   push %r8
@@ -1451,6 +1788,126 @@ add128int_loop:
   movq %xmm1, %rax
   pop %r9
   ret 
+
+aesenc128:
+  push %r9
+  mov $20, %r9
+  movq %r9, %xmm1
+  vzeroall
+  pxor %xmm0, %xmm0
+  pxor %xmm1, %xmm1
+  pxor %xmm2, %xmm2
+  pxor %xmm3, %xmm3
+  pxor %xmm4, %xmm4
+  pxor %xmm5, %xmm5
+aesenc128_loop:
+  aesenc %xmm0, %xmm1
+  aesenc %xmm0, %xmm2
+  aesenc %xmm0, %xmm3
+  aesenc %xmm0, %xmm4
+  aesenc %xmm0, %xmm5
+  aesenc %xmm0, %xmm1
+  aesenc %xmm0, %xmm2
+  aesenc %xmm0, %xmm3
+  aesenc %xmm0, %xmm4
+  aesenc %xmm0, %xmm5 
+  aesenc %xmm0, %xmm1
+  aesenc %xmm0, %xmm2
+  aesenc %xmm0, %xmm3
+  aesenc %xmm0, %xmm4
+  aesenc %xmm0, %xmm5
+  aesenc %xmm0, %xmm1
+  aesenc %xmm0, %xmm2
+  aesenc %xmm0, %xmm3
+  aesenc %xmm0, %xmm4
+  aesenc %xmm0, %xmm5  
+  sub %r9, %rdi
+  jnz aesenc128_loop
+  movq %xmm1, %rax
+  pop %r9
+  ret  
+
+aesencadd128:
+  push %r9
+  mov $20, %r9
+  movq %r9, %xmm1
+  vzeroall
+  pxor %xmm0, %xmm0
+  pxor %xmm1, %xmm1
+  pxor %xmm2, %xmm2
+  pxor %xmm3, %xmm3
+  pxor %xmm4, %xmm4
+  pxor %xmm5, %xmm5
+  pxor %xmm6, %xmm6
+  pxor %xmm7, %xmm7
+  pxor %xmm8, %xmm8
+  pxor %xmm9, %xmm9
+  pxor %xmm10, %xmm10
+  pxor %xmm11, %xmm11
+aesencadd128_loop:
+  aesenc %xmm0, %xmm1
+  aesenc %xmm0, %xmm2
+  aesenc %xmm0, %xmm3
+  aesenc %xmm0, %xmm4
+  aesenc %xmm0, %xmm5
+  paddd %xmm6, %xmm7
+  paddd %xmm6, %xmm8
+  paddd %xmm6, %xmm9
+  paddd %xmm6, %xmm10
+  paddd %xmm6, %xmm11
+  aesenc %xmm0, %xmm1
+  aesenc %xmm0, %xmm2
+  aesenc %xmm0, %xmm3
+  aesenc %xmm0, %xmm4
+  aesenc %xmm0, %xmm5
+  paddd %xmm6, %xmm7
+  paddd %xmm6, %xmm8
+  paddd %xmm6, %xmm9
+  paddd %xmm6, %xmm10
+  paddd %xmm6, %xmm11 
+  sub %r9, %rdi
+  jnz aesencadd128_loop
+  movq %xmm1, %rax
+  pop %r9
+  ret   
+
+aesdec128:
+  push %r9
+  mov $20, %r9
+  movq %r9, %xmm1
+  vzeroall
+  pxor %xmm0, %xmm0
+  pxor %xmm1, %xmm1
+  pxor %xmm2, %xmm2
+  pxor %xmm3, %xmm3
+  pxor %xmm4, %xmm4
+  pxor %xmm5, %xmm5
+aesdec128_loop:
+  aesdec %xmm0, %xmm1
+  aesdec %xmm0, %xmm2
+  aesdec %xmm0, %xmm3
+  aesdec %xmm0, %xmm4
+  aesdec %xmm0, %xmm5
+  aesdec %xmm0, %xmm1
+  aesdec %xmm0, %xmm2
+  aesdec %xmm0, %xmm3
+  aesdec %xmm0, %xmm4
+  aesdec %xmm0, %xmm5 
+  aesdec %xmm0, %xmm1
+  aesdec %xmm0, %xmm2
+  aesdec %xmm0, %xmm3
+  aesdec %xmm0, %xmm4
+  aesdec %xmm0, %xmm5
+  aesdec %xmm0, %xmm1
+  aesdec %xmm0, %xmm2
+  aesdec %xmm0, %xmm3
+  aesdec %xmm0, %xmm4
+  aesdec %xmm0, %xmm5  
+  sub %r9, %rdi
+  jnz aesdec128_loop
+  movq %xmm1, %rax
+  pop %r9
+  ret   
 
 mul128int:
   push %r9
@@ -1721,6 +2178,52 @@ latmul256fp_loop:
   pop %r9
   ret
 
+fma512:
+  push %r9
+  push %r8
+  mov $20, %r9
+  movq %r9, %xmm1
+  cvtsi2ss %r9, %xmm6
+  vbroadcastss %xmm6, %zmm6
+  vmovups %zmm6, %zmm5
+  vmovups %zmm6, %zmm7
+  vmovups %zmm6, %zmm8
+  vmovups %zmm6, %zmm9
+  vmovups %zmm6, %zmm10
+  vmovups %zmm6, %zmm11
+  vmovups %zmm6, %zmm12
+  vmovups %zmm6, %zmm13
+  vmovups %zmm6, %zmm14
+  vmovups %zmm6, %zmm15
+fma512_loop:
+  vfmadd132ps %zmm6, %zmm5, %zmm5
+  vfmadd132ps %zmm6, %zmm7, %zmm7
+  vfmadd132ps %zmm6, %zmm8, %zmm8
+  vfmadd132ps %zmm6, %zmm9, %zmm9
+  vfmadd132ps %zmm6, %zmm10, %zmm10
+  vfmadd132ps %zmm6, %zmm11, %zmm11
+  vfmadd132ps %zmm6, %zmm12, %zmm12
+  vfmadd132ps %zmm6, %zmm13, %zmm13
+  vfmadd132ps %zmm6, %zmm14, %zmm14
+  vfmadd132ps %zmm6, %zmm15, %zmm15
+  vfmadd132ps %zmm6, %zmm5, %zmm5
+  vfmadd132ps %zmm6, %zmm7, %zmm7
+  vfmadd132ps %zmm6, %zmm8, %zmm8
+  vfmadd132ps %zmm6, %zmm9, %zmm9
+  vfmadd132ps %zmm6, %zmm10, %zmm10
+  vfmadd132ps %zmm6, %zmm11, %zmm11
+  vfmadd132ps %zmm6, %zmm12, %zmm12
+  vfmadd132ps %zmm6, %zmm13, %zmm13
+  vfmadd132ps %zmm6, %zmm14, %zmm14
+  vfmadd132ps %zmm6, %zmm15, %zmm15 
+  sub %r9, %rdi
+  jnz fma512_loop
+  movq %xmm1, %rax
+  vzeroupper
+  pop %r8
+  pop %r9
+  ret    
+
 
 fma256:
   push %r9
@@ -1875,6 +2378,98 @@ mixfmafadd256_loop:
   pop %r8
   pop %r9
   ret    
+
+mixfmaadd512:
+  push %r9
+  push %r8
+  mov $16, %r9
+  movq %r9, %xmm0
+  vpbroadcastq %xmm0, %zmm0
+  cvtsi2ss %r9, %xmm1
+  vbroadcastss %xmm1, %zmm1
+  vmovdqa64 %zmm0, %zmm3
+  vmovdqa64 %zmm0, %zmm6
+  vmovdqa64 %zmm0, %zmm9
+  vmovdqa64 %zmm0, %zmm12
+  vmovdqa64 %zmm0, %zmm15
+  vmovaps %zmm1, %zmm2
+  vmovaps %zmm1, %zmm4
+  vmovaps %zmm1, %zmm5
+  vmovaps %zmm1, %zmm7
+  vmovaps %zmm1, %zmm8
+  vmovaps %zmm1, %zmm10
+  vmovaps %zmm1, %zmm11
+  vmovaps %zmm1, %zmm13
+  vmovaps %zmm1, %zmm14
+mixfmaadd512_loop:
+  vpaddq %zmm0, %zmm15, %zmm0
+  vfmadd132ps %zmm1, %zmm1, %zmm1
+  vfmadd132ps %zmm2, %zmm2, %zmm2
+  vpaddq %zmm3, %zmm15, %zmm3
+  vfmadd132ps %zmm4, %zmm4, %zmm4
+  vfmadd132ps %zmm5, %zmm5, %zmm5
+  vpaddq %zmm6, %zmm15, %zmm6
+  vfmadd132ps %zmm7, %zmm7, %zmm7
+  vfmadd132ps %zmm8, %zmm8, %zmm8
+  vpaddq %zmm9, %zmm15, %zmm9
+  vfmadd132ps %zmm10, %zmm10, %zmm10
+  vfmadd132ps %zmm11, %zmm11, %zmm11
+  vpaddq %zmm12, %zmm15, %zmm12
+  vfmadd132ps %zmm13, %zmm13, %zmm13
+  vfmadd132ps %zmm14, %zmm14, %zmm14
+  sub %r9, %rdi
+  jg mixfmaadd512_loop
+  movq %xmm1, %rax
+  vzeroupper
+  pop %r8
+  pop %r9
+  ret      
+
+mixfma512add256:
+  push %r9
+  push %r8
+  mov $16, %r9
+  movq %r9, %xmm0
+  vpbroadcastq %xmm0, %ymm0
+  cvtsi2ss %r9, %xmm1
+  vbroadcastss %xmm1, %zmm1
+  vmovdqa %ymm0, %ymm3
+  vmovdqa %ymm0, %ymm6
+  vmovdqa %ymm0, %ymm9
+  vmovdqa %ymm0, %ymm12
+  vmovdqa %ymm0, %ymm15
+  vmovaps %zmm1, %zmm2
+  vmovaps %zmm1, %zmm4
+  vmovaps %zmm1, %zmm5
+  vmovaps %zmm1, %zmm7
+  vmovaps %zmm1, %zmm8
+  vmovaps %zmm1, %zmm10
+  vmovaps %zmm1, %zmm11
+  vmovaps %zmm1, %zmm13
+  vmovaps %zmm1, %zmm14
+mixfma512add256_loop:
+  vpaddq %ymm0, %ymm15, %ymm0
+  vfmadd132ps %zmm1, %zmm1, %zmm1
+  vfmadd132ps %zmm2, %zmm2, %zmm2
+  vpaddq %ymm3, %ymm15, %ymm3
+  vfmadd132ps %zmm4, %zmm4, %zmm4
+  vfmadd132ps %zmm5, %zmm5, %zmm5
+  vpaddq %ymm6, %ymm15, %ymm6
+  vfmadd132ps %zmm7, %zmm7, %zmm7
+  vfmadd132ps %zmm8, %zmm8, %zmm8
+  vpaddq %ymm9, %ymm15, %ymm9
+  vfmadd132ps %zmm10, %zmm10, %zmm10
+  vfmadd132ps %zmm11, %zmm11, %zmm11
+  vpaddq %ymm12, %ymm15, %ymm12
+  vfmadd132ps %zmm13, %zmm13, %zmm13
+  vfmadd132ps %zmm14, %zmm14, %zmm14
+  sub %r9, %rdi
+  jg mixfma512add256_loop
+  movq %xmm1, %rax
+  vzeroupper
+  pop %r8
+  pop %r9
+  ret       
 
 mixfmaadd256:
   push %r9
@@ -2075,6 +2670,47 @@ mixfmaaddmem256_loop:
   pop %r9
   ret        
 
+nemesfpu512mix21:
+  push %r9
+  mov $16, %r9
+  cvtsi2ss %r9, %xmm0
+  vbroadcastss %xmm0, %zmm1
+  vmovdqa64 %zmm1, %zmm2
+  vmovdqa64 %zmm1, %zmm3
+  vmovdqa64 %zmm1, %zmm4
+  vmovdqa64 %zmm1, %zmm5
+  vmovdqa64 %zmm1, %zmm6
+  vmovdqa64 %zmm1, %zmm7
+  vmovdqa64 %zmm1, %zmm8
+  vmovdqa64 %zmm1, %zmm9
+  vmovdqa64 %zmm1, %zmm10
+  vmovdqa64 %zmm1, %zmm11
+  vmovdqa64 %zmm1, %zmm12
+  vmovdqa64 %zmm1, %zmm13
+  vmovdqa64 %zmm1, %zmm14
+  vmovdqa64 %zmm1, %zmm15
+nemesfpu512mix21_loop:
+  vaddps %zmm0, %zmm0, %zmm0
+  vfmadd132ps %zmm1, %zmm1, %zmm1
+  vfmadd132ps %zmm2, %zmm2, %zmm2
+  vaddps %zmm3, %zmm3, %zmm3
+  vfmadd132ps %zmm4, %zmm4, %zmm4
+  vfmadd132ps %zmm5, %zmm5, %zmm5
+  vaddps %zmm6, %zmm6, %zmm6
+  vfmadd132ps %zmm7, %zmm7, %zmm7
+  vfmadd132ps %zmm8, %zmm8, %zmm8
+  vaddps %zmm9, %zmm9, %zmm9
+  vfmadd132ps %zmm10, %zmm10, %zmm10
+  vfmadd132ps %zmm11, %zmm11, %zmm11
+  vaddps %ymm12, %ymm12, %ymm12
+  vfmadd132ps %zmm13, %zmm13, %zmm13
+  vfmadd132ps %zmm14, %zmm14, %zmm14
+  vaddps %zmm15, %zmm15, %zmm15
+  sub %r9, %rdi
+  jg nemesfpu512mix21_loop
+  pop %r9
+  ret 
+
 nemesfpumix21:
   push %r9
   mov $16, %r9
@@ -2115,6 +2751,52 @@ nemesfpumix21_loop:
   jg nemesfpumix21_loop
   pop %r9
   ret
+
+latfma512:
+  push %r9
+  push %r8
+  mov $20, %r9
+  movq %r9, %xmm1
+  cvtsi2ss %r9, %xmm6
+  vbroadcastss %xmm6, %zmm6
+  vmovups %zmm6, %zmm5
+  vmovups %zmm6, %zmm7
+  vmovups %zmm6, %zmm8
+  vmovups %zmm6, %zmm9
+  vmovups %zmm6, %zmm10
+  vmovups %zmm6, %zmm11
+  vmovups %zmm6, %zmm12
+  vmovups %zmm6, %zmm13
+  vmovups %zmm6, %zmm14
+  vmovups %zmm6, %zmm15
+latfma512_loop:
+  vfmadd132ps %zmm6, %zmm5, %zmm7
+  vfmadd132ps %zmm6, %zmm5, %zmm7
+  vfmadd132ps %zmm6, %zmm5, %zmm7
+  vfmadd132ps %zmm6, %zmm5, %zmm7
+  vfmadd132ps %zmm6, %zmm5, %zmm7
+  vfmadd132ps %zmm6, %zmm5, %zmm7
+  vfmadd132ps %zmm6, %zmm5, %zmm7
+  vfmadd132ps %zmm6, %zmm5, %zmm7
+  vfmadd132ps %zmm6, %zmm5, %zmm7
+  vfmadd132ps %zmm6, %zmm5, %zmm7
+  vfmadd132ps %zmm6, %zmm5, %zmm7
+  vfmadd132ps %zmm6, %zmm5, %zmm7
+  vfmadd132ps %zmm6, %zmm5, %zmm7
+  vfmadd132ps %zmm6, %zmm5, %zmm7
+  vfmadd132ps %zmm6, %zmm5, %zmm7
+  vfmadd132ps %zmm6, %zmm5, %zmm7
+  vfmadd132ps %zmm6, %zmm5, %zmm7
+  vfmadd132ps %zmm6, %zmm5, %zmm7
+  vfmadd132ps %zmm6, %zmm5, %zmm7
+  vfmadd132ps %zmm6, %zmm5, %zmm7
+  sub %r9, %rdi
+  jnz latfma512_loop
+  movq %xmm1, %rax
+  vzeroupper
+  pop %r8
+  pop %r9
+  ret    
 
 latfma256:
   push %r9
@@ -2868,6 +3550,41 @@ load256_loop:
   pop %rbx
   ret 
 
+load512:
+  push %rbx
+  push %rcx
+  push %r8
+  push %r9
+  mov $20, %r9
+load512_loop:
+  vmovaps (%rsi), %zmm10
+  vmovaps (%rsi), %zmm11
+  vmovaps (%rsi), %zmm12
+  vmovaps (%rsi), %zmm13
+  vmovaps (%rsi), %zmm14
+  vmovaps (%rsi), %zmm10
+  vmovaps (%rsi), %zmm11
+  vmovaps (%rsi), %zmm12
+  vmovaps (%rsi), %zmm13
+  vmovaps (%rsi), %zmm14 
+  vmovaps (%rsi), %zmm10
+  vmovaps (%rsi), %zmm11
+  vmovaps (%rsi), %zmm12
+  vmovaps (%rsi), %zmm13
+  vmovaps (%rsi), %zmm14    
+  vmovaps (%rsi), %zmm10
+  vmovaps (%rsi), %zmm11
+  vmovaps (%rsi), %zmm12
+  vmovaps (%rsi), %zmm13
+  vmovaps (%rsi), %zmm14  
+  sub %r9, %rdi
+  jnz load512_loop
+  pop %r9
+  pop %r8 
+  pop %rcx
+  pop %rbx
+  ret  
+
 store128:
   push %rbx
   push %rcx
@@ -2947,6 +3664,46 @@ store256_loop:
   pop %rcx
   pop %rbx
   ret  
+
+store512:
+  push %rbx
+  push %rcx
+  push %r8
+  push %r9
+  vmovaps (%rsi), %zmm10
+  vmovaps %zmm10, %zmm11
+  vmovaps %zmm10, %zmm12
+  vmovaps %zmm10, %zmm13
+  vmovaps %zmm10, %zmm14
+  mov $20, %r9
+store512_loop:
+  vmovaps %zmm10, (%rdx)
+  vmovaps %zmm11, (%rdx)
+  vmovaps %zmm12, (%rdx)
+  vmovaps %zmm13, (%rdx)
+  vmovaps %zmm14, (%rdx)
+  vmovaps %zmm10, (%rdx)
+  vmovaps %zmm11, (%rdx)
+  vmovaps %zmm12, (%rdx)
+  vmovaps %zmm13, (%rdx)
+  vmovaps %zmm14, (%rdx) 
+  vmovaps %zmm10, (%rdx)
+  vmovaps %zmm11, (%rdx)
+  vmovaps %zmm12, (%rdx)
+  vmovaps %zmm13, (%rdx)
+  vmovaps %zmm14, (%rdx) 
+  vmovaps %zmm10, (%rdx)
+  vmovaps %zmm11, (%rdx)
+  vmovaps %zmm12, (%rdx)
+  vmovaps %zmm13, (%rdx)
+  vmovaps %zmm14, (%rdx) 
+  sub %r9, %rdi
+  jnz store512_loop
+  pop %r9
+  pop %r8 
+  pop %rcx
+  pop %rbx
+  ret   
 
 pdeptest:
   push %rbx
