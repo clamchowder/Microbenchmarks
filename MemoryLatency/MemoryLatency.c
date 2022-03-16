@@ -406,7 +406,7 @@ float RunTlbTest(uint32_t size_kb, uint32_t iterations, uint32_t *preallocatedAr
     // [offset-------page-------][offset-----page------....etc
     uint32_t *A; 
     if (preallocatedArr == NULL) {
-        uint32_t *A = (uint32_t *)malloc(sizeof(uint32_t) * list_size);
+        A = (uint32_t *)malloc(sizeof(uint32_t) * list_size);
         if (!A) {
             fprintf(stderr, "Failed to allocate memory for %u KB test (pointer array)\n", size_kb);
         }
