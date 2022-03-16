@@ -74,8 +74,6 @@ int main(int argc, char *argv[]) {
                 latenciesPtr[j + i * numProcs] = i == j ? 0 : RunTest(i, j, iter);
             }
         }
-
-        free(latenciesPtr);
     }
 
       for (int offsetIdx = 0; offsetIdx < offsets; offsetIdx++) {
