@@ -53,10 +53,11 @@ namespace AsmGen
             tests.Add(new BtbTest(8, BtbTest.BranchType.Unconditional));
             tests.Add(new BtbTest(16, BtbTest.BranchType.Unconditional));
             tests.Add(new BtbTest(32, BtbTest.BranchType.Unconditional));
+            //tests.Add(new BtbTest(64, BtbTest.BranchType.Unconditional));
             tests.Add(new MixJmpMulSchedTest(2, 128, 1));
             tests.Add(new MixMulRorSchedTest(2, 128, 1));
             tests.Add(new BranchHistoryTest());
-            //tests.Add(new IndirectBranchTest());
+            tests.Add(new IndirectBranchTest());
             tests.Add(new MxcsrTest(1, 32, 1));
             tests.Add(new MaskRfTest(1, 256, 1));
             tests.Add(new NotIntRfTest(1, 450, 1));
@@ -90,6 +91,7 @@ namespace AsmGen
             tests.Add(new MixLoadStoreDivSchedTest(4, 64, 1));
             tests.Add(new MmxRfTest(4, 256, 1));
             tests.Add(new MxcsrFeTest(4, 256, 1));
+            tests.Add(new Vec512RfTest(4, 256, 1));
 
             StringBuilder cSourceFile = new StringBuilder();
             StringBuilder vsCSourceFile = new StringBuilder();
