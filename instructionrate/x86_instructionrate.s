@@ -1,8 +1,13 @@
 .text
 
 .global clktest
+.global clkmovtest
 .global addtest
+.global addnoptest
+.global addmovtest
 .global rortest
+.global shltest
+.global mixrorshltest
 .global mixrormultest
 .global btstest
 .global leatest
@@ -44,6 +49,7 @@
 .global latmul128fp
 .global latadd128fp
 .global fma512
+.global mixfma256fma512
 .global fma256
 .global fma128
 .global mixfmafadd256
@@ -79,13 +85,18 @@
 .global mixmul16mul64_21
 .global add128int
 .global mul128int
+.global mix256faddintadd
 
 .global pdeptest
 .global pexttest
+.global pdepmultest
 
 .global aesenc128
 .global aesdec128
 .global aesencadd128
+.global aesencfma128
+.global aesencfadd128
+.global aesencmul128
 
 /*
   %rdi = arg0 = iteration count
@@ -124,6 +135,61 @@ clktest_loop:
   pop %r8
   pop %rbx
   ret
+
+clkmovtest:
+  push %rbx
+  push %r8
+  push %r9
+  mov $1, %r8
+  mov $20, %r9
+  xor %rbx, %rbx
+clkmovtest_loop:
+  add %r8, %rbx
+  mov %rbx, %r8
+  add %r8, %rbx
+  mov %rbx, %r8
+  add %r8, %rbx
+  mov %rbx, %r8
+  add %r8, %rbx
+  mov %rbx, %r8
+  add %r8, %rbx
+  mov %rbx, %r8
+  add %r8, %rbx
+  mov %rbx, %r8
+  add %r8, %rbx
+  mov %rbx, %r8
+  add %r8, %rbx
+  mov %rbx, %r8
+  add %r8, %rbx
+  mov %rbx, %r8
+  add %r8, %rbx
+  mov %rbx, %r8
+  add %r8, %rbx
+  mov %rbx, %r8
+  add %r8, %rbx
+  mov %rbx, %r8
+  add %r8, %rbx
+  mov %rbx, %r8
+  add %r8, %rbx
+  mov %rbx, %r8
+  add %r8, %rbx
+  mov %rbx, %r8
+  add %r8, %rbx
+  mov %rbx, %r8
+  add %r8, %rbx
+  mov %rbx, %r8
+  add %r8, %rbx
+  mov %rbx, %r8
+  add %r8, %rbx
+  mov %rbx, %r8
+  add %r8, %rbx
+  mov %rbx, %r8
+  sub %r9, %rdi
+  jnz clkmovtest_loop
+  pop %r9
+  pop %r8
+  pop %rbx
+  ret 
 
 noptest:
   push %rbx
@@ -241,6 +307,118 @@ addtest_loop:
   pop %rbx
   ret
 
+addnoptest:
+  push %rbx
+  push %rcx
+  push %r8
+  push %r9
+  push %r10
+  push %r11
+  push %r12
+  push %r13
+  push %r14
+  push %r15
+  mov $1, %r8
+  mov $20, %r9
+  xor %rbx, %rbx 
+  xor %rcx, %rcx
+  xor %r10, %r10
+  xor %r11, %r11
+  xor %r12, %r12
+  xor %r13, %r13
+  xor %r14, %r14
+  xor %r15, %r15
+addnoptest_loop:
+  add %r8, %r15
+  add %r8, %r14
+  add %r8, %r13
+  add %r8, %r12
+  nop
+  add %r8, %r10
+  add %r8, %rcx
+  add %r8, %r15
+  add %r8, %r14
+  nop
+  add %r8, %r12
+  add %r8, %r11
+  add %r8, %r10
+  add %r8, %rcx 
+  nop
+  add %r8, %r14
+  add %r8, %r13
+  add %r8, %r12
+  add %r8, %r11
+  nop
+  sub %r9, %rdi
+  jnz addnoptest_loop
+  pop %r15
+  pop %r14
+  pop %r13
+  pop %r12
+  pop %r11
+  pop %r10
+  pop %r9
+  pop %r8 
+  pop %rcx
+  pop %rbx
+  ret 
+
+addmovtest:
+  push %rbx
+  push %rcx
+  push %r8
+  push %r9
+  push %r10
+  push %r11
+  push %r12
+  push %r13
+  push %r14
+  push %r15
+  mov $1, %r8
+  mov $20, %r9
+  xor %rbx, %rbx 
+  xor %rcx, %rcx
+  xor %r10, %r10
+  xor %r11, %r11
+  xor %r12, %r12
+  xor %r13, %r13
+  xor %r14, %r14
+  xor %r15, %r15
+addmovtest_loop:
+  add %r8, %r15
+  add %r8, %r14
+  add %r8, %r13
+  add %r8, %r12
+  mov %r15, %rdx
+  add %r8, %r10
+  add %r8, %rcx
+  add %r8, %r15
+  add %r8, %r14
+  mov %r15, %rdx
+  add %r8, %r12
+  add %r8, %r11
+  add %r8, %r10
+  add %r8, %rcx 
+  mov %r15, %rdx
+  add %r8, %r14
+  add %r8, %r13
+  add %r8, %r12
+  add %r8, %r11
+  mov %r15, %rdx
+  sub %r9, %rdi
+  jnz addmovtest_loop
+  pop %r15
+  pop %r14
+  pop %r13
+  pop %r12
+  pop %r11
+  pop %r10
+  pop %r9
+  pop %r8 
+  pop %rcx
+  pop %rbx
+  ret  
+
 rortest:
   push %rbx
   push %rcx
@@ -296,6 +474,118 @@ rortest_loop:
   pop %rcx
   pop %rbx
   ret 
+
+shltest:
+  push %rbx
+  push %rcx
+  push %r8
+  push %r9
+  push %r10
+  push %r11
+  push %r12
+  push %r13
+  push %r14
+  push %r15
+  mov $1, %r8
+  mov $20, %r9
+  mov %r8, %rbx 
+  mov %r8, %rcx
+  mov %r8, %r10
+  mov %r8, %r11
+  mov %r8, %r12
+  mov %r8, %r13
+  mov %r8, %r14
+  mov %r8, %r15
+shltest_loop:
+  shl $1, %r15
+  shl $1, %r14
+  shl $1, %r13
+  shl $1, %r12
+  shl $1, %r11
+  shl $1, %r15
+  shl $1, %r14
+  shl $1, %r13
+  shl $1, %r12
+  shl $1, %r11 
+  shl $1, %r15
+  shl $1, %r14
+  shl $1, %r13
+  shl $1, %r12
+  shl $1, %r11 
+  shl $1, %r15
+  shl $1, %r14
+  shl $1, %r13
+  shl $1, %r12
+  shl $1, %r11 
+  sub %r9, %rdi
+  jnz shltest_loop
+  pop %r15
+  pop %r14
+  pop %r13
+  pop %r12
+  pop %r11
+  pop %r10
+  pop %r9
+  pop %r8 
+  pop %rcx
+  pop %rbx
+  ret  
+
+mixrorshltest:
+  push %rbx
+  push %rcx
+  push %r8
+  push %r9
+  push %r10
+  push %r11
+  push %r12
+  push %r13
+  push %r14
+  push %r15
+  mov $1, %r8
+  mov $20, %r9
+  mov %r8, %rbx 
+  mov %r8, %rcx
+  mov %r8, %r10
+  mov %r8, %r11
+  mov %r8, %r12
+  mov %r8, %r13
+  mov %r8, %r14
+  mov %r8, %r15
+mixrorshltest_loop:
+  ror $1, %r15
+  shl $1, %r14
+  ror $1, %r13
+  shl $1, %r12
+  ror $1, %r11
+  shl $1, %r15
+  ror $1, %r14
+  shl $1, %r13
+  ror $1, %r12
+  shl $1, %r11 
+  ror $1, %r15
+  shl $1, %r14
+  ror $1, %r13
+  shl $1, %r12
+  ror $1, %r11 
+  shl $1, %r15
+  ror $1, %r14
+  shl $1, %r13
+  ror $1, %r12
+  shl $1, %r11 
+  sub %r9, %rdi
+  jnz mixrorshltest_loop
+  pop %r15
+  pop %r14
+  pop %r13
+  pop %r12
+  pop %r11
+  pop %r10
+  pop %r9
+  pop %r8 
+  pop %rcx
+  pop %rbx
+  ret  
 
 mixrormultest:
   push %rbx
@@ -1257,6 +1547,51 @@ mixadd256fpint_loop:
   pop %r9
   ret 
 
+mix256faddintadd:
+  push %r9
+  push %r8
+  mov $20, %r9
+  movq %r9, %xmm1
+  vpbroadcastq %xmm1, %ymm8
+  cvtsi2ss %r9, %xmm6
+  vbroadcastss %xmm6, %ymm6
+  vmovups %ymm6, %ymm7
+  vmovups %ymm6, %ymm9
+  vmovups %ymm6, %ymm11
+  vmovups %ymm6, %ymm13
+  vmovups %ymm6, %ymm15
+  vmovdqu %ymm8, %ymm10
+  vmovdqu %ymm8, %ymm12
+  vmovdqu %ymm8, %ymm14
+mix256faddintadd_loop:
+  vaddps %ymm6, %ymm7, %ymm7
+  vpaddd %ymm8, %ymm8, %ymm8
+  vaddps %ymm6, %ymm9, %ymm9
+  vpaddd %ymm10, %ymm10, %ymm10
+  vaddps %ymm6, %ymm11, %ymm11
+  vpaddd %ymm12, %ymm12, %ymm12
+  vaddps %ymm6, %ymm13, %ymm13
+  vpaddd %ymm14, %ymm14, %ymm14
+  vaddps %ymm6, %ymm15, %ymm15
+  vpaddd %ymm5, %ymm5, %ymm5
+  vaddps %ymm6, %ymm7, %ymm7
+  vpaddd %ymm8, %ymm8, %ymm8
+  vaddps %ymm6, %ymm9, %ymm9
+  vpaddd %ymm10, %ymm10, %ymm10
+  vaddps %ymm6, %ymm11, %ymm11
+  vpaddd %ymm12, %ymm12, %ymm12
+  vaddps %ymm6, %ymm13, %ymm13
+  vpaddd %ymm14, %ymm14, %ymm14
+  vaddps %ymm6, %ymm15, %ymm15
+  vpaddd %ymm5, %ymm5, %ymm5
+  sub %r9, %rdi
+  jnz mix256faddintadd_loop
+  movq %xmm1, %rax
+  vzeroupper
+  pop %r8
+  pop %r9
+  ret   
+
 mix256fp:
   push %r9
   push %r8
@@ -1844,32 +2179,168 @@ aesencadd128:
   pxor %xmm9, %xmm9
   pxor %xmm10, %xmm10
   pxor %xmm11, %xmm11
+  pxor %xmm12, %xmm12
+  pxor %xmm13, %xmm13
 aesencadd128_loop:
   aesenc %xmm0, %xmm1
-  aesenc %xmm0, %xmm2
-  aesenc %xmm0, %xmm3
-  aesenc %xmm0, %xmm4
+  paddd %xmm6, %xmm2
+  paddd %xmm6, %xmm3
+  paddd %xmm6, %xmm4
   aesenc %xmm0, %xmm5
   paddd %xmm6, %xmm7
   paddd %xmm6, %xmm8
   paddd %xmm6, %xmm9
-  paddd %xmm6, %xmm10
-  paddd %xmm6, %xmm11
+  aesenc %xmm0, %xmm10
+  paddd %xmm6, %xmm2
+  paddd %xmm6, %xmm3
+  paddd %xmm6, %xmm4  
   aesenc %xmm0, %xmm1
-  aesenc %xmm0, %xmm2
-  aesenc %xmm0, %xmm3
-  aesenc %xmm0, %xmm4
-  aesenc %xmm0, %xmm5
   paddd %xmm6, %xmm7
   paddd %xmm6, %xmm8
   paddd %xmm6, %xmm9
-  paddd %xmm6, %xmm10
-  paddd %xmm6, %xmm11 
+  aesenc %xmm0, %xmm10 
+  paddd %xmm6, %xmm11
+  paddd %xmm6, %xmm12
+  paddd %xmm6, %xmm13
   sub %r9, %rdi
   jnz aesencadd128_loop
   movq %xmm1, %rax
   pop %r9
   ret   
+
+aesencfma128:
+  push %r9
+  mov $15, %r9
+  movq %r9, %xmm1
+  vzeroall
+  pxor %xmm0, %xmm0
+  pxor %xmm1, %xmm1
+  xorps %xmm2, %xmm2
+  xorps %xmm3, %xmm3
+  xorps %xmm4, %xmm4
+  pxor %xmm5, %xmm5
+  xorps %xmm6, %xmm6
+  xorps %xmm7, %xmm7
+  xorps %xmm8, %xmm8
+  xorps %xmm9, %xmm9
+  pxor %xmm10, %xmm10
+  xorps %xmm11, %xmm11
+  xorps %xmm12, %xmm12
+  xorps %xmm13, %xmm13
+  xorps %xmm14, %xmm14
+  xorps %xmm15, %xmm15
+  vxorps %xmm16, %xmm16, %xmm16
+  vxorps %xmm17, %xmm17, %xmm17
+  vxorps %xmm18, %xmm18, %xmm18
+  vxorps %xmm19, %xmm19, %xmm19
+aesencfma128_loop:
+  aesenc %xmm0, %xmm1
+  vfmadd132ps %xmm6, %xmm2, %xmm2
+  vfmadd132ps %xmm6, %xmm3, %xmm3
+  aesenc %xmm0, %xmm5
+  vfmadd132ps %xmm6, %xmm7, %xmm7
+  vfmadd132ps %xmm6, %xmm8, %xmm8
+  aesenc %xmm0, %xmm10
+  vfmadd132ps %xmm6, %xmm11, %xmm11
+  vfmadd132ps %xmm6, %xmm12, %xmm12
+  aesenc %xmm0, %xmm1
+  vfmadd132ps %xmm6, %xmm14, %xmm14
+  vfmadd132ps %xmm6, %xmm15, %xmm15
+  aesenc %xmm0, %xmm10 
+  vfmadd132ps %xmm6, %xmm17, %xmm17
+  vfmadd132ps %xmm6, %xmm18, %xmm18
+  sub %r9, %rdi
+  jnz aesencfma128_loop
+  movq %xmm1, %rax
+  pop %r9
+  ret    
+
+aesencfadd128:
+  push %r9
+  mov $15, %r9
+  movq %r9, %xmm1
+  vzeroall
+  pxor %xmm0, %xmm0
+  pxor %xmm1, %xmm1
+  xorps %xmm2, %xmm2
+  xorps %xmm3, %xmm3
+  xorps %xmm4, %xmm4
+  pxor %xmm5, %xmm5
+  xorps %xmm6, %xmm6
+  xorps %xmm7, %xmm7
+  xorps %xmm8, %xmm8
+  xorps %xmm9, %xmm9
+  pxor %xmm10, %xmm10
+  xorps %xmm11, %xmm11
+  xorps %xmm12, %xmm12
+  xorps %xmm13, %xmm13
+  xorps %xmm14, %xmm14
+  xorps %xmm15, %xmm15
+  vxorps %xmm16, %xmm16, %xmm16
+  vxorps %xmm17, %xmm17, %xmm17
+  vxorps %xmm18, %xmm18, %xmm18
+  vxorps %xmm19, %xmm19, %xmm19
+aesencfadd128_loop:
+  aesenc %xmm0, %xmm1
+  vaddps %xmm6, %xmm2, %xmm2
+  vaddps %xmm6, %xmm3, %xmm3
+  aesenc %xmm0, %xmm5
+  vaddps %xmm6, %xmm7, %xmm7
+  vaddps %xmm6, %xmm8, %xmm8
+  aesenc %xmm0, %xmm10
+  vaddps %xmm6, %xmm11, %xmm11
+  vaddps %xmm6, %xmm12, %xmm12
+  aesenc %xmm0, %xmm1
+  vaddps %xmm6, %xmm14, %xmm14
+  vaddps %xmm6, %xmm15, %xmm15
+  aesenc %xmm0, %xmm10 
+  vaddps %xmm6, %xmm17, %xmm17
+  vaddps %xmm6, %xmm18, %xmm18
+  sub %r9, %rdi
+  jg aesencfadd128_loop
+  movq %xmm1, %rax
+  pop %r9
+  ret     
+
+aesencmul128:
+  push %r9
+  mov $15, %r9
+  vzeroall
+  movq %r9, %xmm6
+  pxor %xmm0, %xmm0
+  pxor %xmm5, %xmm5
+  pxor %xmm10, %xmm10
+  xorps %xmm1, %xmm1
+  xorps %xmm2, %xmm2
+  xorps %xmm3, %xmm3
+  xorps %xmm4, %xmm4
+  xorps %xmm7, %xmm7
+  xorps %xmm8, %xmm8
+  xorps %xmm11, %xmm11
+  xorps %xmm12, %xmm12
+  xorps %xmm14, %xmm14
+  xorps %xmm15, %xmm15
+aesencmul128_loop:
+  aesenc %xmm0, %xmm1
+  pmullw %xmm6, %xmm2
+  pmullw %xmm6, %xmm3
+  aesenc %xmm0, %xmm5
+  pmullw %xmm6, %xmm7
+  pmullw %xmm6, %xmm8
+  aesenc %xmm0, %xmm10
+  pmullw %xmm6, %xmm11
+  pmullw %xmm6, %xmm12
+  aesenc %xmm0, %xmm1
+  pmullw %xmm6, %xmm4
+  pmullw %xmm6, %xmm6
+  aesenc %xmm0, %xmm10 
+  pmullw %xmm6, %xmm13
+  pmullw %xmm6, %xmm14
+  sub %r9, %rdi
+  jg aesencmul128_loop
+  movq %xmm1, %rax
+  pop %r9
+  ret     
 
 aesdec128:
   push %r9
@@ -2224,6 +2695,51 @@ fma512_loop:
   pop %r9
   ret    
 
+mixfma256fma512:
+  push %r9
+  push %r8
+  mov $20, %r9
+  movq %r9, %xmm1
+  cvtsi2ss %r9, %xmm6
+  vbroadcastss %xmm6, %zmm6
+  vmovups %zmm6, %zmm5
+  vmovups %zmm6, %zmm7
+  vmovups %zmm6, %zmm8
+  vmovups %zmm6, %zmm9
+  vmovups %zmm6, %zmm10
+  vmovups %zmm6, %zmm11
+  vmovups %zmm6, %zmm12
+  vmovups %zmm6, %zmm13
+  vmovups %zmm6, %zmm14
+  vmovups %zmm6, %zmm15
+mixfma256fma512_loop:
+  vfmadd132ps %ymm6, %ymm5, %ymm5
+  vfmadd132ps %zmm6, %zmm7, %zmm7
+  vfmadd132ps %ymm6, %ymm8, %ymm8
+  vfmadd132ps %zmm6, %zmm9, %zmm9
+  vfmadd132ps %ymm6, %ymm10, %ymm10
+  vfmadd132ps %zmm6, %zmm11, %zmm11
+  vfmadd132ps %ymm6, %ymm12, %ymm12
+  vfmadd132ps %zmm6, %zmm13, %zmm13
+  vfmadd132ps %ymm6, %ymm14, %ymm14
+  vfmadd132ps %zmm6, %zmm15, %zmm15
+  vfmadd132ps %ymm6, %ymm5, %ymm5
+  vfmadd132ps %zmm6, %zmm7, %zmm7
+  vfmadd132ps %ymm6, %ymm8, %ymm8
+  vfmadd132ps %zmm6, %zmm9, %zmm9
+  vfmadd132ps %ymm6, %ymm10, %ymm10
+  vfmadd132ps %zmm6, %zmm11, %zmm11
+  vfmadd132ps %ymm6, %ymm12, %ymm12
+  vfmadd132ps %zmm6, %zmm13, %zmm13
+  vfmadd132ps %ymm6, %ymm14, %ymm14
+  vfmadd132ps %zmm6, %zmm15, %zmm15 
+  sub %r9, %rdi
+  jnz mixfma256fma512_loop
+  movq %xmm1, %rax
+  vzeroupper
+  pop %r8
+  pop %r9
+  ret     
 
 fma256:
   push %r9
@@ -3760,6 +4276,65 @@ pdeptest_loop:
   pop %rcx
   pop %rbx
   ret
+
+pdepmultest:
+  push %rbx
+  push %rcx
+  push %rsi
+  push %r8
+  push %r9
+  push %r10
+  push %r11
+  push %r12
+  push %r13
+  push %r14
+  push %r15
+  mov $1, %r8
+  mov $20, %r9
+  xor %rbx, %rbx 
+  xor %rcx, %rcx
+  xor %rsi, %rsi
+  xor %r10, %r10
+  xor %r11, %r11
+  xor %r12, %r12
+  xor %r13, %r13
+  xor %r14, %r14
+  xor %r15, %r15
+pdepmultest_loop:
+  pdep %r8, %r15, %r15
+  imul %r9, %r14
+  pdep %r8, %r13, %r13
+  imul %r9, %r12
+  pdep %r8, %r11, %r11
+  imul %r9, %r10
+  pdep %r8, %rcx, %rcx
+  imul %r9, %rbx
+  pdep %r8, %r15, %r15
+  imul %r9, %rsi
+  pdep %r8, %r15, %r15
+  imul %r9, %r14
+  pdep %r8, %r13, %r13
+  imul %r9, %r12
+  pdep %r8, %r11, %r11
+  imul %r9, %r10
+  pdep %r8, %rcx, %rcx
+  imul %r9, %rbx
+  pdep %r8, %r15, %r15
+  imul %r9, %rsi 
+  sub %r9, %rdi
+  jnz pdepmultest_loop
+  pop %r15
+  pop %r14
+  pop %r13
+  pop %r12
+  pop %r11
+  pop %r10
+  pop %r9
+  pop %r8 
+  pop %rsi
+  pop %rcx
+  pop %rbx
+  ret 
 
 
 pexttest:
