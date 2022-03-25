@@ -76,7 +76,7 @@ asm_read_pass_loop:
   b.ne asm_read_pass_loop /* skip iteration decrement if we're not back to start */
   sub x2, x2, 1
   cbnz x2, asm_read_pass_loop
-  ins v0.4s[0], v16.4s[0]
+  add v0.4s, v16.4s, v16.4s
   ldp x12, x13, [sp, #0x20]
   ldp x14, x15, [sp, #0x10]
   add sp, sp, #0x30
@@ -145,7 +145,7 @@ asm_write_pass_loop:
   b.ne asm_write_pass_loop /* skip iteration decrement if we're not back to start */
   sub x2, x2, 1
   cbnz x2, asm_write_pass_loop
-  ins v0.4s[0], v16.4s[0]
+  add v0.4s, v16.4s, v16.4s
   ldp x12, x13, [sp, #0x20]
   ldp x14, x15, [sp, #0x10]
   add sp, sp, #0x30
@@ -244,7 +244,7 @@ asm_cflip_pass_loop:
   b.ne asm_cflip_pass_loop /* skip iteration decrement if we're not back to start */
   sub x2, x2, 2
   cbnz x2, asm_cflip_pass_loop
-  ins v0.4s[0], v16.4s[0]
+  add v0.4s, v16.4s, v16.4s
   ldp x12, x13, [sp, #0x20]
   ldp x14, x15, [sp, #0x10]
   add sp, sp, #0x30
@@ -320,7 +320,7 @@ asm_copy_pass_loop:
   b.ne asm_copy_pass_loop /* skip iteration decrement if we're not back to start */
   sub x2, x2, 1
   cbnz x2, asm_copy_pass_loop
-  ins v0.4s[0], v16.4s[0]
+  add v0.4s, v16.4s, v16.4s
   ldp x8, x9, [sp, #0x40]
   ldp x10, x11, [sp, #0x30]
   ldp x12, x13, [sp, #0x20]
