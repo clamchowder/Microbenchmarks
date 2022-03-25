@@ -5,6 +5,7 @@
 #include <stdlib.h>
 #include <stdint.h>
 #include <string.h>
+#include <libkern/OSCacheControl.h>
 
 #ifndef __MINGW32__
 #include <sys/syscall.h>
@@ -20,7 +21,7 @@
 
 #pragma GCC diagnostic ignored "-Wattributes"
 
-int default_test_sizes[39] = { 2, 4, 8, 12, 16, 24, 32, 48, 64, 96, 128, 192, 256, 512, 600, 768, 1024, 1536, 2048,
+int default_test_sizes[40] = { 1, 2, 4, 8, 12, 16, 24, 32, 48, 64, 96, 128, 192, 256, 512, 600, 768, 1024, 1536, 2048,
                                3072, 4096, 5120, 6144, 8192, 10240, 12288, 16384, 24567, 32768, 65536, 98304,
                                131072, 262144, 393216, 524288, 1048576, 1572864, 2097152, 3145728 };
 
@@ -389,10 +390,13 @@ float MeasureInstructionBw(uint64_t sizeKb, uint64_t iterations, int nopSize, in
 
     // nops, dec rcx (3 bytes), jump if zero flag set to 32-bit displacement (6 bytes), ret (1 byte)
     //nops = (uint64_t *)malloc(funcLen);
-    if (0 != posix_memalign((void **)(&nops), 4096, funcLen)) {
+    /*if (0 != posix_memalign((void **)(&nops), 4096 * 4, funcLen)) {
         fprintf(stderr, "Failed to allocate memory for size %lu\n", sizeKb);
         return 0;
-    }
+    }*/
+
+    nops = mmap(nops, funcLen, PROT_WRITE | PROT_READ, MAP_ANON | MAP_PRIVATE | MAP_JIT, -1, 0);
+    pthread_jit_write_protect_np(0);
 
     uint64_t *nop8bptr;
     if (nopSize == 8) nop8bptr = (uint64_t *)(nop8b);
@@ -421,17 +425,18 @@ float MeasureInstructionBw(uint64_t sizeKb, uint64_t iterations, int nopSize, in
     #ifdef __aarch64__ 
     uint64_t *functionEnd = (uint64_t *)(nops + elements);
     functionEnd[0] = 0XD65F03C0;
-    flush_icache((void *)nops, funcLen);
     #endif
 
-    uint64_t nopfuncPage = (~0xFFF) & (uint64_t)(nops);
-    size_t mprotectLen = (0xFFF & (uint64_t)(nops)) + funcLen;
-    if (mprotect((void *)nopfuncPage, mprotectLen, PROT_EXEC | PROT_READ | PROT_WRITE) < 0) {
+    uint64_t nopfuncPage = (~0x3FFF) & (uint64_t)(nops);
+    size_t mprotectLen = (0x3FFF & (uint64_t)(nops)) + funcLen;
+    if (mprotect((void *)nopfuncPage, mprotectLen, PROT_EXEC | PROT_READ) < 0) {
         fprintf(stderr, "mprotect failed, errno %d\n", errno); 
         return 0;
-    }  
-
-    nopfunc = (__attribute((ms_abi)) void(*)(uint64_t))nops;
+    }
+    pthread_jit_write_protect_np(1);
+    sys_dcache_flush((void *)nops, funcLen);
+    sys_icache_invalidate((void *)nops, funcLen);
+    nopfunc = (void(*)(uint64_t))nops;
     gettimeofday(&startTv, &startTz);
     for (int iterIdx = 0; iterIdx < iterations; iterIdx++) nopfunc(iterations);
     gettimeofday(&endTv, &endTz);
@@ -441,7 +446,8 @@ float MeasureInstructionBw(uint64_t sizeKb, uint64_t iterations, int nopSize, in
     //fprintf(stderr, "%lf GB transferred in %ld ms\n", gbTransferred, time_diff_ms);
     bw = 1000 * gbTransferred / (double)time_diff_ms; 
 
-    free(nops);
+    //free(nops);
+    munmap(nops, funcLen);
     return bw;
 }
 

@@ -6,9 +6,17 @@
 .global stlftest32
 .global matchedstlftest
 
+.global _latencytest
+.global _preplatencyarr 
+.global _stlftest
+.global _stlftest32
+.global _matchedstlftest
+
+
 /* x0 = ptr to arr
    x1 = arr len
    convert values in array from array indexes to pointers */
+_preplatencyarr:
 preplatencyarr:
   sub sp, sp, #0x20
   stp x14, x15, [sp, #0x10]
@@ -28,6 +36,7 @@ preplatencyarr_loop:
 /* x0 = iteration count
    x1 = ptr to arr
    do pointer chasing for specified iteration count */
+_latencytest:
 latencytest:
   sub sp, sp, #0x20
   stp x14, x15, [sp, #0x10]
@@ -45,6 +54,7 @@ latencytest_loop:
 
 /* x0 = iteration count
    x1 = ptr to arr. first 32-bit int = store offset, second = load offset */
+_stlftest:
 stlftest:
   sub sp, sp, #0x40
   stp x14, x15, [sp, #0x10]
@@ -73,6 +83,7 @@ stlftest_loop:
   add sp, sp, #0x40
   ret
 
+_stlftest32:
 stlftest32:
   sub sp, sp, #0x40
   stp x14, x15, [sp, #0x10]
@@ -101,6 +112,7 @@ stlftest32_loop:
   add sp, sp, #0x40
   ret 
 
+_matchedstlftest:
 matchedstlftest:
   sub sp, sp, #0x40
   stp x14, x15, [sp, #0x10]

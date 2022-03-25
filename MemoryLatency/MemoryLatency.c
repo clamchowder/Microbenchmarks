@@ -12,6 +12,7 @@
 // TODO: possibly get this programatically
 #define PAGE_SIZE 4096
 #define CACHELINE_SIZE 64
+#define MAP_HUGETLB 0 
 
 int default_test_sizes[37] = { 2, 4, 8, 12, 16, 24, 32, 48, 64, 96, 128, 192, 256, 384, 512, 600, 768, 1024, 1536, 2048,
                                3072, 4096, 5120, 6144, 8192, 10240, 12288, 16384, 24567, 32768, 65536, 98304,
