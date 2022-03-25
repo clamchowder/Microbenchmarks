@@ -9,11 +9,20 @@
 .global flush_icache
 .global readbankconflict
 
+.global _asm_read
+.global _asm_write 
+.global _asm_cflip
+.global _asm_copy
+.global _asm_add
+.global _flush_icache
+.global _readbankconflict 
+
 /* x0 = ptr to array (was rcx)
  * x1 = arr length (was rdx)
  * x2 = iterations (was r8)
  * x3 = start (was r9)
  */
+_asm_read:
 asm_read:
   sub sp, sp, #0x30
   stp x14, x15, [sp, #0x10]
@@ -82,6 +91,7 @@ asm_read_pass_loop:
   add sp, sp, #0x30
   ret
 
+_asm_write:
 asm_write:
   sub sp, sp, #0x30
   stp x14, x15, [sp, #0x10]
@@ -151,6 +161,7 @@ asm_write_pass_loop:
   add sp, sp, #0x30
   ret 
 
+_asm_cflip:
 asm_cflip:
   sub sp, sp, #0x30
   stp x14, x15, [sp, #0x10]
@@ -255,6 +266,7 @@ asm_cflip_pass_loop:
  * x2 = iterations (was r8)
  * x3 = start (was r9)
  */ 
+_asm_copy:
 asm_copy:
   sub sp, sp, #0x50
   stp x14, x15, [sp, #0x10]
@@ -334,6 +346,7 @@ asm_copy_pass_loop:
  * x3 = start (was r9)
  */
 asm_add:
+_asm_add:
   sub sp, sp, #0x30
   stp x14, x15, [sp, #0x10]
   stp x12, x13, [sp, #0x20]
@@ -475,6 +488,7 @@ asm_add_pass_loop:
    x2 = load spacing, in bytes
    x3 = iter count (number of loads to execute) */
 readbankconflict:
+_readbankconflict:
    sub sp, sp, #0x40
    stp x14, x15, [sp, #0x10]
    stp x12, x13, [sp, #0x20]
@@ -557,6 +571,7 @@ readbankconflict_end:
 /* x0: ptr to array
    x1: array size in bytes */
 flush_icache:
+_flush_icache:
   sub sp, sp, #0x20
   stp x14, x15, [sp, #0x10]
   asr x0, x0, 6   /* align to 64B cacheline */
