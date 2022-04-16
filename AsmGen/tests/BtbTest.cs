@@ -191,8 +191,9 @@ namespace AsmGen
             {
                 string funcName = GetBranchFuncName(Counts[i]);
                 sb.AppendLine(funcName + ":");
-                sb.AppendLine($"  adrp x2, {funcName}");
-                sb.AppendLine($"  add x2, x2, :lo12:{funcName}");
+                sb.AppendLine("_" + funcName + ":");
+                //sb.AppendLine($"  adrp x2, {funcName}");
+                //sb.AppendLine($"  add x2, x2, :lo12:{funcName}");
                 sb.AppendLine("  mov x1, 1");
                 for (int branchIdx = 1; branchIdx < Counts[i]; branchIdx++)
                 {
@@ -216,7 +217,7 @@ namespace AsmGen
                 sb.AppendLine("  sub x0, x0, 1");
 
                 // aarch64 is a mess. try to avoid 'relocation truncated to fit' issues with an indirect branch
-                if (spacing * Counts[i] >= (1024 * 1024 - 20))
+                /*if (spacing * Counts[i] >= (1024 * 1024 - 20))
                 {
                     string workaroundTarget = funcName + "_aarch64_indirect_workaround";
                     sb.AppendLine("  cbz x0, " + workaroundTarget);  // jump over indirect branch to return, on zero
@@ -224,9 +225,9 @@ namespace AsmGen
                     sb.AppendLine(workaroundTarget + ":");
                 }
                 else
-                {
+                {*/
                     sb.AppendLine("  cbnz x0, " + funcName);
-                }
+                //}
 
                 sb.AppendLine("  ret\n\n");
 

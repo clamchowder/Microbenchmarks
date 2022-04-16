@@ -53,6 +53,11 @@ namespace AsmGen
             tests.Add(new BtbTest(8, BtbTest.BranchType.Unconditional));
             tests.Add(new BtbTest(16, BtbTest.BranchType.Unconditional));
             tests.Add(new BtbTest(32, BtbTest.BranchType.Unconditional));
+            tests.Add(new BtbTest(4, BtbTest.BranchType.Conditional));
+            tests.Add(new BtbTest(8, BtbTest.BranchType.Conditional));
+            tests.Add(new BtbTest(16, BtbTest.BranchType.Conditional));
+            tests.Add(new BtbTest(32, BtbTest.BranchType.Conditional));
+            tests.Add(new BtbTest(16, BtbTest.BranchType.ZenMix));
             //tests.Add(new BtbTest(64, BtbTest.BranchType.Unconditional));
             tests.Add(new MixJmpMulSchedTest(2, 128, 1));
             tests.Add(new MixMulRorSchedTest(2, 128, 1));

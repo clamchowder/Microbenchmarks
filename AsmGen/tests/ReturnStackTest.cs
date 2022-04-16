@@ -98,6 +98,8 @@ namespace AsmGen
                 {
                     string funcName = GetFunctionName(callDepth, callIdx);
                     sb.AppendLine($".global {funcName}");
+                    sb.AppendLine($".global _{funcName}");
+                    sb.AppendLine($"_{funcName}:");
                     sb.AppendLine($"{funcName}:");
                     sb.AppendLine($"  add x3, x3, x0");
                     if (callIdx < callDepth - 1)

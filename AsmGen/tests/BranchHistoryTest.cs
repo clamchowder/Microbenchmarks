@@ -37,6 +37,7 @@ namespace AsmGen
                 string functionLabel = Prefix + branchCounts[i];
                 string loopLabel = functionLabel + "_loop";
                 sb.AppendLine("\n" + functionLabel + ":");
+                sb.AppendLine("_" + functionLabel + ":");
                 sb.AppendLine("  sub sp, sp, #0x40");
                 sb.AppendLine("  stp x11, x12, [sp, #0x30]");
                 sb.AppendLine("  stp x15, x16, [sp, #0x20]");
@@ -133,6 +134,7 @@ namespace AsmGen
                 // rcx = iterations, rdx = ptr to array of arrays, r8 = history length
                 string functionLabel = Prefix + branchCounts[i];
                 sb.AppendLine("\n" + functionLabel + ":");
+                sb.AppendLine("_" + functionLabel + ":");
                 sb.AppendLine("  push rbx");
                 sb.AppendLine("  push r15");
                 sb.AppendLine("  push r11");
@@ -199,7 +201,10 @@ namespace AsmGen
         public void GenerateAsmGlobalLines(StringBuilder sb)
         {
             for (int i = 0; i < branchCounts.Length; i++)
+            {
                 sb.AppendLine(".global " + Prefix + branchCounts[i]);
+                sb.AppendLine(".global _" + Prefix + branchCounts[i]);
+            }
         }
 
         public void GenerateNasmGlobalLines(StringBuilder sb)

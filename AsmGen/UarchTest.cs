@@ -30,7 +30,10 @@ namespace AsmGen
         public void GenerateAsmGlobalLines(StringBuilder sb)
         {
             for (int i = 0; i < Counts.Length; i++)
+            {
                 sb.AppendLine(".global " + Prefix + Counts[i]);
+                sb.AppendLine(".global _" + Prefix + Counts[i]);
+            }
         }
 
         public void GenerateExternLines(StringBuilder sb)

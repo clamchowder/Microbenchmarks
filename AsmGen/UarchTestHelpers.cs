@@ -76,7 +76,10 @@ namespace AsmGen
         {
             int[] counts = test.Counts;
             for (int i = 0; i < counts.Length; i++)
+            {
                 sb.AppendLine(".global " + test.Prefix + counts[i]);
+                sb.AppendLine(".global _" + test.Prefix + counts[i]);
+            }
         }
 
         public static void GenerateExternLines(StringBuilder sb, UarchTest test)
@@ -1201,6 +1204,7 @@ namespace AsmGen
 
                 // args in x0, x1
                 sb.AppendLine("\n" + funcName + ":");
+                sb.AppendLine("_" + funcName + ":");
                 sb.AppendLine("  sub sp, sp, #0x50");
                 sb.AppendLine("  stp x14, x15, [sp, #0x10]");
                 sb.AppendLine("  stp x12, x13, [sp, #0x20]");
@@ -1268,6 +1272,7 @@ namespace AsmGen
 
                 // args in x0, x1
                 sb.AppendLine("\n" + funcName + ":");
+                sb.AppendLine("\n_" + funcName + ":");
                 sb.AppendLine("  sub sp, sp, #0x50");
                 sb.AppendLine("  stp x14, x15, [sp, #0x10]");
                 sb.AppendLine("  stp x12, x13, [sp, #0x20]");
@@ -1322,6 +1327,7 @@ namespace AsmGen
             {
                 string funcName = funcNamePrefix + counts[i];
                 sb.AppendLine("\n" + funcName + ":");
+                sb.AppendLine("_" + funcName + ":");
                 sb.AppendLine("  ret");
             }
         }
@@ -1353,6 +1359,7 @@ namespace AsmGen
 
                 // args in x0 = iterations, x1 = list size, x2 = list (sink)
                 sb.AppendLine("\n" + funcName + ":");
+                sb.AppendLine("_" + funcName + ":");
                 sb.AppendLine("  sub sp, sp, #0x50");
                 sb.AppendLine("  stp x14, x15, [sp, #0x10]");
                 sb.AppendLine("  stp x12, x13, [sp, #0x20]");

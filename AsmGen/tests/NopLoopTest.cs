@@ -56,6 +56,7 @@ namespace AsmGen
             {
                 string funcName = this.Prefix + this.Counts[i];
                 sb.AppendLine(funcName + ":");
+                sb.AppendLine("_" + funcName + ":");
 
                 // count dec, jnz as instructions in the loop
                 for (int nopIdx = 0; nopIdx < this.Counts[i] - 2; nopIdx++) sb.AppendLine("  nop");

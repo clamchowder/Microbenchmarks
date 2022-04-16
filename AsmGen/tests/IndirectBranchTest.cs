@@ -402,7 +402,10 @@ namespace AsmGen
         {
             for (int branchCountIdx = 0; branchCountIdx < branchCounts.Length; branchCountIdx++)
                 for (int targetCountIdx = 0; targetCountIdx < targetCounts.Length; targetCountIdx++)
+                {
                     sb.AppendLine(".global " + GetFunctionName(branchCounts[branchCountIdx], targetCounts[targetCountIdx]));
+                    sb.AppendLine(".global _" + GetFunctionName(branchCounts[branchCountIdx], targetCounts[targetCountIdx]));
+                }
         }
 
         public void GenerateNasmGlobalLines(StringBuilder sb)

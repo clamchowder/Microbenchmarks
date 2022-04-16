@@ -171,6 +171,9 @@ int main(int argc, char *argv[]) {
                 dataGb = atoi(argv[argIdx]);
                 fprintf(stderr, "Base data to transfer: %u\n", dataGb);
             }
+            else if (_strnicmp(arg, "numainfo", 8) == 0) {
+                fprintf(stderr, "Printing NUMA info and exiting\n");
+            }
         }
     }
 
@@ -517,4 +520,19 @@ DWORD WINAPI ReadBandwidthTestThread(LPVOID param) {
     float sum = bw_func(bwTestData->arr, bwTestData->arr_length, bwTestData->iterations);
     if (sum == 0) printf("woohoo\n");
     return 0;
+}
+
+void PrintNumaInfo() {
+    int rc;
+    ULONG highestNumaNode;
+    DWORD nProcs;
+    SYSTEM_INFO SystemInfo;
+    GetSystemInfo(&SystemInfo);
+    nProcs = SystemInfo.dwNumberOfProcessors;
+    if (!GetNumaHighestNodeNumber(&highestNumaNode)) {
+        fprintf(stderr, "Could not get highest NUMA node number: %d\n", GetLastError());
+        return;
+    }
+
+    printf("%d processors, highest NUMA node is %lu", nProcs, highestNumaNode);
 }

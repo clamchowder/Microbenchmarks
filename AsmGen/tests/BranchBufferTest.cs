@@ -147,6 +147,7 @@ namespace AsmGen
                 string funcName = Prefix + Counts[i];
 
                 sb.AppendLine("\n" + funcName + ":");
+                sb.AppendLine("_" + funcName + ":");
                 sb.AppendLine("  sub sp, sp, #0x50");
                 sb.AppendLine("  stp x14, x15, [sp, #0x10]");
                 sb.AppendLine("  stp x12, x13, [sp, #0x20]");
