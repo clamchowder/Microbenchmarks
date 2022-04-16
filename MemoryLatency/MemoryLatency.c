@@ -140,8 +140,14 @@ int main(int argc, char* argv[]) {
        fprintf(stderr, "mmap-ing %lu bytes\n", maxMemRequired);
        hugePagesArr = mmap(NULL, maxMemRequired, PROT_READ | PROT_WRITE, MAP_PRIVATE | MAP_ANONYMOUS | MAP_HUGETLB, -1, 0);
        if (hugePagesArr == (void *)-1) { // on failure, mmap will return MAP_FAILED, or (void *)-1
-           fprintf(stderr, "Failed to mmap huge pages, errno %d = %s\nWill not use huge pages\n", errno, strerror(errno));
-	   hugePagesArr = NULL;
+           fprintf(stderr, "Failed to mmap huge pages, errno %d = %s\nWill try to use madvise\n", errno, strerror(errno));
+           if (0 != posix_memalign((void **)(&hugePagesArr), 2 * 1024 * 1024, maxMemRequired)) {
+               fprintf(stderr, "Failed to allocate 2 MB aligned memory, will not use hugepages\n");
+	       hugePagesArr = NULL;
+               return 0;
+           }
+
+           madvise(hugePagesArr, maxMemRequired, MADV_HUGEPAGE);
        }
     }
 
