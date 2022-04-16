@@ -31,7 +31,7 @@ int main(int argc, char *argv[]) {
       int *grid = (int *)malloc(sizeof(int) * grid_x_length * grid_y_length);
       reset_grid(grid);
       for (int v = 0; v < grid_y_length * grid_x_length; v++) bf(grid, start_x, start_y);
-      printf("Centered on %d,%d:\n", start_x, start_y);
+      //printf("Centered on %d,%d:\n", start_x, start_y);
       //print_grid(grid);
 
       float avg = average_grid(grid);
