@@ -1,15 +1,16 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <omp.h>
 
-int *grid, grid_x_length, grid_y_length;
+int grid_x_length, grid_y_length;
 float *average_latency_map;
 
-void bf(int, int); 
+void bf(int*, int, int); 
 void print_grid(int*);
 void print_float_grid(float*);
-void reset_grid();
-float average_grid();
+void reset_grid(int*);
+float average_grid(int*);
 
 int main(int argc, char *argv[]) {
   if (argc < 3) {
@@ -21,20 +22,22 @@ int main(int argc, char *argv[]) {
   }
   
   printf("Using %dx%d grid\n", grid_x_length, grid_y_length);
-  grid = (int *)malloc(sizeof(int) * grid_x_length * grid_y_length);
   average_latency_map = (float *)malloc(sizeof(float) * grid_x_length * grid_y_length);
   memset(average_latency_map, 0, sizeof(float) * grid_x_length * grid_y_length);
 
   for (int start_y = 0; start_y < grid_y_length; start_y++) {
+    #pragma omp parallel for
     for (int start_x = 0; start_x < grid_x_length; start_x++) {
-      reset_grid();
-      for (int v = 0; v < grid_y_length * grid_x_length; v++) bf(start_x, start_y);
+      int *grid = (int *)malloc(sizeof(int) * grid_x_length * grid_y_length);
+      reset_grid(grid);
+      for (int v = 0; v < grid_y_length * grid_x_length; v++) bf(grid, start_x, start_y);
       printf("Centered on %d,%d:\n", start_x, start_y);
       //print_grid(grid);
 
-      float avg = average_grid();
-      printf("average for %d, %d: %f\n", start_x, start_y, avg); 
+      float avg = average_grid(grid);
+      //printf("average for %d, %d: %f\n", start_x, start_y, avg); 
       average_latency_map[start_y * grid_x_length + start_x] = avg;
+      free(grid);
     }
   }
 
@@ -42,20 +45,20 @@ int main(int argc, char *argv[]) {
   return 0;
 }
 
-void reset_grid() {
+void reset_grid(int *target_grid) {
   for (int y = 0; y < grid_y_length; y++)
-    for (int x = 0; x < grid_x_length; x++) grid[y * grid_x_length + x] = -1;
+    for (int x = 0; x < grid_x_length; x++) target_grid[y * grid_x_length + x] = -1;
 }
 
-float average_grid() {
+float average_grid(int *target_grid) {
   float sum = 0;
   for (int y = 0; y < grid_y_length; y++)
-    for (int x = 0; x < grid_x_length; x++) sum += grid[y * grid_x_length + x];
+    for (int x = 0; x < grid_x_length; x++) sum += target_grid[y * grid_x_length + x];
   return sum / (grid_x_length * grid_y_length);
 }
 
-// populates grid with best distances
-void bf(int start_x, int start_y) {
+// one iteration of bellman-ford
+void bf(int *grid, int start_x, int start_y) {
   grid[start_y * grid_x_length + start_x] = 0;
   for (int y = 0; y < grid_y_length; y++) {
     for (int x = 0; x < grid_x_length; x++) {
