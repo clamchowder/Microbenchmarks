@@ -26,6 +26,7 @@ int main(int argc, char *argv[]) {
   memset(average_latency_map, 0, sizeof(float) * grid_x_length * grid_y_length);
 
   for (int start_y = 0; start_y < grid_y_length; start_y++) {
+    printf("Working on row %d\n", start_y);
     #pragma omp parallel for
     for (int start_x = 0; start_x < grid_x_length; start_x++) {
       int *grid = (int *)malloc(sizeof(int) * grid_x_length * grid_y_length);
