@@ -11,6 +11,11 @@
 #include <immintrin.h>
 #include <windows.h>
 
+#define NUMA_STRIPE 1
+#define NUMA_SEQ 2
+#define NUMA_CROSSNODE 3
+#define NUMA_AUTO 4
+
 #ifdef _WIN64
 int default_test_sizes[39] = { 2, 4, 8, 12, 16, 24, 32, 48, 64, 96, 128, 192, 256, 512, 600, 768, 1024, 1536, 2048,
                                3072, 4096, 5120, 6144, 8192, 10240, 12288, 16384, 24567, 32768, 65536, 98304,
@@ -63,13 +68,20 @@ float(_fastcall *bw_func)(void*, uint32_t, uint32_t) = dummy;
 
 float MeasureBw(uint32_t sizeKb, uint32_t iterations, uint32_t threads, int shared);
 float MeasureInstructionBw(uint64_t sizeKb, uint64_t iterations, enum NopSize nopSize);
+void PrintNumaInfo();
 uint32_t GetIterationCount(uint32_t testSize, uint32_t threads);
 DWORD WINAPI ReadBandwidthTestThread(LPVOID param);
+
+int numa = 0;
+char coreNode, memNode;
+char GetSeqNode(uint64_t);
+char GetStripeNode(uint64_t);
 
 int main(int argc, char *argv[]) {
     int threads = 1, shared = 0, methodSet = 0;
     enum NopSize instr = None;
     int cpuid_data[4];
+    int singleSize = 0;
 
     if (argc == 1) {
         printf("Usage: [-threads <thread count>] [-method <scalar/sse/avx/asm_avx/asm_avx512>] [-shared] [-private] [-data <base GB to transfer, default = %d>]\n", dataGb);
@@ -171,6 +183,41 @@ int main(int argc, char *argv[]) {
                 dataGb = atoi(argv[argIdx]);
                 fprintf(stderr, "Base data to transfer: %u\n", dataGb);
             }
+            else if (_strnicmp(arg, "printnumainfo", 8) == 0) {
+                fprintf(stderr, "Printing NUMA info and exiting\n");
+                PrintNumaInfo();
+                return 0;
+            }
+            else if (_strnicmp(arg, "numa", 4) == 0) {
+                argIdx++;
+                fprintf(stderr, "Attempting to be NUMA aware\n");
+                numa = NUMA_SEQ;
+                if (_strnicmp(argv[argIdx], "stripe", 6) == 0) {
+                    numa = NUMA_STRIPE;
+                }
+                else if (_strnicmp(argv[argIdx], "seq", 3) == 0) {
+                    numa = NUMA_SEQ;
+                }
+                
+                if (numa == NUMA_SEQ) fprintf(stderr, "Filling NUMA nodes one by one\n");
+                else if (numa == NUMA_STRIPE) fprintf(stderr, "Striping threads across NUMA nodes\n");
+            }
+            else if (_strnicmp(arg, "autonuma", 8) == 0) {
+                numa = NUMA_AUTO;
+            }
+            else if (_strnicmp(arg, "crossnode", 9) == 0) {
+                numa = NUMA_CROSSNODE;
+                argIdx++;
+                coreNode = atoi(argv[argIdx]);
+                argIdx++;
+                memNode = atoi(argv[argIdx]);
+                fprintf(stderr, "Testing %d -> %d\n", coreNode, memNode);
+            }
+            else if (_strnicmp(arg, "singlesize", 10) == 0) {
+                argIdx++;
+                singleSize = atoi(argv[argIdx]);
+                fprintf(stderr, "Testing %d KB\n", singleSize);
+            }
         }
     }
 
@@ -226,6 +273,39 @@ int main(int argc, char *argv[]) {
         for (int i = 0; i < sizeof(default_test_sizes) / sizeof(int); i++) {
             float bw = MeasureInstructionBw(default_test_sizes[i], GetIterationCount(default_test_sizes[i], threads), instr);
             if (bw > 0) printf("%d,%f\n", default_test_sizes[i], bw);
+        }
+    }
+    else if (singleSize) {
+        float bw = MeasureBw(singleSize, GetIterationCount(singleSize, threads), threads, shared);
+        printf("%d,%f\n", singleSize, bw);
+    }
+    else if (numa == NUMA_AUTO) {
+        ULONG highestNumaNode;
+        if (!GetNumaHighestNodeNumber(&highestNumaNode)) {
+            fprintf(stderr, "Could not get highest NUMA node number: %d\n", GetLastError());
+            return 0;
+        }
+
+        for (int coreNode = 0; coreNode <= highestNumaNode; coreNode++) printf(",%d", coreNode);
+        printf("\n");
+
+        for (int coreNodeIdx = 0; coreNodeIdx <= highestNumaNode; coreNodeIdx++) {
+            printf("%d", coreNodeIdx);
+            for (int memNodeIdx = 0; memNodeIdx <= highestNumaNode; memNodeIdx++) {
+                ULONGLONG mask;
+                DWORD index;
+                coreNode = coreNodeIdx;
+                memNode = memNodeIdx;
+                numa = NUMA_CROSSNODE; // hacky, oh well
+                float bw = MeasureBw(
+                    default_test_sizes[(sizeof(default_test_sizes) / sizeof(int)) - 1], 
+                    GetIterationCount(default_test_sizes[(sizeof(default_test_sizes) / sizeof(int)) - 1], threads), 
+                    threads, 
+                    shared);
+                printf(",%f", bw);
+            }
+
+            printf("\n");
         }
     }
     else {
@@ -292,12 +372,48 @@ float MeasureBw(uint32_t sizeKb, uint32_t iterations, uint32_t threads, int shar
     struct BandwidthTestThreadData* threadData = (struct BandwidthTestThreadData*)malloc(threads * sizeof(struct BandwidthTestThreadData));
 
     for (uint64_t i = 0; i < threads; i++) {
+        char node;
         if (shared) {
             threadData[i].arr = testArr;
             threadData[i].iterations = iterations;
         }
         else {
-            threadData[i].arr = (float*)_aligned_malloc(elements * sizeof(float), 64);
+            if (!numa) threadData[i].arr = (float*)_aligned_malloc(elements * sizeof(float), 64);
+            else if (numa == NUMA_STRIPE) {
+                node = GetStripeNode(i);
+                threadData[i].arr = (float *)VirtualAllocExNuma(
+                    GetCurrentProcess(),
+                    NULL,
+                    elements * sizeof(float),
+                    MEM_RESERVE | MEM_COMMIT,
+                    PAGE_READWRITE,
+                    node
+                );
+            }
+            else if (numa == NUMA_SEQ) {
+                node = GetSeqNode(i);
+                threadData[i].arr = (float*)VirtualAllocExNuma(
+                    GetCurrentProcess(),
+                    NULL,
+                    elements * sizeof(float),
+                    MEM_RESERVE | MEM_COMMIT,
+                    PAGE_READWRITE,
+                    node
+                );
+            }
+            else if (numa == NUMA_CROSSNODE) {
+                threadData[i].arr = (float*)VirtualAllocExNuma(
+                    GetCurrentProcess(),
+                    NULL,
+                    elements * sizeof(float),
+                    MEM_RESERVE | MEM_COMMIT,
+                    PAGE_READWRITE,
+                    memNode
+                );
+
+                node = memNode;
+            }
+
             if (threadData[i].arr == NULL) {
                 fprintf(stderr, "Could not allocate memory for thread %llu\n", i);
                 return 0;
@@ -316,6 +432,17 @@ float MeasureBw(uint32_t sizeKb, uint32_t iterations, uint32_t threads, int shar
 
         // turns out setting affinity makes no difference, and it's easier to set affinity via start /affinity <mask> anyway
         //SetThreadAffinityMask(testThreads[i], 1UL << i);
+        if (numa == NUMA_STRIPE || numa == NUMA_SEQ) {
+            ULONGLONG mask;
+            //fprintf(stderr, "Thread %d pinned to node %d\n", i, node);
+            GetNumaNodeProcessorMask(node, &mask);
+            SetThreadAffinityMask(testThreads[i], mask);
+        }
+        else if (numa == NUMA_CROSSNODE) {
+            ULONGLONG mask;
+            GetNumaNodeProcessorMask(coreNode, &mask);
+            SetThreadAffinityMask(testThreads[i], mask);
+        }
     }
 
     ftime(&start);
@@ -336,7 +463,8 @@ float MeasureBw(uint32_t sizeKb, uint32_t iterations, uint32_t threads, int shar
 
     if (!shared) {
         for (int i = 0; i < threads; i++) {
-            _aligned_free(threadData[i].arr);
+            if (!numa) _aligned_free(threadData[i].arr);
+            else VirtualFreeEx(GetCurrentProcess(), threadData[i].arr, 0, MEM_RELEASE);
         }
     }
 
@@ -517,4 +645,55 @@ DWORD WINAPI ReadBandwidthTestThread(LPVOID param) {
     float sum = bw_func(bwTestData->arr, bwTestData->arr_length, bwTestData->iterations);
     if (sum == 0) printf("woohoo\n");
     return 0;
+}
+
+void PrintNumaInfo() {
+    ULONG highestNumaNode;
+    DWORD nProcs;
+    SYSTEM_INFO SystemInfo;
+    GetSystemInfo(&SystemInfo);
+    nProcs = SystemInfo.dwNumberOfProcessors;
+    if (!GetNumaHighestNodeNumber(&highestNumaNode)) {
+        fprintf(stderr, "Could not get highest NUMA node number: %d\n", GetLastError());
+        return;
+    }
+
+    printf("%d processors, highest NUMA node is %lu\n", nProcs, highestNumaNode);
+
+    if (highestNumaNode == 0)
+    {
+        return;
+    }
+
+    for (int procIdx = 0; procIdx < nProcs; procIdx++)
+    {
+        unsigned char node;
+        GetNumaProcessorNode(procIdx, &node);
+        printf("Processor %d is on node %d\n", procIdx, node);
+    }
+
+    for (char nodeIdx = 0; nodeIdx <= highestNumaNode; nodeIdx++) {
+        ULONGLONG mask;
+        GetNumaNodeProcessorMask(nodeIdx, &mask);
+        printf("Node %d: %llx\n", nodeIdx, mask);
+    }
+}
+
+char GetStripeNode(uint64_t threadIdx) {
+    ULONG highestNumaNode;
+    if (!GetNumaHighestNodeNumber(&highestNumaNode)) {
+        fprintf(stderr, "Could not get highest NUMA node number: %d\n", GetLastError());
+        return 0;
+    }
+
+    return threadIdx % highestNumaNode;
+}
+
+char GetSeqNode(uint64_t threadIdx) {
+    SYSTEM_INFO SystemInfo;
+    GetSystemInfo(&SystemInfo);
+    unsigned int clippedThreadIdx = threadIdx % SystemInfo.dwNumberOfProcessors;
+    unsigned char node;
+    GetNumaProcessorNode(clippedThreadIdx, &node);
+    return node;
 }
