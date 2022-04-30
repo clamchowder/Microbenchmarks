@@ -413,7 +413,6 @@ float int_atomic_latency_test(cl_context context,
     uint32_t iterations,
     bool local)
 {
-    struct timeb start, end;
     cl_int ret;
     cl_int result = 0;
     size_t global_item_size = 2;
@@ -643,7 +642,6 @@ float latency_test(cl_context context,
     size_t global_item_size = 1, local_item_size = 1;
     cl_int ret;
     float latency;
-    struct timeb start, end;
     int64_t time_diff_ms;
     uint32_t result;
     uint32_t stride = 1211;
