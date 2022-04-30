@@ -2,7 +2,8 @@
 #include <stdlib.h>
 #include <stdint.h>
 #include <string.h>
-#include <sys\timeb.h>
+#include <math.h>
+#include "../common/timing.h"
 
 #define CL_USE_DEPRECATED_OPENCL_1_2_APIS
 #include <CL/cl.h>
@@ -47,12 +48,21 @@ float int_atomic_latency_test(cl_context context,
     uint32_t iterations,
     bool local);
 uint32_t scale_bw_iterations(uint32_t base_iterations, uint32_t size_kb);
+uint64_t scale_iterations(uint32_t size_kb, uint64_t iterations);
 
 
 cl_ulong get_max_buffer_size();
 cl_ulong get_max_constant_buffer_size();
 
-enum TestType { GlobalMemLatency, ConstantMemLatency, GlobalAtomicLatency, LocalAtomicLatency, GlobalMemBandwidth, MemBandwidthWorkgroupScaling };
+enum TestType { 
+    GlobalMemLatency, 
+    ConstantMemLatency, 
+    LocalMemLatency,
+    GlobalAtomicLatency, 
+    LocalAtomicLatency, 
+    GlobalMemBandwidth, 
+    MemBandwidthWorkgroupScaling 
+};
 
 
 int main(int argc, char* argv[]) {
@@ -123,6 +133,10 @@ int main(int argc, char* argv[]) {
                 else if (_strnicmp(argv[argIdx], "globalatomic", 13) == 0) {
                     testType = GlobalAtomicLatency;
                     fprintf(stderr, "Testing global atomic latency\n");
+                }
+                else if (_strnicmp(argv[argIdx], "locallatency", 13) == 0) {
+                    testType = LocalMemLatency;
+                    fprintf(stderr, "Testing local mem latency\n");
                 }
                 else if (_strnicmp(argv[argIdx], "localatomic", 11) == 0) {
                     testType = LocalAtomicLatency;
@@ -232,7 +246,7 @@ int main(int argc, char* argv[]) {
                 printf("%d K would exceed device's max buffer size of %lld K, stopping here.\n", default_test_sizes[size_idx], max_global_test_size / 1024);
                 break;
             }
-            result = latency_test(context, command_queue, latency_kernel, 256 * default_test_sizes[size_idx], chase_iterations, true);
+            result = latency_test(context, command_queue, latency_kernel, 256 * default_test_sizes[size_idx], (default_test_sizes[size_idx], chase_iterations), true);
             printf("%d,%f\n", default_test_sizes[size_idx], result);
             if (result == 0) {
                 printf("Something went wrong, not testing anything bigger.\n");
@@ -250,13 +264,19 @@ int main(int argc, char* argv[]) {
                 printf("%d K would exceed device's max constant buffer size of %lld K, stopping here.\n", default_test_sizes[size_idx], max_constant_test_size / 1024);
                 break;
             }
-            result = latency_test(context, command_queue, constant_kernel, 256 * default_test_sizes[size_idx], chase_iterations, false);
+            result = latency_test(context, command_queue, constant_kernel, 256 * default_test_sizes[size_idx], scale_iterations(default_test_sizes[size_idx], chase_iterations), true);
             printf("%d,%f\n", default_test_sizes[size_idx], result);
             if (result == 0) {
                 printf("Something went wrong, not testing anything bigger.\n");
                 break;
             }
         }
+    }
+    else if (testType == LocalMemLatency)
+    {
+        cl_kernel local_kernel = clCreateKernel(program, "local_unrolled_latency_test", &ret);
+        result = latency_test(context, command_queue, local_kernel, 1024, chase_iterations, true);
+        printf("Local mem latency: %f\n", result);
     }
     else if (testType == GlobalMemBandwidth)
     {
@@ -377,6 +397,16 @@ void FillPatternArr(uint32_t* pattern_arr, uint32_t list_size, uint32_t byte_inc
     }
 }
 
+/// <summary>
+/// Heuristic to make sure test runs for enough time but not too long
+/// </summary>
+/// <param name="size_kb">Region size</param>
+/// <param name="iterations">base iterations</param>
+/// <returns>scaled iterations</returns>
+uint64_t scale_iterations(uint32_t size_kb, uint64_t iterations) {
+    return 10 * iterations / pow(size_kb, 1.0 / 4.0);
+}
+
 float int_atomic_latency_test(cl_context context,
     cl_command_queue command_queue,
     cl_kernel kernel,
@@ -406,7 +436,7 @@ float int_atomic_latency_test(cl_context context,
     clSetKernelArg(kernel, 1, sizeof(cl_int), (void*)&iterations);
     clSetKernelArg(kernel, 2, sizeof(cl_mem), (void*)&result_obj);
 
-    ftime(&start);
+    start_timing();
     ret = clEnqueueNDRangeKernel(command_queue, kernel, 1, NULL, &global_item_size, &local_item_size, 0, NULL, NULL);
     if (ret != CL_SUCCESS)
     {
@@ -415,8 +445,7 @@ float int_atomic_latency_test(cl_context context,
         goto cleanup;
     }
     clFinish(command_queue);
-    ftime(&end);
-    time_diff_ms = 1000 * (end.time - start.time) + (end.millitm - start.millitm);
+    time_diff_ms = end_timing();
     latency = (1e6 * (float)time_diff_ms / (float)(iterations)) / 2;
 
 cleanup:
@@ -433,7 +462,6 @@ float int_exec_latency_test(cl_context context,
     cl_kernel kernel,
     uint32_t iterations)
 {
-    struct timeb start, end;
     cl_int ret;
     cl_int result = 0;
     size_t global_item_size = 1;
@@ -453,7 +481,7 @@ float int_exec_latency_test(cl_context context,
     clSetKernelArg(kernel, 1, sizeof(cl_int), (void*)&iterations);
     clSetKernelArg(kernel, 2, sizeof(cl_mem), (void*)&result_obj);
 
-    ftime(&start);
+    start_timing();
     ret = clEnqueueNDRangeKernel(command_queue, kernel, 1, NULL, &global_item_size, &local_item_size, 0, NULL, NULL);
     if (ret != CL_SUCCESS)
     {
@@ -462,8 +490,7 @@ float int_exec_latency_test(cl_context context,
         goto cleanup;
     }
     clFinish(command_queue);
-    ftime(&end);
-    time_diff_ms = 1000 * (end.time - start.time) + (end.millitm - start.millitm);
+    time_diff_ms = end_timing();
     latency = 1e6 * (float)time_diff_ms / (float)(iterations * 12);
 
 cleanup:
@@ -486,7 +513,6 @@ float bw_test(cl_context context,
     size_t global_item_size = thread_count;
     size_t local_item_size = local_size;
     float bandwidth, total_data_gb;
-    struct timeb start, end;
     cl_int ret;
     cl_int float4size = list_size / 4;
     int64_t time_diff_ms;
@@ -547,7 +573,7 @@ float bw_test(cl_context context,
     clSetKernelArg(kernel, 5, sizeof(cl_mem), (void*)&start_offsets_obj);
     clFinish(command_queue); // writes should be blocking, but are they?
 
-    ftime(&start);
+    start_timing();
     ret = clEnqueueNDRangeKernel(command_queue, kernel, 1, NULL, &global_item_size, &local_item_size, 0, NULL, NULL);
     if (ret != CL_SUCCESS)
     {
@@ -564,8 +590,7 @@ float bw_test(cl_context context,
         goto cleanup;
     }
 
-    ftime(&end);
-    time_diff_ms = 1000 * (end.time - start.time) + (end.millitm - start.millitm);
+    time_diff_ms = end_timing();
 
     // each thread does iterations reads
     total_data_gb = sizeof(float) * ((float)chase_iterations * thread_count + thread_count)/ 1e9;
@@ -654,7 +679,7 @@ float latency_test(cl_context context,
     ret = clSetKernelArg(kernel, 1, sizeof(cl_int), (void*)&chase_iterations);
     ret = clSetKernelArg(kernel, 2, sizeof(cl_mem), (void*)&result_obj);
 
-    ftime(&start);
+    start_timing();
     // Execute the OpenCL kernel. launch a single thread
     ret = clEnqueueNDRangeKernel(command_queue, kernel, 1, NULL, &global_item_size, &local_item_size, 0, NULL, NULL);
     if (ret != CL_SUCCESS)
@@ -672,8 +697,7 @@ float latency_test(cl_context context,
         goto cleanup;
     }
 
-    ftime(&end);
-    time_diff_ms = 1000 * (end.time - start.time) + (end.millitm - start.millitm);
+    time_diff_ms = end_timing();
     latency = 1e6 * (float)time_diff_ms / (float)chase_iterations;
 
     ret = clEnqueueReadBuffer(command_queue, result_obj, CL_TRUE, 0, sizeof(uint32_t), &result, 0, NULL, NULL);
