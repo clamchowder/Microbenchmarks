@@ -51,8 +51,14 @@ float int_atomic_latency_test(cl_context context,
     cl_kernel kernel,
     uint32_t iterations,
     bool local);
+float c2c_atomic_latency_test(cl_context context,
+    cl_command_queue command_queue,
+    cl_kernel kernel,
+    uint32_t iterations);
+
 uint32_t scale_bw_iterations(uint32_t base_iterations, uint32_t size_kb);
 uint64_t scale_iterations(uint32_t size_kb, uint64_t iterations);
+cl_uint getCuCount();
 
 
 cl_ulong get_max_buffer_size();
@@ -65,7 +71,8 @@ enum TestType {
     GlobalAtomicLatency, 
     LocalAtomicLatency, 
     GlobalMemBandwidth, 
-    MemBandwidthWorkgroupScaling 
+    MemBandwidthWorkgroupScaling,
+    CoreToCore
 };
 
 
@@ -161,6 +168,11 @@ int main(int argc, char* argv[]) {
                     fprintf(stderr, "Testing BW scaling with workgroups\n");
                     if (!chase_iterations_set) chase_iterations = 20000000;
                 }
+                else if (_strnicmp(argv[argIdx], "c2c", 3) == 0)
+                {
+                    testType = CoreToCore;
+                    fprintf(stderr, "Testing latency with global atomics across CU count\n");
+                }
                 else {
                     fprintf(stderr, "I'm so confused. Unknown test type %s\n", argv[argIdx]);
                 }
@@ -226,6 +238,7 @@ int main(int argc, char* argv[]) {
     cl_kernel int_exec_latency_test_kernel = clCreateKernel(program, "int_exec_latency_test", &ret);
     cl_kernel atomic_latency_test_kernel = clCreateKernel(program, "atomic_exec_latency_test", &ret);
     cl_kernel local_atomic_latency_test_kernel = clCreateKernel(program, "local_atomic_latency_test", &ret);
+    cl_kernel c2c_atomic_latency_test_kernel = clCreateKernel(program, "c2c_atomic_exec_latency_test", &ret);
 #pragma endregion opencl_overhead
 
     cl_ulong max_global_test_size = get_max_buffer_size();
@@ -311,14 +324,8 @@ int main(int argc, char* argv[]) {
     }
     else if (testType == MemBandwidthWorkgroupScaling)
     {
-        cl_uint cuCount;
-        size_t cuCountLen = sizeof(cl_uint);
         uint32_t testSizeCount = sizeof(default_bw_test_sizes) / sizeof(unsigned long long);
-        if (CL_SUCCESS != clGetDeviceInfo(selected_device_id, CL_DEVICE_MAX_COMPUTE_UNITS, cuCountLen, &cuCount, &cuCountLen))
-        {
-            fprintf(stderr, "Could not get number of compute units\n");
-            return 0;
-        }
+        cl_uint cuCount = getCuCount();
 
         fprintf(stderr, "Device has %u compute units\n", cuCount);
         
@@ -367,6 +374,10 @@ int main(int argc, char* argv[]) {
 
         free(scalingResults);
     }
+    else if (testType == CoreToCore)
+    {
+        c2c_atomic_latency_test(context, command_queue, c2c_atomic_latency_test_kernel, chase_iterations);
+     }
 
     printf("If you didn't run this through cmd, now you can copy the results. And press ctrl+c to close");
     scanf("\n");
@@ -450,6 +461,64 @@ float int_atomic_latency_test(cl_context context,
     clFinish(command_queue);
     time_diff_ms = end_timing();
     latency = (1e6 * (float)time_diff_ms / (float)(iterations)) / 2;
+
+cleanup:
+    clFlush(command_queue);
+    clFinish(command_queue);
+    clReleaseMemObject(a_mem_obj);
+    clReleaseMemObject(result_obj);
+    return latency;
+}
+
+float c2c_atomic_latency_test(cl_context context,
+    cl_command_queue command_queue,
+    cl_kernel kernel,
+    uint32_t iterations)
+{
+    cl_int ret;
+    cl_int result = 0;
+    size_t global_item_size;
+    size_t local_item_size = 1;
+    float latency;
+    uint32_t time_diff_ms;
+    uint32_t A;
+
+    cl_uint cuCount = getCuCount();
+    cl_mem a_mem_obj = clCreateBuffer(context, CL_MEM_READ_ONLY, sizeof(uint32_t), NULL, &ret);
+    cl_mem result_obj = clCreateBuffer(context, CL_MEM_READ_WRITE, sizeof(cl_int), NULL, &result);
+    global_item_size = cuCount;
+
+    for (cl_int t1_idx = 0; t1_idx < cuCount; t1_idx++)
+    {
+        for (cl_int t2_idx = 0; t2_idx < cuCount; t2_idx++)
+        {
+            if (t1_idx == t2_idx) continue;
+            fprintf(stderr, "Testing %d -> %d\n", t1_idx, t2_idx);
+            A = 0;
+            ret = clEnqueueWriteBuffer(command_queue, a_mem_obj, CL_TRUE, 0, sizeof(uint32_t), &A, 0, NULL, NULL);
+            ret = clEnqueueWriteBuffer(command_queue, result_obj, CL_TRUE, 0, sizeof(cl_int), &result, 0, NULL, NULL);
+            clFinish(command_queue);
+            clSetKernelArg(kernel, 0, sizeof(cl_mem), (void*)&a_mem_obj);
+            clSetKernelArg(kernel, 1, sizeof(cl_int), (void*)&iterations);
+            clSetKernelArg(kernel, 2, sizeof(cl_mem), (void*)&result_obj);
+            clSetKernelArg(kernel, 3, sizeof(cl_int), (void*)&t1_idx);
+            clSetKernelArg(kernel, 4, sizeof(cl_int), (void*)&t2_idx);
+            fprintf(stderr, "Kernel args set\n");
+
+            start_timing();
+            ret = clEnqueueNDRangeKernel(command_queue, kernel, 1, NULL, &global_item_size, &local_item_size, 0, NULL, NULL);
+            if (ret != CL_SUCCESS)
+            {
+                fprintf(stderr, "Failed to submit kernel to command queue. clEnqueueNDRangeKernel returned %d\n", ret);
+                latency = 0;
+                goto cleanup;
+            }
+            clFinish(command_queue);
+            time_diff_ms = end_timing();
+            latency = (1e6 * (float)time_diff_ms / (float)(iterations)) / 2;
+            fprintf(stderr, "%d -> %d: %f\n", t1_idx, t2_idx, latency);
+        }
+    }
 
 cleanup:
     clFlush(command_queue);
@@ -860,4 +929,17 @@ uint32_t scale_bw_iterations(uint32_t base_iterations, uint32_t size_kb)
 {
     if (size_kb < 4096) return base_iterations;
     else return base_iterations / 2;
+}
+
+cl_uint getCuCount() {
+    cl_uint cuCount;
+    size_t cuCountLen = sizeof(cl_uint);
+    uint32_t testSizeCount = sizeof(default_bw_test_sizes) / sizeof(unsigned long long);
+    if (CL_SUCCESS != clGetDeviceInfo(selected_device_id, CL_DEVICE_MAX_COMPUTE_UNITS, cuCountLen, &cuCount, &cuCountLen))
+    {
+        fprintf(stderr, "Could not get number of compute units\n");
+        return 0;
+    }
+
+    return cuCount;
 }
