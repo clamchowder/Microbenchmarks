@@ -37,6 +37,8 @@
 .global mixjmpvecmultest 
 .global vecfma128test
 .global latvecfma128test
+.global scalarfmatest
+.global latscalarfmatest
 
 .global mixvecfaddfma128test
 .global mixvecfmulfma128test
@@ -599,6 +601,79 @@ vecmul128test_loop:
   ldp x14, x15, [sp, #0x10]
   add sp, sp, #0x20
   ret 
+
+scalarfmatest: 
+  sub sp, sp, #0x20
+  stp x14, x15, [sp, #0x10]
+  mov x14, 20
+  ldr q16, [x1]
+  ldr q17, [x1]
+  ldr q18, [x1]
+  ldr q19, [x1]
+  ldr q20, [x1]
+  ldr q21, [x1] 
+  ldr q22, [x1] 
+  ldr q23, [x1] 
+  ldr q24, [x1] 
+  ldr q25, [x1] 
+scalarfmatest_loop:
+  fmadd s16, s16, s16, s16
+  fmadd s17, s17, s17, s17
+  fmadd s18, s18, s18, s18
+  fmadd s19, s19, s19, s19
+  fmadd s20, s20, s20, s20
+  fmadd s21, s21, s21, s21
+  fmadd s22, s22, s22, s22
+  fmadd s23, s23, s23, s23
+  fmadd s24, s24, s24, s24
+  fmadd s25, s25, s25, s25
+  fmadd s16, s16, s16, s16
+  fmadd s17, s17, s17, s17
+  fmadd s18, s18, s18, s18
+  fmadd s19, s19, s19, s19
+  fmadd s20, s20, s20, s20
+  fmadd s21, s21, s21, s21
+  fmadd s22, s22, s22, s22
+  fmadd s23, s23, s23, s23
+  fmadd s24, s24, s24, s24
+  fmadd s25, s25, s25, s25 
+  sub x0, x0, x14
+  cbnz x0, scalarfmatest_loop
+  ldp x14, x15, [sp, #0x10]
+  add sp, sp, #0x20
+  ret  
+
+latscalarfmatest: 
+  sub sp, sp, #0x20
+  stp x14, x15, [sp, #0x10]
+  mov x14, 20
+  ldr q16, [x1]
+latscalarfmatest_loop:
+  fmadd s16, s16, s16, s16
+  fmadd s16, s16, s16, s16
+  fmadd s16, s16, s16, s16
+  fmadd s16, s16, s16, s16
+  fmadd s16, s16, s16, s16
+  fmadd s16, s16, s16, s16
+  fmadd s16, s16, s16, s16
+  fmadd s16, s16, s16, s16
+  fmadd s16, s16, s16, s16
+  fmadd s16, s16, s16, s16
+  fmadd s16, s16, s16, s16
+  fmadd s16, s16, s16, s16
+  fmadd s16, s16, s16, s16
+  fmadd s16, s16, s16, s16
+  fmadd s16, s16, s16, s16
+  fmadd s16, s16, s16, s16
+  fmadd s16, s16, s16, s16
+  fmadd s16, s16, s16, s16
+  fmadd s16, s16, s16, s16
+  fmadd s16, s16, s16, s16
+  sub x0, x0, x14
+  cbnz x0, latscalarfmatest_loop
+  ldp x14, x15, [sp, #0x10]
+  add sp, sp, #0x20
+  ret    
 
 vecfma128test: 
   sub sp, sp, #0x20

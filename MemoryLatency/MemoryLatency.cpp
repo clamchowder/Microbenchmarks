@@ -5,6 +5,7 @@
 #include <math.h>
 #include <windows.h>
 #include <tchar.h>
+#include <intrin.h>
 
 #define ITERATIONS 400000000
 
@@ -21,23 +22,107 @@ extern "C" uint64_t latencytest(uint64_t iterations, uint64_t *mem);
 
 int main(int argc, char* argv[]) {
     void* arr = NULL;
-
-    if (argc > 1 && _strnicmp(argv[1], "hugepages", 9) == 0)
-    {
-        fprintf(stderr, "Will attempt to use large pages\n");
-        GetPrivilege();
-        arr = VirtualAlloc(NULL, default_test_sizes[(sizeof(default_test_sizes) / sizeof(int)) - 1] * 1024, MEM_RESERVE | MEM_COMMIT | MEM_LARGE_PAGES, PAGE_READWRITE);
-        if (arr == NULL)
-        {
-            fprintf(stderr, "Failed to get memory via VirtualAlloc: %d\n", GetLastError());
-            return -1;
+    int numa = 0, coreNode = 0, memNode = 0, largepages = 0;
+    for (int argIdx = 1; argIdx < argc; argIdx++) {
+        if (*(argv[argIdx]) == '-') {
+            char* arg = argv[argIdx] + 1;
+            if (_strnicmp(arg, "hugepages", 9) == 0) {
+                fprintf(stderr, "Will attempt to use large pages\n");
+                largepages = 1;
+                GetPrivilege();
+            } else if (_strnicmp(arg, "autonuma", 8) == 0) {
+                fprintf(stderr, "Testing NUMA, 1 GB test size\n");
+                numa = 1;
+            }
+            else if (_strnicmp(arg, "numa", 4) == 0) {
+                numa = 2;
+                argIdx++;
+                coreNode = atoi(argv[argIdx]);
+                argIdx++;
+                memNode = atoi(argv[argIdx]);
+                fprintf(stderr, "Testing %d -> %d\n", coreNode, memNode);
+            }
         }
     }
 
-    printf("Region,Latency (ns)\n");
-    for (int i = 0; i < sizeof(default_test_sizes) / sizeof(int); i++)
-    {
-        printf("%d,%f\n", default_test_sizes[i], RunAsmTest(default_test_sizes[i], ITERATIONS, arr));
+    DWORD allocationType = MEM_RESERVE | MEM_COMMIT;
+    if (largepages) allocationType |= MEM_LARGE_PAGES;
+
+    if (numa == 1) {
+        ULONG highestNumaNode;
+        DWORD nProcs;
+        SYSTEM_INFO SystemInfo;
+        GetSystemInfo(&SystemInfo);
+        nProcs = SystemInfo.dwNumberOfProcessors;
+        if (!GetNumaHighestNodeNumber(&highestNumaNode)) {
+            fprintf(stderr, "Could not get highest NUMA node number: %d\n", GetLastError());
+            return 0;
+        }
+
+        // auto numa latency mode - use highest test size and test latency from core node to mem node
+        for (int coreNode = 0; coreNode <= highestNumaNode; coreNode++) printf(",%d", coreNode);
+        printf("\n");
+
+        for (int coreNode = 0; coreNode <= highestNumaNode; coreNode++) {
+            printf("%d", coreNode);
+            for (int memNode = 0; memNode <= highestNumaNode; memNode++) {
+                ULONGLONG mask;
+                DWORD index;
+                arr = VirtualAllocExNuma(GetCurrentProcess(),
+                    NULL,
+                    default_test_sizes[(sizeof(default_test_sizes) / sizeof(int)) - 1] * 1024,
+                    allocationType,
+                    PAGE_READWRITE,
+                    memNode);
+                GetNumaNodeProcessorMask(coreNode, &mask);
+                BitScanReverse64(&index, mask);
+                mask = 0;
+                mask |= 1ULL << (ULONGLONG)index;
+                SetProcessAffinityMask(GetCurrentProcess(), mask);
+                float latency = RunAsmTest(1048576, ITERATIONS, arr);
+                printf(",%f", latency);
+                VirtualFree(arr, 0, MEM_RELEASE);
+            }
+
+            printf("\n");
+        }
+    } else {
+        if (numa == 2) {
+            ULONG highestNumaNode;
+            ULONGLONG mask;
+            DWORD nProcs, index;
+            SYSTEM_INFO SystemInfo;
+            GetSystemInfo(&SystemInfo);
+            nProcs = SystemInfo.dwNumberOfProcessors;
+            
+            GetNumaNodeProcessorMask(coreNode, &mask);
+            fprintf(stderr, "node core mask: %llx\n", mask);
+            BitScanReverse64(&index, mask);
+            mask = 0;
+            mask |= 1ULL << (ULONGLONG)index;
+            SetProcessAffinityMask(GetCurrentProcess(), mask);
+            fprintf(stderr, "core mask: %llx, index %u\n", mask, index);
+            arr = VirtualAllocExNuma(GetCurrentProcess(), 
+                NULL, 
+                default_test_sizes[(sizeof(default_test_sizes) / sizeof(int)) - 1] * 1024, 
+                allocationType, 
+                PAGE_READWRITE, 
+                memNode);
+        }
+        else if (largepages) {
+            arr = VirtualAlloc(NULL, default_test_sizes[(sizeof(default_test_sizes) / sizeof(int)) - 1] * 1024, MEM_RESERVE | MEM_COMMIT | MEM_LARGE_PAGES, PAGE_READWRITE);
+            if (arr == NULL)
+            {
+                fprintf(stderr, "Failed to get memory via VirtualAlloc: %d\n", GetLastError());
+                return -1;
+            }
+        }
+
+        printf("Region,Latency (ns)\n");
+        for (int i = 0; i < sizeof(default_test_sizes) / sizeof(int); i++)
+        {
+            printf("%d,%f\n", default_test_sizes[i], RunAsmTest(default_test_sizes[i], ITERATIONS, arr));
+        }
     }
 
     printf("If you didn't run this through cmd, now you can copy the results");

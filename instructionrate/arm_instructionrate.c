@@ -30,7 +30,9 @@ extern uint64_t latvecfadd128test(uint64_t iterations, float arr[4]);
 extern uint64_t latvecfmul128test(uint64_t iterations, float arr[4]); 
 extern uint64_t mixvecfaddfmul128test(uint64_t iterations, float arr[4]);
 extern uint64_t vecfma128test(uint64_t iterations, float arr[4]);
+extern uint64_t scalarfmatest(uint64_t iterations, float arr[4]);
 extern uint64_t latvecfma128test(uint64_t iterations, float arr[4]);
+extern uint64_t latscalarfmatest(uint64_t iterations, float arr[4]);
 extern uint64_t mixvecfaddfma128test(uint64_t iterations, float arr[4]);
 extern uint64_t mixvecfmulfma128test(uint64_t iterations, float arr[4]);
 
@@ -93,6 +95,8 @@ uint64_t vecstorewrapper(uint64_t iterations);
 uint64_t mixloadstorewrapper(uint64_t iterations);
 uint64_t mix21loadstorewrapper(uint64_t iterations);
 uint64_t vecfma128wrapper(uint64_t iterations);
+uint64_t scalarfmawrapper(uint64_t iterations);
+uint64_t latscalarfmawrapper(uint64_t iterations);
 uint64_t mixvecfaddfma128wrapper(uint64_t iterations);
 uint64_t mixvecfmulfma128wrapper(uint64_t iterations);
 uint64_t latvecfma128wrapper(uint64_t iteration);
@@ -162,6 +166,8 @@ int main(int argc, char *argv[]) {
 
   printf("128-bit vector FMA per clk: %.2f\n", measureFunction(iterationsHigh, clockSpeedGhz, vecfma128wrapper));
   printf("128-bit vector FMA latency: %.2f clocks\n", 1 / measureFunction(iterations, clockSpeedGhz, latvecfma128wrapper));
+  printf("Scalar FMA per clk: %.2f\n", measureFunction(iterationsHigh, clockSpeedGhz, scalarfmawrapper));
+  printf("Scalar FMA latency: %.2f clocks\n", 1 / measureFunction(iterationsHigh, clockSpeedGhz, latscalarfmawrapper));
   printf("1:1 mixed 128-bit vector FMA/FADD per clk: %.2f\n", measureFunction(iterationsHigh, clockSpeedGhz, mixvecfaddfma128wrapper));
   printf("1:1 mixed 128-bit vector FMA/FMUL per clk: %.2f\n", measureFunction(iterationsHigh, clockSpeedGhz, mixvecfmulfma128wrapper));
   return 0;
@@ -288,6 +294,14 @@ uint64_t mix21loadstorewrapper(uint64_t iterations) {
 
 uint64_t vecfma128wrapper(uint64_t iterations) {
   return vecfma128test(iterations, fpTestArr);
+}
+
+uint64_t scalarfmawrapper(uint64_t iterations) {
+  return scalarfmatest(iterations, fpTestArr);
+}
+
+uint64_t latscalarfmawrapper(uint64_t iterations) {
+  return latscalarfmatest(iterations, fpTestArr);
 }
 
 uint64_t latvecfma128wrapper(uint64_t iterations) {
