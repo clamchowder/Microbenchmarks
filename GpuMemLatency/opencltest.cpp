@@ -485,8 +485,10 @@ float c2c_atomic_latency_test(cl_context context,
 
     cl_uint cuCount = getCuCount();
     cl_mem a_mem_obj = clCreateBuffer(context, CL_MEM_READ_ONLY, sizeof(uint32_t), NULL, &ret);
-    cl_mem result_obj = clCreateBuffer(context, CL_MEM_READ_WRITE, sizeof(cl_int), NULL, &result);
+    cl_mem result_obj = clCreateBuffer(context, CL_MEM_READ_WRITE, sizeof(cl_int), NULL, &ret);
     global_item_size = cuCount;
+
+    float* result_arr = (float *)malloc(sizeof(float) * cuCount * cuCount);
 
     for (cl_int t1_idx = 0; t1_idx < cuCount; t1_idx++)
     {
@@ -503,7 +505,6 @@ float c2c_atomic_latency_test(cl_context context,
             clSetKernelArg(kernel, 2, sizeof(cl_mem), (void*)&result_obj);
             clSetKernelArg(kernel, 3, sizeof(cl_int), (void*)&t1_idx);
             clSetKernelArg(kernel, 4, sizeof(cl_int), (void*)&t2_idx);
-            fprintf(stderr, "Kernel args set\n");
 
             start_timing();
             ret = clEnqueueNDRangeKernel(command_queue, kernel, 1, NULL, &global_item_size, &local_item_size, 0, NULL, NULL);
@@ -517,7 +518,25 @@ float c2c_atomic_latency_test(cl_context context,
             time_diff_ms = end_timing();
             latency = (1e6 * (float)time_diff_ms / (float)(iterations)) / 2;
             fprintf(stderr, "%d -> %d: %f\n", t1_idx, t2_idx, latency);
+            result_arr[t1_idx * cuCount + t2_idx] = latency;
         }
+    }
+
+    for (cl_int i = 0; i < cuCount; i++)
+    {
+        printf(",%d", i);
+    }
+    printf("\n");
+
+    for (cl_int t1_idx = 0; t1_idx < cuCount; t1_idx++)
+    {
+        printf("%d", t1_idx);
+        for (cl_int t2_idx = 0; t2_idx < cuCount; t2_idx++)
+        {
+            if (t1_idx == t2_idx) printf(",x");
+            else printf(",%f", result_arr[t1_idx * cuCount + t2_idx]);
+        }
+        printf("\n");
     }
 
 cleanup:
@@ -525,6 +544,7 @@ cleanup:
     clFinish(command_queue);
     clReleaseMemObject(a_mem_obj);
     clReleaseMemObject(result_obj);
+    free(result_arr);
     return latency;
 }
 
