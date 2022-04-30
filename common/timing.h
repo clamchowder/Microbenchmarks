@@ -16,8 +16,8 @@ void start_timing() {
     gettimeofday(&startTv, NULL);
 }
 
-unsigned int end_timing() {}
+unsigned int end_timing() {
     gettimeofday(&endTv, NULL);
-    return (unsigned int)(1e6 * (endTv.tv_sec - startTv.tv_sec) + (endTv.tv_usec - startTv.tv_usec));
+    return (unsigned int)((endTv.tv_sec - startTv.tv_sec) * 1000 + (endTv.tv_usec - startTv.tv_usec) / 1000);
 }
 #endif

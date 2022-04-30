@@ -11,6 +11,10 @@
 
 #define CACHELINE_SIZE 64
 
+#ifndef _MSC_VER
+#define _strnicmp strncmp
+#endif
+
 int default_test_sizes[] = { 2, 4, 8, 16, 24, 32, 48, 64, 96, 128, 192, 256, 384, 512, 600, 768, 1024, 1536, 2048, 3072, 4096, 5120, 6144, 8192, 16384, 32768, 65536, 98304, 131072, 196608, 262144, 524288, 1048576 };
 
 // lining this up with nemes's VK bw test sizes
