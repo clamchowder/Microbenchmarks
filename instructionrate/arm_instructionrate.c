@@ -12,6 +12,7 @@ extern uint64_t mul32test(uint64_t iterations);
 extern uint64_t mul64test(uint64_t iterations);
 extern uint64_t latmul64test(uint64_t iterations);
 extern uint64_t jmptest(uint64_t iterations);
+extern uint64_t fusejmptest(uint64_t iterations);
 extern uint64_t mixmuljmptest(uint64_t iterations);
 extern uint64_t mixmuljmptest21(uint64_t iterations);
 extern uint64_t mixaddjmptest(uint64_t iterations);
@@ -129,6 +130,7 @@ int main(int argc, char *argv[]) {
 
 
   printf("Not taken jmps per clk: %.2f\n", measureFunction(iterationsHigh, clockSpeedGhz, jmptest));
+  printf("Jump fusion test: %.2f\n", measureFunction(iterationsHigh, clockSpeedGhz, fusejmptest));
   printf("1:1 mixed not taken jmps / muls per clk: %.2f\n", measureFunction(iterationsHigh, clockSpeedGhz, mixmuljmptest));
   printf("1:2 mixed not taken jmps / muls per clk: %.2f\n", measureFunction(iterationsHigh, clockSpeedGhz, mixmuljmptest21));
   printf("1:1 mixed not taken jmps / adds per clk: %.2f\n", measureFunction(iterationsHigh, clockSpeedGhz, mixaddjmptest));

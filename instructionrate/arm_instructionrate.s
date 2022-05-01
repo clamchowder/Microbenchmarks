@@ -7,6 +7,7 @@
 .global mul64test
 .global latmul64test
 .global noptest
+.global fusejmptest
 .global jmptest
 .global mixmuljmptest
 .global mixmuljmptest21
@@ -1688,6 +1689,36 @@ jmptest_jellydonut:
   ldp x14, x15, [sp, #0x10]
   add sp, sp, #0x20
   ret
+
+fusejmptest:
+  sub sp, sp, #0x20
+  stp x14, x15, [sp, #0x10]
+  mov x14, 20
+fusejmptest_loop:
+  nop
+  nop
+  cmp x0, 0
+  b.eq jmptest_jellydonut
+  nop
+  nop
+  cmp x0, 0
+  b.eq jmptest_jellydonut 
+  nop
+  nop
+  cmp x0, 0
+  b.eq jmptest_jellydonut 
+  nop
+  nop
+  cmp x0, 0
+  b.eq jmptest_jellydonut 
+  nop
+  sub x0, x0, x14
+  cmp x0, 0
+  b.ne fusejmptest_loop
+fusejmptest_jellydonut:
+  ldp x14, x15, [sp, #0x10]
+  add sp, sp, #0x20
+  ret 
 
 mixmuljmptest:
   sub sp, sp, #0x50
