@@ -256,11 +256,11 @@ int main(int argc, char* argv[]) {
     else if (testType == GlobalMemLatency)
     {
         fprintf(stderr, "Doing %d K p-chase iterations with stride %d over %d KiB region\n", chase_iterations / 1000, stride, list_size * 4 / 1024);
-        printf("\nSattolo, global memory latency (up to %lld K) unroll:\n", max_global_test_size / 1024);
+        printf("\nSattolo, global memory latency (up to %lu K) unroll:\n", max_global_test_size / 1024);
 
         for (int size_idx = 0; size_idx < sizeof(default_test_sizes) / sizeof(int); size_idx++) {
             if (max_global_test_size < sizeof(int) * 256 * default_test_sizes[size_idx]) {
-                printf("%d K would exceed device's max buffer size of %lld K, stopping here.\n", default_test_sizes[size_idx], max_global_test_size / 1024);
+                printf("%d K would exceed device's max buffer size of %lu K, stopping here.\n", default_test_sizes[size_idx], max_global_test_size / 1024);
                 break;
             }
             result = latency_test(context, command_queue, latency_kernel, 256 * default_test_sizes[size_idx], (default_test_sizes[size_idx], chase_iterations), true);
@@ -274,12 +274,11 @@ int main(int argc, char* argv[]) {
     else if (testType == ConstantMemLatency)
     {
         cl_ulong max_constant_test_size = get_max_constant_buffer_size();
-        printf("\nSattolo, constant memory (up to %lld K), no-unroll:\n", max_constant_test_size / 1024);
+        printf("\nSattolo, constant memory (up to %lu K), no-unroll:\n", max_constant_test_size / 1024);
 
         for (int size_idx = 0; size_idx < sizeof(default_test_sizes) / sizeof(int); size_idx++) {
             if (max_constant_test_size < sizeof(int) * 256 * default_test_sizes[size_idx]) {
-                printf("%d K would exceed device's max constant buffer size of %lld K, stopping here.\n", default_test_sizes[size_idx], max_constant_test_size / 1024);
-                break;
+                printf("%d K would exceed device's max constant buffer size of %lu K, stopping here.\n", default_test_sizes[size_idx], max_constant_test_size / 1024);
             }
             result = latency_test(context, command_queue, constant_kernel, 256 * default_test_sizes[size_idx], scale_iterations(default_test_sizes[size_idx], chase_iterations), true);
             printf("%d,%f\n", default_test_sizes[size_idx], result);
@@ -298,12 +297,12 @@ int main(int argc, char* argv[]) {
     else if (testType == GlobalMemBandwidth)
     {
         fprintf(stderr, "Using %u threads, %u local size, %u base iterations\n", thread_count, local_size, chase_iterations / 1000);
-        printf("\nMemory bandwidth (up to %lld K):\n", max_global_test_size / 1024);
+        printf("\nMemory bandwidth (up to %lu K):\n", max_global_test_size / 1024);
 
         for (int size_idx = 0; size_idx < sizeof(default_bw_test_sizes) / sizeof(unsigned long long); size_idx++) {
             uint64_t testSizeKb = default_bw_test_sizes[size_idx] / 1024;
             if ((max_global_test_size / 1024) < testSizeKb) {
-                printf("%llu K would exceed device's max buffer size of %llu K, stopping here.\n", testSizeKb, max_global_test_size / 1024);
+                printf("%lu K would exceed device's max buffer size of %lu K, stopping here.\n", testSizeKb, max_global_test_size / 1024);
                 break;
             }
 
@@ -315,7 +314,7 @@ int main(int argc, char* argv[]) {
                 skip, 
                 scale_bw_iterations(chase_iterations, testSizeKb));
 
-            printf("%llu,%f\n", testSizeKb, result);
+            printf("%lu,%f\n", testSizeKb, result);
             if (result == 0) {
                 printf("Something went wrong, not testing anything bigger.\n");
                 break;
@@ -335,9 +334,9 @@ int main(int argc, char* argv[]) {
             for (int size_idx = 0; size_idx < testSizeCount; size_idx++)
             {
                 uint64_t testSizeKb = default_bw_test_sizes[size_idx] / 1024;
-                fprintf(stderr, "Testing size %llu KB, %u workgroups\n", testSizeKb, workgroupCount);
+                fprintf(stderr, "Testing size %lu KB, %u workgroups\n", testSizeKb, workgroupCount);
                 if ((max_global_test_size / 1024) < testSizeKb) {
-                    printf("%llu K would exceed device's max buffer size of %llu K\n", testSizeKb, max_global_test_size / 1024);
+                    printf("%lu K would exceed device's max buffer size of %lu K\n", testSizeKb, max_global_test_size / 1024);
                     scalingResults[(workgroupCount - 1) * testSizeCount + size_idx] = 0;
                     continue;
                 }
@@ -351,7 +350,7 @@ int main(int argc, char* argv[]) {
                     scale_bw_iterations(chase_iterations, testSizeKb));
 
                 scalingResults[(workgroupCount - 1) * testSizeCount + size_idx] = result;
-                fprintf(stderr, "%u workgroups, %llu KB = %f GB/s\n", workgroupCount, testSizeKb, result);
+                fprintf(stderr, "%u workgroups, %lu KB = %f GB/s\n", workgroupCount, testSizeKb, result);
             }
         }
 
@@ -363,7 +362,7 @@ int main(int argc, char* argv[]) {
 
         for (int size_idx = 0; size_idx < testSizeCount; size_idx++)
         {
-            printf("%llu", default_bw_test_sizes[size_idx] / 1024);
+            printf("%lu", default_bw_test_sizes[size_idx] / 1024);
             for (uint32_t workgroupCount = 1; workgroupCount <= cuCount; workgroupCount++)
             {
                 printf(",%f", scalingResults[(workgroupCount - 1) * testSizeCount + size_idx]);
@@ -622,7 +621,7 @@ float bw_test(cl_context context,
 
     if (!A || !result)
     {
-        fprintf(stderr, "Failed to allocate memory for test size %llu KB\n", list_size);
+        fprintf(stderr, "Failed to allocate memory for test size %lu KB\n", list_size);
     }
 
     // assume that cl_uint size is 4 bytes, same as float size
