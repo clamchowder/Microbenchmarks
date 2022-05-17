@@ -15,15 +15,19 @@
 #define _strnicmp strncmp
 #endif
 
+// default test sizes for latency, in KB
 int default_test_sizes[] = { 2, 4, 8, 16, 24, 32, 48, 64, 96, 128, 192, 256, 384, 512, 600, 768, 1024, 1536, 2048, 3072, 4096, 5120, 6144, 8192, 16384, 32768, 65536, 98304, 131072, 196608, 262144, 524288, 1048576 };
 
-// lining this up with nemes's VK bw test sizes
+// lining this up with nemes's VK bw test sizes. units for this one are in bytes
 const uint64_t default_bw_test_sizes[] = {
     4096, 8192, 12288, 16384, 20480, 24576, 28672, 32768, 40960, 49152, 57344, 65536, 81920, 98304, 114688, 131072,
         196608, 262144, 393216, 458752, 524288, 786432, 1048576, 1572864, 2097152, 3145728, 4194304, 6291456, 8388608, 12582912, 16777216,
         25165824, 33554432, 41943040, 50331648, 58720256, 67108864, 100663296, 134217728, 201326592, 268435456, 402653184, 536870912, 805306368,
         1073741824, 1610579968, 2147483648, 3221225472, 4294967296
 };
+
+// default test sizes for link bandwidth
+const uint64_t default_link_test_sizes[] = { 512, 1024, 2048, 4096, 8192, 16384, 32768, 65536, 131072, 262144, 524288, 1048576, 2097152 };
 
 cl_device_id selected_device_id;
 cl_platform_id selected_platform_id;
@@ -183,6 +187,7 @@ int main(int argc, char* argv[]) {
                 {
                     testType = LinkBandwidth;
                     fprintf(stderr, "Testing host <-> GPU link bandwidth\n");
+                    if (!chase_iterations_set) chase_iterations = 30000000;
                 }
                 else {
                     fprintf(stderr, "I'm so confused. Unknown test type %s\n", argv[argIdx]);
@@ -577,24 +582,24 @@ void link_bw_test(cl_context context,
     uint32_t *A;
 
     printf("Region Size (KB), Host to GPU (GB/s), GPU to Host (GB/s)\n");
-    for (int size_idx = 0; size_idx < sizeof(default_bw_test_sizes) / sizeof(unsigned long long); size_idx++) {
-        uint64_t testSizeBytes = default_bw_test_sizes[size_idx];
-        uint64_t testSizeKb = default_bw_test_sizes[size_idx] / 1024;
+    for (int size_idx = 0; size_idx < sizeof(default_link_test_sizes) / sizeof(unsigned long long); size_idx++) {
+        uint64_t testSizeBytes = default_link_test_sizes[size_idx] * 1024;
+        uint64_t testSizeKb = default_link_test_sizes[size_idx];
 
         if (testSizeBytes > max_global_test_size) {
             printf("%d K would exceed device's max buffer size of %lu K, stopping here.\n", testSizeKb, max_global_test_size / 1024);
             break;
         }
 
-        A = (uint32_t *)malloc(default_bw_test_sizes[size_idx]);
+        A = (uint32_t *)malloc(testSizeBytes);
         memset(A, 0, testSizeBytes);
         cl_mem a_mem_obj = clCreateBuffer(context, CL_MEM_READ_ONLY, testSizeBytes, NULL, &ret);
         clSetKernelArg(kernel, 0, sizeof(cl_mem), (void*)&a_mem_obj);
         global_item_size = 1; // only hit the first element, not like we're going to spend time verifying an entire arr especially at large sizes
 
         // use 1M iterations = 1 GB total to transfer
-        loop_iterations = (iterations * 1000) / testSizeBytes;
-        //fprintf(stderr, "Iterations: %d\n", loop_iterations);
+        loop_iterations = ((uint64_t)iterations * 1000) / (uint64_t)testSizeBytes;
+        //fprintf(stderr, "Size: %llu KB, Iterations: %d, base iterations: %d\n", testSizeKb, loop_iterations, iterations);
 
         start_timing();
         for (int iter_idx = 0; iter_idx < loop_iterations; iter_idx++)
@@ -608,7 +613,7 @@ void link_bw_test(cl_context context,
         //fprintf(stderr, "Write to GPU: %f GB transferred in %d ms\n", total_data_gb, time_diff_ms);
 
         start_timing();
-        for (int iter_idx = 0; iter_idx < iterations; iter_idx++)
+        for (int iter_idx = 0; iter_idx < loop_iterations; iter_idx++)
         {
             ret = clEnqueueReadBuffer(command_queue, a_mem_obj, CL_TRUE, 0, testSizeBytes, A, 0, NULL, NULL);
             clFinish(command_queue);
