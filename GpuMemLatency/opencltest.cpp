@@ -581,8 +581,12 @@ void link_bw_test(cl_context context,
     uint32_t time_diff_ms, loop_iterations;
     uint32_t *A;
 
-    printf("Region Size (KB), Host to GPU (GB/s), GPU to Host (GB/s)\n");
-    for (int size_idx = 0; size_idx < sizeof(default_link_test_sizes) / sizeof(unsigned long long); size_idx++) {
+    int test_size_count = sizeof(default_link_test_sizes) / sizeof(unsigned long long);
+    float* results = (float*)malloc(sizeof(float) * 2 * test_size_count);
+    memset(results, 0, sizeof(float) * 2 * test_size_count);
+
+    printf("Copy Size (KB), Host to GPU (GB/s), GPU to Host (GB/s)\n");
+    for (int size_idx = 0; size_idx < test_size_count; size_idx++) {
         uint64_t testSizeBytes = default_link_test_sizes[size_idx] * 1024;
         uint64_t testSizeKb = default_link_test_sizes[size_idx];
 
@@ -610,6 +614,7 @@ void link_bw_test(cl_context context,
         time_diff_ms = end_timing();
         total_data_gb = ((float)loop_iterations * testSizeBytes) / 1e9;
         host_to_gpu_bandwidth = 1000 * (float)total_data_gb / (float)time_diff_ms;
+        results[size_idx * 2] = host_to_gpu_bandwidth;
         //fprintf(stderr, "Write to GPU: %f GB transferred in %d ms\n", total_data_gb, time_diff_ms);
 
         start_timing();
@@ -621,6 +626,7 @@ void link_bw_test(cl_context context,
         time_diff_ms = end_timing();
         total_data_gb = ((float)loop_iterations * testSizeBytes) / 1e9;
         gpu_to_host_bandwidth = 1000 * (float)total_data_gb / (float)time_diff_ms;
+        results[size_idx * 2 + 1] = gpu_to_host_bandwidth;
         //fprintf(stderr, "Read from GPU: %f GB transferred in %d ms\n", total_data_gb, time_diff_ms);
 
         printf("%llu,%f,%f\n", testSizeKb, host_to_gpu_bandwidth, gpu_to_host_bandwidth);
@@ -629,7 +635,16 @@ void link_bw_test(cl_context context,
         free(A);
     }
 
+    float max = 0;
+    for (int size_idx = 0; size_idx < test_size_count; size_idx++) {
+        if (results[size_idx * 2] > max) max = results[size_idx * 2];
+        if (results[size_idx * 2 + 1] > max) max = results[size_idx * 2 + 1];
+    }
+
+    printf("Link bandwidth: %f GB/s\n", max);
+
 cleanup:
+    free(results);
     clFlush(command_queue);
     clFinish(command_queue);
 }
