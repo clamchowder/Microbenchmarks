@@ -251,3 +251,7 @@ __kernel void local_atomic_latency_test(__global int* A, int count, __global int
         }
     }
 }
+
+__kernel void dummy_add(__global int* A) {
+    A[get_global_id(0)]++;
+}

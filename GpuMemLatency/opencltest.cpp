@@ -27,6 +27,7 @@ const uint64_t default_bw_test_sizes[] = {
 
 cl_device_id selected_device_id;
 cl_platform_id selected_platform_id;
+cl_ulong max_global_test_size;
 cl_context get_context_from_user(int platform_index, int device_index);
 float latency_test(cl_context context,
     cl_command_queue command_queue,
@@ -55,6 +56,10 @@ float c2c_atomic_latency_test(cl_context context,
     cl_command_queue command_queue,
     cl_kernel kernel,
     uint32_t iterations);
+void link_bw_test(cl_context context,
+    cl_command_queue command_queue,
+    cl_kernel kernel,
+    uint32_t iterations);
 
 uint32_t scale_bw_iterations(uint32_t base_iterations, uint32_t size_kb);
 uint64_t scale_iterations(uint32_t size_kb, uint64_t iterations);
@@ -72,7 +77,8 @@ enum TestType {
     LocalAtomicLatency, 
     GlobalMemBandwidth, 
     MemBandwidthWorkgroupScaling,
-    CoreToCore
+    CoreToCore,
+    LinkBandwidth
 };
 
 
@@ -173,6 +179,11 @@ int main(int argc, char* argv[]) {
                     testType = CoreToCore;
                     fprintf(stderr, "Testing latency with global atomics across CU count\n");
                 }
+                else if (_strnicmp(argv[argIdx], "link", 4) == 0)
+                {
+                    testType = LinkBandwidth;
+                    fprintf(stderr, "Testing host <-> GPU link bandwidth\n");
+                }
                 else {
                     fprintf(stderr, "I'm so confused. Unknown test type %s\n", argv[argIdx]);
                 }
@@ -239,9 +250,10 @@ int main(int argc, char* argv[]) {
     cl_kernel atomic_latency_test_kernel = clCreateKernel(program, "atomic_exec_latency_test", &ret);
     cl_kernel local_atomic_latency_test_kernel = clCreateKernel(program, "local_atomic_latency_test", &ret);
     cl_kernel c2c_atomic_latency_test_kernel = clCreateKernel(program, "c2c_atomic_exec_latency_test", &ret);
+    cl_kernel dummy_add_kernel = clCreateKernel(program, "dummy_add", &ret);
 #pragma endregion opencl_overhead
 
-    cl_ulong max_global_test_size = get_max_buffer_size();
+    max_global_test_size = get_max_buffer_size();
 
     if (testType == GlobalAtomicLatency)
     {
@@ -377,6 +389,10 @@ int main(int argc, char* argv[]) {
     {
         c2c_atomic_latency_test(context, command_queue, c2c_atomic_latency_test_kernel, chase_iterations);
      }
+    else if (testType == LinkBandwidth)
+    {
+        link_bw_test(context, command_queue, dummy_add_kernel, chase_iterations);
+    }
 
     printf("If you didn't run this through cmd, now you can copy the results. And press ctrl+c to close");
     scanf("\n");
@@ -545,6 +561,72 @@ cleanup:
     clReleaseMemObject(result_obj);
     free(result_arr);
     return latency;
+}
+
+void link_bw_test(cl_context context,
+    cl_command_queue command_queue,
+    cl_kernel kernel,
+    uint32_t iterations)
+{
+    cl_int ret;
+    cl_int result = 0;
+    size_t global_item_size;
+    size_t local_item_size = 1;
+    float gpu_to_host_bandwidth, host_to_gpu_bandwidth, total_data_gb;
+    uint32_t time_diff_ms, loop_iterations;
+    uint32_t *A;
+
+    printf("Region Size (KB), Host to GPU (GB/s), GPU to Host (GB/s)\n");
+    for (int size_idx = 0; size_idx < sizeof(default_bw_test_sizes) / sizeof(unsigned long long); size_idx++) {
+        uint64_t testSizeBytes = default_bw_test_sizes[size_idx];
+        uint64_t testSizeKb = default_bw_test_sizes[size_idx] / 1024;
+
+        if (testSizeBytes > max_global_test_size) {
+            printf("%d K would exceed device's max buffer size of %lu K, stopping here.\n", testSizeKb, max_global_test_size / 1024);
+            break;
+        }
+
+        A = (uint32_t *)malloc(default_bw_test_sizes[size_idx]);
+        memset(A, 0, testSizeBytes);
+        cl_mem a_mem_obj = clCreateBuffer(context, CL_MEM_READ_ONLY, testSizeBytes, NULL, &ret);
+        clSetKernelArg(kernel, 0, sizeof(cl_mem), (void*)&a_mem_obj);
+        global_item_size = 1; // only hit the first element, not like we're going to spend time verifying an entire arr especially at large sizes
+
+        // use 1M iterations = 1 GB total to transfer
+        loop_iterations = (iterations * 1000) / testSizeBytes;
+        //fprintf(stderr, "Iterations: %d\n", loop_iterations);
+
+        start_timing();
+        for (int iter_idx = 0; iter_idx < loop_iterations; iter_idx++)
+        {
+            ret = clEnqueueWriteBuffer(command_queue, a_mem_obj, CL_TRUE, 0, testSizeBytes, A, 0, NULL, NULL);
+            clFinish(command_queue);
+        }
+        time_diff_ms = end_timing();
+        total_data_gb = ((float)loop_iterations * testSizeBytes) / 1e9;
+        host_to_gpu_bandwidth = 1000 * (float)total_data_gb / (float)time_diff_ms;
+        //fprintf(stderr, "Write to GPU: %f GB transferred in %d ms\n", total_data_gb, time_diff_ms);
+
+        start_timing();
+        for (int iter_idx = 0; iter_idx < iterations; iter_idx++)
+        {
+            ret = clEnqueueReadBuffer(command_queue, a_mem_obj, CL_TRUE, 0, testSizeBytes, A, 0, NULL, NULL);
+            clFinish(command_queue);
+        }
+        time_diff_ms = end_timing();
+        total_data_gb = ((float)loop_iterations * testSizeBytes) / 1e9;
+        gpu_to_host_bandwidth = 1000 * (float)total_data_gb / (float)time_diff_ms;
+        //fprintf(stderr, "Read from GPU: %f GB transferred in %d ms\n", total_data_gb, time_diff_ms);
+
+        printf("%llu,%f,%f\n", testSizeKb, host_to_gpu_bandwidth, gpu_to_host_bandwidth);
+
+        clReleaseMemObject(a_mem_obj);
+        free(A);
+    }
+
+cleanup:
+    clFlush(command_queue);
+    clFinish(command_queue);
 }
 
 #define INT_EXEC_INPUT_SIZE 16
