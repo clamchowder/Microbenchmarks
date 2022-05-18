@@ -97,7 +97,7 @@ int main(int argc, char* argv[]) {
                     fprintf(stderr, "Running store to load forwarding test, with 32-bit stores\n");
                 }
 		#endif
-		#endif
+		#endif  // end UNKNOWN_ARCH
                 else {
                     fprintf(stderr, "Unrecognized test type: %s\n", testType);
                     fprintf(stderr, "Valid test types: c, tlb, mlp");
@@ -332,6 +332,7 @@ float RunMlpTest(uint32_t size_kb, uint32_t iterations, uint32_t parallelism) {
 #define POINTER_INT uint64_t
 #endif
 
+#ifndef UNKNOWN_ARCH
 float RunAsmTest(uint32_t size_kb, uint32_t iterations, uint32_t *preallocatedArr) {
     struct timeval startTv, endTv;
     struct timezone startTz, endTz;
@@ -373,6 +374,7 @@ float RunAsmTest(uint32_t size_kb, uint32_t iterations, uint32_t *preallocatedAr
     if (sum == 0) printf("sum == 0 (?)\n");
     return latency;
 }
+#endif
 
 // Tries to isolate virtual to physical address translation latency by accessing
 // one element per page, and checking latency difference between that and hitting the same amount of "hot"
