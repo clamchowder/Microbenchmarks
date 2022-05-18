@@ -6,7 +6,11 @@
 #include "../common/timing.h"
 
 #define CL_USE_DEPRECATED_OPENCL_1_2_APIS
+#ifndef __APPLE__
 #include <CL/cl.h>
+#else
+#include <OpenCL/cl.h>
+#endif
 #define MAX_SOURCE_SIZE (0x100000)
 
 #define CACHELINE_SIZE 64
