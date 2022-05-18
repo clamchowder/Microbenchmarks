@@ -34,6 +34,11 @@ typedef struct BandwidthTestThreadData {
 
 float MeasureBw(uint64_t sizeKb, uint64_t iterations, uint64_t threads, int shared);
 
+#ifndef __x86_64
+#ifndef __aarch64__
+#define UNKNOWN_ARCH 1
+#endif
+#endif
 
 #ifdef __x86_64
 #include <cpuid.h>
@@ -52,18 +57,20 @@ float (*bw_func)(float*, uint64_t, uint64_t, uint64_t start);
 extern uint32_t readbankconflict(uint32_t *arr, uint64_t arr_length, uint64_t spacing, uint64_t iterations);
 #endif
 
+#ifndef UNKNOWN_ARCH
 extern float asm_read(float* arr, uint64_t arr_length, uint64_t iterations, uint64_t start) __attribute__((ms_abi));
 extern float asm_write(float* arr, uint64_t arr_length, uint64_t iterations, uint64_t start) __attribute__((ms_abi));
 extern float asm_copy(float *arr, uint64_t arr_length, uint64_t iterations, uint64_t start) __attribute__((ms_abi));
 extern float asm_cflip(float *arr, uint64_t arr_length, uint64_t iterations, uint64_t start) __attribute__((ms_abi));
 extern float asm_add(float *arr, uint64_t arr_length, uint64_t iterations, uint64_t start) __attribute__((ms_abi));
+void TestBankConflicts(); 
+#endif
 
 #ifdef __aarch64__
 extern void flush_icache(void *arr, uint64_t length);
 #endif
 
 float MeasureInstructionBw(uint64_t sizeKb, uint64_t iterations, int nopSize, int branchInterval); 
-void TestBankConflicts(); 
 uint64_t GetIterationCount(uint64_t testSize, uint64_t threads);
 void *ReadBandwidthTestThread(void *param);
 uint64_t gbToTransfer = 512;
@@ -92,8 +99,11 @@ int main(int argc, char *argv[]) {
         avx512Supported = 1;
     } 
 #endif
-
+#ifdef UNKNOWN_ARCH
+    bw_func = scalar_read;
+#else
     bw_func = asm_read;
+#endif
     for (int argIdx = 1; argIdx < argc; argIdx++) {
         if (*(argv[argIdx]) == '-') {
             char *arg = argv[argIdx] + 1;
@@ -135,7 +145,9 @@ int main(int argc, char *argv[]) {
                 if (strncmp(argv[argIdx], "scalar", 6) == 0) {
                     bw_func = scalar_read;
                     fprintf(stderr, "Using scalar C code\n");
-                } else if (strncmp(argv[argIdx], "asm", 3) == 0) {
+                } 
+#ifndef UNKNOWN_ARCH
+                else if (strncmp(argv[argIdx], "asm", 3) == 0) {
                     bw_func = asm_read;
                     fprintf(stderr, "Using ASM code (AVX or NEON)\n");
                 } else if (strncmp(argv[argIdx], "write", 5) == 0) {
@@ -169,7 +181,7 @@ int main(int argc, char *argv[]) {
                     }
                     #endif  
                 } 
-                
+               #endif 
                 else if (strncmp(argv[argIdx], "instr8", 6) == 0) {
                     testInstructionBandwidth = 1; 
                     nopBytes = 8;
@@ -192,9 +204,11 @@ int main(int argc, char *argv[]) {
                     bw_func = sse_read;
                     fprintf(stderr, "Using ASM code, SSE\n");
                 }
+#ifndef UNKNOWN_ARCH
                 else if (strncmp(argv[argIdx], "readbankconflict", 13) == 0) {
                     testBankConflict = 1;
                 }
+#endif
                 #endif
             }
         } else {
@@ -235,9 +249,13 @@ int main(int argc, char *argv[]) {
         {
             printf("%d,%f\n", singleSize, MeasureInstructionBw(singleSize, GetIterationCount(singleSize, threads), nopBytes, branchInterval));
         }
-    } else if (testBankConflict) {
+    } 
+#ifndef UNKNOWN_ARCH
+    else if (testBankConflict) {
         TestBankConflicts(); 
-    } else if (autothreads > 0) {
+    } 
+#endif
+    else if (autothreads > 0) {
         float *threadResults = (float *)malloc(sizeof(float) * autothreads * testSizeCount);
         printf("Auto threads mode, up to %d threads\n", autothreads);
         for (int threadIdx = 1; threadIdx <= autothreads; threadIdx++) {
@@ -309,6 +327,7 @@ uint64_t GetIterationCount(uint64_t testSize, uint64_t threads)
     else return iterations;
 }
 
+#ifndef UNKNOWN_ARCH
 void TestBankConflicts() {
     struct timeval startTv, endTv;
     time_t time_diff_ms;
@@ -355,6 +374,7 @@ void TestBankConflicts() {
 
     free(resultArr);
 }
+#endif
 
 float MeasureInstructionBw(uint64_t sizeKb, uint64_t iterations, int nopSize, int branchInterval) {
 #ifdef __x86_64
@@ -377,6 +397,8 @@ float MeasureInstructionBw(uint64_t sizeKb, uint64_t iterations, int nopSize, in
     // mov x0, 0 + add x10, x10, 0
     char nop8b1[9] = { 0x00, 0x00, 0x80, 0xD2, 0x8c, 0x01, 0x00, 0x91 }; 
 #endif
+    char nop8b[8] = { 0, 0, 0, 0x60, 0, 0, 0, 0x60 };
+    char nop4b[8] = { 0, 0, 0, 0x60, 0, 0, 0, 0x60 };
 
     struct timeval startTv, endTv;
     struct timezone startTz, endTz;
@@ -384,15 +406,17 @@ float MeasureInstructionBw(uint64_t sizeKb, uint64_t iterations, int nopSize, in
     uint64_t *nops;
     uint64_t elements = sizeKb * 1024 / 8;
     size_t funcLen = sizeKb * 1024 + 4;   // add 4 bytes to cover for aarch64 ret as well. doesn't hurt for x86
+    size_t minMmapSize = 65536 * 2;
 
     void (*nopfunc)(uint64_t) __attribute((ms_abi));
 
     // nops, dec rcx (3 bytes), jump if zero flag set to 32-bit displacement (6 bytes), ret (1 byte)
     //nops = (uint64_t *)malloc(funcLen);
-    if (0 != posix_memalign((void **)(&nops), 4096, funcLen)) {
+    nops = mmap(NULL, funcLen < minMmapSize ? minMmapSize : funcLen, PROT_READ | PROT_WRITE, MAP_PRIVATE | MAP_ANONYMOUS, -1, 0);
+    /*if (0 != posix_memalign((void **)(&nops), 65536, funcLen)) {
         fprintf(stderr, "Failed to allocate memory for size %lu\n", sizeKb);
         return 0;
-    }
+    }*/
 
     uint64_t *nop8bptr;
     if (nopSize == 8) nop8bptr = (uint64_t *)(nop8b);
@@ -424,10 +448,16 @@ float MeasureInstructionBw(uint64_t sizeKb, uint64_t iterations, int nopSize, in
     flush_icache((void *)nops, funcLen);
     #endif
 
+    uint64_t *functionEnd = (uint64_t *)(nops + elements);
+    functionEnd[0] = 0x4E800020;
+    __builtin___clear_cache((char *)nops, functionEnd);
+
     uint64_t nopfuncPage = (~0xFFF) & (uint64_t)(nops);
     size_t mprotectLen = (0xFFF & (uint64_t)(nops)) + funcLen;
-    if (mprotect((void *)nopfuncPage, mprotectLen, PROT_EXEC | PROT_READ | PROT_WRITE) < 0) {
+    if (mprotectLen < 65536) mprotectLen = 65540;
+    if (mprotect((void *)nopfuncPage, mprotectLen, PROT_EXEC | PROT_READ) < 0) {
         fprintf(stderr, "mprotect failed, errno %d\n", errno); 
+        fprintf(stderr, "%s\n", strerror(errno));
         return 0;
     }  
 
@@ -441,7 +471,8 @@ float MeasureInstructionBw(uint64_t sizeKb, uint64_t iterations, int nopSize, in
     //fprintf(stderr, "%lf GB transferred in %ld ms\n", gbTransferred, time_diff_ms);
     bw = 1000 * gbTransferred / (double)time_diff_ms; 
 
-    free(nops);
+    //free(nops);
+    munmap(nops, funcLen);
     return bw;
 }
 
