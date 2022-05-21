@@ -48,10 +48,10 @@ namespace AsmGen
             dependentStores[3] = "  movups [r8 + r12 * 8], xmm0";
 
             string[] indepStores = new string[4];
-            indepStores[0] = "  movups [r8], %xmm1";
-            indepStores[1] = "  movups [r8 + 16], %xmm1";
-            indepStores[2] = "  movups [r8 + 32], %xmm1";
-            indepStores[3] = "  movups [r8 + 48], %xmm1";
+            indepStores[0] = "  movups [r8], xmm1";
+            indepStores[1] = "  movups [r8 + 16], xmm1";
+            indepStores[2] = "  movups [r8 + 32], xmm1";
+            indepStores[3] = "  movups [r8 + 48], xmm1";
 
             UarchTestHelpers.GenerateX86NasmNsqTestFuncs(sb, this.Counts[this.Counts.Length - 1], this.Counts, this.Prefix, dependentStores, indepStores, false, initInstrs, postLoadInstr);
         }

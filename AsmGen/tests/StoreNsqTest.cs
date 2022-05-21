@@ -71,7 +71,7 @@ namespace AsmGen
             indepStores[1] = "  mov [r8 + 8], r11";
             indepStores[2] = "  mov [r8 + 16], r11";
             indepStores[3] = "  mov [r8 + 24], r11";
-            UarchTestHelpers.GenerateX86AsmNsqTestFuncs(sb, this.Counts[this.Counts.Length - 1], this.Counts, this.Prefix, dependentStores, indepStores, false);
+            UarchTestHelpers.GenerateX86NasmNsqTestFuncs(sb, this.Counts[this.Counts.Length - 1], this.Counts, this.Prefix, dependentStores, indepStores, false);
         }
 
         public override void GenerateArmAsm(StringBuilder sb)
