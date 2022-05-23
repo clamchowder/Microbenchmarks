@@ -36,8 +36,18 @@ float MeasureBw(uint64_t sizeKb, uint64_t iterations, uint64_t threads, int shar
 
 #ifndef __x86_64
 #ifndef __aarch64__
+#ifndef _ARCH_PPC64
 #define UNKNOWN_ARCH 1
 #endif
+#endif
+#endif
+
+#ifdef __x86_64
+#define ASM_SUPPORTED 1
+#endif
+
+#ifdef __aarch64__
+#define ASM_SUPPORTED 1
 #endif
 
 #ifdef __x86_64
@@ -57,7 +67,7 @@ float (*bw_func)(float*, uint64_t, uint64_t, uint64_t start);
 extern uint32_t readbankconflict(uint32_t *arr, uint64_t arr_length, uint64_t spacing, uint64_t iterations);
 #endif
 
-#ifndef UNKNOWN_ARCH
+#ifndef ASM_SUPPORTED
 extern float asm_read(float* arr, uint64_t arr_length, uint64_t iterations, uint64_t start) __attribute__((ms_abi));
 extern float asm_write(float* arr, uint64_t arr_length, uint64_t iterations, uint64_t start) __attribute__((ms_abi));
 extern float asm_copy(float *arr, uint64_t arr_length, uint64_t iterations, uint64_t start) __attribute__((ms_abi));
@@ -99,10 +109,10 @@ int main(int argc, char *argv[]) {
         avx512Supported = 1;
     } 
 #endif
-#ifdef UNKNOWN_ARCH
-    bw_func = scalar_read;
-#else
+#ifdef ASM_SUPPORTED
     bw_func = asm_read;
+#else
+    bw_func = scalar_read;
 #endif
     for (int argIdx = 1; argIdx < argc; argIdx++) {
         if (*(argv[argIdx]) == '-') {
@@ -146,7 +156,7 @@ int main(int argc, char *argv[]) {
                     bw_func = scalar_read;
                     fprintf(stderr, "Using scalar C code\n");
                 } 
-#ifndef UNKNOWN_ARCH
+#ifdef ASM_SUPPORTED
                 else if (strncmp(argv[argIdx], "asm", 3) == 0) {
                     bw_func = asm_read;
                     fprintf(stderr, "Using ASM code (AVX or NEON)\n");
@@ -204,7 +214,7 @@ int main(int argc, char *argv[]) {
                     bw_func = sse_read;
                     fprintf(stderr, "Using ASM code, SSE\n");
                 }
-#ifndef UNKNOWN_ARCH
+#ifdef ASM_SUPPORTED
                 else if (strncmp(argv[argIdx], "readbankconflict", 13) == 0) {
                     testBankConflict = 1;
                 }
@@ -250,7 +260,7 @@ int main(int argc, char *argv[]) {
             printf("%d,%f\n", singleSize, MeasureInstructionBw(singleSize, GetIterationCount(singleSize, threads), nopBytes, branchInterval));
         }
     } 
-#ifndef UNKNOWN_ARCH
+#ifdef ASM_SUPPORTED
     else if (testBankConflict) {
         TestBankConflicts(); 
     } 
@@ -327,7 +337,7 @@ uint64_t GetIterationCount(uint64_t testSize, uint64_t threads)
     else return iterations;
 }
 
-#ifndef UNKNOWN_ARCH
+#ifdef ASM_SUPPORTED
 void TestBankConflicts() {
     struct timeval startTv, endTv;
     time_t time_diff_ms;
@@ -397,8 +407,11 @@ float MeasureInstructionBw(uint64_t sizeKb, uint64_t iterations, int nopSize, in
     // mov x0, 0 + add x10, x10, 0
     char nop8b1[9] = { 0x00, 0x00, 0x80, 0xD2, 0x8c, 0x01, 0x00, 0x91 }; 
 #endif
+
+#ifdef _ARCH_PPC64
     char nop8b[8] = { 0, 0, 0, 0x60, 0, 0, 0, 0x60 };
     char nop4b[8] = { 0, 0, 0, 0x60, 0, 0, 0, 0x60 };
+#endif
 
     struct timeval startTv, endTv;
     struct timezone startTz, endTz;
@@ -448,9 +461,11 @@ float MeasureInstructionBw(uint64_t sizeKb, uint64_t iterations, int nopSize, in
     flush_icache((void *)nops, funcLen);
     #endif
 
+    #ifdef _ARCH_PPC64
     uint64_t *functionEnd = (uint64_t *)(nops + elements);
     functionEnd[0] = 0x4E800020;
     __builtin___clear_cache((char *)nops, functionEnd);
+    #endif
 
     uint64_t nopfuncPage = (~0xFFF) & (uint64_t)(nops);
     size_t mprotectLen = (0xFFF & (uint64_t)(nops)) + funcLen;

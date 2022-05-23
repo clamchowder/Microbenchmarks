@@ -22,7 +22,7 @@ extern "C" uint64_t latencytest(uint64_t iterations, uint64_t *mem);
 
 int main(int argc, char* argv[]) {
     void* arr = NULL;
-    int numa = 0, coreNode = 0, memNode = 0, largepages = 0;
+    int numa = 0, coreNode = 0, memNode = 0, largepages = 0, sleep = 0;
     for (int argIdx = 1; argIdx < argc; argIdx++) {
         if (*(argv[argIdx]) == '-') {
             char* arg = argv[argIdx] + 1;
@@ -33,6 +33,11 @@ int main(int argc, char* argv[]) {
             } else if (_strnicmp(arg, "autonuma", 8) == 0) {
                 fprintf(stderr, "Testing NUMA, 1 GB test size\n");
                 numa = 1;
+            }
+            else if (_strnicmp(arg, "sleep", 5) == 0) {
+                argIdx++;
+                sleep = atoi(argv[argIdx]);
+                fprintf(stderr, "Sleeping for %d seconds between runs\n", sleep);
             }
             else if (_strnicmp(arg, "numa", 4) == 0) {
                 numa = 2;
@@ -122,6 +127,7 @@ int main(int argc, char* argv[]) {
         for (int i = 0; i < sizeof(default_test_sizes) / sizeof(int); i++)
         {
             printf("%d,%f\n", default_test_sizes[i], RunAsmTest(default_test_sizes[i], ITERATIONS, arr));
+            if (sleep) Sleep(1000 * sleep);
         }
     }
 
