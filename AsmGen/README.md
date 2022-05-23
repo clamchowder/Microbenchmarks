@@ -12,7 +12,11 @@ Branch predictor benchmarks are different:
 Compile the project and run AsmGen.exe. That gives several output files. Compilation for Linux:
 `gcc clammicrobench.c clammicrobench_x86.s -o clammicrobench` for x86_64
 `gcc clammicrobench.c clammicrobench_arm.s -o clammicrobench` for aarch64
+`aarch64-linux-gnu-gcc clammicrobench.c clammicrobench_arm.s -o clammicrobench` to cross compile for aarch64 (for example from a fast desktop)
 
 For Windows, run `AsmGen.exe autocopy`. That copies generated files to the /clammicrobench directory, assuming it's run from the default VS output location. Then, open /clammicrobench/clammicrobench.sln and build. You need nasm in your path for that, as covered on README.md at repo root.
 
-The indirect branch test can take a while to build with nasm, so you might want to reduce the branch and target counts for that.
+The indirect branch test can take a while to build with nasm, so you might want to reduce the branch and target counts for that. Or just keep it commented out.
+
+# Running
+Generally, the syntax is `clammicrobench [test name] [list size for latency test] [iteration count]`. The last two parameters are optional.
