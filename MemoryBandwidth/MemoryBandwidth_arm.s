@@ -598,7 +598,6 @@ flush_icache_clean_icache_loop:
   add sp, sp, #0x20
   ret
 
-
 sve_read:
   sub sp, sp, #0x30
   stp x14, x15, [sp, #0x10]
@@ -611,7 +610,8 @@ sve_read_pass_loop:
   ld1d z16.d, p0/z, [x0, x14, lsl #3]
   incd x14
   whilelt p0.d, x14, x13 /* x13 = len in 64-bit elements */
-  b.first sve_read_pass_loop
+  cmp x14, x13 
+  b.gt sve_read_pass_loop
   sub x2, x2, 1
   cbnz x2, sve_read_pass_loop
   add v0.4s, v16.4s, v16.4s

@@ -60,6 +60,7 @@ extern float asm_add(float *arr, uint64_t arr_length, uint64_t iterations, uint6
 
 #ifdef __aarch64__
 extern void flush_icache(void *arr, uint64_t length);
+extern void sve_read(float *arr, uint64_t arr_length, uint64_t iterations, uint64_t start);
 #endif
 
 float MeasureInstructionBw(uint64_t sizeKb, uint64_t iterations, int nopSize, int branchInterval); 
@@ -196,6 +197,12 @@ int main(int argc, char *argv[]) {
                     testBankConflict = 1;
                 }
                 #endif
+		#ifdef __aarch64__
+		else if (strncmp(argv[argIdx], "sve_read", 8) == 0) {
+		    bw_func = sve_read;
+                    fprintf(stderr, "Using ASM code, SVE\n");
+		}
+		#endif
             }
         } else {
             fprintf(stderr, "Expected - parameter\n");
