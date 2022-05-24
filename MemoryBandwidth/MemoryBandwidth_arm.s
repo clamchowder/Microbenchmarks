@@ -2,6 +2,7 @@
 .text
 
 .global asm_read
+.global sve_read
 .global asm_write 
 .global asm_cflip
 .global asm_copy
@@ -596,3 +597,25 @@ flush_icache_clean_icache_loop:
   ldp x14, x15, [sp, #0x10]
   add sp, sp, #0x20
   ret
+
+
+sve_read:
+  sub sp, sp, #0x30
+  stp x14, x15, [sp, #0x10]
+  stp x12, x13, [sp, #0x20]
+  sub x1, x1, 128 
+  mov x14, 0      /* start at 0 */
+  lsr x13, x1, 3  /* set x13 = length in 64-bit elements */
+  ld1d z15.d, p0/z, [x0, x14, lsl #3]
+sve_read_pass_loop:
+  ld1d z16.d, p0/z, [x0, x14, lsl #3]
+  incd x14
+  whilelt p0.d, x14, x13 /* x13 = len in 64-bit elements */
+  b.first sve_read_pass_loop
+  sub x2, x2, 1
+  cbnz x2, sve_read_pass_loop
+  add v0.4s, v16.4s, v16.4s
+  ldp x12, x13, [sp, #0x20]
+  ldp x14, x15, [sp, #0x10]
+  add sp, sp, #0x30
+  ret 
