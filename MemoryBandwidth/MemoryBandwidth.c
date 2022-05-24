@@ -61,6 +61,7 @@ extern float asm_add(float *arr, uint64_t arr_length, uint64_t iterations, uint6
 #ifdef __aarch64__
 extern void flush_icache(void *arr, uint64_t length);
 extern void sve_read(float *arr, uint64_t arr_length, uint64_t iterations, uint64_t start);
+extern void sve_write(float *arr, uint64_t arr_length, uint64_t iterations, uint64_t start);
 #endif
 
 float MeasureInstructionBw(uint64_t sizeKb, uint64_t iterations, int nopSize, int branchInterval); 
@@ -202,6 +203,10 @@ int main(int argc, char *argv[]) {
 		    bw_func = sve_read;
                     fprintf(stderr, "Using ASM code, SVE\n");
 		}
+ 		else if (strncmp(argv[argIdx], "sve_write", 9) == 0) {
+		    bw_func = sve_write;
+                    fprintf(stderr, "Using ASM code, SVE, writing\n");
+		} 
 		#endif
             }
         } else {
@@ -380,9 +385,9 @@ float MeasureInstructionBw(uint64_t sizeKb, uint64_t iterations, int nopSize, in
 
     // hack this to deal with graviton 1 / A72
     // nop + add x0, x0, 0
-    char nop8b[9] = { 0x1F, 0x20, 0x03, 0xD5, 0x00, 0x00, 0x00, 0x91 }; 
+    //char nop8b[9] = { 0x1F, 0x20, 0x03, 0xD5, 0x00, 0x00, 0x00, 0x91 }; 
     // mov x0, 0 + add x10, x10, 0
-    char nop8b1[9] = { 0x00, 0x00, 0x80, 0xD2, 0x8c, 0x01, 0x00, 0x91 }; 
+    char nop8b[9] = { 0x00, 0x00, 0x80, 0xD2, 0x00, 0x00, 0x80, 0xD2 }; 
 #endif
 
     struct timeval startTv, endTv;
@@ -415,8 +420,8 @@ float MeasureInstructionBw(uint64_t sizeKb, uint64_t iterations, int nopSize, in
 	if (branchInterval > 1 && nopIdx % branchInterval == 0) nops[nopIdx] = *nopBranchPtr;
 #endif
 #ifdef __aarch64__
-        uint64_t *otherNops = (uint64_t *)nop8b1;
-        if (nopIdx & 1) nops[nopIdx] = *otherNops;
+        //uint64_t *otherNops = (uint64_t *)nop8b1;
+        //if (nopIdx & 1) nops[nopIdx] = *otherNops;
 #endif
     }
 

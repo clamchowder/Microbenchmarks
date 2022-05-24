@@ -3,6 +3,7 @@
 
 .global asm_read
 .global sve_read
+.global sve_write
 .global asm_write 
 .global asm_cflip
 .global asm_copy
@@ -648,4 +649,57 @@ sve_read_pass_loop:
   ldp x12, x13, [sp, #0x20]
   ldp x14, x15, [sp, #0x10]
   add sp, sp, #0x30
-  ret 
+  ret
+
+sve_write:
+  sub sp, sp, #0x30
+  stp x14, x15, [sp, #0x10]
+  stp x12, x13, [sp, #0x20]
+  sub x1, x1, 128 
+  mov x14, x3     /* set x14 = index into array to start location (x3) */
+  eor x13, x13, x13 /* x13 = 0 (for comparison) */
+  ldr z16, [x0, 0, MUL VL]
+sve_write_pass_loop:
+  lsl x12, x14, 2  /* x12 = x14 * 4, because float is 4B */
+  add x15, x0, x12 /* ptr (x15) to next element = x0 (base) + x12 (index *4) */
+  str z16, [x15, 0, MUL VL]
+  str z18, [x15, 1, MUL VL]
+  str z20, [x15, 2, MUL VL]
+  str z22, [x15, 3, MUL VL]
+  add x14, x14, 32
+
+  lsl x12, x14, 2  
+  add x15, x0, x12 
+  str z16, [x15, 0, MUL VL]
+  str z18, [x15, 1, MUL VL]
+  str z20, [x15, 2, MUL VL]
+  str z22, [x15, 3, MUL VL] 
+  add x14, x14, 32
+
+  lsl x12, x14, 2  
+  add x15, x0, x12 
+  str z16, [x15, 0, MUL VL]
+  str z18, [x15, 1, MUL VL]
+  str z20, [x15, 2, MUL VL]
+  str z22, [x15, 3, MUL VL]  
+  add x14, x14, 32
+
+  lsl x12, x14, 2  
+  add x15, x0, x12 
+  str z16, [x15, 0, MUL VL]
+  str z18, [x15, 1, MUL VL]
+  str z20, [x15, 2, MUL VL]
+  str z22, [x15, 3, MUL VL]   
+  add x14, x14, 32
+  
+  cmp x1, x14 /* if x1 (len - 128) - x14 < 0, loop back around */
+  csel x14, x13, x14, LT
+  cmp x14, x3
+  b.ne sve_write_pass_loop /* skip iteration decrement if we're not back to start */
+  sub x2, x2, 1
+  cbnz x2, sve_write_pass_loop
+  add v0.4s, v16.4s, v16.4s
+  ldp x12, x13, [sp, #0x20]
+  ldp x14, x15, [sp, #0x10]
+  add sp, sp, #0x30
+  ret
