@@ -603,15 +603,45 @@ sve_read:
   stp x14, x15, [sp, #0x10]
   stp x12, x13, [sp, #0x20]
   sub x1, x1, 128 
-  mov x14, 0      /* start at 0 */
-  lsr x13, x1, 3  /* set x13 = length in 64-bit elements */
-  ld1d z15.d, p0/z, [x0, x14, lsl #3]
+  mov x14, x3     /* set x14 = index into array to start location (x3) */
+  eor x13, x13, x13 /* x13 = 0 (for comparison) */
 sve_read_pass_loop:
-  ld1d z16.d, p0/z, [x0, x14, lsl #3]
-  incd x14
-  whilelt p0.d, x14, x13 /* x13 = len in 64-bit elements */
-  cmp x14, x13 
-  b.gt sve_read_pass_loop
+  lsl x12, x14, 2  /* x12 = x14 * 4, because float is 4B */
+  add x15, x0, x12 /* ptr (x15) to next element = x0 (base) + x12 (index *4) */
+  ldr z16, [x15, 0, MUL VL]
+  ldr z18, [x15, 1, MUL VL]
+  ldr z20, [x15, 2, MUL VL]
+  ldr z22, [x15, 3, MUL VL]
+  add x14, x14, 32
+
+  lsl x12, x14, 2  
+  add x15, x0, x12 
+  ldr z16, [x15, 0, MUL VL]
+  ldr z18, [x15, 1, MUL VL]
+  ldr z20, [x15, 2, MUL VL]
+  ldr z22, [x15, 3, MUL VL] 
+  add x14, x14, 32
+
+  lsl x12, x14, 2  
+  add x15, x0, x12 
+  ldr z16, [x15, 0, MUL VL]
+  ldr z18, [x15, 1, MUL VL]
+  ldr z20, [x15, 2, MUL VL]
+  ldr z22, [x15, 3, MUL VL]  
+  add x14, x14, 32
+
+  lsl x12, x14, 2  
+  add x15, x0, x12 
+  ldr z16, [x15, 0, MUL VL]
+  ldr z18, [x15, 1, MUL VL]
+  ldr z20, [x15, 2, MUL VL]
+  ldr z22, [x15, 3, MUL VL]   
+  add x14, x14, 32
+  
+  cmp x1, x14 /* if x1 (len - 128) - x14 < 0, loop back around */
+  csel x14, x13, x14, LT
+  cmp x14, x3
+  b.ne sve_read_pass_loop /* skip iteration decrement if we're not back to start */
   sub x2, x2, 1
   cbnz x2, sve_read_pass_loop
   add v0.4s, v16.4s, v16.4s
