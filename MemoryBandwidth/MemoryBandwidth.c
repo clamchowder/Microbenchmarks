@@ -18,6 +18,10 @@
 #include <sys/mman.h>
 #include <errno.h>
 
+#ifdef _ARCH_PPC64
+#include <altivec.h>
+#endif
+
 #pragma GCC diagnostic ignored "-Wattributes"
 
 int default_test_sizes[39] = { 2, 4, 8, 12, 16, 24, 32, 48, 64, 96, 128, 192, 256, 512, 600, 768, 1024, 1536, 2048,
@@ -78,6 +82,10 @@ void TestBankConflicts();
 
 #ifdef __aarch64__
 extern void flush_icache(void *arr, uint64_t length);
+#endif
+
+#ifdef _ARCH_PPC64
+extern float altivec_read(float* arr, uint64_t arr_length, uint64_t iterations, uint64_t start); 
 #endif
 
 float MeasureInstructionBw(uint64_t sizeKb, uint64_t iterations, int nopSize, int branchInterval); 
@@ -217,6 +225,12 @@ int main(int argc, char *argv[]) {
 #ifdef ASM_SUPPORTED
                 else if (strncmp(argv[argIdx], "readbankconflict", 13) == 0) {
                     testBankConflict = 1;
+                }
+#endif
+#ifdef _ARCH_PPC64
+                 else if (strncmp(argv[argIdx], "altivec", 7) == 0) {
+                    bw_func = sse_read;
+                    fprintf(stderr, "Using AltiVec intrinsics\n");
                 }
 #endif
                 #endif
@@ -611,6 +625,41 @@ float scalar_read(float* arr, uint64_t arr_length, uint64_t iterations, uint64_t
 
     return sum;
 }
+
+#ifdef _ARCH_PPC64
+float altivec_read(float* arr, uint64_t arr_length, uint64_t iterations, uint64_t start) {
+    vector float v0, v1, v2, v3;
+    vector float d0, d1, d2, d3;
+    float thing[4];
+    if (start + 16 >= arr_length) return 0;
+
+    uint64_t iter_idx = 0, i = start;
+    d0 = vec_ld(0, arr);
+    d1 = vec_ld(0, arr + 4);
+    d2 = vec_ld(0, arr + 8);
+    d3 = vec_ld(0, arr + 12);
+    while (iter_idx < iterations) {
+        v0 = vec_ld(0, arr + i);
+        v1 = vec_ld(0, arr + i + 4);
+        v2 = vec_ld(0, arr + i + 8);
+        v3 = vec_ld(0, arr + i + 12);
+        d0 = vec_add(d0, v0);
+        d1 = vec_add(d1, v1);
+        d2 = vec_add(d2, v2);
+        d3 = vec_add(d3, v3);
+        i += 16;
+        if (i + 15 >= arr_length) i = 0;
+        if (i == start) iter_idx++;
+    }
+    
+    d0 = vec_add(d0, d1);
+    d0 = vec_add(d0, d2);
+    d0 = vec_add(d0, d3);
+    vec_st(d0, 0, thing);
+
+    return thing[0] + thing[1] + thing[2] + thing[3]; 
+}
+#endif
 
 void *ReadBandwidthTestThread(void *param) {
     BandwidthTestThreadData* bwTestData = (BandwidthTestThreadData*)param;
