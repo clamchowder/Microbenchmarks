@@ -408,8 +408,8 @@ float MeasureInstructionBw(uint64_t sizeKb, uint64_t iterations, int nopSize, in
 	if (branchInterval > 1 && nopIdx % branchInterval == 0) nops[nopIdx] = *nopBranchPtr;
 #endif
 #ifdef __aarch64__
-        uint64_t *otherNops = (uint64_t *)nop8b1;
-        if (nopIdx & 1) nops[nopIdx] = *otherNops;
+        //uint64_t *otherNops = (uint64_t *)nop8b1;
+        //if (nopIdx & 1) nops[nopIdx] = *otherNops;
 #endif
     }
 
