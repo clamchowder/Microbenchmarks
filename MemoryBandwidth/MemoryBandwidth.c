@@ -60,8 +60,8 @@ extern float asm_add(float *arr, uint64_t arr_length, uint64_t iterations, uint6
 
 #ifdef __aarch64__
 extern void flush_icache(void *arr, uint64_t length);
-extern void sve_read(float *arr, uint64_t arr_length, uint64_t iterations, uint64_t start);
-extern void sve_write(float *arr, uint64_t arr_length, uint64_t iterations, uint64_t start);
+extern float sve_read(float *arr, uint64_t arr_length, uint64_t iterations, uint64_t start);
+extern float sve_write(float *arr, uint64_t arr_length, uint64_t iterations, uint64_t start);
 #endif
 
 float MeasureInstructionBw(uint64_t sizeKb, uint64_t iterations, int nopSize, int branchInterval); 
@@ -381,13 +381,11 @@ float MeasureInstructionBw(uint64_t sizeKb, uint64_t iterations, int nopSize, in
 #endif
 
 #ifdef __aarch64__
+    // just NOPs
     char nop4b[8] = { 0x1F, 0x20, 0x03, 0xD5, 0x1F, 0x20, 0x03, 0xD5 };
 
-    // hack this to deal with graviton 1 / A72
-    // nop + add x0, x0, 0
-    //char nop8b[9] = { 0x1F, 0x20, 0x03, 0xD5, 0x00, 0x00, 0x00, 0x91 }; 
-    // mov x0, 0 + add x10, x10, 0
-    char nop8b[9] = { 0x00, 0x00, 0x80, 0xD2, 0x00, 0x00, 0x80, 0xD2 }; 
+    // mov x0, 0 
+    char nop8b[8] = { 0x00, 0x00, 0x80, 0xD2, 0x00, 0x00, 0x80, 0xD2 }; 
 #endif
 
     struct timeval startTv, endTv;
