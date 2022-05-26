@@ -8,7 +8,7 @@ namespace AsmGen
         {
             this.Counts = UarchTestHelpers.GenerateCountArray(low, high, step);
             this.Prefix = "vec256rf";
-            this.Description = "Vector (256-bit packed fp) RF Test - x86 only";
+            this.Description = "Vector (256-bit packed fp) RF Test - SVE whatever on ARM";
             this.FunctionDefinitionParameters = "uint64_t iterations, int *arr, float *floatArr";
             this.GetFunctionCallParameters = "structIterations, A, fpArr";
             this.DivideTimeByCount = false;
@@ -49,17 +49,17 @@ namespace AsmGen
 
         public override void GenerateArmAsm(StringBuilder sb)
         {
-            string initInstrs = "  ldr q0, [x1]\n" +
-                "  ldr q1, [x1, #0x10]\n" +
-                "  ldr q2, [x1, #0x20]\n" +
-                "  ldr q3, [x1, #0x30]\n" +
-                "  ldr q4, [x1, #0x40]\n";
+            string initInstrs = "  ldr z0, [x1, 0, MUL VL]\n" +
+                "  ldr z1, [x1, 1, MUL VL]\n" +
+                "  ldr z2, [x1, 2, MUL VL]\n" +
+                "  ldr z3, [x1, 3, MUL VL]\n" +
+                "  ldr z4, [x1, 4, MUL VL]\n";
 
             string[] unrolledAdds = new string[4];
-            unrolledAdds[0] = "  add v1.4s, v1.4s, v0.4s";
-            unrolledAdds[1] = "  add v2.4s, v2.4s, v0.4s";
-            unrolledAdds[2] = "  add v3.4s, v3.4s, v0.4s";
-            unrolledAdds[3] = "  add v4.4s, v4.4s, v0.4s";
+            unrolledAdds[0] = "  add z1.s, z1.s, z0.s";
+            unrolledAdds[1] = "  add z2.s, z2.s, z0.s";
+            unrolledAdds[2] = "  add z3.s, z3.s, z0.s";
+            unrolledAdds[3] = "  add z4.s, z4.s, z0.s";
             UarchTestHelpers.GenerateArmAsmStructureTestFuncs(sb, this.Counts, this.Prefix, unrolledAdds, unrolledAdds, false, initInstrs);
         }
     }
