@@ -9,6 +9,9 @@
 #include <math.h>
 #include "../common/timing.h"
 
+#define false 0
+#define true 1
+
 #define CL_USE_DEPRECATED_OPENCL_1_2_APIS
 #ifndef __APPLE__
 #include <CL/cl.h>
@@ -33,13 +36,13 @@ float int_atomic_latency_test(cl_context context,
     cl_command_queue command_queue,
     cl_kernel kernel,
     uint32_t iterations,
-    bool local);
+    short local);
 float latency_test(cl_context context,
     cl_command_queue command_queue,
     cl_kernel kernel,
     uint32_t list_size,
     uint32_t chase_iterations,
-    bool sattolo);
+    short sattolo);
 float bw_test(cl_context context,
     cl_command_queue command_queue,
     cl_kernel kernel,

@@ -145,11 +145,12 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClCompile Include="atomic_test.cpp" />
-    <ClCompile Include="bw_test.cpp" />
-    <ClCompile Include="common.cpp" />
-    <ClCompile Include="latency_test.cpp" />
-    <ClCompile Include="opencltest.cpp" />
+    <ClCompile Include="..\common\timing.c" />
+    <ClCompile Include="atomic_test.c" />
+    <ClCompile Include="bw_test.c" />
+    <ClCompile Include="common.c" />
+    <ClCompile Include="latency_test.c" />
+    <ClCompile Include="opencltest.c" />
   </ItemGroup>
   <ItemGroup>
     <CopyFileToFolders Include="kernel.cl">
@@ -158,6 +159,7 @@
     </CopyFileToFolders>
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="..\common\timing.h" />
     <ClInclude Include="opencltest.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />

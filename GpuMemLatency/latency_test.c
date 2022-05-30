@@ -5,7 +5,7 @@ float latency_test(cl_context context,
     cl_kernel kernel,
     uint32_t list_size,
     uint32_t chase_iterations,
-    bool sattolo)
+    short sattolo)
 {
     size_t global_item_size = 1, local_item_size = 1;
     cl_int ret;

@@ -4,7 +4,7 @@ float int_atomic_latency_test(cl_context context,
     cl_command_queue command_queue,
     cl_kernel kernel,
     uint32_t iterations,
-    bool local)
+    short local)
 {
     cl_int ret;
     cl_int result = 0;
