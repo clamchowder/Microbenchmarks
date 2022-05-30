@@ -145,13 +145,20 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="atomic_test.cpp" />
+    <ClCompile Include="bw_test.cpp" />
+    <ClCompile Include="common.cpp" />
+    <ClCompile Include="latency_test.cpp" />
     <ClCompile Include="opencltest.cpp" />
   </ItemGroup>
   <ItemGroup>
-    <CopyFileToFolders Include="latency_kernel.cl">
+    <CopyFileToFolders Include="kernel.cl">
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">false</ExcludedFromBuild>
       <FileType>Document</FileType>
     </CopyFileToFolders>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="opencltest.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
