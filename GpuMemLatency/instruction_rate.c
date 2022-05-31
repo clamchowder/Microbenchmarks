@@ -91,11 +91,12 @@ float instruction_rate_test(cl_context context,
     time_diff_ms = end_timing();
 
     // each thread does iterations * (4 (int4) * 8 (8 per iteration) + 1 (loop inc)) adds
-    totalOps = chase_iterations * (4 * 8 + 1) * thread_count;
+    totalOps = (float)chase_iterations * (4.0f * 8.0f + 1.0f) * (float)thread_count;
     gOpsPerSec = ((float)totalOps / 1e9) / ((float)time_diff_ms / 1000);
 
     fprintf(stderr, "%f G INT32 Adds/sec\n", gOpsPerSec);
-    fprintf(stderr, "total ops: %f\ntotal time: %llu ms\n", totalOps, time_diff_ms);
+    fprintf(stderr, "chase iterations: %d, thread count: %d\n", chase_iterations, thread_count);
+    fprintf(stderr, "total ops: %f (%.2f G)\ntotal time: %llu ms\n", totalOps, totalOps / 1e9, time_diff_ms);
 
     ret = clEnqueueReadBuffer(command_queue, result_obj, CL_TRUE, 0, sizeof(uint32_t) * 4 * thread_count, result, 0, NULL, NULL);
     if (ret != 0) fprintf(stderr, "enqueue read buffer for result failed. ret = %d\n", ret);
