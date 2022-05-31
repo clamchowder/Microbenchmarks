@@ -224,7 +224,7 @@ float run_rate_test(cl_context context,
     ret = clEnqueueNDRangeKernel(command_queue, kernel, 1, NULL, &global_item_size, &local_item_size, 0, NULL, NULL);
     if (ret != CL_SUCCESS)
     {
-        fprintf(stderr, "Failed to submit fp32 add kernel to command queue. clEnqueueNDRangeKernel returned %d\n", ret);
+        fprintf(stderr, "Failed to submit kernel to command queue. clEnqueueNDRangeKernel returned %d\n", ret);
         gOpsPerSec = 0;
         return 0;
     }
