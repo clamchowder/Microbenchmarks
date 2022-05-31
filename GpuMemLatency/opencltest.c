@@ -31,7 +31,8 @@ enum TestType {
     GlobalMemBandwidth, 
     MemBandwidthWorkgroupScaling,
     CoreToCore,
-    LinkBandwidth
+    LinkBandwidth,
+    InstructionRate,
 };
 
 
@@ -138,6 +139,12 @@ int main(int argc, char* argv[]) {
                     fprintf(stderr, "Testing host <-> GPU link bandwidth\n");
                     if (!chase_iterations_set) chase_iterations = 30000000;
                 }
+                else if (_strnicmp(argv[argIdx], "instructionrate", 15) == 0)
+                {
+                    testType = InstructionRate;
+                    fprintf(stderr, "Testing instruction rate\n");
+                    if (!chase_iterations_set) chase_iterations = 1000;
+                }
                 else {
                     fprintf(stderr, "I'm so confused. Unknown test type %s\n", argv[argIdx]);
                 }
@@ -181,7 +188,7 @@ int main(int argc, char* argv[]) {
     cl_program program = clCreateProgramWithSource(context, 1, (const char**)&source_str, (const size_t*)&source_size, &ret);
     //printf("clCreateProgramWithSource returned %d\n", ret);
 
-    // Build the program
+    // Build program and create all the kernels here, then pass them to individual tests
     ret = clBuildProgram(program, 1, &selected_device_id, NULL, NULL, NULL);
     fprintf(stderr, "clBuildProgram returned %d\n", ret);
 
@@ -345,6 +352,10 @@ int main(int argc, char* argv[]) {
     else if (testType == LinkBandwidth)
     {
         link_bw_test(context, command_queue, dummy_add_kernel, chase_iterations);
+    }
+    else if (testType == InstructionRate)
+    {
+        instruction_rate_test(context, command_queue, thread_count, local_size, chase_iterations);
     }
 
     printf("If you didn't run this through cmd, now you can copy the results. And press ctrl+c to close");

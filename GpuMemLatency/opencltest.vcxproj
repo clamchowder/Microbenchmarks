@@ -149,6 +149,7 @@
     <ClCompile Include="atomic_test.c" />
     <ClCompile Include="bw_test.c" />
     <ClCompile Include="common.c" />
+    <ClCompile Include="instruction_rate.c" />
     <ClCompile Include="latency_test.c" />
     <ClCompile Include="opencltest.c" />
   </ItemGroup>
@@ -161,6 +162,12 @@
   <ItemGroup>
     <ClInclude Include="..\common\timing.h" />
     <ClInclude Include="opencltest.h" />
+  </ItemGroup>
+  <ItemGroup>
+    <CopyFileToFolders Include="instruction_rate_kernel.cl">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">false</ExcludedFromBuild>
+      <FileType>Document</FileType>
+    </CopyFileToFolders>
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

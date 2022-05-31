@@ -59,4 +59,10 @@ float c2c_atomic_latency_test(cl_context context,
     cl_command_queue command_queue,
     cl_kernel kernel,
     uint32_t iterations);
+
+float instruction_rate_test(cl_context context,
+    cl_command_queue command_queue,
+    uint32_t thread_count,
+    uint32_t local_size,
+    uint32_t chase_iterations);
 #endif
