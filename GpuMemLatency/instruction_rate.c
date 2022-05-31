@@ -43,10 +43,12 @@ float instruction_rate_test(cl_context context,
     cl_kernel int32_add_rate_kernel = clCreateKernel(program, "int32_add_rate_test", &ret);
     cl_kernel int32_mul_rate_kernel = clCreateKernel(program, "int32_mul_rate_test", &ret);
     cl_kernel fp32_add_rate_kernel = clCreateKernel(program, "fp32_add_rate_test", &ret);
+    cl_kernel fp32_fma_rate_kernel = clCreateKernel(program, "fp32_fma_rate_test", &ret);
+    cl_kernel mix_fp32_int32_add_rate_kernel = clCreateKernel(program, "mix_fp32_int32_add_rate_test", &ret);
     cl_kernel int64_add_rate_kernel = clCreateKernel(program, "int64_add_rate_test", &ret);
     cl_kernel int64_mul_rate_kernel = clCreateKernel(program, "int64_mul_rate_test", &ret);
-    cl_kernel mix_fp32_int32_add_rate_kernel = clCreateKernel(program, "mix_fp32_int32_add_rate_test", &ret);
-    cl_kernel fp32_fma_rate_kernel = clCreateKernel(program, "fp32_fma_rate_test", &ret);
+    cl_kernel int16_add_rate_kernel = clCreateKernel(program, "int16_add_rate_test", &ret);
+    cl_kernel int16_mul_rate_kernel = clCreateKernel(program, "int16_mul_rate_test", &ret);
 
     float* A = (float*)malloc(sizeof(float) * float4_element_count * 4);
     float* result = (float*)malloc(sizeof(float) * 4 * thread_count);
@@ -116,6 +118,23 @@ float instruction_rate_test(cl_context context,
     float int64_mul_rate = run_rate_test(context, command_queue, int64_mul_rate_kernel, thread_count, local_size, chase_iterations / 4,
         float4_element_count, a_mem_obj, result_obj, A, result, totalOps);
     fprintf(stderr, "%f G INT64 Multiplies/sec\n", int64_mul_rate);
+
+    // INT16 (short) tests
+    cl_ushort* int16_A = (cl_ushort*)A;
+    for (int i = 0; i < float4_element_count * 8; i++)
+    {
+        int16_A[i] = i;
+    }
+
+    // short8
+    totalOps = (float)chase_iterations * (8.0f * 8.0f) * (float)thread_count;
+    float int16_add_rate = run_rate_test(context, command_queue, int16_add_rate_kernel, thread_count, local_size, chase_iterations,
+        float4_element_count, a_mem_obj, result_obj, A, result, totalOps);
+    fprintf(stderr, "%f G INT16 Adds/sec\n", int16_add_rate);
+
+    float int16_mul_rate = run_rate_test(context, command_queue, int16_mul_rate_kernel, thread_count, local_size, chase_iterations,
+        float4_element_count, a_mem_obj, result_obj, A, result, totalOps);
+    fprintf(stderr, "%f G INT16 Multiplies/sec\n", int16_mul_rate);
 
     if (checkExtensionSupport("cl_khr_fp64")) {
         fp64_instruction_rate_test(context, command_queue, thread_count, local_size, chase_iterations, float4_element_count,

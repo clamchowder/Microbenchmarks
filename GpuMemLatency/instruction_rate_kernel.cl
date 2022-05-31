@@ -224,3 +224,63 @@ __kernel void fp32_fma_rate_test(__global float4 *A, int count, __global float4 
 
     ret[get_global_id(0)] = v0 + v1 + v2 + v3 + v4 + v5 + v6 + v7;
 }
+
+__kernel void int16_add_rate_test(__global short8 *A, int count, __global short8 *ret) {
+    int tid = get_local_id(0);
+    int max_offset = get_local_size(0);
+    __global short8 *local_a = A;
+
+    int masked_tid = tid & (rate_local_mem_test_size - 1);
+    short8 v0 = local_a[masked_tid];
+    short8 v1 = local_a[masked_tid + 1];
+    short8 v2 = local_a[masked_tid + 2];
+    short8 v3 = local_a[masked_tid + 3];
+    short8 v4 = v0 + v1;
+    short8 v5 = v0 + v2;
+    short8 v6 = v0 + v3;
+    short8 v7 = v1 + v2;
+    short8 acc = local_a[0];
+
+    for (int i = 0; i < count; i++) {
+        v0 += acc;
+        v1 += acc;
+        v2 += acc;
+        v3 += acc;
+        v4 += acc;
+        v5 += acc;
+        v6 += acc;
+        v7 += acc;
+    }
+
+    ret[get_global_id(0)] = v0 + v1 + v2 + v3 + v4 + v5 + v6 + v7;
+}
+
+__kernel void int16_mul_rate_test(__global short8 *A, int count, __global short8 *ret) {
+    int tid = get_local_id(0);
+    int max_offset = get_local_size(0);
+    __global short8 *local_a = A;
+
+    int masked_tid = tid & (rate_local_mem_test_size - 1);
+    short8 v0 = local_a[masked_tid];
+    short8 v1 = local_a[masked_tid + 1];
+    short8 v2 = local_a[masked_tid + 2];
+    short8 v3 = local_a[masked_tid + 3];
+    short8 v4 = v0 + v1;
+    short8 v5 = v0 + v2;
+    short8 v6 = v0 + v3;
+    short8 v7 = v1 + v2;
+    short8 acc = local_a[0];
+
+    for (int i = 0; i < count; i++) {
+        v0 *= acc;
+        v1 *= acc;
+        v2 *= acc;
+        v3 *= acc;
+        v4 *= acc;
+        v5 *= acc;
+        v6 *= acc;
+        v7 *= acc;
+    }
+
+    ret[get_global_id(0)] = v0 + v1 + v2 + v3 + v4 + v5 + v6 + v7;
+}
