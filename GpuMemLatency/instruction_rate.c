@@ -174,7 +174,7 @@ float instruction_rate_test(cl_context context,
     }
 
     if (checkExtensionSupport("cl_khr_fp16")) {
-        fp64_instruction_rate_test(context, command_queue, thread_count, local_size, chase_iterations, float4_element_count,
+        fp16_instruction_rate_test(context, command_queue, thread_count, local_size, chase_iterations, float4_element_count,
             a_mem_obj, result_obj, A, result);
     }
     else {
