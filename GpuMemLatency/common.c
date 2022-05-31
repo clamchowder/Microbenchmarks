@@ -59,6 +59,7 @@ short checkExtensionSupport(const char *extension_name) {
     }
 
     int* extensionsSpaces = (int*)malloc(sizeof(int) * (spaceCount + 1));
+    extensionsSpaces[0] = 0;
     int spaceIdx = 1;
     for (int i = 0; i < extensionLen; i++) {
         if (extensions[i] == ' ') {
