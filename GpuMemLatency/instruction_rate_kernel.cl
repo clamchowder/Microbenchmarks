@@ -284,3 +284,63 @@ __kernel void int16_mul_rate_test(__global short8 *A, int count, __global short8
 
     ret[get_global_id(0)] = v0 + v1 + v2 + v3 + v4 + v5 + v6 + v7;
 }
+
+__kernel void int8_add_rate_test(__global char16 *A, int count, __global char16 *ret) {
+    int tid = get_local_id(0);
+    int max_offset = get_local_size(0);
+    __global char16 *local_a = A;
+
+    int masked_tid = tid & (rate_local_mem_test_size - 1);
+    char16 v0 = local_a[masked_tid];
+    char16 v1 = local_a[masked_tid + 1];
+    char16 v2 = local_a[masked_tid + 2];
+    char16 v3 = local_a[masked_tid + 3];
+    char16 v4 = v0 + v1;
+    char16 v5 = v0 + v2;
+    char16 v6 = v0 + v3;
+    char16 v7 = v1 + v2;
+    char16 acc = local_a[0];
+
+    for (int i = 0; i < count; i++) {
+        v0 += acc;
+        v1 += acc;
+        v2 += acc;
+        v3 += acc;
+        v4 += acc;
+        v5 += acc;
+        v6 += acc;
+        v7 += acc;
+    }
+
+    ret[get_global_id(0)] = v0 + v1 + v2 + v3 + v4 + v5 + v6 + v7;
+}
+
+__kernel void int8_mul_rate_test(__global char16 *A, int count, __global char16 *ret) {
+    int tid = get_local_id(0);
+    int max_offset = get_local_size(0);
+    __global char16 *local_a = A;
+
+    int masked_tid = tid & (rate_local_mem_test_size - 1);
+    char16 v0 = local_a[masked_tid];
+    char16 v1 = local_a[masked_tid + 1];
+    char16 v2 = local_a[masked_tid + 2];
+    char16 v3 = local_a[masked_tid + 3];
+    char16 v4 = v0 + v1;
+    char16 v5 = v0 + v2;
+    char16 v6 = v0 + v3;
+    char16 v7 = v1 + v2;
+    char16 acc = local_a[0];
+
+    for (int i = 0; i < count; i++) {
+        v0 *= acc;
+        v1 *= acc;
+        v2 *= acc;
+        v3 *= acc;
+        v4 *= acc;
+        v5 *= acc;
+        v6 *= acc;
+        v7 *= acc;
+    }
+
+    ret[get_global_id(0)] = v0 + v1 + v2 + v3 + v4 + v5 + v6 + v7;
+}

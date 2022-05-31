@@ -150,6 +150,10 @@
     <ClCompile Include="bw_test.c" />
     <ClCompile Include="common.c" />
     <ClCompile Include="instruction_rate.c" />
+    <CopyFileToFolders Include="instruction_rate_fp16_kernel.cl">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">false</ExcludedFromBuild>
+      <FileType>CppCode</FileType>
+    </CopyFileToFolders>
     <ClCompile Include="latency_test.c" />
     <ClCompile Include="opencltest.c" />
   </ItemGroup>
