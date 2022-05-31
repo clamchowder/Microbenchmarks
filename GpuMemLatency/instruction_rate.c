@@ -65,7 +65,7 @@ float instruction_rate_test(cl_context context,
 
     // 4x int4 * 8 per iteration, and count the loop increment too
     totalOps = (float)chase_iterations * (4.0f * 8.0f + 1.0f) * (float)thread_count;
-    float int32_rate = run_rate_test(context, command_queue, fp32_add_rate_kernel, thread_count, local_size, chase_iterations, 
+    float int32_rate = run_rate_test(context, command_queue, int32_add_rate_kernel, thread_count, local_size, chase_iterations, 
         float4_element_count, a_mem_obj, result_obj, A, result, totalOps);
     fprintf(stderr, "%f G INT32 Adds/sec\n", int32_rate);
 
