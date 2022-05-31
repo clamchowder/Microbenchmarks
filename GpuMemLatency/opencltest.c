@@ -146,7 +146,8 @@ int main(int argc, char* argv[]) {
                     if (!chase_iterations_set) chase_iterations = 2000000;
                     if (!local_size_set && !thread_count_set) {
                         local_size = 256;
-                        thread_count = getCuCount()* local_size;
+                        thread_count = 8 * local_size;
+                        fprintf(stderr, "Selecting local size = %d, threads = %d\n", local_size, thread_count);
                     }
                 }
                 else {
