@@ -143,7 +143,11 @@ int main(int argc, char* argv[]) {
                 {
                     testType = InstructionRate;
                     fprintf(stderr, "Testing instruction rate\n");
-                    if (!chase_iterations_set) chase_iterations = 1000;
+                    if (!chase_iterations_set) chase_iterations = 2000000;
+                    if (!local_size_set && !thread_count_set) {
+                        local_size = 256;
+                        thread_count = getCuCount()* local_size;
+                    }
                 }
                 else {
                     fprintf(stderr, "I'm so confused. Unknown test type %s\n", argv[argIdx]);
