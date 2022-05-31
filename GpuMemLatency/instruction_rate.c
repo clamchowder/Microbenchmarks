@@ -41,9 +41,12 @@ float instruction_rate_test(cl_context context,
 
     cl_program program = build_program(context, "instruction_rate_kernel.cl");
     cl_kernel int32_add_rate_kernel = clCreateKernel(program, "int32_add_rate_test", &ret);
+    cl_kernel int32_mul_rate_kernel = clCreateKernel(program, "int32_mul_rate_test", &ret);
     cl_kernel fp32_add_rate_kernel = clCreateKernel(program, "fp32_add_rate_test", &ret);
     cl_kernel int64_add_rate_kernel = clCreateKernel(program, "int64_add_rate_test", &ret);
+    cl_kernel int64_mul_rate_kernel = clCreateKernel(program, "int64_mul_rate_test", &ret);
     cl_kernel mix_fp32_int32_add_rate_kernel = clCreateKernel(program, "mix_fp32_int32_add_rate_test", &ret);
+    cl_kernel fp32_fma_rate_kernel = clCreateKernel(program, "fp32_fma_rate_test", &ret);
 
     float* A = (float*)malloc(sizeof(float) * float4_element_count * 4);
     float* result = (float*)malloc(sizeof(float) * 4 * thread_count);
@@ -65,11 +68,16 @@ float instruction_rate_test(cl_context context,
 
     // 4x int4 * 8 per iteration, and count the loop increment too
     totalOps = (float)chase_iterations * (4.0f * 8.0f + 1.0f) * (float)thread_count;
-    float int32_rate = run_rate_test(context, command_queue, int32_add_rate_kernel, thread_count, local_size, chase_iterations, 
+    float int32_add_rate = run_rate_test(context, command_queue, int32_add_rate_kernel, thread_count, local_size, chase_iterations, 
         float4_element_count, a_mem_obj, result_obj, A, result, totalOps);
-    fprintf(stderr, "%f G INT32 Adds/sec\n", int32_rate);
+    fprintf(stderr, "%f G INT32 Adds/sec\n", int32_add_rate);
 
-    // FP32 add test
+    totalOps = (float)(chase_iterations / 2) * (4.0f * 8.0f) * (float)thread_count;
+    float int32_mul_rate = run_rate_test(context, command_queue, int32_mul_rate_kernel, thread_count, local_size, (chase_iterations / 2),
+        float4_element_count, a_mem_obj, result_obj, A, result, totalOps);
+    fprintf(stderr, "%f G INT32 Multiplies/sec\n", int32_mul_rate);
+
+    // FP32 add and fma test
     cl_float* fp32_A = (cl_float*)A;
     for (int i = 0; i < float4_element_count * 4; i++)
     {
@@ -77,11 +85,16 @@ float instruction_rate_test(cl_context context,
     }
 
     totalOps = (float)chase_iterations * (4.0f * 8.0f) * (float)thread_count;
-    float fp32_rate = run_rate_test(context, command_queue, fp32_add_rate_kernel, thread_count, local_size, chase_iterations, 
+    float fp32_add_rate = run_rate_test(context, command_queue, fp32_add_rate_kernel, thread_count, local_size, chase_iterations, 
         float4_element_count, a_mem_obj, result_obj, A, result, totalOps);
-    fprintf(stderr, "%f G FP32 Adds/sec\n", fp32_rate);
+    fprintf(stderr, "%f G FP32 Adds/sec\n", fp32_add_rate);
+
+    float fp32_fma_rate = run_rate_test(context, command_queue, fp32_fma_rate_kernel, thread_count, local_size, chase_iterations,
+        float4_element_count, a_mem_obj, result_obj, A, result, totalOps);
+    fprintf(stderr, "%f G FP32 FMA/sec = %f FP32 GFLOPS\n", fp32_fma_rate, fp32_fma_rate * 2);
 
     // Mixed INT32 and FP32 - 4 FP32, 4 INT32, and the loop increment
+    // takes FP inputs and converts some to int
     totalOps = (float)chase_iterations * (4.0f * 8.0f + 1.0f) * (float)thread_count;
     float mix_fp32_int32_rate = run_rate_test(context, command_queue, mix_fp32_int32_add_rate_kernel, thread_count, local_size, chase_iterations,
         float4_element_count, a_mem_obj, result_obj, A, result, totalOps);
@@ -95,14 +108,18 @@ float instruction_rate_test(cl_context context,
     }
 
     totalOps = (float)(chase_iterations / 2) * (2.0f * 8.0f) * (float)thread_count;
-    float int64_rate = run_rate_test(context, command_queue, int64_add_rate_kernel, thread_count, local_size, chase_iterations / 2,
+    float int64_add_rate = run_rate_test(context, command_queue, int64_add_rate_kernel, thread_count, local_size, chase_iterations / 2,
         float4_element_count, a_mem_obj, result_obj, A, result, totalOps);
-    fprintf(stderr, "%f G INT64 Adds/sec\n", int64_rate);
+    fprintf(stderr, "%f G INT64 Adds/sec\n", int64_add_rate);
+
+    totalOps = (float)(chase_iterations / 4) * (2.0f * 8.0f) * (float)thread_count;
+    float int64_mul_rate = run_rate_test(context, command_queue, int64_mul_rate_kernel, thread_count, local_size, chase_iterations / 4,
+        float4_element_count, a_mem_obj, result_obj, A, result, totalOps);
+    fprintf(stderr, "%f G INT64 Multiplies/sec\n", int64_mul_rate);
 
     if (checkExtensionSupport("cl_khr_fp64")) {
-        float fp64_rate = fp64_instruction_rate_test(context, command_queue, thread_count, local_size, chase_iterations, float4_element_count,
+        fp64_instruction_rate_test(context, command_queue, thread_count, local_size, chase_iterations, float4_element_count,
             a_mem_obj, result_obj, A, result);
-        fprintf(stderr, "%f G FP64 Adds/sec\n", fp64_rate);
     }
     else {
         fprintf(stderr, "FP64 not supported\n");
@@ -202,8 +219,14 @@ float fp64_instruction_rate_test(cl_context context,
 
     cl_program program = build_program(context, "instruction_rate_fp64_kernel.cl");
     cl_kernel fp64_add_rate_kernel = clCreateKernel(program, "fp64_add_rate_test", &ret);
+    cl_kernel fp64_fma_rate_kernel = clCreateKernel(program, "fp64_fma_rate_test", &ret);
     totalOps = (float)low_chase_iterations * (2.0f * 8.0f) * (float)thread_count;
     gOpsPerSec = run_rate_test(context, command_queue, fp64_add_rate_kernel, thread_count, local_size, low_chase_iterations, 
         float4_element_count, a_mem_obj, result_obj, A, result, totalOps);
+    fprintf(stderr, "%f G FP64 Adds/sec\n", gOpsPerSec);
+    gOpsPerSec = run_rate_test(context, command_queue, fp64_fma_rate_kernel, thread_count, local_size, low_chase_iterations,
+        float4_element_count, a_mem_obj, result_obj, A, result, totalOps);
+    fprintf(stderr, "%f G FP64 FMAs/sec = %f FP64 GFLOPs\n", gOpsPerSec, gOpsPerSec * 2);
+
     return gOpsPerSec;
 }
