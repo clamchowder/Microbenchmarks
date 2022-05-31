@@ -2,12 +2,14 @@
 
 // A must be at least (local size * 4) uint32 elements in size, but must not exceed local mem size
 __kernel void int32_add_rate_test(__global uint4 *A, int count, __global uint4 *ret) {
-    __local uint4 local_a[rate_local_mem_test_size];
     int tid = get_local_id(0);
     int max_offset = get_local_size(0);
+
+    /*__local uint4 local_a[rate_local_mem_test_size];
     for (int i = tid;i < rate_local_mem_test_size; i += max_offset)
         local_a[i] = A[i];
-    barrier(CLK_LOCAL_MEM_FENCE);
+    barrier(CLK_LOCAL_MEM_FENCE);*/
+    __global uint4 *local_a = A;
 
     int masked_tid = tid & (rate_local_mem_test_size - 1);
     uint4 v0 = local_a[masked_tid];
@@ -18,9 +20,10 @@ __kernel void int32_add_rate_test(__global uint4 *A, int count, __global uint4 *
     uint4 v5 = v0 + v2;
     uint4 v6 = v0 + v3;
     uint4 v7 = v1 + v2;
+    uint4 acc = local_a[0];
 
     for (int i = 0; i < count; i++) {
-        uint4 acc = local_a[i & (rate_local_mem_test_size) - 1];
+        //uint4 acc = local_a[i & (rate_local_mem_test_size) - 1];
         v0 += acc;
         v1 += acc;
         v2 += acc;

@@ -95,7 +95,7 @@ float instruction_rate_test(cl_context context,
     gOpsPerSec = ((float)totalOps / 1e9) / ((float)time_diff_ms / 1000);
 
     fprintf(stderr, "%f G INT32 Adds/sec\n", gOpsPerSec);
-    fprintf(stderr, "total ops: %f\ntotal time: %llu ms", totalOps, time_diff_ms);
+    fprintf(stderr, "total ops: %f\ntotal time: %llu ms\n", totalOps, time_diff_ms);
 
     ret = clEnqueueReadBuffer(command_queue, result_obj, CL_TRUE, 0, sizeof(uint32_t) * 4 * thread_count, result, 0, NULL, NULL);
     if (ret != 0) fprintf(stderr, "enqueue read buffer for result failed. ret = %d\n", ret);
