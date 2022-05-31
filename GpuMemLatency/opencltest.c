@@ -171,27 +171,16 @@ int main(int argc, char* argv[]) {
     char* source_str;
     size_t source_size;
 
-    fp = fopen("kernel.cl", "r");
-    if (!fp) {
-        fprintf(stderr, "Failed to load kernel.\n");
-        exit(1);
-    }
-    source_str = (char*)malloc(MAX_SOURCE_SIZE);
-    source_size = fread(source_str, 1, MAX_SOURCE_SIZE, fp);
-    fclose(fp);
-    fprintf(stderr, "kernel loading done\n");
-
     // Create an OpenCL context
     cl_context context = get_context_from_user(platform_index, device_index);
     if (context == NULL) exit(1);
 
+    // Load kernel
+    cl_program program = build_program(context, "kernel.cl");
+
     // Create a command queue
     cl_command_queue command_queue = clCreateCommandQueue(context, selected_device_id, 0, &ret);
     fprintf(stderr, "clCreateCommandQueue returned %d\n", ret);
-
-    // Create a program from the kernel source
-    cl_program program = clCreateProgramWithSource(context, 1, (const char**)&source_str, (const size_t*)&source_size, &ret);
-    //printf("clCreateProgramWithSource returned %d\n", ret);
 
     // Build program and create all the kernels here, then pass them to individual tests
     ret = clBuildProgram(program, 1, &selected_device_id, NULL, NULL, NULL);
@@ -374,7 +363,6 @@ int main(int argc, char* argv[]) {
     ret = clReleaseProgram(program);
     ret = clReleaseCommandQueue(command_queue);
     ret = clReleaseContext(context);
-    free(source_str);
     return 0;
 }
 

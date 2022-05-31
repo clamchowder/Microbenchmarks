@@ -34,6 +34,56 @@ cl_uint getCuCount() {
     return cuCount;
 }
 
+short checkExtensionSupport(const char *extension_name) {
+    size_t extensionLen = 0;
+    char* extensions;
+    if (CL_SUCCESS != clGetDeviceInfo(selected_device_id, CL_DEVICE_EXTENSIONS, 0, NULL, &extensionLen))
+    {
+        fprintf(stderr, "Could not determine memory needed to hold OpenCL extension list\n");
+        return 0;
+    }
+
+    extensions = (char *)malloc(extensionLen + 1);
+    extensions[extensionLen] = 0;
+    if (CL_SUCCESS != clGetDeviceInfo(selected_device_id, CL_DEVICE_EXTENSIONS, extensionLen, extensions, &extensionLen))
+    {
+        fprintf(stderr, "Could not get OpenCL extensions list\n");
+        return 0;
+    }
+
+    //fprintf(stderr, "OpenCL extensions list: %s\n", extensions);
+    // extension list is space separated
+    size_t spaceCount = 0;
+    for (int i = 0; i < extensionLen; i++) {
+        if (extensions[i] == ' ') spaceCount++;
+    }
+
+    int* extensionsSpaces = (int*)malloc(sizeof(int) * (spaceCount + 1));
+    int spaceIdx = 1;
+    for (int i = 0; i < extensionLen; i++) {
+        if (extensions[i] == ' ') {
+            extensions[i] = 0;
+            extensionsSpaces[spaceIdx] = i + 1;
+            spaceIdx++;
+        }
+    }
+
+    short found = 0;
+    for (int i = 0; i < spaceCount; i++)
+    {
+        //fprintf(stderr, "Looking for %s = %s\n", extension_name, extensions + extensionsSpaces[i]);
+        if (strcmp(extension_name, extensions + extensionsSpaces[i]) == 0) {
+            found = 1;
+            //fprintf(stderr, "found\n");
+            break;
+        }
+    }
+
+    free(extensionsSpaces);
+    free(extensions);
+    return found;
+}
+
 /// <summary>
 /// populate global variables for opencl device id and platform id
 /// </summary>
@@ -155,4 +205,37 @@ get_context_from_user_end:
     free(platforms);
     free(devices);
     return context;
+}
+
+cl_program build_program(cl_context context, const char* fname)
+{
+    cl_int ret;
+    FILE* fp = NULL;
+    char* source_str;
+    size_t source_size;
+    fp = fopen(fname, "r");
+    if (!fp) {
+        fprintf(stderr, "Failed to load kernel %s.\n", fname);
+        exit(1);
+    }
+    source_str = (char*)malloc(MAX_SOURCE_SIZE);
+    source_size = fread(source_str, 1, MAX_SOURCE_SIZE, fp);
+    fclose(fp);
+
+    cl_program program = clCreateProgramWithSource(context, 1, (const char**)&source_str, (const size_t*)&source_size, &ret);
+    ret = clBuildProgram(program, 1, &selected_device_id, NULL, NULL, NULL);
+    //fprintf(stderr, "clBuildProgram %s returned %d\n", fname, ret);
+    if (ret == -11)
+    {
+        size_t log_size;
+        fprintf(stderr, "OpenCL kernel build error\n");
+        clGetProgramBuildInfo(program, selected_device_id, CL_PROGRAM_BUILD_LOG, 0, NULL, &log_size);
+        char* log = (char*)malloc(log_size);
+        clGetProgramBuildInfo(program, selected_device_id, CL_PROGRAM_BUILD_LOG, log_size, log, NULL);
+        fprintf(stderr, "%s\n", log);
+        free(log);
+    }
+
+    free(source_str);
+    return program;
 }

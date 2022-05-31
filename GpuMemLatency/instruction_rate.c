@@ -1,5 +1,16 @@
 #include "opencltest.h"
 
+float fp64_instruction_rate_test(cl_context context,
+    cl_command_queue command_queue,
+    uint32_t thread_count,
+    uint32_t local_size,
+    uint32_t chase_iterations,
+    int float4_element_count,
+    cl_mem a_mem_obj,
+    cl_mem result_obj,
+    cl_double* A,
+    cl_double* result);
+
 float instruction_rate_test(cl_context context,
     cl_command_queue command_queue,
     uint32_t thread_count,
@@ -13,37 +24,11 @@ float instruction_rate_test(cl_context context,
     int64_t time_diff_ms;
     int float4_element_count = local_size * 4;
 
-    FILE* fp = NULL;
-    char* source_str;
-    size_t source_size;
-    fp = fopen("instruction_rate_kernel.cl", "r");
-    if (!fp) {
-        fprintf(stderr, "Failed to load kernel.\n");
-        exit(1);
-    }
-    source_str = (char*)malloc(MAX_SOURCE_SIZE);
-    source_size = fread(source_str, 1, MAX_SOURCE_SIZE, fp);
-    fclose(fp);
-
-    cl_program program = clCreateProgramWithSource(context, 1, (const char**)&source_str, (const size_t*)&source_size, &ret);
-    ret = clBuildProgram(program, 1, &selected_device_id, NULL, NULL, NULL);
-    fprintf(stderr, "clBuildProgram for instruction rate returned %d\n", ret);
-    if (ret == -11)
-    {
-        size_t log_size;
-        fprintf(stderr, "OpenCL kernel build error\n");
-        clGetProgramBuildInfo(program, selected_device_id, CL_PROGRAM_BUILD_LOG, 0, NULL, &log_size);
-        char* log = (char*)malloc(log_size);
-        clGetProgramBuildInfo(program, selected_device_id, CL_PROGRAM_BUILD_LOG, log_size, log, NULL);
-        fprintf(stderr, "%s\n", log);
-        free(log);
-    }
-
+    cl_program program = build_program(context, "instruction_rate_kernel.cl");
     cl_kernel int32_add_rate_kernel = clCreateKernel(program, "int32_add_rate_test", &ret);
     cl_kernel fp32_add_rate_kernel = clCreateKernel(program, "fp32_add_rate_test", &ret);
-    cl_kernel fp64_add_rate_kernel = clCreateKernel(program, "fp64_add_rate_test", &ret);
 
-    float* A = (float*)malloc(sizeof(float) * float4_element_count);
+    float* A = (float*)malloc(sizeof(float) * float4_element_count * 4);
     float* result = (float*)malloc(sizeof(float) * 4 * thread_count);
 
     if (!A || !result)
@@ -153,6 +138,42 @@ float instruction_rate_test(cl_context context,
     if (ret != 0) fprintf(stderr, "enqueue read buffer for result failed. ret = %d\n", ret);
     clFinish(command_queue);
 
+    if (checkExtensionSupport("cl_khr_fp64")) {
+        fp64_instruction_rate_test(context, command_queue, thread_count, local_size, chase_iterations, float4_element_count,
+            a_mem_obj, result_obj, A, result);
+    }
+    else {
+        fprintf(stderr, "FP64 extension not supported\n");
+    }
+
+cleanup:
+    clFlush(command_queue);
+    clFinish(command_queue);
+    clReleaseMemObject(a_mem_obj);
+    clReleaseMemObject(result_obj);
+    free(A);
+    free(result);
+    return gOpsPerSec;
+}
+
+// taking out FP64 because some implementations don't support it
+float fp64_instruction_rate_test(cl_context context,
+    cl_command_queue command_queue,
+    uint32_t thread_count,
+    uint32_t local_size,
+    uint32_t chase_iterations,
+    int float4_element_count,
+    cl_mem a_mem_obj,
+    cl_mem result_obj,
+    cl_double *A,
+    cl_double *result)
+{
+    size_t global_item_size = thread_count;
+    size_t local_item_size = local_size;
+    float gOpsPerSec, totalOps;
+    cl_int ret;
+    int64_t time_diff_ms;
+
     // FP64 add test
     uint32_t low_chase_iterations = chase_iterations / 4;
     cl_double* fp64_A = (cl_float*)A;
@@ -163,6 +184,8 @@ float instruction_rate_test(cl_context context,
 
     memset(result, 0, sizeof(float) * 4 * thread_count);
 
+    cl_program program = build_program(context, "instruction_rate_fp64_kernel.cl");
+    cl_kernel fp64_add_rate_kernel = clCreateKernel(program, "fp64_add_rate_test", &ret);
     ret = clEnqueueWriteBuffer(command_queue, a_mem_obj, CL_TRUE, 0, float4_element_count * sizeof(float), A, 0, NULL, NULL);
     ret = clEnqueueWriteBuffer(command_queue, result_obj, CL_TRUE, 0, sizeof(float) * 4 * thread_count, result, 0, NULL, NULL);
     clSetKernelArg(fp64_add_rate_kernel, 0, sizeof(cl_mem), (void*)&a_mem_obj);
@@ -170,14 +193,13 @@ float instruction_rate_test(cl_context context,
     clSetKernelArg(fp64_add_rate_kernel, 2, sizeof(cl_mem), (void*)&result_obj);
     clFinish(command_queue);
 
-    //fprintf(stderr, "Submitting fp32 add kernel to command queue\n");
     start_timing();
     ret = clEnqueueNDRangeKernel(command_queue, fp64_add_rate_kernel, 1, NULL, &global_item_size, &local_item_size, 0, NULL, NULL);
     if (ret != CL_SUCCESS)
     {
         fprintf(stderr, "Failed to submit fp64 add kernel to command queue. clEnqueueNDRangeKernel returned %d\n", ret);
         gOpsPerSec = 0;
-        goto cleanup;
+        return 0;
     }
 
     ret = clFinish(command_queue);
@@ -185,7 +207,7 @@ float instruction_rate_test(cl_context context,
     {
         printf("Failed to finish command queue. clFinish returned %d\n", ret);
         gOpsPerSec = 0;
-        goto cleanup;
+        return 0;
     }
 
     time_diff_ms = end_timing();
@@ -200,15 +222,5 @@ float instruction_rate_test(cl_context context,
 
     ret = clEnqueueReadBuffer(command_queue, result_obj, CL_TRUE, 0, sizeof(uint32_t) * 4 * thread_count, result, 0, NULL, NULL);
     if (ret != 0) fprintf(stderr, "enqueue read buffer for result failed. ret = %d\n", ret);
-    clFinish(command_queue);
-
-cleanup:
-    clFlush(command_queue);
-    clFinish(command_queue);
-    clReleaseMemObject(a_mem_obj);
-    clReleaseMemObject(result_obj);
-    free(A);
-    free(result);
-    free(source_str);
     return gOpsPerSec;
 }
