@@ -328,7 +328,6 @@ float fp16_instruction_rate_test(cl_context context,
     cl_program program = build_program(context, "instruction_rate_fp16_kernel.cl");
     cl_kernel fp16_add_rate_kernel = clCreateKernel(program, "fp16_add_rate_test", &ret);
     cl_kernel fp16_fma_rate_kernel = clCreateKernel(program, "fp16_fma_rate_test", &ret);
-    cl_kernel mix_fp16_int16_add_rate_kernel = clCreateKernel(program, "mix_fp16_int16_add_rate_test", &ret);
     totalOps = 8.0f * 8.0f;
     gOpsPerSec = run_rate_test(context, command_queue, fp16_add_rate_kernel, thread_count, local_size, low_chase_iterations,
         float4_element_count, a_mem_obj, result_obj, A, result, totalOps);
@@ -336,9 +335,6 @@ float fp16_instruction_rate_test(cl_context context,
     gOpsPerSec = run_rate_test(context, command_queue, fp16_fma_rate_kernel, thread_count, local_size, low_chase_iterations,
         float4_element_count, a_mem_obj, result_obj, A, result, totalOps);
     fprintf(stderr, "%f G FP16 FMAs/sec = %f FP16 GFLOPs\n", gOpsPerSec, gOpsPerSec * 2);
-    gOpsPerSec = run_rate_test(context, command_queue, mix_fp16_int16_add_rate_kernel, thread_count, local_size, low_chase_iterations,
-        float4_element_count, a_mem_obj, result_obj, A, result, totalOps);
-    fprintf(stderr, "%f G Mixed FP16 and INT16 Adds/sec\n", gOpsPerSec);
 
     return gOpsPerSec;
 }
