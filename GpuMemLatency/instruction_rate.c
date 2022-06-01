@@ -45,7 +45,7 @@ float instruction_rate_test(cl_context context,
 {
     size_t global_item_size = thread_count;
     size_t local_item_size = local_size;
-    float gOpsPerSec = 0, totalOps;
+    float gOpsPerSec = 0, opsPerIteration;
     cl_int ret;
     int64_t time_diff_ms;
     int float4_element_count = local_size * 4;
@@ -82,14 +82,14 @@ float instruction_rate_test(cl_context context,
     }
 
     // 4x int4 * 8 per iteration, and count the loop increment too
-    totalOps = (float)chase_iterations * (4.0f * 8.0f + 1.0f) * (float)thread_count;
+    opsPerIteration = 4.0f * 8.0f + 1.0f;
     float int32_add_rate = run_rate_test(context, command_queue, int32_add_rate_kernel, thread_count, local_size, chase_iterations, 
-        float4_element_count, a_mem_obj, result_obj, A, result, totalOps);
+        float4_element_count, a_mem_obj, result_obj, A, result, opsPerIteration);
     fprintf(stderr, "%f G INT32 Adds/sec\n", int32_add_rate);
 
-    totalOps = (float)(chase_iterations / 2) * (4.0f * 8.0f) * (float)thread_count;
+    opsPerIteration = 4.0f * 8.0f;
     float int32_mul_rate = run_rate_test(context, command_queue, int32_mul_rate_kernel, thread_count, local_size, (chase_iterations / 2),
-        float4_element_count, a_mem_obj, result_obj, A, result, totalOps);
+        float4_element_count, a_mem_obj, result_obj, A, result, opsPerIteration);
     fprintf(stderr, "%f G INT32 Multiplies/sec\n", int32_mul_rate);
 
     // FP32 add and fma test
@@ -99,20 +99,20 @@ float instruction_rate_test(cl_context context,
         fp32_A[i] = 0.5f * i;
     }
 
-    totalOps = (float)chase_iterations * (4.0f * 8.0f) * (float)thread_count;
+    opsPerIteration = 4.0f * 8.0f;
     float fp32_add_rate = run_rate_test(context, command_queue, fp32_add_rate_kernel, thread_count, local_size, chase_iterations, 
-        float4_element_count, a_mem_obj, result_obj, A, result, totalOps);
+        float4_element_count, a_mem_obj, result_obj, A, result, opsPerIteration);
     fprintf(stderr, "%f G FP32 Adds/sec\n", fp32_add_rate);
 
     float fp32_fma_rate = run_rate_test(context, command_queue, fp32_fma_rate_kernel, thread_count, local_size, chase_iterations,
-        float4_element_count, a_mem_obj, result_obj, A, result, totalOps);
+        float4_element_count, a_mem_obj, result_obj, A, result, opsPerIteration);
     fprintf(stderr, "%f G FP32 FMA/sec = %f FP32 GFLOPS\n", fp32_fma_rate, fp32_fma_rate * 2);
 
     // Mixed INT32 and FP32 - 4 FP32, 4 INT32, and the loop increment
     // takes FP inputs and converts some to int
-    totalOps = (float)chase_iterations * (4.0f * 8.0f + 1.0f) * (float)thread_count;
+    opsPerIteration = 4.0f * 8.0f + 1.0f;
     float mix_fp32_int32_rate = run_rate_test(context, command_queue, mix_fp32_int32_add_rate_kernel, thread_count, local_size, chase_iterations,
-        float4_element_count, a_mem_obj, result_obj, A, result, totalOps);
+        float4_element_count, a_mem_obj, result_obj, A, result, opsPerIteration);
     fprintf(stderr, "%f G mixed INT32 and FP32 Adds/sec\n", mix_fp32_int32_rate);
 
     // INT64 add test
@@ -122,14 +122,14 @@ float instruction_rate_test(cl_context context,
         int64_A[i] = i * 2;
     }
 
-    totalOps = (float)(chase_iterations / 2) * (2.0f * 8.0f) * (float)thread_count;
+    opsPerIteration = 2.0f * 8.0f;
     float int64_add_rate = run_rate_test(context, command_queue, int64_add_rate_kernel, thread_count, local_size, chase_iterations / 2,
-        float4_element_count, a_mem_obj, result_obj, A, result, totalOps);
+        float4_element_count, a_mem_obj, result_obj, A, result, opsPerIteration);
     fprintf(stderr, "%f G INT64 Adds/sec\n", int64_add_rate);
 
-    totalOps = (float)(chase_iterations / 4) * (2.0f * 8.0f) * (float)thread_count;
-    float int64_mul_rate = run_rate_test(context, command_queue, int64_mul_rate_kernel, thread_count, local_size, chase_iterations / 4,
-        float4_element_count, a_mem_obj, result_obj, A, result, totalOps);
+    opsPerIteration = 2.0f * 8.0f;
+    float int64_mul_rate = run_rate_test(context, command_queue, int64_mul_rate_kernel, thread_count, local_size, chase_iterations / 8,
+        float4_element_count, a_mem_obj, result_obj, A, result, opsPerIteration);
     fprintf(stderr, "%f G INT64 Multiplies/sec\n", int64_mul_rate);
 
     // INT16 (short) tests
@@ -140,13 +140,13 @@ float instruction_rate_test(cl_context context,
     }
 
     // short8
-    totalOps = (float)chase_iterations * (8.0f * 8.0f) * (float)thread_count;
+    opsPerIteration = 8.0f * 8.0f;
     float int16_add_rate = run_rate_test(context, command_queue, int16_add_rate_kernel, thread_count, local_size, chase_iterations,
-        float4_element_count, a_mem_obj, result_obj, A, result, totalOps);
+        float4_element_count, a_mem_obj, result_obj, A, result, opsPerIteration);
     fprintf(stderr, "%f G INT16 Adds/sec\n", int16_add_rate);
 
     float int16_mul_rate = run_rate_test(context, command_queue, int16_mul_rate_kernel, thread_count, local_size, chase_iterations,
-        float4_element_count, a_mem_obj, result_obj, A, result, totalOps);
+        float4_element_count, a_mem_obj, result_obj, A, result, opsPerIteration);
     fprintf(stderr, "%f G INT16 Multiplies/sec\n", int16_mul_rate);
 
     // INT8 (char) tests
@@ -156,13 +156,14 @@ float instruction_rate_test(cl_context context,
         int8_A[i] = i;
     }
 
-    totalOps = (float)chase_iterations * (16.0f * 8.0f) * (float)thread_count;
-    float int8_add_rate = run_rate_test(context, command_queue, int8_add_rate_kernel, thread_count, local_size, chase_iterations,
-        float4_element_count, a_mem_obj, result_obj, A, result, totalOps);
+    uint32_t int8_chase_iterations = chase_iterations / 10;
+    opsPerIteration = 16.0f * 8.0f;
+    float int8_add_rate = run_rate_test(context, command_queue, int8_add_rate_kernel, thread_count, local_size, int8_chase_iterations,
+        float4_element_count, a_mem_obj, result_obj, A, result, opsPerIteration);
     fprintf(stderr, "%f G INT8 Adds/sec\n", int8_add_rate);
 
-    float int8_mul_rate = run_rate_test(context, command_queue, int8_mul_rate_kernel, thread_count, local_size, chase_iterations,
-        float4_element_count, a_mem_obj, result_obj, A, result, totalOps);
+    float int8_mul_rate = run_rate_test(context, command_queue, int8_mul_rate_kernel, thread_count, local_size, int8_chase_iterations,
+        float4_element_count, a_mem_obj, result_obj, A, result, opsPerIteration);
     fprintf(stderr, "%f G INT8 Multiplies/sec\n", int8_mul_rate);
 
     if (checkExtensionSupport("cl_khr_fp64")) {
@@ -191,6 +192,8 @@ cleanup:
     return gOpsPerSec;
 }
 
+#define TARGET_TIME_MS 1500
+
 float run_rate_test(cl_context context,
     cl_command_queue command_queue,
     cl_kernel kernel,
@@ -202,13 +205,13 @@ float run_rate_test(cl_context context,
     cl_mem result_obj,
     cl_double* A,
     cl_double* result,
-    float totalOps)
+    float opsPerIteration)
 {
     size_t global_item_size = thread_count;
     size_t local_item_size = local_size;
     cl_int ret;
     float gOpsPerSec;
-    uint64_t time_diff_ms;
+    uint64_t time_diff_ms = 0;
 
     memset(result, 0, sizeof(float) * 4 * thread_count);
 
@@ -220,25 +223,32 @@ float run_rate_test(cl_context context,
     clFinish(command_queue);
 
     //fprintf(stderr, "Submitting fp32 add kernel to command queue\n");
-    start_timing();
-    ret = clEnqueueNDRangeKernel(command_queue, kernel, 1, NULL, &global_item_size, &local_item_size, 0, NULL, NULL);
-    if (ret != CL_SUCCESS)
-    {
-        fprintf(stderr, "Failed to submit kernel to command queue. clEnqueueNDRangeKernel returned %d\n", ret);
-        gOpsPerSec = 0;
-        return 0;
+    // start with a low iteration count and try to make it work for all GPUs without needing manual iteration adjustment
+    while (time_diff_ms < TARGET_TIME_MS / 2) {
+        start_timing();
+        ret = clEnqueueNDRangeKernel(command_queue, kernel, 1, NULL, &global_item_size, &local_item_size, 0, NULL, NULL);
+        if (ret != CL_SUCCESS)
+        {
+            fprintf(stderr, "Failed to submit kernel to command queue. clEnqueueNDRangeKernel returned %d\n", ret);
+            gOpsPerSec = 0;
+            return 0;
+        }
+
+        ret = clFinish(command_queue);
+        if (ret != CL_SUCCESS)
+        {
+            printf("Failed to finish command queue. clFinish returned %d\n", ret);
+            gOpsPerSec = 0;
+            return 0;
+        }
+
+        time_diff_ms = end_timing();
+        //fprintf(stderr, "Kernel took %llu ms\n", time_diff_ms);
+        chase_iterations = (uint32_t)((float)chase_iterations * TARGET_TIME_MS / (float)time_diff_ms);
+        clSetKernelArg(kernel, 1, sizeof(cl_int), (void*)&chase_iterations);
     }
 
-    ret = clFinish(command_queue);
-    if (ret != CL_SUCCESS)
-    {
-        printf("Failed to finish command queue. clFinish returned %d\n", ret);
-        gOpsPerSec = 0;
-        return 0;
-    }
-
-    time_diff_ms = end_timing();
-
+    float totalOps = (float)chase_iterations * opsPerIteration * (float)thread_count;
     gOpsPerSec = ((float)totalOps / 1e9) / ((float)time_diff_ms / 1000);
     //fprintf(stderr, "chase iterations: %d, thread count: %d\n", chase_iterations, thread_count);
     //fprintf(stderr, "total ops: %f (%.2f G)\ntotal time: %llu ms\n", totalOps, totalOps / 1e9, time_diff_ms);
@@ -276,7 +286,7 @@ float fp64_instruction_rate_test(cl_context context,
     cl_program program = build_program(context, "instruction_rate_fp64_kernel.cl");
     cl_kernel fp64_add_rate_kernel = clCreateKernel(program, "fp64_add_rate_test", &ret);
     cl_kernel fp64_fma_rate_kernel = clCreateKernel(program, "fp64_fma_rate_test", &ret);
-    totalOps = (float)low_chase_iterations * (2.0f * 8.0f) * (float)thread_count;
+    totalOps = 2.0f * 8.0f;
     gOpsPerSec = run_rate_test(context, command_queue, fp64_add_rate_kernel, thread_count, local_size, low_chase_iterations, 
         float4_element_count, a_mem_obj, result_obj, A, result, totalOps);
     fprintf(stderr, "%f G FP64 Adds/sec\n", gOpsPerSec);
@@ -318,13 +328,17 @@ float fp16_instruction_rate_test(cl_context context,
     cl_program program = build_program(context, "instruction_rate_fp16_kernel.cl");
     cl_kernel fp16_add_rate_kernel = clCreateKernel(program, "fp16_add_rate_test", &ret);
     cl_kernel fp16_fma_rate_kernel = clCreateKernel(program, "fp16_fma_rate_test", &ret);
-    totalOps = (float)low_chase_iterations * (8.0f * 8.0f) * (float)thread_count;
+    cl_kernel mix_fp16_int16_add_rate_kernel = clCreateKernel(program, "mix_fp16_int16_add_rate_test", &ret);
+    totalOps = 8.0f * 8.0f;
     gOpsPerSec = run_rate_test(context, command_queue, fp16_add_rate_kernel, thread_count, local_size, low_chase_iterations,
         float4_element_count, a_mem_obj, result_obj, A, result, totalOps);
     fprintf(stderr, "%f G FP16 Adds/sec\n", gOpsPerSec);
     gOpsPerSec = run_rate_test(context, command_queue, fp16_fma_rate_kernel, thread_count, local_size, low_chase_iterations,
         float4_element_count, a_mem_obj, result_obj, A, result, totalOps);
     fprintf(stderr, "%f G FP16 FMAs/sec = %f FP16 GFLOPs\n", gOpsPerSec, gOpsPerSec * 2);
+    gOpsPerSec = run_rate_test(context, command_queue, mix_fp16_int16_add_rate_kernel, thread_count, local_size, low_chase_iterations,
+        float4_element_count, a_mem_obj, result_obj, A, result, totalOps);
+    fprintf(stderr, "%f G Mixed FP16 and INT16 Adds/sec\n", gOpsPerSec);
 
     return gOpsPerSec;
 }
