@@ -11,7 +11,8 @@ unsigned int end_timing() {
 }
 #else
 #include <sys/time.h>
-__declspec(selectany) struct timeval startTv, endTv;
+#include <stddef.h>
+struct timeval startTv, endTv;
 void start_timing() {
     gettimeofday(&startTv, NULL);
 }
