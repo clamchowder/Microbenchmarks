@@ -38,6 +38,13 @@ extern void matchedstlftest(uint64_t iterations, uint32_t *arr);
 extern void stlftest(uint64_t iterations, uint32_t *arr);
 extern void stlftest32(uint64_t iterations, uint32_t *arr);
 void (*stlfFunc)(uint64_t, uint32_t *) = stlftest;
+#elif __ALTIVEC__
+extern void preplatencyarr(uint64_t *arr, uint32_t len);
+extern uint32_t latencytest(uint64_t iterations, uint64_t *arr);
+extern void matchedstlftest(uint64_t iterations, uint32_t *arr);
+extern void stlftest(uint64_t iterations, uint32_t *arr);
+extern void stlftest32(uint64_t iterations, uint32_t *arr);
+void (*stlfFunc)(uint64_t, uint32_t *) = stlftest;
 #else 
 #define UNKNOWN_ARCH 1
 extern uint32_t latencytest(uint64_t iterations, uint64_t *arr);
