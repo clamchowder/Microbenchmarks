@@ -8,3 +8,5 @@ win64:
 	x86_64-w64-mingw32-gcc-win32 -pthread -O3 MemoryBandwidth.c MemoryBandwidth_x86.s -o membw.exe -lm
 ppc64:
 	powerpc64-linux-gnu-gcc -pthread -O3 MemoryBandwidth.c -o membw_ppc64le -lm
+power:
+	gcc -pthread -O3 -mregnames MemoryBandwidth.c MemoryBandwidth_altivec.s -o membw_power -lm

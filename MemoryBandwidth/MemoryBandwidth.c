@@ -18,7 +18,7 @@
 #include <sys/mman.h>
 #include <errno.h>
 
-#ifdef _ARCH_PPC64
+#ifdef __ALTIVEC__
 #include <altivec.h>
 #endif
 
@@ -40,7 +40,7 @@ float MeasureBw(uint64_t sizeKb, uint64_t iterations, uint64_t threads, int shar
 
 #ifndef __x86_64
 #ifndef __aarch64__
-#ifndef _ARCH_PPC64
+#ifndef __ALTIVEC___
 #define UNKNOWN_ARCH 1
 #endif
 #endif
@@ -84,8 +84,9 @@ void TestBankConflicts();
 extern void flush_icache(void *arr, uint64_t length);
 #endif
 
-#ifdef _ARCH_PPC64
-extern float altivec_read(float* arr, uint64_t arr_length, uint64_t iterations, uint64_t start); 
+#ifdef __ALTIVEC__
+float altivec_read(float* arr, uint64_t arr_length, uint64_t iterations, uint64_t start); 
+extern float asm_altivec_read(float* arr, uint64_t arr_length, uint64_t iterations, uint64_t start); 
 #endif
 
 float MeasureInstructionBw(uint64_t sizeKb, uint64_t iterations, int nopSize, int branchInterval); 
@@ -198,7 +199,8 @@ int main(int argc, char *argv[]) {
                         bw_func = avx512_add;
                     }
                     #endif  
-                } 
+                }
+               /* endif for asm supported */ 
                #endif 
                 else if (strncmp(argv[argIdx], "instr8", 6) == 0) {
                     testInstructionBandwidth = 1; 
@@ -222,18 +224,21 @@ int main(int argc, char *argv[]) {
                     bw_func = sse_read;
                     fprintf(stderr, "Using ASM code, SSE\n");
                 }
+                #endif
 #ifdef ASM_SUPPORTED
                 else if (strncmp(argv[argIdx], "readbankconflict", 13) == 0) {
                     testBankConflict = 1;
                 }
 #endif
-#ifdef _ARCH_PPC64
+#ifdef __ALTIVEC__
                  else if (strncmp(argv[argIdx], "altivec", 7) == 0) {
-                    bw_func = sse_read;
-                    fprintf(stderr, "Using AltiVec intrinsics\n");
+                    bw_func = altivec_read;
+                    fprintf(stderr, "using altivec intrinsics\n");
+                }
+                 else if (strncmp(argv[argIdx], "asm_altivec", 11) == 0) {
+                    bw_func = asm_altivec_read;
                 }
 #endif
-                #endif
             }
         } else {
             fprintf(stderr, "Expected - parameter\n");
@@ -422,7 +427,7 @@ float MeasureInstructionBw(uint64_t sizeKb, uint64_t iterations, int nopSize, in
     char nop8b1[9] = { 0x00, 0x00, 0x80, 0xD2, 0x8c, 0x01, 0x00, 0x91 }; 
 #endif
 
-#ifdef _ARCH_PPC64
+#ifdef __ALTIVEC__
     char nop8b[8] = { 0, 0, 0, 0x60, 0, 0, 0, 0x60 };
     char nop4b[8] = { 0, 0, 0, 0x60, 0, 0, 0, 0x60 };
 #endif
@@ -475,7 +480,7 @@ float MeasureInstructionBw(uint64_t sizeKb, uint64_t iterations, int nopSize, in
     flush_icache((void *)nops, funcLen);
     #endif
 
-    #ifdef _ARCH_PPC64
+    #ifdef __ALTIVEC___
     uint64_t *functionEnd = (uint64_t *)(nops + elements);
     functionEnd[0] = 0x4E800020;
     __builtin___clear_cache((char *)nops, functionEnd);
@@ -626,7 +631,7 @@ float scalar_read(float* arr, uint64_t arr_length, uint64_t iterations, uint64_t
     return sum;
 }
 
-#ifdef _ARCH_PPC64
+#ifdef __ALTIVEC__
 float altivec_read(float* arr, uint64_t arr_length, uint64_t iterations, uint64_t start) {
     vector float v0, v1, v2, v3;
     vector float d0, d1, d2, d3;
@@ -664,6 +669,6 @@ float altivec_read(float* arr, uint64_t arr_length, uint64_t iterations, uint64_
 void *ReadBandwidthTestThread(void *param) {
     BandwidthTestThreadData* bwTestData = (BandwidthTestThreadData*)param;
     float sum = bw_func(bwTestData->arr, bwTestData->arr_length, bwTestData->iterations, bwTestData->start);
-    if (sum == 0) printf("woohoo\n");
+    //if (sum == 0) printf("woohoo\n");
     pthread_exit(NULL);
 }
