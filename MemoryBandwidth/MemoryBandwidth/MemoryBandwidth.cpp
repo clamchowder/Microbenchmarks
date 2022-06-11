@@ -26,7 +26,7 @@ int default_test_sizes[35] = { 2, 4, 8, 12, 16, 24, 32, 48, 64, 96, 128, 192, 25
                                131072, 262144, 393216, 524288 };
 #endif
 
-enum NopSize { None, FourByte, EightByte, K8_FourByte };
+enum NopType { None, FourByte, EightByte, K8_FourByte, Branch16 };
 
 struct BandwidthTestThreadData {
     uint32_t iterations;
@@ -66,8 +66,10 @@ extern "C" float __fastcall dummy(void* arr, uint32_t arr_length, uint32_t itera
 float(_fastcall *bw_func)(void*, uint32_t, uint32_t) = dummy;
 #endif
 
-float MeasureBw(uint32_t sizeKb, uint32_t iterations, uint32_t threads, int shared);
-float MeasureInstructionBw(uint64_t sizeKb, uint64_t iterations, enum NopSize nopSize);
+float MeasureBw(uint32_t sizeKb, uint32_t iterations, uint32_t threads, int shared, enum NopType instr);
+float MeasureInstructionBw(uint64_t sizeKb, uint64_t iterations, enum NopType nopSize, uint32_t threads, int shared);
+void FillInstructionArray(uint64_t* arr, uint64_t sizeKb, enum NopType nopSize);
+float instr_read(void* arr, uint64_t arr_length, uint64_t iterations);
 void PrintNumaInfo();
 uint32_t GetIterationCount(uint32_t testSize, uint32_t threads);
 DWORD WINAPI ReadBandwidthTestThread(LPVOID param);
@@ -79,7 +81,7 @@ char GetStripeNode(uint64_t);
 
 int main(int argc, char *argv[]) {
     int threads = 1, shared = 0, methodSet = 0;
-    enum NopSize instr = None;
+    enum NopType instr = None;
     int cpuid_data[4];
     int singleSize = 0;
 
@@ -172,6 +174,10 @@ int main(int argc, char *argv[]) {
                 else if (_strnicmp(argv[argIdx], "instrk8_4", 6) == 0) {
                     instr = K8_FourByte;
                     fprintf(stderr, "Using 4B NOPs, with encoding recommended in the Athlon optimization manual\n");
+                }
+                else if (_strnicmp(argv[argIdx], "branch16", 6) == 0) {
+                    instr = Branch16;
+                    fprintf(stderr, "Using branch per 16B\n");
                 }
                 else {
                     methodSet = 0;
@@ -269,14 +275,11 @@ int main(int argc, char *argv[]) {
     }
 
     if (instr) {
-        printf("Testing instruction bandwidth, multithreading not supported\n");
-        for (int i = 0; i < sizeof(default_test_sizes) / sizeof(int); i++) {
-            float bw = MeasureInstructionBw(default_test_sizes[i], GetIterationCount(default_test_sizes[i], threads), instr);
-            if (bw > 0) printf("%d,%f\n", default_test_sizes[i], bw);
-        }
+        bw_func = instr_read;
     }
-    else if (singleSize) {
-        float bw = MeasureBw(singleSize, GetIterationCount(singleSize, threads), threads, shared);
+    
+    if (singleSize) {
+        float bw = MeasureBw(singleSize, GetIterationCount(singleSize, threads), threads, shared, instr);
         printf("%d,%f\n", singleSize, bw);
     }
     else if (numa == NUMA_AUTO) {
@@ -301,7 +304,8 @@ int main(int argc, char *argv[]) {
                     default_test_sizes[(sizeof(default_test_sizes) / sizeof(int)) - 1], 
                     GetIterationCount(default_test_sizes[(sizeof(default_test_sizes) / sizeof(int)) - 1], threads), 
                     threads, 
-                    shared);
+                    shared,
+                    instr);
                 printf(",%f", bw);
             }
 
@@ -311,7 +315,7 @@ int main(int argc, char *argv[]) {
     else {
         printf("Using %d threads\n", threads);
         for (int i = 0; i < sizeof(default_test_sizes) / sizeof(int); i++) {
-            float bw = MeasureBw(default_test_sizes[i], GetIterationCount(default_test_sizes[i], threads), threads, shared);
+            float bw = MeasureBw(default_test_sizes[i], GetIterationCount(default_test_sizes[i], threads), threads, shared, instr);
             if (bw > 0) printf("%d,%f\n", default_test_sizes[i], bw);
         }
     }
@@ -337,12 +341,14 @@ uint32_t GetIterationCount(uint32_t testSize, uint32_t threads)
     else return iterations;
 }
 
-float MeasureBw(uint32_t sizeKb, uint32_t iterations, uint32_t threads, int shared) {
+float MeasureBw(uint32_t sizeKb, uint32_t iterations, uint32_t threads, int shared, enum NopType instr) {
     struct timeb start, end;
     float bw = 0;
     uint32_t elements = sizeKb * 1024 / sizeof(float);
     uint32_t private_elements = ceil((double)sizeKb / (double)threads) * 256;
+    DWORD protection_flags = PAGE_EXECUTE_READWRITE;
 
+    //if (instr != None) protection_flags = PAGE_EXECUTE_READWRITE;
     if (!shared) elements = private_elements;
 
     //fprintf(stderr, "%llu elements per thread\n", elements);
@@ -355,20 +361,25 @@ float MeasureBw(uint32_t sizeKb, uint32_t iterations, uint32_t threads, int shar
     // make array and fill it with something
     float* testArr = NULL;
     if (shared) {
-        testArr = (float*)_aligned_malloc(elements * sizeof(float), 4096);
+        testArr = (float*)VirtualAlloc(NULL, elements * sizeof(float), MEM_COMMIT | MEM_RESERVE, protection_flags);
         if (testArr == NULL) {
             fprintf(stderr, "Could not allocate memory\n");
             return 0;
         }
 
-        for (uint32_t i = 0; i < elements; i++) {
-            testArr[i] = i + 0.5f;
+        if (instr != None)
+        {
+            FillInstructionArray((uint64_t*)testArr, sizeKb, instr);
+        }
+        else {
+            for (uint32_t i = 0; i < elements; i++) {
+                testArr[i] = i + 0.5f;
+            }
         }
     }
 
     HANDLE* testThreads = (HANDLE*)malloc(threads * sizeof(HANDLE));
     DWORD* tids = (DWORD*)malloc(threads * sizeof(DWORD));
-    //bw_func(testArr, 128, iterations);
     struct BandwidthTestThreadData* threadData = (struct BandwidthTestThreadData*)malloc(threads * sizeof(struct BandwidthTestThreadData));
 
     for (uint64_t i = 0; i < threads; i++) {
@@ -378,7 +389,7 @@ float MeasureBw(uint32_t sizeKb, uint32_t iterations, uint32_t threads, int shar
             threadData[i].iterations = iterations;
         }
         else {
-            if (!numa) threadData[i].arr = (float*)_aligned_malloc(elements * sizeof(float), 64);
+            if (!numa) threadData[i].arr = (float*)VirtualAlloc(NULL, elements * sizeof(float), MEM_COMMIT | MEM_RESERVE, protection_flags);
             else if (numa == NUMA_STRIPE) {
                 node = GetStripeNode(i);
                 threadData[i].arr = (float *)VirtualAllocExNuma(
@@ -386,7 +397,7 @@ float MeasureBw(uint32_t sizeKb, uint32_t iterations, uint32_t threads, int shar
                     NULL,
                     elements * sizeof(float),
                     MEM_RESERVE | MEM_COMMIT,
-                    PAGE_READWRITE,
+                    protection_flags,
                     node
                 );
             }
@@ -397,7 +408,7 @@ float MeasureBw(uint32_t sizeKb, uint32_t iterations, uint32_t threads, int shar
                     NULL,
                     elements * sizeof(float),
                     MEM_RESERVE | MEM_COMMIT,
-                    PAGE_READWRITE,
+                    protection_flags,
                     node
                 );
             }
@@ -407,7 +418,7 @@ float MeasureBw(uint32_t sizeKb, uint32_t iterations, uint32_t threads, int shar
                     NULL,
                     elements * sizeof(float),
                     MEM_RESERVE | MEM_COMMIT,
-                    PAGE_READWRITE,
+                    protection_flags,
                     memNode
                 );
 
@@ -419,8 +430,15 @@ float MeasureBw(uint32_t sizeKb, uint32_t iterations, uint32_t threads, int shar
                 return 0;
             }
 
-            for (uint64_t arr_idx = 0; arr_idx < elements; arr_idx++) {
-                threadData[i].arr[arr_idx] = arr_idx + i + 0.5f;
+            if (instr != None)
+            {
+                FillInstructionArray((uint64_t*)threadData[i].arr, (elements * 4) / 1024, instr);
+            }
+            else
+            {
+                for (uint64_t arr_idx = 0; arr_idx < elements; arr_idx++) {
+                    threadData[i].arr[arr_idx] = arr_idx + i + 0.5f;
+                }
             }
 
             threadData[i].iterations = iterations * threads;
@@ -463,8 +481,7 @@ float MeasureBw(uint32_t sizeKb, uint32_t iterations, uint32_t threads, int shar
 
     if (!shared) {
         for (int i = 0; i < threads; i++) {
-            if (!numa) _aligned_free(threadData[i].arr);
-            else VirtualFreeEx(GetCurrentProcess(), threadData[i].arr, 0, MEM_RELEASE);
+            VirtualFreeEx(GetCurrentProcess(), threadData[i].arr, 0, MEM_RELEASE);
         }
     }
 
@@ -472,8 +489,8 @@ float MeasureBw(uint32_t sizeKb, uint32_t iterations, uint32_t threads, int shar
     return bw;
 }
 
-float MeasureInstructionBw(uint64_t sizeKb, uint64_t iterations, enum NopSize nopSize) {
-    struct timeb start, end;
+void FillInstructionArray(uint64_t* arr, uint64_t sizeKb, enum NopType nopSize)
+{
     char nop8b[8] = { 0x0F, 0x1F, 0x84, 0x00, 0x00, 0x00, 0x00, 0x00 };
 
     // zen/piledriver optimization manual uses this pattern
@@ -482,49 +499,51 @@ float MeasureInstructionBw(uint64_t sizeKb, uint64_t iterations, enum NopSize no
     // athlon64 (K8) optimization manual pattern
     char k8_nop4b[8] = { 0x66, 0x66, 0x66, 0x90, 0x66, 0x66, 0x66, 0x90 };
 
-    float bw = 0;
-    uint64_t* nops;
-    uint64_t elements = sizeKb * 1024 / 8;
-    size_t funcLen = sizeKb * 1024 + 1;
+    uint64_t elements = (sizeKb * 1024 / 8) - 1; // leave room for ret
+    unsigned char* functionEnd = (unsigned char*)(arr + elements);
 
-    void (*nopfunc)(uint64_t);
+    if (nopSize != Branch16) {
+        uint64_t* nopPtr;
+        if (nopSize == EightByte) nopPtr = (uint64_t*)(nop8b);
+        else if (nopSize == FourByte) nopPtr = (uint64_t*)(nop4b);
+        else if (nopSize == K8_FourByte) nopPtr = (uint64_t*)(k8_nop4b);
+        else {
+            fprintf(stderr, "%d (enum value) NOP size isn't supported :(\n", nopSize);
+            return;
+        }
 
-    // nops, dec rcx (3 bytes), jump if zero flag set to 32-bit displacement (6 bytes), ret (1 byte)
-    nops = (uint64_t *)VirtualAlloc(NULL, funcLen, MEM_COMMIT | MEM_RESERVE, PAGE_EXECUTE_READWRITE);
-    if (nops == NULL) {
-        fprintf(stderr, "Failed to allocate memory for size %lu\n", sizeKb);
-        return 0;
+        for (uint64_t nopIdx = 0; nopIdx < elements; nopIdx++) {
+            arr[nopIdx] = *nopPtr;
+        }
+
+        functionEnd[0] = 0xC3;
     }
-
-    uint64_t* nopPtr;
-    if (nopSize == EightByte) nopPtr = (uint64_t*)(nop8b);
-    else if (nopSize == FourByte) nopPtr = (uint64_t*)(nop4b);
-    else if (nopSize == K8_FourByte) nopPtr = (uint64_t*)(k8_nop4b);
     else {
-        fprintf(stderr, "%d (enum value) NOP size isn't supported :(\n", nopSize);
-        return 0;
+        // jump forward 14 bytes
+        char branch16b[8] = { 0xEB, 0x0E, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00 };
+        char ret8b[8] = { 0xC3, 0, 0, 0, 0, 0, 0, 0 };
+        uint64_t *branchPtr = (uint64_t*)(branch16b);
+        uint64_t* nopPtr = (uint64_t*)(nop8b); // doesn't really matter, we should never hit this
+
+        // last iteration must have nopIdx % 2 == 1, so the jump will go to the return statement
+        // i.e. branchElements for loop must be even, so the last iteration is odd
+        uint64_t branchElements = elements % 2 == 0 ? elements : elements - 1;
+        uint64_t nopIdx;
+        for (nopIdx = 0; nopIdx < branchElements; nopIdx++) {
+            arr[nopIdx] = nopIdx % 2 == 0 ? *branchPtr : *nopPtr;
+        }
+
+        arr[nopIdx] = *(uint64_t*)ret8b;
     }
+}
 
-    for (uint64_t nopIdx = 0; nopIdx < elements; nopIdx++) {
-        nops[nopIdx] = *nopPtr;
-    }
-
-    unsigned char* functionEnd = (unsigned char*)(nops + elements);
-    // ret
-    functionEnd[0] = 0xC3;
-
-    nopfunc = (void(*)(uint64_t))nops;
-    ftime(&start);
-    for (int iterIdx = 0; iterIdx < iterations; iterIdx++) nopfunc(iterations);
-    ftime(&end);
-
-    int64_t time_diff_ms = 1000 * (end.time - start.time) + (end.millitm - start.millitm);
-    double gbTransferred = (iterations * 8 * elements + 1) / (double)1e9;
-    //fprintf(stderr, "%lf GB transferred in %ld ms\n", gbTransferred, time_diff_ms);
-    bw = 1000 * gbTransferred / (double)time_diff_ms;
-
-    if (!VirtualFree(nops, 0, MEM_RELEASE)) fprintf(stderr, "VirtualFree failed, last error = %u. Watch for mem leaks\n", GetLastError());
-    return bw;
+float instr_read(void* arr, uint64_t arr_length, uint64_t iterations)
+{
+    void (*nopfunc)(uint64_t);
+    nopfunc = (void(*)(uint64_t))arr;
+    int iterIdx;
+    for (iterIdx = 0; iterIdx < iterations; iterIdx++) nopfunc(iterations);
+    return iterIdx;
 }
 
 float __fastcall scalar_read(void* a, uint32_t arr_length, uint32_t iterations)  {
