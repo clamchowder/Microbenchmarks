@@ -9,12 +9,16 @@
 #include <math.h>
 #include <intrin.h>
 #include <immintrin.h>
+#include <tchar.h>
 #include <windows.h>
 
 #define NUMA_STRIPE 1
 #define NUMA_SEQ 2
 #define NUMA_CROSSNODE 3
 #define NUMA_AUTO 4
+
+#define INTEL_RAPL_POWER_UNIT_MSR 0x606
+#define INTEL_PKG_ENERGY_STATUS_MSR 0x611
 
 #ifdef _WIN64
 int default_test_sizes[39] = { 2, 4, 8, 12, 16, 24, 32, 48, 64, 96, 128, 192, 256, 512, 600, 768, 1024, 1536, 2048,
@@ -66,7 +70,7 @@ extern "C" float __fastcall dummy(void* arr, uint32_t arr_length, uint32_t itera
 float(_fastcall *bw_func)(void*, uint32_t, uint32_t) = dummy;
 #endif
 
-float MeasureBw(uint32_t sizeKb, uint32_t iterations, uint32_t threads, int shared, enum NopType instr);
+float MeasureBw(uint32_t sizeKb, uint32_t iterations, uint32_t threads, int shared, enum NopType instr, int measurePower);
 float MeasureInstructionBw(uint64_t sizeKb, uint64_t iterations, enum NopType nopSize, uint32_t threads, int shared);
 void FillInstructionArray(uint64_t* arr, uint64_t sizeKb, enum NopType nopSize);
 float instr_read(void* arr, uint64_t arr_length, uint64_t iterations);
@@ -74,13 +78,21 @@ void PrintNumaInfo();
 uint32_t GetIterationCount(uint32_t testSize, uint32_t threads);
 DWORD WINAPI ReadBandwidthTestThread(LPVOID param);
 
+float energyStatusUnits;
+uint64_t ReadMsr(uint32_t index);
+void StartMeasuringEnergy();
+float StopMeasuringEnergy();
+void OpenWinring0Driver();
+
 int numa = 0;
 char coreNode, memNode;
 char GetSeqNode(uint64_t);
 char GetStripeNode(uint64_t);
 
+HANDLE winring0DriverHandle = INVALID_HANDLE_VALUE;
+
 int main(int argc, char *argv[]) {
-    int threads = 1, shared = 0, methodSet = 0;
+    int threads = 1, shared = 0, methodSet = 0, measurePower = 0;
     enum NopType instr = None;
     int cpuid_data[4];
     int singleSize = 0;
@@ -224,6 +236,15 @@ int main(int argc, char *argv[]) {
                 singleSize = atoi(argv[argIdx]);
                 fprintf(stderr, "Testing %d KB\n", singleSize);
             }
+            else if (_strnicmp(arg, "power", 5) == 0)
+            {
+                argIdx++;
+                measurePower = 1;
+                OpenWinring0Driver();
+                uint64_t raplPowerUnit = ReadMsr(INTEL_RAPL_POWER_UNIT_MSR);
+                raplPowerUnit = (raplPowerUnit >> 8) & 0x1F;
+                energyStatusUnits = (float)pow(0.5, (float)raplPowerUnit);
+            }
         }
     }
 
@@ -279,7 +300,7 @@ int main(int argc, char *argv[]) {
     }
     
     if (singleSize) {
-        float bw = MeasureBw(singleSize, GetIterationCount(singleSize, threads), threads, shared, instr);
+        float bw = MeasureBw(singleSize, GetIterationCount(singleSize, threads), threads, shared, instr, measurePower);
         printf("%d,%f\n", singleSize, bw);
     }
     else if (numa == NUMA_AUTO) {
@@ -305,7 +326,8 @@ int main(int argc, char *argv[]) {
                     GetIterationCount(default_test_sizes[(sizeof(default_test_sizes) / sizeof(int)) - 1], threads), 
                     threads, 
                     shared,
-                    instr);
+                    instr,
+                    measurePower);
                 printf(",%f", bw);
             }
 
@@ -314,9 +336,14 @@ int main(int argc, char *argv[]) {
     }
     else {
         printf("Using %d threads\n", threads);
+        if (measurePower)
+        {
+            printf("Data (KB), Bandwidth (GB/s), Time (s), Joules, Total Data (GB)\n");
+        }
+
         for (int i = 0; i < sizeof(default_test_sizes) / sizeof(int); i++) {
-            float bw = MeasureBw(default_test_sizes[i], GetIterationCount(default_test_sizes[i], threads), threads, shared, instr);
-            if (bw > 0) printf("%d,%f\n", default_test_sizes[i], bw);
+            float bw = MeasureBw(default_test_sizes[i], GetIterationCount(default_test_sizes[i], threads), threads, shared, instr, measurePower);
+            if (!measurePower && bw > 0) printf("%d,%f\n", default_test_sizes[i], bw);
         }
     }
 
@@ -341,9 +368,9 @@ uint32_t GetIterationCount(uint32_t testSize, uint32_t threads)
     else return iterations;
 }
 
-float MeasureBw(uint32_t sizeKb, uint32_t iterations, uint32_t threads, int shared, enum NopType instr) {
+float MeasureBw(uint32_t sizeKb, uint32_t iterations, uint32_t threads, int shared, enum NopType instr, int measurePower) {
     struct timeb start, end;
-    float bw = 0;
+    float bw = 0, energy = 0;
     uint32_t elements = sizeKb * 1024 / sizeof(float);
     uint32_t private_elements = ceil((double)sizeKb / (double)threads) * 256;
     DWORD protection_flags = PAGE_EXECUTE_READWRITE;
@@ -463,10 +490,12 @@ float MeasureBw(uint32_t sizeKb, uint32_t iterations, uint32_t threads, int shar
         }
     }
 
+    if (measurePower) StartMeasuringEnergy();
     ftime(&start);
     for (uint32_t i = 0; i < threads; i++) ResumeThread(testThreads[i]);
     WaitForMultipleObjects((DWORD)threads, testThreads, TRUE, INFINITE);
     ftime(&end);
+    if (measurePower) energy = StopMeasuringEnergy();
 
     int64_t time_diff_ms = 1000 * (end.time - start.time) + (end.millitm - start.millitm);
     double gbTransferred = (uint64_t)iterations * sizeof(float) * elements * threads / (double)1e9;
@@ -474,6 +503,11 @@ float MeasureBw(uint32_t sizeKb, uint32_t iterations, uint32_t threads, int shar
     if (!shared) bw = bw * threads;
     //printf("%u iterations\n", iterations);
     //printf("%f GB, %lu ms\n", gbTransferred, time_diff_ms);
+
+    if (measurePower)
+    {
+        printf("%d,%f,%f,%f,%f\n", sizeKb, bw, (float)time_diff_ms / 1000, energy, gbTransferred);
+    }
 
     free(testThreads);
     if (shared) _aligned_free(testArr);
@@ -715,4 +749,88 @@ char GetSeqNode(uint64_t threadIdx) {
     unsigned char node;
     GetNumaProcessorNode(clippedThreadIdx, &node);
     return node;
+}
+
+void OpenWinring0Driver()
+{
+    winring0DriverHandle = CreateFile(
+        _T("\\\\.\\") _T("WinRing0_1_2_0"),
+        GENERIC_READ | GENERIC_WRITE,
+        0,
+        NULL,
+        OPEN_EXISTING,
+        FILE_ATTRIBUTE_NORMAL,
+        NULL
+    );
+
+    if (winring0DriverHandle == INVALID_HANDLE_VALUE)
+    {
+        int error = GetLastError();
+        fprintf(stderr, "Failed to get handle to WinRing0_1_2_0 driver: %d\n", error);
+    }
+}
+
+#define OLS_TYPE 40000
+#define IOCTL_OLS_READ_MSR CTL_CODE(OLS_TYPE, 0x821, METHOD_BUFFERED, FILE_ANY_ACCESS)
+
+uint64_t ReadMsr(uint32_t index)
+{
+    DWORD returnedLength;
+    bool result;
+    uint64_t retval;
+    if (winring0DriverHandle == INVALID_HANDLE_VALUE)
+    {
+        fprintf(stderr, "Invalid handle to Winring0 driver\n");
+        return 0;
+    }
+
+    result = DeviceIoControl(
+        winring0DriverHandle,
+        IOCTL_OLS_READ_MSR,
+        &index,
+        sizeof(index),
+        &retval,
+        sizeof(retval),
+        &returnedLength,
+        NULL
+    );
+
+    if (!result)
+    {
+        fprintf(stderr, "DeviceIoControl to read MSR failed\n");
+    }
+
+    return retval;
+}
+
+uint64_t startEnergy;
+
+void StartMeasuringEnergy()
+{
+    uint64_t rawEnergy = ReadMsr(INTEL_PKG_ENERGY_STATUS_MSR);
+    rawEnergy &= 0xFFFFFFFF;
+    startEnergy = rawEnergy;
+}
+
+/// <summary>
+/// Stops measuring power and gives back consumed energy in joules
+/// </summary>
+/// <returns>Consumed energy in joules</returns>
+float StopMeasuringEnergy()
+{
+    uint64_t elapsedEnergy;
+    uint64_t rawEnergy = ReadMsr(INTEL_PKG_ENERGY_STATUS_MSR);
+    rawEnergy &= 0xFFFFFFFF;
+    
+    if (rawEnergy < startEnergy)
+    {
+        uint64_t extraEnergy = 0xFFFFFFFF - startEnergy;
+        elapsedEnergy = extraEnergy + rawEnergy;
+    }
+    else
+    {
+        elapsedEnergy = rawEnergy - startEnergy;
+    }
+
+    return elapsedEnergy * energyStatusUnits;
 }
