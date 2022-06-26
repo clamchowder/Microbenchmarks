@@ -338,7 +338,7 @@ int main(int argc, char *argv[]) {
         printf("Using %d threads\n", threads);
         if (measurePower)
         {
-            printf("Data (KB), Bandwidth (GB/s), Time (s), Joules, Total Data (GB)\n");
+            printf("Data (KB), Bandwidth (GB/s), Time (s), Joules\n");
         }
 
         for (int i = 0; i < sizeof(default_test_sizes) / sizeof(int); i++) {
@@ -506,7 +506,7 @@ float MeasureBw(uint32_t sizeKb, uint32_t iterations, uint32_t threads, int shar
 
     if (measurePower)
     {
-        printf("%d,%f,%f,%f,%f\n", sizeKb, bw, (float)time_diff_ms / 1000, energy, gbTransferred);
+        printf("%d,%f,%f,%f\n", sizeKb, bw, (float)time_diff_ms / 1000, energy);
     }
 
     free(testThreads);
