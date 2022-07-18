@@ -69,7 +69,12 @@ float(_fastcall *bw_func)(void*, uint32_t, uint32_t) = dummy;
 float MeasureBw(uint32_t sizeKb, uint32_t iterations, uint32_t threads, int shared, enum NopType instr);
 float MeasureInstructionBw(uint64_t sizeKb, uint64_t iterations, enum NopType nopSize, uint32_t threads, int shared);
 void FillInstructionArray(uint64_t* arr, uint64_t sizeKb, enum NopType nopSize);
-float instr_read(void* arr, uint64_t arr_length, uint64_t iterations);
+#ifdef _WIN64
+float __fastcall instr_read(void* arr, uint64_t arr_length, uint64_t iterations);
+#else
+float __fastcall instr_read(void* arr, uint32_t arr_length, uint32_t iterations);
+#endif
+
 void PrintNumaInfo();
 uint32_t GetIterationCount(uint32_t testSize, uint32_t threads);
 DWORD WINAPI ReadBandwidthTestThread(LPVOID param);
@@ -537,7 +542,11 @@ void FillInstructionArray(uint64_t* arr, uint64_t sizeKb, enum NopType nopSize)
     }
 }
 
-float instr_read(void* arr, uint64_t arr_length, uint64_t iterations)
+#ifdef _WIN64
+float __fastcall instr_read(void* arr, uint64_t arr_length, uint64_t iterations)
+#else
+float __fastcall instr_read(void* arr, uint32_t arr_length, uint32_t iterations)
+#endif
 {
     void (*nopfunc)(uint64_t);
     nopfunc = (void(*)(uint64_t))arr;
@@ -616,6 +625,7 @@ float sse_read(float* arr, uint64_t arr_length, uint64_t iterations) {
     return sum;
 }
 
+#ifdef _WIN64
 float avx_read(float* arr, uint64_t arr_length, uint64_t iterations) {
     float sum = 0;
     float iterSum = 0;
@@ -658,6 +668,7 @@ float avx_read(float* arr, uint64_t arr_length, uint64_t iterations) {
 
     return sum;
 }
+#endif
 
 DWORD WINAPI ReadBandwidthTestThread(LPVOID param) {
     BandwidthTestThreadData* bwTestData = (BandwidthTestThreadData*)param;
