@@ -391,8 +391,34 @@ __kernel void fp32_fma_latency_test(__global float *A, int count, __global float
     float v7 = v1 + v2;
     float acc = local_a[0];
 
-    for (int i = 0; i < count; i++) {
-        //float4 acc = local_a[i & (rate_local_mem_test_size) - 1];
+    for (int i = 0; i < count; i += 4) {
+        v0 = v7 + acc * v0;
+        v1 = v0 + acc * v1;
+        v2 = v1 + acc * v2;
+        v3 = v2 + acc * v3;
+        v4 = v3 + acc * v4;
+        v5 = v4 + acc * v5;
+        v6 = v5 + acc * v6;
+        v7 = v6 + acc * v7;
+
+        v0 = v7 + acc * v0;
+        v1 = v0 + acc * v1;
+        v2 = v1 + acc * v2;
+        v3 = v2 + acc * v3;
+        v4 = v3 + acc * v4;
+        v5 = v4 + acc * v5;
+        v6 = v5 + acc * v6;
+        v7 = v6 + acc * v7;
+
+        v0 = v7 + acc * v0;
+        v1 = v0 + acc * v1;
+        v2 = v1 + acc * v2;
+        v3 = v2 + acc * v3;
+        v4 = v3 + acc * v4;
+        v5 = v4 + acc * v5;
+        v6 = v5 + acc * v6;
+        v7 = v6 + acc * v7;
+
         v0 = v7 + acc * v0;
         v1 = v0 + acc * v1;
         v2 = v1 + acc * v2;
@@ -422,7 +448,34 @@ __kernel void fp32_add_latency_test(__global float *A, int count, __global float
     float v7 = v1 + v2;
     float acc = local_a[0];
 
-    for (int i = 0; i < count; i++) {
+    for (int i = 0; i < count; i += 4) {
+        v0 = v7 + v0;
+        v1 = v0 + v1;
+        v2 = v1 + v2;
+        v3 = v2 + v3;
+        v4 = v3 + v4;
+        v5 = v4 + v5;
+        v6 = v5 + v6;
+        v7 = v6 + v7;
+
+        v0 = v7 + v0;
+        v1 = v0 + v1;
+        v2 = v1 + v2;
+        v3 = v2 + v3;
+        v4 = v3 + v4;
+        v5 = v4 + v5;
+        v6 = v5 + v6;
+        v7 = v6 + v7;
+
+        v0 = v7 + v0;
+        v1 = v0 + v1;
+        v2 = v1 + v2;
+        v3 = v2 + v3;
+        v4 = v3 + v4;
+        v5 = v4 + v5;
+        v6 = v5 + v6;
+        v7 = v6 + v7;
+
         v0 = v7 + v0;
         v1 = v0 + v1;
         v2 = v1 + v2;
@@ -450,7 +503,34 @@ __kernel void int32_add_latency_test(__global uint *A, int count, __global uint 
     uint v6 = v0 + v3;
     uint v7 = v1 + v2;
 
-    for (int i = 0; i < count; i++) {
+    for (int i = 0; i < count; i += 4) {
+        v0 = v7 + v0;
+        v1 = v0 + v1;
+        v2 = v1 + v2;
+        v3 = v2 + v3;
+        v4 = v3 + v4;
+        v5 = v4 + v5;
+        v6 = v5 + v6;
+        v7 = v6 + v7;
+
+        v0 = v7 + v0;
+        v1 = v0 + v1;
+        v2 = v1 + v2;
+        v3 = v2 + v3;
+        v4 = v3 + v4;
+        v5 = v4 + v5;
+        v6 = v5 + v6;
+        v7 = v6 + v7;
+
+        v0 = v7 + v0;
+        v1 = v0 + v1;
+        v2 = v1 + v2;
+        v3 = v2 + v3;
+        v4 = v3 + v4;
+        v5 = v4 + v5;
+        v6 = v5 + v6;
+        v7 = v6 + v7;
+
         v0 = v7 + v0;
         v1 = v0 + v1;
         v2 = v1 + v2;
