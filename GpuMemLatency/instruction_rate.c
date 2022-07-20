@@ -75,6 +75,8 @@ float instruction_rate_test(cl_context context,
     cl_kernel int8_add_rate_kernel = clCreateKernel(program, "int8_add_rate_test", &ret);
     cl_kernel int8_mul_rate_kernel = clCreateKernel(program, "int8_mul_rate_test", &ret);
     cl_kernel fp32_fma_latency_kernel = clCreateKernel(program, "fp32_fma_latency_test", &ret);
+    cl_kernel fp32_add_latency_kernel = clCreateKernel(program, "fp32_add_latency_test", &ret);
+    cl_kernel int32_add_latency_kernel = clCreateKernel(program, "int32_add_latency_test", &ret);
 
     float* A = (float*)malloc(sizeof(float) * float4_element_count * 4);
     float* result = (float*)malloc(sizeof(float) * 4 * thread_count);
@@ -100,6 +102,9 @@ float instruction_rate_test(cl_context context,
         float4_element_count, a_mem_obj, result_obj, A, result, opsPerIteration);
     fprintf(stderr, "INT32 G Adds/sec: %f\n", int32_add_rate);
 
+    float int32_add_latency = run_latency_test(context, command_queue, int32_add_latency_kernel, chase_iterations, float4_element_count, a_mem_obj, result_obj, A, result, 8.0f);
+    fprintf(stderr, "INT32 add latency: %f ns\n", int32_add_latency);
+
     opsPerIteration = 4.0f * 8.0f;
     float int32_mul_rate = run_rate_test(context, command_queue, int32_mul_rate_kernel, thread_count, local_size, (chase_iterations / 2),
         float4_element_count, a_mem_obj, result_obj, A, result, opsPerIteration);
@@ -116,6 +121,9 @@ float instruction_rate_test(cl_context context,
     float fp32_add_rate = run_rate_test(context, command_queue, fp32_add_rate_kernel, thread_count, local_size, chase_iterations, 
         float4_element_count, a_mem_obj, result_obj, A, result, opsPerIteration);
     fprintf(stderr, "FP32 G Adds/sec: %f\n", fp32_add_rate);
+
+    float fp32_add_latency = run_latency_test(context, command_queue, fp32_add_latency_kernel, chase_iterations, float4_element_count, a_mem_obj, result_obj, A, result, 8.0f);
+    fprintf(stderr, "FP32 add latency: %f ns\n", fp32_add_latency);
 
     float fp32_fma_rate = run_rate_test(context, command_queue, fp32_fma_rate_kernel, thread_count, local_size, chase_iterations,
         float4_element_count, a_mem_obj, result_obj, A, result, opsPerIteration);
