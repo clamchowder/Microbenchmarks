@@ -66,6 +66,7 @@ float instruction_rate_test(cl_context context,
     cl_kernel int32_mul_rate_kernel = clCreateKernel(program, "int32_mul_rate_test", &ret);
     cl_kernel fp32_add_rate_kernel = clCreateKernel(program, "fp32_add_rate_test", &ret);
     cl_kernel fp32_fma_rate_kernel = clCreateKernel(program, "fp32_fma_rate_test", &ret);
+    cl_kernel fp32_mad_rate_kernel = clCreateKernel(program, "fp32_mad_rate_test", &ret);
     cl_kernel mix_fp32_int32_add_rate_kernel = clCreateKernel(program, "mix_fp32_int32_add_rate_test", &ret);
     cl_kernel int64_add_rate_kernel = clCreateKernel(program, "int64_add_rate_test", &ret);
     cl_kernel int64_mul_rate_kernel = clCreateKernel(program, "int64_mul_rate_test", &ret);
@@ -119,6 +120,10 @@ float instruction_rate_test(cl_context context,
     float fp32_fma_rate = run_rate_test(context, command_queue, fp32_fma_rate_kernel, thread_count, local_size, chase_iterations,
         float4_element_count, a_mem_obj, result_obj, A, result, opsPerIteration);
     fprintf(stderr, "FP32 G FMA/sec: %f : %f GFLOPs\n", fp32_fma_rate, fp32_fma_rate * 2);
+
+    fp32_fma_rate = run_rate_test(context, command_queue, fp32_mad_rate_kernel, thread_count, local_size, chase_iterations,
+        float4_element_count, a_mem_obj, result_obj, A, result, opsPerIteration);
+    fprintf(stderr, "FP32 G mad()/sec: %f : %f GFLOPs\n", fp32_fma_rate, fp32_fma_rate * 2);
 
     float fp32_fma_latency = run_latency_test(context, command_queue, fp32_fma_latency_kernel, chase_iterations, float4_element_count, a_mem_obj, result_obj, A, result, 8.0f);
     fprintf(stderr, "FP32 FMA latency: %f ns\n", fp32_fma_latency);
@@ -209,6 +214,17 @@ cleanup:
 
 #define TARGET_TIME_MS 1500
 
+// Given last run settings, return target iteration count that should make the next run
+// go for approximately TARGET_TIME_MS
+uint32_t adjust_iterations(uint32_t iterations, uint64_t time_ms)
+{
+    uint32_t chase_iterations = (uint32_t)((float)iterations * TARGET_TIME_MS / (float)time_ms);
+    if (time_ms == 0) chase_iterations = iterations * 100;
+    //fprintf(stderr, "Kernel took %llu ms. Setting iterations = %u\n", time_ms, chase_iterations);
+
+    return chase_iterations;
+}
+
 float run_rate_test(cl_context context,
     cl_command_queue command_queue,
     cl_kernel kernel,
@@ -258,8 +274,7 @@ float run_rate_test(cl_context context,
         }
 
         time_diff_ms = end_timing();
-        chase_iterations = (uint32_t)((float)chase_iterations * TARGET_TIME_MS / (float)time_diff_ms);
-        fprintf(stderr, "Kernel took %llu ms. Setting iterations = %u\n", time_diff_ms, chase_iterations);
+        chase_iterations = adjust_iterations(chase_iterations, time_diff_ms);
         clSetKernelArg(kernel, 1, sizeof(cl_int), (void*)&chase_iterations);
     }
 
@@ -289,7 +304,6 @@ float run_latency_test(cl_context context,
 
     // hack around latency taking longer
     chase_iterations = chase_iterations / 50;
-    fprintf(stderr, "Latency test iterations: %u\n", chase_iterations);
 
     // testing returning a float4
     memset(result, 0, sizeof(float) * 4);
@@ -322,9 +336,7 @@ float run_latency_test(cl_context context,
         }
 
         time_diff_ms = end_timing();
-        fprintf(stderr, "Kernel took %llu ms\n", time_diff_ms);
-        chase_iterations = (uint32_t)((float)chase_iterations * TARGET_TIME_MS / (float)time_diff_ms);
-        fprintf(stderr, "Latency test iterations: %u\n", chase_iterations);
+        chase_iterations = adjust_iterations(chase_iterations, time_diff_ms);
         clSetKernelArg(kernel, 1, sizeof(cl_int), (void*)&chase_iterations);
     }
 
@@ -335,7 +347,8 @@ float run_latency_test(cl_context context,
     return latency;
 }
 
-// taking out FP64 because some implementations don't support it
+// taking out FP64 because some implementations don't support it. putting another build program + create kernel section
+// in the main instruction rate test function would be too messy
 float fp64_instruction_rate_test(cl_context context,
     cl_command_queue command_queue,
     uint32_t thread_count,
