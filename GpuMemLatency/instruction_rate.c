@@ -8,8 +8,8 @@ float fp64_instruction_rate_test(cl_context context,
     int float4_element_count,
     cl_mem a_mem_obj,
     cl_mem result_obj,
-    cl_double* A,
-    cl_double* result);
+    cl_float* A,
+    cl_float* result);
 
 float fp16_instruction_rate_test(cl_context context,
     cl_command_queue command_queue,
@@ -19,8 +19,8 @@ float fp16_instruction_rate_test(cl_context context,
     int float4_element_count,
     cl_mem a_mem_obj,
     cl_mem result_obj,
-    cl_double* A,
-    cl_double* result);
+    cl_float* A,
+    cl_float* result);
 
 float run_rate_test(cl_context context,
     cl_command_queue command_queue,
@@ -31,9 +31,20 @@ float run_rate_test(cl_context context,
     int float4_element_count,
     cl_mem a_mem_obj,
     cl_mem result_obj,
-    cl_double* A,
-    cl_double* result,
+    cl_float* A,
+    cl_float* result,
     float totalOps);
+
+float run_latency_test(cl_context context,
+    cl_command_queue command_queue,
+    cl_kernel kernel,
+    uint32_t chase_iterations,
+    int float4_element_count,
+    cl_mem a_mem_obj,
+    cl_mem result_obj,
+    cl_float* A,
+    cl_float* result,
+    float opsPerIteration);
 
 float global_totalOps;
 
@@ -62,6 +73,7 @@ float instruction_rate_test(cl_context context,
     cl_kernel int16_mul_rate_kernel = clCreateKernel(program, "int16_mul_rate_test", &ret);
     cl_kernel int8_add_rate_kernel = clCreateKernel(program, "int8_add_rate_test", &ret);
     cl_kernel int8_mul_rate_kernel = clCreateKernel(program, "int8_mul_rate_test", &ret);
+    cl_kernel fp32_fma_latency_kernel = clCreateKernel(program, "fp32_fma_latency_test", &ret);
 
     float* A = (float*)malloc(sizeof(float) * float4_element_count * 4);
     float* result = (float*)malloc(sizeof(float) * 4 * thread_count);
@@ -107,6 +119,9 @@ float instruction_rate_test(cl_context context,
     float fp32_fma_rate = run_rate_test(context, command_queue, fp32_fma_rate_kernel, thread_count, local_size, chase_iterations,
         float4_element_count, a_mem_obj, result_obj, A, result, opsPerIteration);
     fprintf(stderr, "FP32 G FMA/sec: %f : %f GFLOPs\n", fp32_fma_rate, fp32_fma_rate * 2);
+
+    float fp32_fma_latency = run_latency_test(context, command_queue, fp32_fma_latency_kernel, chase_iterations, float4_element_count, a_mem_obj, result_obj, A, result, 8.0f);
+    fprintf(stderr, "FP32 FMA latency: %f ns\n", fp32_fma_latency);
 
     // Mixed INT32 and FP32 - 4 FP32, 4 INT32, and the loop increment
     // takes FP inputs and converts some to int
@@ -203,8 +218,8 @@ float run_rate_test(cl_context context,
     int float4_element_count,
     cl_mem a_mem_obj,
     cl_mem result_obj,
-    cl_double* A,
-    cl_double* result,
+    cl_float* A,
+    cl_float* result,
     float opsPerIteration)
 {
     size_t global_item_size = thread_count;
@@ -243,8 +258,8 @@ float run_rate_test(cl_context context,
         }
 
         time_diff_ms = end_timing();
-        //fprintf(stderr, "Kernel took %llu ms\n", time_diff_ms);
         chase_iterations = (uint32_t)((float)chase_iterations * TARGET_TIME_MS / (float)time_diff_ms);
+        fprintf(stderr, "Kernel took %llu ms. Setting iterations = %u\n", time_diff_ms, chase_iterations);
         clSetKernelArg(kernel, 1, sizeof(cl_int), (void*)&chase_iterations);
     }
 
@@ -253,6 +268,71 @@ float run_rate_test(cl_context context,
     //fprintf(stderr, "chase iterations: %d, thread count: %d\n", chase_iterations, thread_count);
     //fprintf(stderr, "total ops: %f (%.2f G)\ntotal time: %llu ms\n", totalOps, totalOps / 1e9, time_diff_ms);
     return gOpsPerSec;
+}
+
+float run_latency_test(cl_context context,
+    cl_command_queue command_queue,
+    cl_kernel kernel,
+    uint32_t chase_iterations,
+    int float4_element_count,
+    cl_mem a_mem_obj,
+    cl_mem result_obj,
+    cl_float* A,
+    cl_float* result,
+    float opsPerIteration)
+{
+    size_t global_item_size = 1;
+    size_t local_item_size = 1;
+    cl_int ret;
+    float latency;
+    uint64_t time_diff_ms = 0;
+
+    // hack around latency taking longer
+    chase_iterations = chase_iterations / 50;
+    fprintf(stderr, "Latency test iterations: %u\n", chase_iterations);
+
+    // testing returning a float4
+    memset(result, 0, sizeof(float) * 4);
+
+    ret = clEnqueueWriteBuffer(command_queue, a_mem_obj, CL_TRUE, 0, float4_element_count * sizeof(float), A, 0, NULL, NULL);
+    ret = clEnqueueWriteBuffer(command_queue, result_obj, CL_TRUE, 0, sizeof(float) * 4, result, 0, NULL, NULL);
+    clSetKernelArg(kernel, 0, sizeof(cl_mem), (void*)&a_mem_obj);
+    clSetKernelArg(kernel, 1, sizeof(cl_int), (void*)&chase_iterations);
+    clSetKernelArg(kernel, 2, sizeof(cl_mem), (void*)&result_obj);
+    clFinish(command_queue);
+
+    //fprintf(stderr, "Submitting fp32 add kernel to command queue\n");
+    // start with a low iteration count and try to make it work for all GPUs without needing manual iteration adjustment
+    while (time_diff_ms < TARGET_TIME_MS / 2) {
+        start_timing();
+        ret = clEnqueueNDRangeKernel(command_queue, kernel, 1, NULL, &global_item_size, &local_item_size, 0, NULL, NULL);
+        if (ret != CL_SUCCESS)
+        {
+            fprintf(stderr, "Failed to submit kernel to command queue. clEnqueueNDRangeKernel returned %d\n", ret);
+            latency = 0;
+            return 0;
+        }
+
+        ret = clFinish(command_queue);
+        if (ret != CL_SUCCESS)
+        {
+            printf("Failed to finish command queue. clFinish returned %d\n", ret);
+            latency = 0;
+            return 0;
+        }
+
+        time_diff_ms = end_timing();
+        fprintf(stderr, "Kernel took %llu ms\n", time_diff_ms);
+        chase_iterations = (uint32_t)((float)chase_iterations * TARGET_TIME_MS / (float)time_diff_ms);
+        fprintf(stderr, "Latency test iterations: %u\n", chase_iterations);
+        clSetKernelArg(kernel, 1, sizeof(cl_int), (void*)&chase_iterations);
+    }
+
+    float totalOps = (float)chase_iterations * opsPerIteration * (float)global_item_size;
+    latency = (float)time_diff_ms * 1e6 / totalOps;
+    //fprintf(stderr, "chase iterations: %d, thread count: %d\n", chase_iterations, thread_count);
+    //fprintf(stderr, "total ops: %f (%.2f G)\ntotal time: %llu ms\n", totalOps, totalOps / 1e9, time_diff_ms);
+    return latency;
 }
 
 // taking out FP64 because some implementations don't support it
@@ -264,8 +344,8 @@ float fp64_instruction_rate_test(cl_context context,
     int float4_element_count,
     cl_mem a_mem_obj,
     cl_mem result_obj,
-    cl_double *A,
-    cl_double *result)
+    cl_float *A,
+    cl_float*result)
 {
     size_t global_item_size = thread_count;
     size_t local_item_size = local_size;
@@ -275,7 +355,7 @@ float fp64_instruction_rate_test(cl_context context,
 
     // FP64 add test
     uint32_t low_chase_iterations = chase_iterations / 4;
-    cl_double* fp64_A = (cl_float*)A;
+    cl_double* fp64_A = (cl_double*)A;
     for (int i = 0; i < float4_element_count * 2; i++)
     {
         fp64_A[i] = 0.5f * i;
@@ -306,8 +386,8 @@ float fp16_instruction_rate_test(cl_context context,
     int float4_element_count,
     cl_mem a_mem_obj,
     cl_mem result_obj,
-    cl_double* A,
-    cl_double* result)
+    cl_float* A,
+    cl_float* result)
 {
     size_t global_item_size = thread_count;
     size_t local_item_size = local_size;

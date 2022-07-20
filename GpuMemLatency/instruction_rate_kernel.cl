@@ -212,14 +212,14 @@ __kernel void fp32_fma_rate_test(__global float4 *A, int count, __global float4 
 
     for (int i = 0; i < count; i++) {
         //float4 acc = local_a[i & (rate_local_mem_test_size) - 1];
-        v0 += acc * v0;
-        v1 += acc * v1;
-        v2 += acc * v2;
-        v3 += acc * v3;
-        v4 += acc * v4;
-        v5 += acc * v5;
-        v6 += acc * v6;
-        v7 += acc * v7;
+        v0 = mad(acc, v0, v0);
+        v1 = mad(acc, v1, v1);
+        v2 = mad(acc, v2, v2);
+        v3 = mad(acc, v3, v3);
+        v4 = mad(acc, v4, v3);
+        v5 = mad(acc, v5, v5);
+        v6 = mad(acc, v6, v6);
+        v7 = mad(acc, v7, v7);
     }
 
     ret[get_global_id(0)] = v0 + v1 + v2 + v3 + v4 + v5 + v6 + v7;
@@ -340,6 +340,37 @@ __kernel void int8_mul_rate_test(__global char16 *A, int count, __global char16 
         v5 *= acc;
         v6 *= acc;
         v7 *= acc;
+    }
+
+    ret[get_global_id(0)] = v0 + v1 + v2 + v3 + v4 + v5 + v6 + v7;
+}
+
+__kernel void fp32_fma_latency_test(__global float *A, int count, __global float *ret) {
+    int tid = get_local_id(0);
+    int max_offset = get_local_size(0);
+    __global float *local_a = A;
+
+    int masked_tid = tid & (rate_local_mem_test_size - 1);
+    float v0 = local_a[masked_tid];
+    float v1 = local_a[masked_tid + 1];
+    float v2 = local_a[masked_tid + 2];
+    float v3 = local_a[masked_tid + 3];
+    float v4 = v0 + v1;
+    float v5 = v0 + v2;
+    float v6 = v0 + v3;
+    float v7 = v1 + v2;
+    float acc = local_a[0];
+
+    for (int i = 0; i < count; i++) {
+        //float4 acc = local_a[i & (rate_local_mem_test_size) - 1];
+        v0 = v7 + acc * v0;
+        v1 = v0 + acc * v1;
+        v2 = v1 + acc * v2;
+        v3 = v2 + acc * v3;
+        v4 = v3 + acc * v4;
+        v5 = v4 + acc * v5;
+        v6 = v5 + acc * v6;
+        v7 = v6 + acc * v7;
     }
 
     ret[get_global_id(0)] = v0 + v1 + v2 + v3 + v4 + v5 + v6 + v7;
