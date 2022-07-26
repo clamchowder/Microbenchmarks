@@ -67,6 +67,7 @@ float instruction_rate_test(cl_context context,
     cl_kernel fp32_add_rate_kernel = clCreateKernel(program, "fp32_add_rate_test", &ret);
     cl_kernel fp32_fma_rate_kernel = clCreateKernel(program, "fp32_fma_rate_test", &ret);
     cl_kernel fp32_mad_rate_kernel = clCreateKernel(program, "fp32_mad_rate_test", &ret);
+    cl_kernel fp32_rcp_rate_kernel = clCreateKernel(program, "fp32_rcp_rate_test", &ret);
     cl_kernel mix_fp32_int32_add_rate_kernel = clCreateKernel(program, "mix_fp32_int32_add_rate_test", &ret);
     cl_kernel int64_add_rate_kernel = clCreateKernel(program, "int64_add_rate_test", &ret);
     cl_kernel int64_mul_rate_kernel = clCreateKernel(program, "int64_mul_rate_test", &ret);
@@ -139,6 +140,10 @@ float instruction_rate_test(cl_context context,
 
     float fp32_fma_latency = run_latency_test(context, command_queue, fp32_fma_latency_kernel, chase_iterations, float4_element_count, a_mem_obj, result_obj, A, result, 8.0f);
     fprintf(stderr, "FP32 FMA latency: %f ns\n", fp32_fma_latency);
+
+    float fp32_rcp_rate = run_rate_test(context, command_queue, fp32_rcp_rate_kernel, thread_count, local_size, chase_iterations,
+        float4_element_count, a_mem_obj, result_obj, A, result, opsPerIteration);
+    fprintf(stderr, "FP32 G native_recip/sec: %f\n", fp32_rcp_rate);
 
     // Mixed INT32 and FP32 - 4 FP32, 4 INT32, and the loop increment
     // takes FP inputs and converts some to int

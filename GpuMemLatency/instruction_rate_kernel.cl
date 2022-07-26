@@ -100,6 +100,36 @@ __kernel void fp32_add_rate_test(__global float4 *A, int count, __global float4 
     ret[get_global_id(0)] = v0 + v1 + v2 + v3 + v4 + v5 + v6 + v7;
 }
 
+__kernel void fp32_rcp_rate_test(__global float4 *A, int count, __global float4 *ret) {
+    int tid = get_local_id(0);
+    int max_offset = get_local_size(0);
+    __global float4 *local_a = A;
+
+    int masked_tid = tid & (rate_local_mem_test_size - 1);
+    float4 v0 = local_a[masked_tid];
+    float4 v1 = local_a[masked_tid + 1];
+    float4 v2 = local_a[masked_tid + 2];
+    float4 v3 = local_a[masked_tid + 3];
+    float4 v4 = v0 + v1;
+    float4 v5 = v0 + v2;
+    float4 v6 = v0 + v3;
+    float4 v7 = v1 + v2;
+    float4 acc = local_a[0];
+
+    for (int i = 0; i < count; i++) {
+        v0 = native_recip(v0);
+        v1 = native_recip(v1);
+        v2 = native_recip(v2);
+        v3 = native_recip(v3);
+        v4 = native_recip(v4);
+        v5 = native_recip(v5);
+        v6 = native_recip(v6);
+        v7 = native_recip(v7);
+    }
+
+    ret[get_global_id(0)] = v0 + v1 + v2 + v3 + v4 + v5 + v6 + v7;
+}
+
 __kernel void int64_add_rate_test(__global ulong2 *A, int count, __global ulong2 *ret) {
     int tid = get_local_id(0);
     int max_offset = get_local_size(0);
