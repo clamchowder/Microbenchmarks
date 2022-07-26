@@ -543,3 +543,60 @@ __kernel void int32_add_latency_test(__global uint *A, int count, __global uint 
 
     ret[get_global_id(0)] = v0 + v1 + v2 + v3 + v4 + v5 + v6 + v7;
 }
+
+__kernel void int32_mul_latency_test(__global uint4 *A, int count, __global uint4 *ret) {
+    int tid = get_local_id(0);
+    int max_offset = get_local_size(0);
+    __global uint4 *local_a = A;
+
+    int masked_tid = tid & (rate_local_mem_test_size - 1);
+    uint4 v0 = local_a[masked_tid];
+    uint4 v1 = local_a[masked_tid + 1];
+    uint4 v2 = local_a[masked_tid + 2];
+    uint4 v3 = local_a[masked_tid + 3];
+    uint4 v4 = v0 + v1;
+    uint4 v5 = v0 + v2;
+    uint4 v6 = v0 + v3;
+    uint4 v7 = v1 + v2;
+    uint4 acc = local_a[0];
+
+    for (int i = 0; i < count; i++) {
+        v0 = v7 * v0;
+        v1 = v0 * v1;
+        v2 = v1 * v2;
+        v3 = v2 * v3;
+        v4 = v3 * v4;
+        v5 = v4 * v5;
+        v6 = v5 * v6;
+        v7 = v6 * v7;
+
+        v0 = v7 * v0;
+        v1 = v0 * v1;
+        v2 = v1 * v2;
+        v3 = v2 * v3;
+        v4 = v3 * v4;
+        v5 = v4 * v5;
+        v6 = v5 * v6;
+        v7 = v6 * v7;
+
+        v0 = v7 * v0;
+        v1 = v0 * v1;
+        v2 = v1 * v2;
+        v3 = v2 * v3;
+        v4 = v3 * v4;
+        v5 = v4 * v5;
+        v6 = v5 * v6;
+        v7 = v6 * v7;
+
+        v0 = v7 * v0;
+        v1 = v0 * v1;
+        v2 = v1 * v2;
+        v3 = v2 * v3;
+        v4 = v3 * v4;
+        v5 = v4 * v5;
+        v6 = v5 * v6;
+        v7 = v6 * v7;
+    }
+
+    ret[get_global_id(0)] = v0 + v1 + v2 + v3 + v4 + v5 + v6 + v7;
+}
