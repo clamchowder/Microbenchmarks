@@ -126,7 +126,6 @@ int main(int argc, char* argv[]) {
     }
 
     printf("If you didn't run this through cmd, now you can copy the results");
-    scanf("\n");
 
     return 0;
 }
