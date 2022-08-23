@@ -191,8 +191,8 @@ namespace AsmGen
             {
                 string funcName = GetBranchFuncName(Counts[i]);
                 sb.AppendLine(funcName + ":");
-                sb.AppendLine($"  adrp x2, {funcName}");
-                sb.AppendLine($"  add x2, x2, :lo12:{funcName}");
+                /*sb.AppendLine($"  adrp x2, {funcName}");
+                sb.AppendLine($"  add x2, x2, :lo12:{funcName}");*/
                 sb.AppendLine("  mov x1, 1");
                 for (int branchIdx = 1; branchIdx < Counts[i]; branchIdx++)
                 {

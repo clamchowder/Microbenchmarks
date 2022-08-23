@@ -2,9 +2,9 @@
 
 namespace AsmGen
 {
-    public class RobTest1 : UarchTest
+    public class FlagRfTest : UarchTest
     {
-        public RobTest1(int low, int high, int step)
+        public FlagRfTest(int low, int high, int step)
         {
             this.Counts = UarchTestHelpers.GenerateCountArray(low, high, step);
             this.Prefix = "flagrf";

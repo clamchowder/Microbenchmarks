@@ -16,7 +16,7 @@ namespace AsmGen
         static void Main(string[] args)
         {
             List<IUarchTest> tests = new List<IUarchTest>();
-            tests.Add(new RobTest(4, 512, 1));
+            tests.Add(new RobTest(4, 384, 1));
             tests.Add(new IntRfTest(4, 384, 1));
             tests.Add(new FpRfTest(4, 384, 1));
             tests.Add(new VecRfTest(4, 384, 1));
@@ -30,8 +30,8 @@ namespace AsmGen
             tests.Add(new Fadd256SchedTest(1, 128, 1));
             tests.Add(new MixFaddFmulSchedTest(2, 128, 1));
             tests.Add(new JumpSchedTest(4, 32, 1));
-            tests.Add(new RobTest1(4, 512, 1));
-            tests.Add(new MixIntFpRfTest(4, 256, 1));
+            tests.Add(new FlagRfTest(4, 512, 1));
+            tests.Add(new MixIntFpRfTest(4, 512, 1));
             tests.Add(new LoadSchedTest(4, 128, 1));
             tests.Add(new StoreSchedTest(4, 128, 1));
             tests.Add(new StoreDataSchedTest(2, 128, 1));
@@ -56,7 +56,7 @@ namespace AsmGen
             tests.Add(new MixJmpMulSchedTest(2, 128, 1));
             tests.Add(new MixMulRorSchedTest(2, 128, 1));
             tests.Add(new BranchHistoryTest());
-            //tests.Add(new IndirectBranchTest());
+            tests.Add(new IndirectBranchTest());
             tests.Add(new MxcsrTest(1, 32, 1));
             tests.Add(new MaskRfTest(1, 256, 1));
             tests.Add(new NotIntRfTest(1, 450, 1));
