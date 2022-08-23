@@ -171,11 +171,6 @@ int main(int argc, char *argv[]) {
       avx512Supported = 1;
   }  
 
-  // not propertly detected on CNS
-  avxSupported = 1;
-  avx2Supported = 1;
-  bmi2Supported = 1;
-  
   if (argc == 1) {
     // figure out clock speed
     gettimeofday(&startTv, &startTz);
