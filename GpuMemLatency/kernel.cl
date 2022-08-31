@@ -151,12 +151,12 @@ __kernel void sum_bw_test(__global float* A, uint count, uint float4size, __glob
     int localSize = get_local_size(0);
     int groupId = get_group_id(0);
     float4 result1 = (0.1f,0.2f,0.3f,0.4f);
-    float4 result2 = (1.1f,1.2f,1.3f,1.4f); 
+    float4 result2 = (1.1f,1.2f,1.3f,1.4f);
     float4 result3 = (2.1f,2.2f,2.3f,2.4f);
     float4 result4 = (3.0f,3.1f,3.2f,3.3f);
     float4 result5 = (4.0f,4.2f,4.1f,4.3f);
 
-    int initialIdx = startPositions[threadId]; 
+    int initialIdx = startPositions[threadId];
     //int initialIdx = (groupId * skip * localSize + localId) % (float4size - 1);
     //startPositions[threadId] = initialIdx; // for debugging
 
@@ -218,7 +218,7 @@ __kernel void c2c_atomic_exec_latency_test(__global int* A, int count, __global 
     int current = 0;
     if (global_id == t1) current = 1;
     else if (global_id == t2) current = 2;
-    
+
     if (global_id == t1 || global_id == t2) {
         //printf("gid: %d, t1: %d, t2: %d, A: %d, current = %d\n", global_id, t1, t2, *A, current);
         while (current <= 2 * count) {

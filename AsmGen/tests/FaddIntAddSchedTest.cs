@@ -32,7 +32,7 @@ namespace AsmGen
             string rdicvt = "cvtsi2ss %rdi, %xmm0";
             string rsicvt = "cvtsi2ss %rsi, %xmm0";
 
-            UarchTestHelpers.GenerateX86AsmStructureTestFuncs(sb, this.Counts, this.Prefix, unrolledAdds, unrolledAdds, 
+            UarchTestHelpers.GenerateX86AsmStructureTestFuncs(sb, this.Counts, this.Prefix, unrolledAdds, unrolledAdds,
                 includePtrChasingLoads: false, postLoadInstrs1: rdicvt, postLoadInstrs2: rsicvt);
         }
 

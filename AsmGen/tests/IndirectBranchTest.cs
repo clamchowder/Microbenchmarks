@@ -187,7 +187,7 @@ namespace AsmGen
                         for (int targetIdx = 0; targetIdx < currentTargetCount; targetIdx++)
                         {
                             // assuming 64-bit pointers and 4K page size
-                            // use rbx = index into 
+                            // use rbx = index into
                             string targetLabelName = GetTargetLabelName(currentBranchCount, currentTargetCount, branchIdx, targetIdx);
                             sb.AppendLine($"  lea {targetLabelName}(%rip), %rax");
                             sb.AppendLine($"  mov %rax, (%r15,%rbx,8)");
@@ -303,7 +303,7 @@ namespace AsmGen
                         for (int targetIdx = 0; targetIdx < currentTargetCount; targetIdx++)
                         {
                             // assuming 64-bit pointers and 4K page size
-                            // use rbx = index into 
+                            // use rbx = index into
                             string targetLabelName = GetTargetLabelName(currentBranchCount, currentTargetCount, branchIdx, targetIdx);
                             sb.AppendLine($"  lea rax, [rel {targetLabelName}]");
                             sb.AppendLine($"  mov [r15 + rbx * 8], rax");

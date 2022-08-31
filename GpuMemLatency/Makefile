@@ -11,12 +11,10 @@ else
 endif
 
 opencltest: $(OBJ)
-	gcc $(CFLAGS) $^ -o $@ -lm $(LDFLAGS) 
+	gcc $(CFLAGS) $^ -o $@ -lm $(LDFLAGS)
 
 %.o: %.c $(DEPS)
 	$(CC) $(CFLAGS) -c -o $@ $<
 
-timing.o: 
-	$(CC) $(CFLAGS) -c ../common/timing.c -o timing.o 
-
-
+timing.o:
+	$(CC) $(CFLAGS) -c ../common/timing.c -o timing.o

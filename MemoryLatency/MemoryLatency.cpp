@@ -9,7 +9,7 @@
 
 #define ITERATIONS 400000000
 
-int default_test_sizes[36] = { 2, 4, 8, 12, 16, 24, 32, 48, 64, 96, 128, 192, 256, 512, 600, 768, 1024, 1536, 2048, 
+int default_test_sizes[36] = { 2, 4, 8, 12, 16, 24, 32, 48, 64, 96, 128, 192, 256, 512, 600, 768, 1024, 1536, 2048,
                                3072, 4096, 5120, 6144, 8192, 10240, 12288, 16384, 24567, 32768, 65536, 98304,
                                131072, 262144, 393216, 524288, 1048576 };
 
@@ -94,7 +94,7 @@ int main(int argc, char* argv[]) {
             SYSTEM_INFO SystemInfo;
             GetSystemInfo(&SystemInfo);
             nProcs = SystemInfo.dwNumberOfProcessors;
-            
+
             GetNumaNodeProcessorMask(coreNode, &mask);
             fprintf(stderr, "node core mask: %llx\n", mask);
             BitScanReverse64(&index, mask);
@@ -102,11 +102,11 @@ int main(int argc, char* argv[]) {
             mask |= 1ULL << (ULONGLONG)index;
             SetProcessAffinityMask(GetCurrentProcess(), mask);
             fprintf(stderr, "core mask: %llx, index %u\n", mask, index);
-            arr = VirtualAllocExNuma(GetCurrentProcess(), 
-                NULL, 
-                default_test_sizes[(sizeof(default_test_sizes) / sizeof(int)) - 1] * 1024, 
-                allocationType, 
-                PAGE_READWRITE, 
+            arr = VirtualAllocExNuma(GetCurrentProcess(),
+                NULL,
+                default_test_sizes[(sizeof(default_test_sizes) / sizeof(int)) - 1] * 1024,
+                allocationType,
+                PAGE_READWRITE,
                 memNode);
         }
         else if (largepages) {

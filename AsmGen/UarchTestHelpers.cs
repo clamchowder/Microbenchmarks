@@ -97,7 +97,7 @@ namespace AsmGen
         {
             sb.AppendLine("  if (argc > 1 && strncmp(argv[1], \"" + test.Prefix + "\", " + test.Prefix.Length + ") == 0) {");
             sb.AppendLine("    printf(\"" + test.Description + ":\\n\");");
-            
+
             int[] counts = test.Counts;
             for (int i = 0; i < counts.Length; i++)
             {
@@ -108,7 +108,7 @@ namespace AsmGen
                     sb.AppendLine("    tmp = structIterations;");
                     sb.AppendLine("    structIterations = iterations / " + counts[i] + ";");
                 }
-                
+
                 sb.AppendLine("    gettimeofday(&startTv, &startTz);");
                 sb.AppendLine("    " + test.Prefix + counts[i] + $"({test.GetFunctionCallParameters});");
                 sb.AppendLine("    gettimeofday(&endTv, &endTz);");
@@ -170,7 +170,7 @@ namespace AsmGen
         /// <param name="funcNamePrefix">Function name prefix</param>
         /// <param name="fillerInstrs1">Filler instructions after first ptr chasing load</param>
         /// <param name="fillerInstrs2">Filler instructions after second ptr chasing load</param>
-        /// <param name="includePtrChasingLoads">If true, count pointer chasing loads as consuming the tested resource 
+        /// <param name="includePtrChasingLoads">If true, count pointer chasing loads as consuming the tested resource
         /// (i.e. ptr chasing loads consume a ROB and integer RF slot) </param>
         /// <param name="initInstrs">Any extra initialization instructions</param>
         public static void GenerateX86AsmDivStructureTestFuncs(StringBuilder sb, int[] counts, string funcNamePrefix, string[] fillerInstrs1, string[] fillerInstrs2, bool includePtrChasingLoads = true, string initInstrs = null)
@@ -275,11 +275,11 @@ namespace AsmGen
 
         public static void GenerateX86AsmDivNsqTestFuncs(StringBuilder sb,
             int maxSize,
-            int[] counts, 
-            string funcNamePrefix, 
-            string[] depInstrs, 
+            int[] counts,
+            string funcNamePrefix,
+            string[] depInstrs,
             string[] indepInstrs,
-            bool divsInSq = false, 
+            bool divsInSq = false,
             string initInstrs = null)
         {
             for (int i = 0; i < counts.Length; i++)
@@ -336,12 +336,12 @@ namespace AsmGen
                 int fillerInstrCount = divsInSq ? counts[i] - 6 : counts[i];
                 for (int fillerIdx = 0, depInstrIdx = 0, indepInstrIdx = 0; fillerIdx < maxSize; fillerIdx++)
                 {
-                    if (fillerIdx < fillerInstrCount) 
+                    if (fillerIdx < fillerInstrCount)
                     {
                         sb.AppendLine(depInstrs[depInstrIdx]);
                         depInstrIdx = (depInstrIdx + 1) % depInstrs.Length;
                     }
-                    else 
+                    else
                     {
                         sb.AppendLine(indepInstrs[indepInstrIdx]);
                         indepInstrIdx = (indepInstrIdx + 1) % indepInstrs.Length;
@@ -394,14 +394,14 @@ namespace AsmGen
             }
         }
 
-        public static void GenerateX86AsmStructureTestFuncs(StringBuilder sb, 
-            int[] counts, 
-            string funcNamePrefix, 
-            string[] fillerInstrs1, 
-            string[] fillerInstrs2, 
-            bool includePtrChasingLoads = true, 
-            string initInstrs = null, 
-            string postLoadInstrs1 = null, 
+        public static void GenerateX86AsmStructureTestFuncs(StringBuilder sb,
+            int[] counts,
+            string funcNamePrefix,
+            string[] fillerInstrs1,
+            string[] fillerInstrs2,
+            bool includePtrChasingLoads = true,
+            string initInstrs = null,
+            string postLoadInstrs1 = null,
             string postLoadInstrs2 = null,
             bool lfence = true)
         {
@@ -479,7 +479,7 @@ namespace AsmGen
         /// <summary>
         /// Generate test functions to see how big a scheduler is, without a NSQ
         /// Dependent ops are followed by independent ops, total op count = max
-        /// If number of dependent ops is greater than NSQ size, indep ops can't be executed and 
+        /// If number of dependent ops is greater than NSQ size, indep ops can't be executed and
         /// there will be a dispatch stall
         /// </summary>
         /// <param name="sb">Stringbuilder to append to</param>
@@ -711,7 +711,7 @@ namespace AsmGen
 
         /// <summary>
         /// Generates pointer chasing test functions in assembly, with xmm0 <- [address using offset from ptr chasing result]
-        /// xmm1-4 can be used for 
+        /// xmm1-4 can be used for
         /// </summary>
         /// <param name="sb"></param>
         /// <param name="counts"></param>
@@ -868,7 +868,7 @@ namespace AsmGen
         /// <param name="funcNamePrefix">Function name prefix</param>
         /// <param name="fillerInstrs1">Filler instructions after first ptr chasing load</param>
         /// <param name="fillerInstrs2">Filler instructions after second ptr chasing load</param>
-        /// <param name="includePtrChasingLoads">If true, count pointer chasing loads as consuming the tested resource 
+        /// <param name="includePtrChasingLoads">If true, count pointer chasing loads as consuming the tested resource
         /// (i.e. ptr chasing loads consume a ROB and integer RF slot) </param>
         /// <param name="initInstrs">Any extra initialization instructions</param>
         public static void GenerateX86NasmDivStructureTestFuncs(StringBuilder sb, int[] counts, string funcNamePrefix, string[] fillerInstrs1, string[] fillerInstrs2, bool includePtrChasingLoads = true, string initInstrs = null)
@@ -1184,14 +1184,14 @@ namespace AsmGen
         /// <param name="fillerInstrs2"></param>
         /// <param name="includePtrChasingLoads"></param>
         /// <param name="dsb">use dsb as lfence</param>
-        public static void GenerateArmAsmStructureTestFuncs(StringBuilder sb, 
-            int[] counts, 
-            string funcNamePrefix, 
-            string[] fillerInstrs1, 
-            string[] fillerInstrs2, 
-            bool includePtrChasingLoads = false, 
-            string initInstrs = null, 
-            string postLoadInstrs1 = null, 
+        public static void GenerateArmAsmStructureTestFuncs(StringBuilder sb,
+            int[] counts,
+            string funcNamePrefix,
+            string[] fillerInstrs1,
+            string[] fillerInstrs2,
+            bool includePtrChasingLoads = false,
+            string initInstrs = null,
+            string postLoadInstrs1 = null,
             string postLoadInstrs2 = null,
             bool dsb = true)
         {
@@ -1328,14 +1328,14 @@ namespace AsmGen
 
         public static void GenerateArmAsmFpSchedTestFuncs(StringBuilder sb, int[] counts, string funcNamePrefix, string[] fillerInstrs1, string[] fillerInstrs2)
         {
-            GenerateArmAsmStructureTestFuncs(sb, 
-                counts, 
-                funcNamePrefix, 
-                fillerInstrs1, 
-                fillerInstrs2, 
-                false, 
+            GenerateArmAsmStructureTestFuncs(sb,
+                counts,
+                funcNamePrefix,
+                fillerInstrs1,
+                fillerInstrs2,
+                false,
                 null,
-                "  ldr s16, [x2, w25, uxtw #2]", 
+                "  ldr s16, [x2, w25, uxtw #2]",
                 "  ldr s16, [x2, w26, uxtw #2]");
         }
 

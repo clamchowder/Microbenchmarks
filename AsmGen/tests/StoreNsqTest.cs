@@ -5,7 +5,7 @@ namespace AsmGen
     /// <summary>
     /// Determines whether there is a non-scheduling queue, overflow buffer, dispatch buffer, or whatever you choose to call it
     /// is placed before the store address scheduler. Trying to see if Gracemont has a memory overflow buffer like Tremont does,
-    /// according to Wikichip. 
+    /// according to Wikichip.
     /// </summary>
     public class StoreNsqTest : UarchTest
     {

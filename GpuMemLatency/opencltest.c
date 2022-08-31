@@ -22,13 +22,13 @@ uint64_t scale_iterations(uint32_t size_kb, uint64_t iterations);
 cl_ulong get_max_buffer_size();
 cl_ulong get_max_constant_buffer_size();
 
-enum TestType { 
-    GlobalMemLatency, 
-    ConstantMemLatency, 
+enum TestType {
+    GlobalMemLatency,
+    ConstantMemLatency,
     LocalMemLatency,
-    GlobalAtomicLatency, 
-    LocalAtomicLatency, 
-    GlobalMemBandwidth, 
+    GlobalAtomicLatency,
+    LocalAtomicLatency,
+    GlobalMemBandwidth,
     MemBandwidthWorkgroupScaling,
     CoreToCore,
     LinkBandwidth,
@@ -272,12 +272,12 @@ int main(int argc, char* argv[]) {
                 break;
             }
 
-            result = bw_test(context, 
-                command_queue, 
-                bw_kernel, 256 * testSizeKb, 
-                thread_count, 
-                local_size, 
-                skip, 
+            result = bw_test(context,
+                command_queue,
+                bw_kernel, 256 * testSizeKb,
+                thread_count,
+                local_size,
+                skip,
                 scale_bw_iterations(chase_iterations, testSizeKb));
 
             printf("%lu,%f\n", testSizeKb, result);
@@ -293,7 +293,7 @@ int main(int argc, char* argv[]) {
         cl_uint cuCount = getCuCount();
 
         fprintf(stderr, "Device has %u compute units\n", cuCount);
-        
+
         float* scalingResults = (float*)malloc(sizeof(float) * cuCount * testSizeCount);
         for (uint32_t workgroupCount = 1; workgroupCount <= cuCount; workgroupCount++)
         {
@@ -389,7 +389,7 @@ float int_exec_latency_test(cl_context context,
     float latency;
     uint32_t time_diff_ms;
     uint32_t A[INT_EXEC_INPUT_SIZE];
-    
+
     for (int i = 0; i < INT_EXEC_INPUT_SIZE; i++) A[i] = i;
 
     cl_mem a_mem_obj = clCreateBuffer(context, CL_MEM_READ_ONLY, INT_EXEC_INPUT_SIZE * sizeof(uint32_t), NULL, &ret);

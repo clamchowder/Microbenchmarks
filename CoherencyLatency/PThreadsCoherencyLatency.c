@@ -25,7 +25,7 @@ typedef struct LatencyThreadData {
 } LatencyData;
 
 void *LatencyTestThread(void *param);
-float RunTest(unsigned int processor1, unsigned int processor2, uint64_t iter); 
+float RunTest(unsigned int processor1, unsigned int processor2, uint64_t iter);
 uint64_t *bouncy;
 uint64_t *bouncyBase;
 
@@ -41,7 +41,7 @@ int main(int argc, char *argv[]) {
         fprintf(stderr, "Could not allocate aligned mem\n");
         return 0;
     }
-    
+
     for (int argIdx = 1; argIdx < argc; argIdx++) {
         if (*(argv[argIdx]) == '-') {
             char* arg = argv[argIdx] + 1;
@@ -59,10 +59,10 @@ int main(int argc, char *argv[]) {
                 fprintf(stderr, "Offsets: %d\n", offsets);
             }
         }
-    } 
+    }
 
     latencies = (float **)malloc(sizeof(float *) * offsets);
-    memset(latencies, 0, sizeof(float) * offsets); 
+    memset(latencies, 0, sizeof(float) * offsets);
 
     for (int offsetIdx = 0; offsetIdx < offsets; offsetIdx++) {
         latencies[offsetIdx] = (float *)malloc(sizeof(float) * numProcs * numProcs);
@@ -80,7 +80,7 @@ int main(int argc, char *argv[]) {
         float *latenciesPtr = latencies[offsetIdx];
         printf("Cache line offset: %d\n", offsetIdx);
         for (int i = 0;i < numProcs; i++) {
-            for (int j = 0;j < numProcs; j++) { 
+            for (int j = 0;j < numProcs; j++) {
                 if (j != 0) printf(",");
                 if (j == i) printf("x");
                 // to maintain consistency, divide by 2 (see justification in windows version)
@@ -88,7 +88,7 @@ int main(int argc, char *argv[]) {
             }
             printf("\n");
         }
-        
+
         free(latenciesPtr);
     }
 
@@ -98,10 +98,10 @@ int main(int argc, char *argv[]) {
 }
 
 // run test and gather timing data using the specified thread function
-float TimeThreads(unsigned int proc1, 
-                  unsigned int proc2, 
-                  uint64_t iter, 
-                  LatencyData *lat1, 
+float TimeThreads(unsigned int proc1,
+                  unsigned int proc2,
+                  uint64_t iter,
+                  LatencyData *lat1,
                   LatencyData *lat2,
                   void *(*threadFunc)(void *)) {
     struct timeval startTv, endTv;
@@ -111,8 +111,8 @@ float TimeThreads(unsigned int proc1,
     void *res1, *res2;
 
     gettimeofday(&startTv, &startTz);
-    t1rc = pthread_create(&testThreads[0], NULL, threadFunc, (void *)lat1); 
-    t2rc = pthread_create(&testThreads[1], NULL, threadFunc, (void *)lat2); 
+    t1rc = pthread_create(&testThreads[0], NULL, threadFunc, (void *)lat1);
+    t2rc = pthread_create(&testThreads[1], NULL, threadFunc, (void *)lat2);
     if (t1rc != 0 || t2rc != 0) {
       fprintf(stderr, "Could not create threads\n");
       return 0;
@@ -150,12 +150,12 @@ void *LatencyTestThread(void *param) {
     LatencyData *latencyData = (LatencyData *)param;
     cpu_set_t cpuset;
     uint64_t current = latencyData->start;
-    
+
     CPU_ZERO(&cpuset);
     CPU_SET(latencyData->processorIndex, &cpuset);
     sched_setaffinity(gettid(), sizeof(cpu_set_t), &cpuset);
     //fprintf(stderr, "thread %ld set affinity %d\n", gettid(), latencyData->processorIndex);
-    
+
     while (current <= 2 * latencyData->iterations) {
         if (__sync_bool_compare_and_swap(latencyData->target, current - 1, current)) current += 2;
     }

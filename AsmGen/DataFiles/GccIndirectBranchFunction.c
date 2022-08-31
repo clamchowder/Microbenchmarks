@@ -27,7 +27,7 @@ float runIndirectBranchTest(uint32_t branchCountIdx, uint32_t targetCountIdx, ui
 
     // each branch needs a jump table
     uint64_t** jumpTables = (uint64_t**)malloc(sizeof(uint64_t*) * branchCount);
-    for (int jumpTableIdx = 0; jumpTableIdx < branchCount; jumpTableIdx++) 
+    for (int jumpTableIdx = 0; jumpTableIdx < branchCount; jumpTableIdx++)
     {
         uint64_t* jumpTable = (uint64_t*)malloc(sizeof(uint64_t) * targetCount);
         jumpTables[jumpTableIdx] = jumpTable;

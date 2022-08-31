@@ -24,4 +24,3 @@ void printResultFloatArr(float* arr, uint32_t *xCounts, uint32_t xLen, uint32_t 
         printf("\n");
     }
 }
-

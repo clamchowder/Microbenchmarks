@@ -2,7 +2,7 @@
 .text
 
 .global asm_read
-.global asm_write 
+.global asm_write
 .global asm_cflip
 .global asm_copy
 .global asm_add
@@ -10,12 +10,12 @@
 .global readbankconflict
 
 .global _asm_read
-.global _asm_write 
+.global _asm_write
 .global _asm_cflip
 .global _asm_copy
 .global _asm_add
 .global _flush_icache
-.global _readbankconflict 
+.global _readbankconflict
 
 /* x0 = ptr to array (was rcx)
  * x1 = arr length (was rdx)
@@ -27,7 +27,7 @@ asm_read:
   sub sp, sp, #0x30
   stp x14, x15, [sp, #0x10]
   stp x12, x13, [sp, #0x20]
-  sub x1, x1, 128 
+  sub x1, x1, 128
   mov x14, x3     /* set x14 = index into array to start location (x3) */
   eor x13, x13, x13 /* x13 = 0 (for comparison) */
 asm_read_pass_loop:
@@ -43,8 +43,8 @@ asm_read_pass_loop:
   ldr q22, [x15, 112]
   add x14, x14, 32
 
-  lsl x12, x14, 2  
-  add x15, x0, x12 
+  lsl x12, x14, 2
+  add x15, x0, x12
   ldr q16, [x15]
   ldr q17, [x15, 16]
   ldr q18, [x15, 32]
@@ -55,8 +55,8 @@ asm_read_pass_loop:
   ldr q22, [x15, 112]
   add x14, x14, 32
 
-  lsl x12, x14, 2  
-  add x15, x0, x12 
+  lsl x12, x14, 2
+  add x15, x0, x12
   ldr q16, [x15]
   ldr q17, [x15, 16]
   ldr q18, [x15, 32]
@@ -67,8 +67,8 @@ asm_read_pass_loop:
   ldr q22, [x15, 112]
   add x14, x14, 32
 
-  lsl x12, x14, 2  
-  add x15, x0, x12 
+  lsl x12, x14, 2
+  add x15, x0, x12
   ldr q16, [x15]
   ldr q17, [x15, 16]
   ldr q18, [x15, 32]
@@ -78,7 +78,7 @@ asm_read_pass_loop:
   ldr q22, [x15, 96]
   ldr q22, [x15, 112]
   add x14, x14, 32
-  
+
   cmp x1, x14 /* if x1 (len - 128) - x14 < 0, loop back around */
   csel x14, x13, x14, LT
   cmp x14, x3
@@ -113,8 +113,8 @@ asm_write_pass_loop:
   str q16, [x15, 112]
   add x14, x14, 32
 
-  lsl x12, x14, 2  
-  add x15, x0, x12 
+  lsl x12, x14, 2
+  add x15, x0, x12
   str q16, [x15]
   str q16, [x15, 16]
   str q16, [x15, 32]
@@ -122,11 +122,11 @@ asm_write_pass_loop:
   str q16, [x15, 64]
   str q16, [x15, 80]
   str q16, [x15, 96]
-  str q16, [x15, 112] 
+  str q16, [x15, 112]
   add x14, x14, 32
 
-  lsl x12, x14, 2  
-  add x15, x0, x12 
+  lsl x12, x14, 2
+  add x15, x0, x12
   str q16, [x15]
   str q16, [x15, 16]
   str q16, [x15, 32]
@@ -134,11 +134,11 @@ asm_write_pass_loop:
   str q16, [x15, 64]
   str q16, [x15, 80]
   str q16, [x15, 96]
-  str q16, [x15, 112] 
+  str q16, [x15, 112]
   add x14, x14, 32
 
-  lsl x12, x14, 2  
-  add x15, x0, x12 
+  lsl x12, x14, 2
+  add x15, x0, x12
   str q16, [x15]
   str q16, [x15, 16]
   str q16, [x15, 32]
@@ -146,9 +146,9 @@ asm_write_pass_loop:
   str q16, [x15, 64]
   str q16, [x15, 80]
   str q16, [x15, 96]
-  str q16, [x15, 112] 
+  str q16, [x15, 112]
   add x14, x14, 32
-  
+
   cmp x1, x14 /* if x1 (len - 128) - x14 < 0, loop back around */
   csel x14, x13, x14, LT
   cmp x14, x3
@@ -159,14 +159,14 @@ asm_write_pass_loop:
   ldp x12, x13, [sp, #0x20]
   ldp x14, x15, [sp, #0x10]
   add sp, sp, #0x30
-  ret 
+  ret
 
 _asm_cflip:
 asm_cflip:
   sub sp, sp, #0x30
   stp x14, x15, [sp, #0x10]
   stp x12, x13, [sp, #0x20]
-  sub x1, x1, 128 
+  sub x1, x1, 128
   mov x14, x3     /* set x14 = index into array to start location (x3) */
   eor x13, x13, x13 /* x13 = 0 (for comparison) */
 asm_cflip_pass_loop:
@@ -190,8 +190,8 @@ asm_cflip_pass_loop:
   str q19, [x15, 64]
 
   add x14, x14, 32
-  lsl x12, x14, 2  
-  add x15, x0, x12 
+  lsl x12, x14, 2
+  add x15, x0, x12
   ldr q16, [x15]
   ldr q17, [x15, 16]
   ldr q18, [x15, 32]
@@ -207,11 +207,11 @@ asm_cflip_pass_loop:
   str q16, [x15, 112]
   str q17, [x15, 96]
   str q18, [x15, 80]
-  str q19, [x15, 64] 
+  str q19, [x15, 64]
 
   add x14, x14, 32
-  lsl x12, x14, 2  
-  add x15, x0, x12 
+  lsl x12, x14, 2
+  add x15, x0, x12
   ldr q16, [x15]
   ldr q17, [x15, 16]
   ldr q18, [x15, 32]
@@ -227,11 +227,11 @@ asm_cflip_pass_loop:
   str q16, [x15, 112]
   str q17, [x15, 96]
   str q18, [x15, 80]
-  str q19, [x15, 64]  
+  str q19, [x15, 64]
 
   add x14, x14, 32
-  lsl x12, x14, 2  
-  add x15, x0, x12 
+  lsl x12, x14, 2
+  add x15, x0, x12
   ldr q16, [x15]
   ldr q17, [x15, 16]
   ldr q18, [x15, 32]
@@ -247,8 +247,8 @@ asm_cflip_pass_loop:
   str q16, [x15, 112]
   str q17, [x15, 96]
   str q18, [x15, 80]
-  str q19, [x15, 64]   
-  
+  str q19, [x15, 64]
+
   cmp x1, x14 /* if x1 (len - 128) - x14 < 0, loop back around */
   csel x14, x13, x14, LT
   cmp x14, x3
@@ -259,13 +259,13 @@ asm_cflip_pass_loop:
   ldp x12, x13, [sp, #0x20]
   ldp x14, x15, [sp, #0x10]
   add sp, sp, #0x30
-  ret 
+  ret
 
 /* x0 = ptr to array (was rcx)
  * x1 = arr length (was rdx)
  * x2 = iterations (was r8)
  * x3 = start (was r9)
- */ 
+ */
 _asm_copy:
 asm_copy:
   sub sp, sp, #0x50
@@ -298,13 +298,13 @@ asm_copy_pass_loop:
   str q20, [x9, 64]
   str q21, [x9, 80]
   str q22, [x9, 96]
-  str q23, [x9, 112] 
+  str q23, [x9, 112]
   add x14, x14, 32
   add x10, x10, 32
 
-  lsl x12, x14, 2  
-  add x15, x0, x12 
-  lsl x12, x10, 2  
+  lsl x12, x14, 2
+  add x15, x0, x12
+  lsl x12, x10, 2
   add x9, x0, x12
   ldr q16, [x15]
   ldr q17, [x15, 16]
@@ -321,10 +321,10 @@ asm_copy_pass_loop:
   str q20, [x9, 64]
   str q21, [x9, 80]
   str q22, [x9, 96]
-  str q23, [x9, 112]  
+  str q23, [x9, 112]
   add x14, x14, 32
   add x10, x10, 32
-  
+
   cmp x1, x10 /* if destination hits end, loop around */
   csel x14, x13, x14, LT
   csel x10, x11, x10, LT
@@ -338,7 +338,7 @@ asm_copy_pass_loop:
   ldp x12, x13, [sp, #0x20]
   ldp x14, x15, [sp, #0x10]
   add sp, sp, #0x50
-  ret 
+  ret
 
 /* x0 = ptr to array (was rcx)
  * x1 = arr length (was rdx)
@@ -350,7 +350,7 @@ _asm_add:
   sub sp, sp, #0x30
   stp x14, x15, [sp, #0x10]
   stp x12, x13, [sp, #0x20]
-  sub x1, x1, 128 
+  sub x1, x1, 128
   mov x14, x3     /* set x14 = index into array to start location (x3) */
   eor x13, x13, x13 /* x13 = 0 (for comparison) */
   ldr q15, [x0]
@@ -380,11 +380,11 @@ asm_add_pass_loop:
   str q20, [x15, 64]
   str q21, [x15, 80]
   str q22, [x15, 96]
-  str q23, [x15, 112] 
+  str q23, [x15, 112]
   add x14, x14, 32
 
-  lsl x12, x14, 2  
-  add x15, x0, x12 
+  lsl x12, x14, 2
+  add x15, x0, x12
   ldr q16, [x15]
   ldr q17, [x15, 16]
   ldr q18, [x15, 32]
@@ -408,11 +408,11 @@ asm_add_pass_loop:
   str q20, [x15, 64]
   str q21, [x15, 80]
   str q22, [x15, 96]
-  str q23, [x15, 112]  
+  str q23, [x15, 112]
   add x14, x14, 32
 
-  lsl x12, x14, 2  
-  add x15, x0, x12 
+  lsl x12, x14, 2
+  add x15, x0, x12
   ldr q16, [x15]
   ldr q17, [x15, 16]
   ldr q18, [x15, 32]
@@ -436,11 +436,11 @@ asm_add_pass_loop:
   str q20, [x15, 64]
   str q21, [x15, 80]
   str q22, [x15, 96]
-  str q23, [x15, 112]   
+  str q23, [x15, 112]
   add x14, x14, 32
 
-  lsl x12, x14, 2  
-  add x15, x0, x12 
+  lsl x12, x14, 2
+  add x15, x0, x12
   ldr q16, [x15]
   ldr q17, [x15, 16]
   ldr q18, [x15, 32]
@@ -464,9 +464,9 @@ asm_add_pass_loop:
   str q20, [x15, 64]
   str q21, [x15, 80]
   str q22, [x15, 96]
-  str q23, [x15, 112]    
+  str q23, [x15, 112]
   add x14, x14, 32
-  
+
   cmp x1, x14 /* if x1 (len - 128) - x14 < 0, loop back around */
   csel x14, x13, x14, LT
   cmp x14, x3
@@ -478,7 +478,7 @@ asm_add_pass_loop:
   ldp x12, x13, [sp, #0x20]
   ldp x14, x15, [sp, #0x10]
   add sp, sp, #0x30
-  ret 
+  ret
 
 
 /* Tests for cache bank conflicts by reading from two locations, spaced by some
@@ -505,61 +505,61 @@ readbankconflict_loop:
    ldr x15, [x13]
    add x14, x14, 1
    add x13, x13, 1
-   
+
    ldr x10, [x14]
    ldr x15, [x13]
    add x14, x14, 1
-   add x13, x13, 1   
-   
+   add x13, x13, 1
+
    ldr x10, [x14]
    ldr x15, [x13]
    add x14, x14, 1
-   add x13, x13, 1 
-   
+   add x13, x13, 1
+
    ldr x10, [x14]
    ldr x15, [x13]
    add x14, x14, 1
-   add x13, x13, 1 
-   
+   add x13, x13, 1
+
    ldr x10, [x14]
    ldr x15, [x13]
    add x14, x14, 1
-   add x13, x13, 1 
-   
+   add x13, x13, 1
+
    ldr x10, [x14]
    ldr x15, [x13]
    add x14, x14, 1
-   add x13, x13, 1 
-   
+   add x13, x13, 1
+
    ldr x10, [x14]
    ldr x15, [x13]
    add x14, x14, 1
-   add x13, x13, 1 
-   
+   add x13, x13, 1
+
    ldr x10, [x14]
    ldr x15, [x13]
    add x14, x14, 1
-   add x13, x13, 1 
-   
+   add x13, x13, 1
+
    ldr x10, [x14]
    ldr x15, [x13]
    add x14, x14, 1
-   add x13, x13, 1 
-   
+   add x13, x13, 1
+
    ldr x10, [x14]
    ldr x15, [x13]
    add x14, x14, 1
-   add x13, x13, 1 
-   
+   add x13, x13, 1
+
    sub x12, x12, 20
-   sub x3, x3, 20 
+   sub x3, x3, 20
    cmp x3, 0
    b.le readbankconflict_end  /* iteration count = exit condition */
    cmp x12, 0                 /* check bytes remaining */
    b.ge readbankconflict_loop /* if positive or equal, continue loop */
    sub x12, x1, 20     /* reset bytes remaining */
    mov x14, x1
-   add x13, x1, x2     
+   add x13, x1, x2
    b readbankconflict_loop
 readbankconflict_end:
    ldp x10, x11, [sp, #0x30]

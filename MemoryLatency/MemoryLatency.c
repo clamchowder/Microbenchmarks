@@ -38,7 +38,7 @@ extern void matchedstlftest(uint64_t iterations, uint32_t *arr);
 extern void stlftest(uint64_t iterations, uint32_t *arr);
 extern void stlftest32(uint64_t iterations, uint32_t *arr);
 void (*stlfFunc)(uint64_t, uint32_t *) = stlftest;
-#else 
+#else
 #define UNKNOWN_ARCH 1
 extern uint32_t latencytest(uint64_t iterations, uint64_t *arr);
 void (*stlfFunc)(uint64_t, uint32_t *) = NULL;
@@ -63,11 +63,11 @@ int main(int argc, char* argv[]) {
     uint32_t *hugePagesArr = NULL;
     for (int argIdx = 1; argIdx < argc; argIdx++) {
         if (*(argv[argIdx]) == '-') {
-            char *arg = argv[argIdx] + 1; 
+            char *arg = argv[argIdx] + 1;
             if (strncmp(arg, "test", 4) == 0) {
                 argIdx++;
                 char *testType = argv[argIdx];
-                
+
 		if (strncmp(testType, "c", 1) == 0) {
                     testFunc = RunTest;
                     fprintf(stderr, "Using simple C test\n");
@@ -77,7 +77,7 @@ int main(int argc, char* argv[]) {
                 } else if (strncmp(testType, "mlp", 3) == 0) {
                     mlpTest = 32;
                     fprintf(stderr, "Running memory parallelism test\n");
-                } 
+                }
                 #ifndef UNKNOWN_ARCH
                 else if (strncmp(testType, "asm", 3) == 0) {
                     testFunc = RunAsmTest;
@@ -177,7 +177,7 @@ int main(int argc, char* argv[]) {
 
         free(results);
     } else if (stlf) {
-        RunStlfTest(ITERATIONS, stlf); 
+        RunStlfTest(ITERATIONS, stlf);
     } else {
         if (singleSize == 0) {
         printf("Region,Latency (ns)\n");
@@ -192,7 +192,7 @@ int main(int argc, char* argv[]) {
         } else {
             printf("%d,%f\n", singleSize, testFunc(singleSize, ITERATIONS, hugePagesArr));
         }
-    } 
+    }
 
     return 0;
 }
@@ -222,7 +222,7 @@ void FillPatternArr(uint32_t *pattern_arr, uint32_t list_size, uint32_t byte_inc
         uint32_t tmp = pattern_arr[iter * increment];
         pattern_arr[iter * increment] = pattern_arr[j * increment];
         pattern_arr[j * increment] = tmp;
-    } 
+    }
 }
 
 void FillPatternArr64(uint64_t *pattern_arr, uint64_t list_size, uint64_t byte_increment) {
@@ -239,7 +239,7 @@ void FillPatternArr64(uint64_t *pattern_arr, uint64_t list_size, uint64_t byte_i
         uint64_t tmp = pattern_arr[iter * increment];
         pattern_arr[iter * increment] = pattern_arr[j * increment];
         pattern_arr[j * increment] = tmp;
-    } 
+    }
 }
 
 float RunTest(uint32_t size_kb, uint32_t iterations, uint32_t *preallocatedArr) {
@@ -259,7 +259,7 @@ float RunTest(uint32_t size_kb, uint32_t iterations, uint32_t *preallocatedArr) 
     } else {
         A = preallocatedArr;
     }
-    
+
     FillPatternArr(A, list_size, CACHELINE_SIZE);
 
     uint32_t scaled_iterations = scale_iterations(size_kb, iterations);
@@ -280,7 +280,7 @@ float RunTest(uint32_t size_kb, uint32_t iterations, uint32_t *preallocatedArr) 
     return latency;
 }
 
-// Tests memory level parallelism. Returns achieved BW in MB/s using specified number of 
+// Tests memory level parallelism. Returns achieved BW in MB/s using specified number of
 // independent pointer chasing chains
 float RunMlpTest(uint32_t size_kb, uint32_t iterations, uint32_t parallelism) {
     struct timeval startTv, endTv;
@@ -297,7 +297,7 @@ float RunMlpTest(uint32_t size_kb, uint32_t iterations, uint32_t parallelism) {
         fprintf(stderr, "Failed to allocate memory for %u KB test\n", size_kb);
         return 0;
     }
-    
+
     FillPatternArr(A, list_size, CACHELINE_SIZE);
     for (int i = 0; i < parallelism; i++) offsets[i] = i * (CACHELINE_SIZE / sizeof(int));
     uint32_t scaled_iterations = scale_iterations(size_kb, iterations) / parallelism;
@@ -313,7 +313,7 @@ float RunMlpTest(uint32_t size_kb, uint32_t iterations, uint32_t parallelism) {
     gettimeofday(&endTv, &endTz);
     uint64_t time_diff_ms = 1000 * (endTv.tv_sec - startTv.tv_sec) + ((endTv.tv_usec - startTv.tv_usec) / 1000);
     double mbTransferred = (scaled_iterations * parallelism * sizeof(int))  / (double)1e6;
-    float bw = 1000 * mbTransferred / (double)time_diff_ms; 
+    float bw = 1000 * mbTransferred / (double)time_diff_ms;
 
     sum = 0;
     for (int i = 0; i < parallelism; i++) sum += offsets[i];
@@ -378,7 +378,7 @@ float RunAsmTest(uint32_t size_kb, uint32_t iterations, uint32_t *preallocatedAr
 
 // Tries to isolate virtual to physical address translation latency by accessing
 // one element per page, and checking latency difference between that and hitting the same amount of "hot"
-// cachelines using a normal latency test.. 4 KB pages are assumed. 
+// cachelines using a normal latency test.. 4 KB pages are assumed.
 float RunTlbTest(uint32_t size_kb, uint32_t iterations, uint32_t *preallocatedArr) {
     struct timeval startTv, endTv;
     struct timezone startTz, endTz;
@@ -396,7 +396,7 @@ float RunTlbTest(uint32_t size_kb, uint32_t iterations, uint32_t *preallocatedAr
         fprintf(stderr, "Failed to allocate memory for %u KB test (offset array)\n", size_kb);
         return 0;
     }
-    
+
     for (int i = 0; i < element_count; i++) {
         pattern_arr[i] = i;
     }
@@ -412,7 +412,7 @@ float RunTlbTest(uint32_t size_kb, uint32_t iterations, uint32_t *preallocatedAr
 
     // translate offsets and fill the test array
     // [offset-------page-------][offset-----page------....etc
-    uint32_t *A; 
+    uint32_t *A;
     if (preallocatedArr == NULL) {
         A = (uint32_t *)malloc(sizeof(uint32_t) * list_size);
         if (!A) {
@@ -421,7 +421,7 @@ float RunTlbTest(uint32_t size_kb, uint32_t iterations, uint32_t *preallocatedAr
     } else {
         A = preallocatedArr;
     }
-    
+
     memset(A, INT_MAX, list_size); // catch any bad accesses immediately
     int pageIncrement = PAGE_SIZE / sizeof(uint32_t);
     for (int i = 0;i < element_count; i++) {
@@ -465,12 +465,12 @@ float RunTlbTest(uint32_t size_kb, uint32_t iterations, uint32_t *preallocatedAr
 // uses 4B loads and 8B stores to see when/if store forwarding can succeed when sizes are not matched
 void RunStlfTest(uint32_t iterations, int mode) {
     struct timeval startTv, endTv;
-    struct timezone startTz, endTz; 
+    struct timezone startTz, endTz;
     uint64_t time_diff_ms;
     float latency;
     float stlfResults[64][64];
     int *arr;
-  
+
     // obtain a couple of cachelines, assuming 64B cacheline size
 #ifdef _WIN32
     arr = (int *)_aligned_malloc(128, 64);
@@ -478,7 +478,7 @@ void RunStlfTest(uint32_t iterations, int mode) {
         fprintf(stderr, "Could not obtain aligned memory\n");
         return;
     }
-#else 
+#else
     if (0 != posix_memalign((void **)(&arr), 64, 128)) {
         fprintf(stderr, "Could not obtain aligned memory\n");
         return;
