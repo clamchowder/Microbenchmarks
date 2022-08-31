@@ -128,7 +128,7 @@ namespace AsmGen
                 for (int branchIdx = 1; branchIdx < Counts[i]; branchIdx++)
                 {
                     string labelName = GetLabelName(funcName, branchIdx);
-                    
+
                     if(branchType == BranchType.Conditional)
                     {
                         sb.AppendLine("  test rax, rax");

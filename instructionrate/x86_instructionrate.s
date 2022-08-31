@@ -189,12 +189,12 @@ clkmovtest_loop:
   pop %r9
   pop %r8
   pop %rbx
-  ret 
+  ret
 
 noptest:
   push %rbx
   push %r9
-  mov $20, %r9 
+  mov $20, %r9
 noptest_loop:
   xchg %ax,%ax
   xchg %ax,%ax
@@ -224,7 +224,7 @@ noptest_loop:
 noptest1b:
   push %rbx
   push %r9
-  mov $20, %r9 
+  mov $20, %r9
 noptest1b_loop:
   nop
   nop
@@ -249,7 +249,7 @@ noptest1b_loop:
   jnz noptest1b_loop
   pop %r9
   pop %rbx
-  ret 
+  ret
 
 addtest:
   push %rbx
@@ -264,7 +264,7 @@ addtest:
   push %r15
   mov $1, %r8
   mov $20, %r9
-  xor %rbx, %rbx 
+  xor %rbx, %rbx
   xor %rcx, %rcx
   xor %r10, %r10
   xor %r11, %r11
@@ -286,13 +286,13 @@ addtest_loop:
   add %r8, %r12
   add %r8, %r11
   add %r8, %r10
-  add %r8, %rcx 
+  add %r8, %rcx
   add %r8, %r15
   add %r8, %r14
   add %r8, %r13
   add %r8, %r12
   add %r8, %r11
-  add %r8, %r10 
+  add %r8, %r10
   sub %r9, %rdi
   jnz addtest_loop
   pop %r15
@@ -302,7 +302,7 @@ addtest_loop:
   pop %r11
   pop %r10
   pop %r9
-  pop %r8 
+  pop %r8
   pop %rcx
   pop %rbx
   ret
@@ -320,7 +320,7 @@ addnoptest:
   push %r15
   mov $1, %r8
   mov $20, %r9
-  xor %rbx, %rbx 
+  xor %rbx, %rbx
   xor %rcx, %rcx
   xor %r10, %r10
   xor %r11, %r11
@@ -342,7 +342,7 @@ addnoptest_loop:
   add %r8, %r12
   add %r8, %r11
   add %r8, %r10
-  add %r8, %rcx 
+  add %r8, %rcx
   nop
   add %r8, %r14
   add %r8, %r13
@@ -358,10 +358,10 @@ addnoptest_loop:
   pop %r11
   pop %r10
   pop %r9
-  pop %r8 
+  pop %r8
   pop %rcx
   pop %rbx
-  ret 
+  ret
 
 addmovtest:
   push %rbx
@@ -376,7 +376,7 @@ addmovtest:
   push %r15
   mov $1, %r8
   mov $20, %r9
-  xor %rbx, %rbx 
+  xor %rbx, %rbx
   xor %rcx, %rcx
   xor %r10, %r10
   xor %r11, %r11
@@ -398,7 +398,7 @@ addmovtest_loop:
   add %r8, %r12
   add %r8, %r11
   add %r8, %r10
-  add %r8, %rcx 
+  add %r8, %rcx
   mov %r15, %rdx
   add %r8, %r14
   add %r8, %r13
@@ -414,10 +414,10 @@ addmovtest_loop:
   pop %r11
   pop %r10
   pop %r9
-  pop %r8 
+  pop %r8
   pop %rcx
   pop %rbx
-  ret  
+  ret
 
 rortest:
   push %rbx
@@ -432,7 +432,7 @@ rortest:
   push %r15
   mov $1, %r8
   mov $20, %r9
-  mov %r8, %rbx 
+  mov %r8, %rbx
   mov %r8, %rcx
   mov %r8, %r10
   mov %r8, %r11
@@ -450,17 +450,17 @@ rortest_loop:
   ror $1, %r14
   ror $1, %r13
   ror $1, %r12
-  ror $1, %r11 
+  ror $1, %r11
   ror $1, %r15
   ror $1, %r14
   ror $1, %r13
   ror $1, %r12
-  ror $1, %r11 
+  ror $1, %r11
   ror $1, %r15
   ror $1, %r14
   ror $1, %r13
   ror $1, %r12
-  ror $1, %r11 
+  ror $1, %r11
   sub %r9, %rdi
   jnz rortest_loop
   pop %r15
@@ -470,10 +470,10 @@ rortest_loop:
   pop %r11
   pop %r10
   pop %r9
-  pop %r8 
+  pop %r8
   pop %rcx
   pop %rbx
-  ret 
+  ret
 
 shltest:
   push %rbx
@@ -488,7 +488,7 @@ shltest:
   push %r15
   mov $1, %r8
   mov $20, %r9
-  mov %r8, %rbx 
+  mov %r8, %rbx
   mov %r8, %rcx
   mov %r8, %r10
   mov %r8, %r11
@@ -506,17 +506,17 @@ shltest_loop:
   shl $1, %r14
   shl $1, %r13
   shl $1, %r12
-  shl $1, %r11 
+  shl $1, %r11
   shl $1, %r15
   shl $1, %r14
   shl $1, %r13
   shl $1, %r12
-  shl $1, %r11 
+  shl $1, %r11
   shl $1, %r15
   shl $1, %r14
   shl $1, %r13
   shl $1, %r12
-  shl $1, %r11 
+  shl $1, %r11
   sub %r9, %rdi
   jnz shltest_loop
   pop %r15
@@ -526,10 +526,10 @@ shltest_loop:
   pop %r11
   pop %r10
   pop %r9
-  pop %r8 
+  pop %r8
   pop %rcx
   pop %rbx
-  ret  
+  ret
 
 mixrorshltest:
   push %rbx
@@ -544,7 +544,7 @@ mixrorshltest:
   push %r15
   mov $1, %r8
   mov $20, %r9
-  mov %r8, %rbx 
+  mov %r8, %rbx
   mov %r8, %rcx
   mov %r8, %r10
   mov %r8, %r11
@@ -562,17 +562,17 @@ mixrorshltest_loop:
   ror $1, %r14
   shl $1, %r13
   ror $1, %r12
-  shl $1, %r11 
+  shl $1, %r11
   ror $1, %r15
   shl $1, %r14
   ror $1, %r13
   shl $1, %r12
-  ror $1, %r11 
+  ror $1, %r11
   shl $1, %r15
   ror $1, %r14
   shl $1, %r13
   ror $1, %r12
-  shl $1, %r11 
+  shl $1, %r11
   sub %r9, %rdi
   jnz mixrorshltest_loop
   pop %r15
@@ -582,10 +582,10 @@ mixrorshltest_loop:
   pop %r11
   pop %r10
   pop %r9
-  pop %r8 
+  pop %r8
   pop %rcx
   pop %rbx
-  ret  
+  ret
 
 mixrormultest:
   push %rbx
@@ -602,7 +602,7 @@ mixrormultest:
   push %r15
   mov $3, %r8
   mov $20, %r9
-  mov %r8, %rbx 
+  mov %r8, %rbx
   mov %r8, %rcx
   mov %r8, %r10
   mov %r8, %r11
@@ -639,7 +639,7 @@ mixrormultest_loop:
   imul %r8, %rcx
   mov %r9, %rcx
   ror $1, %rsi
-  imul %r8, %rdx  
+  imul %r8, %rdx
   sub %r9, %rdi
   jnz mixrormultest_loop
   pop %r15
@@ -649,12 +649,12 @@ mixrormultest_loop:
   pop %r11
   pop %r10
   pop %r9
-  pop %r8 
+  pop %r8
   pop %rdx
   pop %rsi
   pop %rcx
   pop %rbx
-  ret  
+  ret
 
 rorbtstest:
   push %rbx
@@ -671,7 +671,7 @@ rorbtstest:
   push %r15
   mov $1, %r8
   mov $20, %r9
-  mov %r8, %rbx 
+  mov %r8, %rbx
   mov %r8, %rcx
   mov %r8, %r10
   mov %r8, %r11
@@ -710,12 +710,12 @@ rorbtstest_loop:
   pop %r11
   pop %r10
   pop %r9
-  pop %r8 
+  pop %r8
   pop %rsi
   pop %rdx
   pop %rcx
   pop %rbx
-  ret  
+  ret
 
 btstest:
   push %rbx
@@ -730,7 +730,7 @@ btstest:
   push %r15
   mov $1, %r8
   mov $20, %r9
-  mov %r8, %rbx 
+  mov %r8, %rbx
   mov %r8, %rcx
   mov %r8, %r10
   mov %r8, %r11
@@ -749,17 +749,17 @@ btstest_loop:
   bts %r8, %r14
   bts %r8, %r13
   bts %r8, %r12
-  bts %r8, %r11 
+  bts %r8, %r11
   bts %r8, %r15
   bts %r8, %r14
   bts %r8, %r13
   bts %r8, %r12
-  bts %r8, %r11 
+  bts %r8, %r11
   bts %r8, %r15
   bts %r8, %r14
   bts %r8, %r13
   bts %r8, %r12
-  bts %r8, %r11 
+  bts %r8, %r11
   sub %r9, %rdi
   jnz btstest_loop
   pop %r15
@@ -769,10 +769,10 @@ btstest_loop:
   pop %r11
   pop %r10
   pop %r9
-  pop %r8 
+  pop %r8
   pop %rcx
   pop %rbx
-  ret  
+  ret
 
 leatest:
   push %rbx
@@ -787,7 +787,7 @@ leatest:
   push %r15
   mov $1, %r8
   mov $20, %r9
-  mov %r8, %rbx 
+  mov %r8, %rbx
   mov %r8, %rcx
   mov %r8, %r10
   mov %r8, %r11
@@ -826,10 +826,10 @@ leatest_loop:
   pop %r11
   pop %r10
   pop %r9
-  pop %r8 
+  pop %r8
   pop %rcx
   pop %rbx
-  ret  
+  ret
 
 leamultest:
   push %rbx
@@ -846,7 +846,7 @@ leamultest:
   push %r15
   mov $1, %r8
   mov $20, %r9
-  mov %r8, %rbx 
+  mov %r8, %rbx
   mov %r8, %rcx
   mov %r8, %r10
   mov %r8, %r11
@@ -889,12 +889,12 @@ leamultest_loop:
   pop %r11
   pop %r10
   pop %r9
-  pop %r8 
+  pop %r8
   pop %rsi
   pop %rdx
   pop %rcx
   pop %rbx
-  ret  
+  ret
 
 
 btsmultest:
@@ -912,9 +912,9 @@ btsmultest:
   push %r15
   mov $1, %r8
   mov $20, %r9
-  mov %r8, %rbx 
-  mov %r8, %rdx 
-  mov %r8, %rsi 
+  mov %r8, %rbx
+  mov %r8, %rdx
+  mov %r8, %rsi
   mov %r8, %rcx
   mov %r8, %r10
   mov %r8, %r11
@@ -950,9 +950,9 @@ btsmultest_loop:
   imul %r8, %rcx
   mov %r8, %rcx
   bts %r8, %rsi
-  imul %r8, %rdx  
+  imul %r8, %rdx
   mov %r8, %rdx
-  bts %r8, %r11 
+  bts %r8, %r11
   sub %r9, %rdi
   jnz btsmultest_loop
   pop %r15
@@ -962,12 +962,12 @@ btsmultest_loop:
   pop %r11
   pop %r10
   pop %r9
-  pop %r8 
+  pop %r8
   pop %rdx
   pop %rsi
   pop %rcx
   pop %rbx
-  ret  
+  ret
 
 
 jmptest:
@@ -985,7 +985,7 @@ jmptest:
   push %r15
   mov $1, %r8
   mov $20, %r9
-  xor %rbx, %rbx 
+  xor %rbx, %rbx
   xor %rcx, %rcx
   xor %r10, %r10
   xor %r11, %r11
@@ -1017,19 +1017,19 @@ jmptest4:
 jmptest5:
   jmp jmptest6
   add $6, %rax
-jmptest6: 
+jmptest6:
   jmp jmptest7
   add $7, %rax
 jmptest7:
   jmp jmptest8
   add $8, %rax
-jmptest8: 
+jmptest8:
   jmp jmptest9
   add $9, %rax
-jmptest9:  
+jmptest9:
   jmp jmptest10
   add $10, %rax
-jmptest10:   
+jmptest10:
   jmp jmptest11
   add $11, %rax
 jmptest11:
@@ -1047,13 +1047,13 @@ jmptest14:
 jmptest15:
   jmp jmptest16
   add $16, %rax
-jmptest16: 
+jmptest16:
   jmp jmptest17
   add $17, %rax
 jmptest17:
   jmp jmptest18
   add $18, %rax
-jmptest18: 
+jmptest18:
   jmp jmptest19
   add $19, %rax
 jmptest19:      /* jump back counts as nr 20 */
@@ -1067,12 +1067,12 @@ jmptest_jellydonut:
   pop %r11
   pop %r10
   pop %r9
-  pop %r8 
+  pop %r8
   pop %rdx
   pop %rcx
   pop %rbx
   pop %rsi
-  ret   
+  ret
 
 ntjmptest:
   push %rsi
@@ -1089,7 +1089,7 @@ ntjmptest:
   push %r15
   mov $1, %r8
   mov $20, %r9
-  xor %rbx, %rbx 
+  xor %rbx, %rbx
   xor %rcx, %rcx
   xor %r10, %r10
   xor %r11, %r11
@@ -1107,43 +1107,43 @@ ntjmptest_loop:
   cmp %r8, %r9
   je jmpmultest_jellydonut
   cmp %r8, %r9
-  je jmpmultest_jellydonut  
-  cmp %r8, %r9
-  je jmpmultest_jellydonut    
-  cmp %r8, %r9
-  je jmpmultest_jellydonut      
-  cmp %r8, %r9
-  je jmpmultest_jellydonut       
+  je jmpmultest_jellydonut
   cmp %r8, %r9
   je jmpmultest_jellydonut
   cmp %r8, %r9
-  je jmpmultest_jellydonut  
-  cmp %r8, %r9
-  je jmpmultest_jellydonut    
-  cmp %r8, %r9
-  je jmpmultest_jellydonut      
-  cmp %r8, %r9
-  je jmpmultest_jellydonut         
+  je jmpmultest_jellydonut
   cmp %r8, %r9
   je jmpmultest_jellydonut
   cmp %r8, %r9
-  je jmpmultest_jellydonut  
-  cmp %r8, %r9
-  je jmpmultest_jellydonut    
-  cmp %r8, %r9
-  je jmpmultest_jellydonut      
-  cmp %r8, %r9
-  je jmpmultest_jellydonut        
+  je jmpmultest_jellydonut
   cmp %r8, %r9
   je jmpmultest_jellydonut
   cmp %r8, %r9
-  je jmpmultest_jellydonut  
+  je jmpmultest_jellydonut
   cmp %r8, %r9
-  je jmpmultest_jellydonut    
+  je jmpmultest_jellydonut
   cmp %r8, %r9
-  je jmpmultest_jellydonut      
+  je jmpmultest_jellydonut
   cmp %r8, %r9
-  je jmpmultest_jellydonut        
+  je jmpmultest_jellydonut
+  cmp %r8, %r9
+  je jmpmultest_jellydonut
+  cmp %r8, %r9
+  je jmpmultest_jellydonut
+  cmp %r8, %r9
+  je jmpmultest_jellydonut
+  cmp %r8, %r9
+  je jmpmultest_jellydonut
+  cmp %r8, %r9
+  je jmpmultest_jellydonut
+  cmp %r8, %r9
+  je jmpmultest_jellydonut
+  cmp %r8, %r9
+  je jmpmultest_jellydonut
+  cmp %r8, %r9
+  je jmpmultest_jellydonut
+  cmp %r8, %r9
+  je jmpmultest_jellydonut
   sub %r9, %rdi
   jnz ntjmptest_loop
 ntjmptest_jellydonut:
@@ -1154,12 +1154,12 @@ ntjmptest_jellydonut:
   pop %r11
   pop %r10
   pop %r9
-  pop %r8 
+  pop %r8
   pop %rdx
   pop %rcx
   pop %rbx
   pop %rsi
-  ret  
+  ret
 
 jmpmultest:
   push %rsi
@@ -1176,7 +1176,7 @@ jmpmultest:
   push %r15
   mov $2, %r8
   mov $20, %r9
-  xor %rbx, %rbx 
+  xor %rbx, %rbx
   xor %rcx, %rcx
   xor %r11, %r11
   xor %r12, %r12
@@ -1195,41 +1195,41 @@ jmpmultest_loop:
   imul %r8d, %r10d
 
   cmp %r8, %r9
-  je jmpmultest_jellydonut  
+  je jmpmultest_jellydonut
   imul %r8d, %esi
 
   cmp %r8, %r9
-  je jmpmultest_jellydonut    
+  je jmpmultest_jellydonut
   imul %r8d, %ebx
 
   cmp %r8, %r9
-  je jmpmultest_jellydonut      
-  imul %r8d, %edx 
-  
+  je jmpmultest_jellydonut
+  imul %r8d, %edx
+
   cmp %r8, %r9
-  je jmpmultest_jellydonut       
+  je jmpmultest_jellydonut
   imul %r8d, %r10d
-  
+
   cmp %r8, %r9
-  je jmpmultest_jellydonut        
+  je jmpmultest_jellydonut
   imul %r8d, %esi
-  
+
   cmp %r8, %r9
-  je jmpmultest_jellydonut         
+  je jmpmultest_jellydonut
   imul %r8d, %ebx
 
   cmp %r8, %r9
-  je jmpmultest_jellydonut           
-  imul %r8d, %edx  
+  je jmpmultest_jellydonut
+  imul %r8d, %edx
 
   cmp %r8, %r9
-  je jmpmultest_jellydonut            
-  imul %r8d, %r15d  
+  je jmpmultest_jellydonut
+  imul %r8d, %r15d
 
   cmp %r8, %r9
-  je jmpmultest_jellydonut             
-  imul %r8d, %r14d  
-  
+  je jmpmultest_jellydonut
+  imul %r8d, %r14d
+
   sub %r9, %rdi
   jnz jmpmultest_loop
 jmpmultest_jellydonut:
@@ -1240,12 +1240,12 @@ jmpmultest_jellydonut:
   pop %r11
   pop %r10
   pop %r9
-  pop %r8 
+  pop %r8
   pop %rdx
   pop %rcx
   pop %rbx
   pop %rsi
-  ret 
+  ret
 
 addmultest:
   push %rsi
@@ -1262,7 +1262,7 @@ addmultest:
   push %r15
   mov $1, %r8
   mov $40, %r9
-  xor %rbx, %rbx 
+  xor %rbx, %rbx
   xor %rcx, %rcx
   xor %r10, %r10
   xor %r11, %r11
@@ -1282,48 +1282,48 @@ addmultest_loop:
   add %r8, %r13
   add %r8, %r12
   imul %r8, %r10
-  
+
   add %r8, %r15
   add %r8, %r14
   add %r8, %r13
   add %r8, %r12
   imul %r8, %rsi
-  
+
   add %r8, %r15
   add %r8, %r14
   add %r8, %r13
   add %r8, %r12
   imul %r8, %rbx
-  
+
   add %r8, %r15
   add %r8, %r15
   add %r8, %r13
   add %r8, %r12
-  imul %r8, %rdx 
-  
+  imul %r8, %rdx
+
   add %r8, %r15
   add %r8, %r14
   add %r8, %r13
   add %r8, %r12
   imul %r8, %r10
-  
+
   add %r8, %r15
   add %r8, %r14
   add %r8, %r13
   add %r8, %r12
   imul %r8, %rsi
-  
+
   add %r8, %r15
   add %r8, %r14
   add %r8, %r13
   add %r8, %r12
   imul %r8, %rbx
-  
+
   add %r8, %r15
   add %r8, %r13
   add %r8, %r12
-  imul %r8, %rdx  
-  
+  imul %r8, %rdx
+
   sub %r9, %rdi
   jnz addmultest_loop
   pop %r15
@@ -1333,7 +1333,7 @@ addmultest_loop:
   pop %r11
   pop %r10
   pop %r9
-  pop %r8 
+  pop %r8
   pop %rdx
   pop %rcx
   pop %rbx
@@ -1366,12 +1366,12 @@ add256int_loop:
   vpaddq %ymm0, %ymm2, %ymm2
   vpaddq %ymm0, %ymm3, %ymm3
   vpaddq %ymm0, %ymm4, %ymm4
-  vpaddq %ymm0, %ymm5, %ymm5 
+  vpaddq %ymm0, %ymm5, %ymm5
   vpaddq %ymm0, %ymm1, %ymm1
   vpaddq %ymm0, %ymm2, %ymm2
   vpaddq %ymm0, %ymm3, %ymm3
   vpaddq %ymm0, %ymm4, %ymm4
-  vpaddq %ymm0, %ymm5, %ymm5 
+  vpaddq %ymm0, %ymm5, %ymm5
   sub %r9, %rdi
   jnz add256int_loop
   movq %xmm1, %rax
@@ -1406,19 +1406,19 @@ mul512int_loop:
   vpmulld %zmm0, %zmm2, %zmm2
   vpmulld %zmm0, %zmm3, %zmm3
   vpmulld %zmm0, %zmm4, %zmm4
-  vpmulld %zmm0, %zmm5, %zmm5 
+  vpmulld %zmm0, %zmm5, %zmm5
   vpmulld %zmm0, %zmm1, %zmm1
   vpmulld %zmm0, %zmm2, %zmm2
   vpmulld %zmm0, %zmm3, %zmm3
   vpmulld %zmm0, %zmm4, %zmm4
-  vpmulld %zmm0, %zmm5, %zmm5 
+  vpmulld %zmm0, %zmm5, %zmm5
   sub %r9, %rdi
   jnz mul512int_loop
   movq %xmm1, %rax
   vzeroupper
   pop %r8
   pop %r9
-  ret  
+  ret
 
 muldq512int:
   push %r9
@@ -1446,19 +1446,19 @@ muldq512int_loop:
   vpmuldq %zmm0, %zmm2, %zmm2
   vpmuldq %zmm0, %zmm3, %zmm3
   vpmuldq %zmm0, %zmm4, %zmm4
-  vpmuldq %zmm0, %zmm5, %zmm5 
+  vpmuldq %zmm0, %zmm5, %zmm5
   vpmuldq %zmm0, %zmm1, %zmm1
   vpmuldq %zmm0, %zmm2, %zmm2
   vpmuldq %zmm0, %zmm3, %zmm3
   vpmuldq %zmm0, %zmm4, %zmm4
-  vpmuldq %zmm0, %zmm5, %zmm5 
+  vpmuldq %zmm0, %zmm5, %zmm5
   sub %r9, %rdi
   jnz muldq512int_loop
   movq %xmm1, %rax
   vzeroupper
   pop %r8
   pop %r9
-  ret   
+  ret
 
 add512int:
   push %r9
@@ -1486,19 +1486,19 @@ add512int_loop:
   vpaddq %zmm0, %zmm2, %zmm2
   vpaddq %zmm0, %zmm3, %zmm3
   vpaddq %zmm0, %zmm4, %zmm4
-  vpaddq %zmm0, %zmm5, %zmm5 
+  vpaddq %zmm0, %zmm5, %zmm5
   vpaddq %zmm0, %zmm1, %zmm1
   vpaddq %zmm0, %zmm2, %zmm2
   vpaddq %zmm0, %zmm3, %zmm3
   vpaddq %zmm0, %zmm4, %zmm4
-  vpaddq %zmm0, %zmm5, %zmm5 
+  vpaddq %zmm0, %zmm5, %zmm5
   sub %r9, %rdi
   jnz add512int_loop
   movq %xmm1, %rax
   vzeroupper
   pop %r8
   pop %r9
-  ret 
+  ret
 
 mixadd256fpint:
   push %r9
@@ -1545,7 +1545,7 @@ mixadd256fpint_loop:
   vzeroupper
   pop %r8
   pop %r9
-  ret 
+  ret
 
 mix256faddintadd:
   push %r9
@@ -1590,7 +1590,7 @@ mix256faddintadd_loop:
   vzeroupper
   pop %r8
   pop %r9
-  ret   
+  ret
 
 mix256fp:
   push %r9
@@ -1636,7 +1636,7 @@ mix256fp_loop:
   vzeroupper
   pop %r8
   pop %r9
-  ret  
+  ret
 
 mixadd256int:
   push %r9
@@ -1665,7 +1665,7 @@ mixadd256int_loop:
   add %r8, %r12
   add %r8, %r13
   add %r8, %r14
-  add %r8, %r15 
+  add %r8, %r15
   vpaddq %ymm0, %ymm1, %ymm1
   vpaddq %ymm0, %ymm2, %ymm2
   vpaddq %ymm0, %ymm3, %ymm3
@@ -1680,17 +1680,17 @@ mixadd256int_loop:
   add %r8, %r12
   add %r8, %r13
   add %r8, %r14
-  add %r8, %r15 
+  add %r8, %r15
   vpaddq %ymm0, %ymm1, %ymm1
   vpaddq %ymm0, %ymm2, %ymm2
   vpaddq %ymm0, %ymm3, %ymm3
   vpaddq %ymm0, %ymm4, %ymm4
-  vpaddq %ymm0, %ymm5, %ymm5 
+  vpaddq %ymm0, %ymm5, %ymm5
   add %r8, %r11
   add %r8, %r12
   add %r8, %r13
   add %r8, %r14
-  add %r8, %r15 
+  add %r8, %r15
   sub %r9, %rdi
   jnz mixadd256int_loop
   movq %xmm1, %rax
@@ -1702,7 +1702,7 @@ mixadd256int_loop:
   pop %r15
   pop %r8
   pop %r9
-  ret 
+  ret
 
 mixadd256int11:
   push %r9
@@ -1731,7 +1731,7 @@ mixadd256int11_loop:
   add %r8, %r12
   add %r8, %r13
   add %r8, %r14
-  add %r8, %r15 
+  add %r8, %r15
   vpaddq %ymm0, %ymm1, %ymm1
   vpaddq %ymm0, %ymm2, %ymm2
   vpaddq %ymm0, %ymm3, %ymm3
@@ -1741,12 +1741,12 @@ mixadd256int11_loop:
   add %r8, %r12
   add %r8, %r13
   add %r8, %r14
-  add %r8, %r15 
+  add %r8, %r15
   vpaddq %ymm0, %ymm1, %ymm1
   vpaddq %ymm0, %ymm2, %ymm2
   vpaddq %ymm0, %ymm3, %ymm3
   vpaddq %ymm0, %ymm4, %ymm4
-  vpaddq %ymm0, %ymm5, %ymm5 
+  vpaddq %ymm0, %ymm5, %ymm5
   sub %r9, %rdi
   jnz mixadd256int11_loop
   movq %xmm1, %rax
@@ -1758,7 +1758,7 @@ mixadd256int11_loop:
   pop %r15
   pop %r8
   pop %r9
-  ret  
+  ret
 
 latadd256int:
   push %r9
@@ -1808,7 +1808,7 @@ latadd256int_loop:
   pop %r15
   pop %r8
   pop %r9
-  ret 
+  ret
 
 latadd512int:
   push %r9
@@ -1858,7 +1858,7 @@ latadd51a2int_loop:
   pop %r15
   pop %r8
   pop %r9
-  ret  
+  ret
 
 latmul512int:
   push %r9
@@ -1908,7 +1908,7 @@ latmul512int_loop:
   pop %r15
   pop %r8
   pop %r9
-  ret   
+  ret
 
 latmuldq512int:
   push %r9
@@ -1958,7 +1958,7 @@ latmuldq512int_loop:
   pop %r15
   pop %r8
   pop %r9
-  ret    
+  ret
 
 latmulq512int:
   push %r9
@@ -2008,7 +2008,7 @@ latmulq512int_loop:
   pop %r15
   pop %r8
   pop %r9
-  ret    
+  ret
 
 latmul256int:
   push %r9
@@ -2058,7 +2058,7 @@ latmul256int_loop:
   pop %r15
   pop %r8
   pop %r9
-  ret  
+  ret
 
 latadd128int:
   push %r9
@@ -2122,7 +2122,7 @@ add128int_loop:
   jnz add128int_loop
   movq %xmm1, %rax
   pop %r9
-  ret 
+  ret
 
 aesenc128:
   push %r9
@@ -2145,7 +2145,7 @@ aesenc128_loop:
   aesenc %xmm0, %xmm2
   aesenc %xmm0, %xmm3
   aesenc %xmm0, %xmm4
-  aesenc %xmm0, %xmm5 
+  aesenc %xmm0, %xmm5
   aesenc %xmm0, %xmm1
   aesenc %xmm0, %xmm2
   aesenc %xmm0, %xmm3
@@ -2155,12 +2155,12 @@ aesenc128_loop:
   aesenc %xmm0, %xmm2
   aesenc %xmm0, %xmm3
   aesenc %xmm0, %xmm4
-  aesenc %xmm0, %xmm5  
+  aesenc %xmm0, %xmm5
   sub %r9, %rdi
   jnz aesenc128_loop
   movq %xmm1, %rax
   pop %r9
-  ret  
+  ret
 
 aesencadd128:
   push %r9
@@ -2193,12 +2193,12 @@ aesencadd128_loop:
   aesenc %xmm0, %xmm10
   paddd %xmm6, %xmm2
   paddd %xmm6, %xmm3
-  paddd %xmm6, %xmm4  
+  paddd %xmm6, %xmm4
   aesenc %xmm0, %xmm1
   paddd %xmm6, %xmm7
   paddd %xmm6, %xmm8
   paddd %xmm6, %xmm9
-  aesenc %xmm0, %xmm10 
+  aesenc %xmm0, %xmm10
   paddd %xmm6, %xmm11
   paddd %xmm6, %xmm12
   paddd %xmm6, %xmm13
@@ -2206,7 +2206,7 @@ aesencadd128_loop:
   jnz aesencadd128_loop
   movq %xmm1, %rax
   pop %r9
-  ret   
+  ret
 
 aesencfma128:
   push %r9
@@ -2246,14 +2246,14 @@ aesencfma128_loop:
   aesenc %xmm0, %xmm1
   vfmadd132ps %xmm6, %xmm14, %xmm14
   vfmadd132ps %xmm6, %xmm15, %xmm15
-  aesenc %xmm0, %xmm10 
+  aesenc %xmm0, %xmm10
   vfmadd132ps %xmm6, %xmm17, %xmm17
   vfmadd132ps %xmm6, %xmm18, %xmm18
   sub %r9, %rdi
   jnz aesencfma128_loop
   movq %xmm1, %rax
   pop %r9
-  ret    
+  ret
 
 aesencfadd128:
   push %r9
@@ -2293,14 +2293,14 @@ aesencfadd128_loop:
   aesenc %xmm0, %xmm1
   vaddps %xmm6, %xmm14, %xmm14
   vaddps %xmm6, %xmm15, %xmm15
-  aesenc %xmm0, %xmm10 
+  aesenc %xmm0, %xmm10
   vaddps %xmm6, %xmm17, %xmm17
   vaddps %xmm6, %xmm18, %xmm18
   sub %r9, %rdi
   jg aesencfadd128_loop
   movq %xmm1, %rax
   pop %r9
-  ret     
+  ret
 
 aesencmul128:
   push %r9
@@ -2333,14 +2333,14 @@ aesencmul128_loop:
   aesenc %xmm0, %xmm1
   pmullw %xmm6, %xmm4
   pmullw %xmm6, %xmm6
-  aesenc %xmm0, %xmm10 
+  aesenc %xmm0, %xmm10
   pmullw %xmm6, %xmm13
   pmullw %xmm6, %xmm14
   sub %r9, %rdi
   jg aesencmul128_loop
   movq %xmm1, %rax
   pop %r9
-  ret     
+  ret
 
 aesdec128:
   push %r9
@@ -2363,7 +2363,7 @@ aesdec128_loop:
   aesdec %xmm0, %xmm2
   aesdec %xmm0, %xmm3
   aesdec %xmm0, %xmm4
-  aesdec %xmm0, %xmm5 
+  aesdec %xmm0, %xmm5
   aesdec %xmm0, %xmm1
   aesdec %xmm0, %xmm2
   aesdec %xmm0, %xmm3
@@ -2373,12 +2373,12 @@ aesdec128_loop:
   aesdec %xmm0, %xmm2
   aesdec %xmm0, %xmm3
   aesdec %xmm0, %xmm4
-  aesdec %xmm0, %xmm5  
+  aesdec %xmm0, %xmm5
   sub %r9, %rdi
   jnz aesdec128_loop
   movq %xmm1, %rax
   pop %r9
-  ret   
+  ret
 
 mul128int:
   push %r9
@@ -2410,7 +2410,7 @@ mul128int_loop:
   jnz mul128int_loop
   movq %xmm1, %rax
   pop %r9
-  ret  
+  ret
 
 latmul128int:
   push %r9
@@ -2442,7 +2442,7 @@ latmul128int_loop:
   jnz latmul128int_loop
   movq %xmm1, %rax
   pop %r9
-  ret 
+  ret
 
 mixaddmul128int:
   push %r9
@@ -2479,12 +2479,12 @@ mixaddmul128int_loop:
   pmulld %xmm0, %xmm7
   paddd %xmm0, %xmm8
   pmulld %xmm0, %xmm9
-  paddd %xmm0, %xmm10 
+  paddd %xmm0, %xmm10
   sub %r9, %rdi
   jnz mixaddmul128int_loop
   movq %xmm1, %rax
   pop %r9
-  ret  
+  ret
 
 latadd256fp:
   push %r9
@@ -2520,7 +2520,7 @@ latadd256fp_loop:
   vzeroupper
   pop %r8
   pop %r9
-  ret 
+  ret
 
 mul256fp:
   push %r9
@@ -2686,14 +2686,14 @@ fma512_loop:
   vfmadd132ps %zmm6, %zmm12, %zmm12
   vfmadd132ps %zmm6, %zmm13, %zmm13
   vfmadd132ps %zmm6, %zmm14, %zmm14
-  vfmadd132ps %zmm6, %zmm15, %zmm15 
+  vfmadd132ps %zmm6, %zmm15, %zmm15
   sub %r9, %rdi
   jnz fma512_loop
   movq %xmm1, %rax
   vzeroupper
   pop %r8
   pop %r9
-  ret    
+  ret
 
 mixfma256fma512:
   push %r9
@@ -2732,14 +2732,14 @@ mixfma256fma512_loop:
   vfmadd132ps %ymm6, %ymm12, %ymm12
   vfmadd132ps %zmm6, %zmm13, %zmm13
   vfmadd132ps %ymm6, %ymm14, %ymm14
-  vfmadd132ps %zmm6, %zmm15, %zmm15 
+  vfmadd132ps %zmm6, %zmm15, %zmm15
   sub %r9, %rdi
   jnz mixfma256fma512_loop
   movq %xmm1, %rax
   vzeroupper
   pop %r8
   pop %r9
-  ret     
+  ret
 
 fma256:
   push %r9
@@ -2778,14 +2778,14 @@ fma256_loop:
   vfmadd132ps %ymm6, %ymm12, %ymm12
   vfmadd132ps %ymm6, %ymm13, %ymm13
   vfmadd132ps %ymm6, %ymm14, %ymm14
-  vfmadd132ps %ymm6, %ymm15, %ymm15 
+  vfmadd132ps %ymm6, %ymm15, %ymm15
   sub %r9, %rdi
   jnz fma256_loop
   movq %xmm1, %rax
   vzeroupper
   pop %r8
   pop %r9
-  ret   
+  ret
 
 fma128:
   push %r9
@@ -2825,14 +2825,14 @@ fma128_loop:
   vfmadd132ps %xmm6, %xmm12, %xmm12
   vfmadd132ps %xmm6, %xmm13, %xmm13
   vfmadd132ps %xmm6, %xmm14, %xmm14
-  vfmadd132ps %xmm6, %xmm15, %xmm15 
+  vfmadd132ps %xmm6, %xmm15, %xmm15
   sub %r9, %rdi
   jnz fma128_loop
   movq %xmm1, %rax
   vzeroupper
   pop %r8
   pop %r9
-  ret    
+  ret
 
 mixfmafadd256:
   push %r9
@@ -2868,7 +2868,7 @@ mixfmafadd256_loop:
   vaddps %ymm12, %ymm6, %ymm13
   vfmadd132ps %ymm6, %ymm0, %ymm1
   vfmadd132ps %ymm6, %ymm2, %ymm3
-  vaddps %ymm6, %ymm5, %ymm4 
+  vaddps %ymm6, %ymm5, %ymm4
   vfmadd132ps %ymm6, %ymm5, %ymm5
   vfmadd132ps %ymm6, %ymm7, %ymm7
   vaddps %ymm10, %ymm6, %ymm11
@@ -2880,20 +2880,20 @@ mixfmafadd256_loop:
   vaddps %ymm12, %ymm5, %ymm13
   vfmadd132ps %ymm6, %ymm0, %ymm1
   vfmadd132ps %ymm6, %ymm2, %ymm3
-  vaddps %ymm6, %ymm5, %ymm4  
+  vaddps %ymm6, %ymm5, %ymm4
   vfmadd132ps %ymm6, %ymm5, %ymm5
   vfmadd132ps %ymm6, %ymm7, %ymm7
   vaddps %ymm10, %ymm6, %ymm11
   vfmadd132ps %ymm6, %ymm8, %ymm8
   vfmadd132ps %ymm6, %ymm9, %ymm9
-  vaddps %ymm12, %ymm5, %ymm13 
+  vaddps %ymm12, %ymm5, %ymm13
   sub %r9, %rdi
   jnz mixfmafadd256_loop
   movq %xmm1, %rax
   vzeroupper
   pop %r8
   pop %r9
-  ret    
+  ret
 
 mixfmaadd512:
   push %r9
@@ -2939,7 +2939,7 @@ mixfmaadd512_loop:
   vzeroupper
   pop %r8
   pop %r9
-  ret      
+  ret
 
 mixfma512add256:
   push %r9
@@ -2985,7 +2985,7 @@ mixfma512add256_loop:
   vzeroupper
   pop %r8
   pop %r9
-  ret       
+  ret
 
 mixfmaadd256:
   push %r9
@@ -3031,7 +3031,7 @@ mixfmaadd256_loop:
   vzeroupper
   pop %r8
   pop %r9
-  ret     
+  ret
 
 mixfmaand256:
   push %r9
@@ -3077,7 +3077,7 @@ mixfmaand256_loop:
   vzeroupper
   pop %r8
   pop %r9
-  ret      
+  ret
 
 mixfmaandmem256:
   push %r9
@@ -3118,7 +3118,7 @@ mixfmaandmem256_loop:
   vfmadd132ps %ymm13, %ymm13, %ymm13
   vfmadd132ps (%rsi), %ymm14, %ymm14
 
-  vpand %ymm3, %ymm3, %ymm3 
+  vpand %ymm3, %ymm3, %ymm3
   vfmadd132ps %ymm6, %ymm6, %ymm6
   vfmadd132ps (%rsi), %ymm9, %ymm9
   vpand %ymm0, %ymm0, %ymm0
@@ -3130,7 +3130,7 @@ mixfmaandmem256_loop:
   vzeroupper
   pop %r8
   pop %r9
-  ret       
+  ret
 
 mixfmaaddmem256:
   push %r9
@@ -3170,13 +3170,13 @@ mixfmaaddmem256_loop:
   vpaddq %ymm0, %ymm0, %ymm0
   vfmadd132ps %ymm13, %ymm13, %ymm13
   vfmadd132ps (%rsi), %ymm14, %ymm14
-  
-  vpaddq %ymm3, %ymm3, %ymm3 
+
+  vpaddq %ymm3, %ymm3, %ymm3
   vfmadd132ps %ymm6, %ymm6, %ymm6
   vfmadd132ps (%rsi), %ymm9, %ymm9
   vpaddq %ymm0, %ymm0, %ymm0
   vfmadd132ps %ymm12, %ymm12, %ymm12
-  vfmadd132ps (%rsi), %ymm15, %ymm15 
+  vfmadd132ps (%rsi), %ymm15, %ymm15
 
   sub %r9, %rdi
   jg mixfmaaddmem256_loop
@@ -3184,7 +3184,7 @@ mixfmaaddmem256_loop:
   vzeroupper
   pop %r8
   pop %r9
-  ret        
+  ret
 
 nemesfpu512mix21:
   push %r9
@@ -3225,7 +3225,7 @@ nemesfpu512mix21_loop:
   sub %r9, %rdi
   jg nemesfpu512mix21_loop
   pop %r9
-  ret 
+  ret
 
 nemesfpumix21:
   push %r9
@@ -3312,7 +3312,7 @@ latfma512_loop:
   vzeroupper
   pop %r8
   pop %r9
-  ret    
+  ret
 
 latfma256:
   push %r9
@@ -3358,7 +3358,7 @@ latfma256_loop:
   vzeroupper
   pop %r8
   pop %r9
-  ret   
+  ret
 
 latfma128:
   push %r9
@@ -3405,7 +3405,7 @@ latfma128_loop:
   vzeroupper
   pop %r8
   pop %r9
-  ret    
+  ret
 
 
 latadd128fp:
@@ -3441,7 +3441,7 @@ latadd128fp_loop:
   movq %xmm1, %rax
   pop %r8
   pop %r9
-  ret 
+  ret
 
 latmul128fp:
   push %r9
@@ -3476,7 +3476,7 @@ latmul128fp_loop:
   movq %xmm1, %rax
   pop %r8
   pop %r9
-  ret 
+  ret
 
 mul128fp:
   push %r9
@@ -3513,7 +3513,7 @@ mul128fp_loop:
   movq %xmm1, %rax
   pop %r8
   pop %r9
-  ret  
+  ret
 
 add128fp:
   push %r9
@@ -3550,7 +3550,7 @@ add128fp_loop:
   movq %xmm1, %rax
   pop %r8
   pop %r9
-  ret   
+  ret
 
 latmul64:
   push %rbx
@@ -3565,7 +3565,7 @@ latmul64:
   push %r15
   mov $1, %r8
   mov $20, %r9
-  mov %r8, %rbx 
+  mov %r8, %rbx
   mov %r8, %rcx
   mov %r8, %r10
   mov %r8, %r11
@@ -3603,10 +3603,10 @@ latmul64_loop:
   pop %r11
   pop %r10
   pop %r9
-  pop %r8 
+  pop %r8
   pop %rcx
   pop %rbx
-  ret 
+  ret
 
 latmul16:
   push %rbx
@@ -3621,7 +3621,7 @@ latmul16:
   push %r15
   mov $1, %r8
   mov $20, %r9
-  mov %r8, %rbx 
+  mov %r8, %rbx
   mov %r8, %rcx
   mov %r8, %r10
   mov %r8, %r11
@@ -3659,7 +3659,7 @@ latmul16_loop:
   pop %r11
   pop %r10
   pop %r9
-  pop %r8 
+  pop %r8
   pop %rcx
   pop %rbx
   ret
@@ -3677,7 +3677,7 @@ mul16:
   push %r15
   mov $1, %r8
   mov $20, %r9
-  mov %r8, %rbx 
+  mov %r8, %rbx
   mov %r8, %rcx
   mov %r8, %r10
   mov %r8, %r11
@@ -3695,17 +3695,17 @@ mul16_loop:
   imul %r9w, %r14w
   imul %r9w, %r13w
   imul %r9w, %r12w
-  imul %r9w, %r11w 
+  imul %r9w, %r11w
   imul %r9w, %r15w
   imul %r9w, %r14w
   imul %r9w, %r13w
   imul %r9w, %r12w
-  imul %r9w, %r11w  
+  imul %r9w, %r11w
   imul %r9w, %r15w
   imul %r9w, %r14w
   imul %r9w, %r13w
   imul %r9w, %r12w
-  imul %r9w, %r11w  
+  imul %r9w, %r11w
   sub %r9, %rdi
   jnz mul16_loop
   pop %r15
@@ -3715,10 +3715,10 @@ mul16_loop:
   pop %r11
   pop %r10
   pop %r9
-  pop %r8 
+  pop %r8
   pop %rcx
   pop %rbx
-  ret 
+  ret
 
 mul64:
   push %rbx
@@ -3734,7 +3734,7 @@ mul64:
   push %r15
   mov $1, %r8
   mov $20, %r9
-  mov %r8, %rbx 
+  mov %r8, %rbx
   mov %r8, %rcx
   mov %r8, %r10
   mov %r8, %r11
@@ -3781,7 +3781,7 @@ mul64_loop:
   mov %r9, %rbx
   imul %r9, %rcx
   mov %r9, %rcx
-  imul %r9, %rsi 
+  imul %r9, %rsi
   mov %r9, %rsi
   sub %r9, %rdi
   jnz mul64_loop
@@ -3792,11 +3792,11 @@ mul64_loop:
   pop %r11
   pop %r10
   pop %r9
-  pop %r8 
+  pop %r8
   pop %rsi
   pop %rcx
   pop %rbx
-  ret  
+  ret
 
 mixmul16mul64:
   push %rbx
@@ -3812,7 +3812,7 @@ mixmul16mul64:
   push %r15
   mov $1, %r8
   mov $20, %r9
-  mov %r8, %rbx 
+  mov %r8, %rbx
   mov %r8, %rcx
   mov %r8, %r10
   mov %r8, %r11
@@ -3840,7 +3840,7 @@ mixmul16mul64_loop:
   imul %r9, %r8
   imul %r9w, %bx
   imul %r9, %rcx
-  imul %r9w, %si 
+  imul %r9w, %si
   sub %r9, %rdi
   jnz mixmul16mul64_loop
   pop %r15
@@ -3850,11 +3850,11 @@ mixmul16mul64_loop:
   pop %r11
   pop %r10
   pop %r9
-  pop %r8 
+  pop %r8
   pop %rsi
   pop %rcx
   pop %rbx
-  ret   
+  ret
 
 mixmul16mul64_21:
   push %rbx
@@ -3871,7 +3871,7 @@ mixmul16mul64_21:
   push %r15
   mov $1, %r8
   mov $24, %r9
-  mov %r8, %rbx 
+  mov %r8, %rbx
   mov %r8, %rcx
   mov %r8, %rsi
   mov %r8, %r10
@@ -3893,21 +3893,21 @@ mixmul16mul64_21_loop:
   imul %r9w, %r13w
   imul %r9, %rcx
   imul %r9w, %r11w
-  imul %r9w, %r10w 
+  imul %r9w, %r10w
 
   imul %r9, %rbx
   imul %r9w, %r14w
   imul %r9w, %r13w
   imul %r9, %rax
   imul %r9w, %r11w
-  imul %r9w, %r10w 
+  imul %r9w, %r10w
 
   imul %r9, %rsi
   imul %r9w, %r14w
   imul %r9w, %r13w
   imul %r9, %rdx
   imul %r9w, %r11w
-  imul %r9w, %r10w  
+  imul %r9w, %r10w
 
   sub %r9, %rdi
   jge mixmul16mul64_21_loop
@@ -3918,12 +3918,12 @@ mixmul16mul64_21_loop:
   pop %r11
   pop %r10
   pop %r9
-  pop %r8 
+  pop %r8
   pop %rsi
   pop %rdx
   pop %rcx
   pop %rbx
-  ret    
+  ret
 
 spacedstorescalar:
   push %rbx
@@ -3932,7 +3932,7 @@ spacedstorescalar:
   push %r9
   mov $20, %r9
 spacedstorescalar_loop:
-  mov %rdi, (%rsi) 
+  mov %rdi, (%rsi)
   mov %rdi, 64(%rsi)
   mov %rdi, 128(%rsi)
   mov %rdi, 192(%rsi)
@@ -3955,7 +3955,7 @@ spacedstorescalar_loop:
   sub %r9, %rdi
   jnz spacedstorescalar_loop
   pop %r9
-  pop %r8 
+  pop %r8
   pop %rcx
   pop %rbx
   ret
@@ -3977,21 +3977,21 @@ spacedload128_loop:
   movdqa 384(%rsi), %xmm11
   movdqa 448(%rsi), %xmm12
   movdqa 512(%rsi), %xmm13
-  movdqa 576(%rsi), %xmm14 
+  movdqa 576(%rsi), %xmm14
   movdqa 640(%rsi), %xmm10
   movdqa 704(%rsi), %xmm11
   movdqa 768(%rsi), %xmm12
   movdqa 832(%rsi), %xmm13
-  movdqa 896(%rsi), %xmm14    
+  movdqa 896(%rsi), %xmm14
   movdqa 960(%rsi), %xmm10
   movdqa 1024(%rsi), %xmm11
   movdqa 1088(%rsi), %xmm12
   movdqa 1152(%rsi), %xmm13
-  movdqa 1216(%rsi), %xmm14  
+  movdqa 1216(%rsi), %xmm14
   sub %r9, %rdi
   jnz spacedload128_loop
   pop %r9
-  pop %r8 
+  pop %r8
   pop %rcx
   pop %rbx
   ret
@@ -4012,24 +4012,24 @@ load128_loop:
   movdqa (%rsi), %xmm11
   movdqa (%rsi), %xmm12
   movdqa (%rsi), %xmm13
-  movdqa (%rsi), %xmm14 
+  movdqa (%rsi), %xmm14
   movdqa (%rsi), %xmm10
   movdqa (%rsi), %xmm11
   movdqa (%rsi), %xmm12
   movdqa (%rsi), %xmm13
-  movdqa (%rsi), %xmm14    
+  movdqa (%rsi), %xmm14
   movdqa (%rsi), %xmm10
   movdqa (%rsi), %xmm11
   movdqa (%rsi), %xmm12
   movdqa (%rsi), %xmm13
-  movdqa (%rsi), %xmm14  
+  movdqa (%rsi), %xmm14
   sub %r9, %rdi
   jnz load128_loop
   pop %r9
-  pop %r8 
+  pop %r8
   pop %rcx
   pop %rbx
-  ret 
+  ret
 
 load256:
   push %rbx
@@ -4047,24 +4047,24 @@ load256_loop:
   vmovaps (%rsi), %ymm11
   vmovaps (%rsi), %ymm12
   vmovaps (%rsi), %ymm13
-  vmovaps (%rsi), %ymm14 
+  vmovaps (%rsi), %ymm14
   vmovaps (%rsi), %ymm10
   vmovaps (%rsi), %ymm11
   vmovaps (%rsi), %ymm12
   vmovaps (%rsi), %ymm13
-  vmovaps (%rsi), %ymm14    
+  vmovaps (%rsi), %ymm14
   vmovaps (%rsi), %ymm10
   vmovaps (%rsi), %ymm11
   vmovaps (%rsi), %ymm12
   vmovaps (%rsi), %ymm13
-  vmovaps (%rsi), %ymm14  
+  vmovaps (%rsi), %ymm14
   sub %r9, %rdi
   jnz load256_loop
   pop %r9
-  pop %r8 
+  pop %r8
   pop %rcx
   pop %rbx
-  ret 
+  ret
 
 load512:
   push %rbx
@@ -4082,24 +4082,24 @@ load512_loop:
   vmovaps (%rsi), %zmm11
   vmovaps (%rsi), %zmm12
   vmovaps (%rsi), %zmm13
-  vmovaps (%rsi), %zmm14 
+  vmovaps (%rsi), %zmm14
   vmovaps (%rsi), %zmm10
   vmovaps (%rsi), %zmm11
   vmovaps (%rsi), %zmm12
   vmovaps (%rsi), %zmm13
-  vmovaps (%rsi), %zmm14    
+  vmovaps (%rsi), %zmm14
   vmovaps (%rsi), %zmm10
   vmovaps (%rsi), %zmm11
   vmovaps (%rsi), %zmm12
   vmovaps (%rsi), %zmm13
-  vmovaps (%rsi), %zmm14  
+  vmovaps (%rsi), %zmm14
   sub %r9, %rdi
   jnz load512_loop
   pop %r9
-  pop %r8 
+  pop %r8
   pop %rcx
   pop %rbx
-  ret  
+  ret
 
 store128:
   push %rbx
@@ -4122,24 +4122,24 @@ store128_loop:
   movdqa %xmm11, (%rdx)
   movdqa %xmm12, (%rdx)
   movdqa %xmm13, (%rdx)
-  movdqa %xmm14, (%rdx) 
+  movdqa %xmm14, (%rdx)
   movdqa %xmm10, (%rdx)
   movdqa %xmm11, (%rdx)
   movdqa %xmm12, (%rdx)
   movdqa %xmm13, (%rdx)
-  movdqa %xmm14, (%rdx) 
+  movdqa %xmm14, (%rdx)
   movdqa %xmm10, (%rdx)
   movdqa %xmm11, (%rdx)
   movdqa %xmm12, (%rdx)
   movdqa %xmm13, (%rdx)
-  movdqa %xmm14, (%rdx) 
+  movdqa %xmm14, (%rdx)
   sub %r9, %rdi
   jnz store128_loop
   pop %r9
-  pop %r8 
+  pop %r8
   pop %rcx
   pop %rbx
-  ret 
+  ret
 
 store256:
   push %rbx
@@ -4162,24 +4162,24 @@ store256_loop:
   vmovaps %ymm11, (%rdx)
   vmovaps %ymm12, (%rdx)
   vmovaps %ymm13, (%rdx)
-  vmovaps %ymm14, (%rdx) 
+  vmovaps %ymm14, (%rdx)
   vmovaps %ymm10, (%rdx)
   vmovaps %ymm11, (%rdx)
   vmovaps %ymm12, (%rdx)
   vmovaps %ymm13, (%rdx)
-  vmovaps %ymm14, (%rdx) 
+  vmovaps %ymm14, (%rdx)
   vmovaps %ymm10, (%rdx)
   vmovaps %ymm11, (%rdx)
   vmovaps %ymm12, (%rdx)
   vmovaps %ymm13, (%rdx)
-  vmovaps %ymm14, (%rdx) 
+  vmovaps %ymm14, (%rdx)
   sub %r9, %rdi
   jnz store256_loop
   pop %r9
-  pop %r8 
+  pop %r8
   pop %rcx
   pop %rbx
-  ret  
+  ret
 
 store512:
   push %rbx
@@ -4202,24 +4202,24 @@ store512_loop:
   vmovaps %zmm11, (%rdx)
   vmovaps %zmm12, (%rdx)
   vmovaps %zmm13, (%rdx)
-  vmovaps %zmm14, (%rdx) 
+  vmovaps %zmm14, (%rdx)
   vmovaps %zmm10, (%rdx)
   vmovaps %zmm11, (%rdx)
   vmovaps %zmm12, (%rdx)
   vmovaps %zmm13, (%rdx)
-  vmovaps %zmm14, (%rdx) 
+  vmovaps %zmm14, (%rdx)
   vmovaps %zmm10, (%rdx)
   vmovaps %zmm11, (%rdx)
   vmovaps %zmm12, (%rdx)
   vmovaps %zmm13, (%rdx)
-  vmovaps %zmm14, (%rdx) 
+  vmovaps %zmm14, (%rdx)
   sub %r9, %rdi
   jnz store512_loop
   pop %r9
-  pop %r8 
+  pop %r8
   pop %rcx
   pop %rbx
-  ret   
+  ret
 
 pdeptest:
   push %rbx
@@ -4234,7 +4234,7 @@ pdeptest:
   push %r15
   mov $1, %r8
   mov $20, %r9
-  xor %rbx, %rbx 
+  xor %rbx, %rbx
   xor %rcx, %rcx
   xor %r10, %r10
   xor %r11, %r11
@@ -4258,7 +4258,7 @@ pdeptest_loop:
   pdep %r8, %r11, %r11
   pdep %r8, %r10, %r10
   pdep %r8, %rcx, %rcx
-  pdep %r8, %rbx, %rbx 
+  pdep %r8, %rbx, %rbx
   pdep %r8, %r15, %r15
   pdep %r8, %r14, %r14
   pdep %r8, %r13, %r13
@@ -4272,7 +4272,7 @@ pdeptest_loop:
   pop %r11
   pop %r10
   pop %r9
-  pop %r8 
+  pop %r8
   pop %rcx
   pop %rbx
   ret
@@ -4291,7 +4291,7 @@ pdepmultest:
   push %r15
   mov $1, %r8
   mov $20, %r9
-  xor %rbx, %rbx 
+  xor %rbx, %rbx
   xor %rcx, %rcx
   xor %rsi, %rsi
   xor %r10, %r10
@@ -4320,7 +4320,7 @@ pdepmultest_loop:
   pdep %r8, %rcx, %rcx
   imul %r9, %rbx
   pdep %r8, %r15, %r15
-  imul %r9, %rsi 
+  imul %r9, %rsi
   sub %r9, %rdi
   jnz pdepmultest_loop
   pop %r15
@@ -4330,11 +4330,11 @@ pdepmultest_loop:
   pop %r11
   pop %r10
   pop %r9
-  pop %r8 
+  pop %r8
   pop %rsi
   pop %rcx
   pop %rbx
-  ret 
+  ret
 
 
 pexttest:
@@ -4350,7 +4350,7 @@ pexttest:
   push %r15
   mov $1, %r8
   mov $20, %r9
-  xor %rbx, %rbx 
+  xor %rbx, %rbx
   xor %rcx, %rcx
   xor %r10, %r10
   xor %r11, %r11
@@ -4374,7 +4374,7 @@ pexttest_loop:
   pext %r8, %r11, %r11
   pext %r8, %r10, %r10
   pext %r8, %rcx, %rcx
-  pext %r8, %rbx, %rbx 
+  pext %r8, %rbx, %rbx
   pext %r8, %r15, %r15
   pext %r8, %r14, %r14
   pext %r8, %r13, %r13
@@ -4388,7 +4388,7 @@ pexttest_loop:
   pop %r11
   pop %r10
   pop %r9
-  pop %r8 
+  pop %r8
   pop %rcx
   pop %rbx
   ret
@@ -4416,17 +4416,17 @@ depmovtest_loop:
   mov %r12, %r14
   mov %r14, %r13
   mov %r13, %r11
-  mov %r11, %r15 
+  mov %r11, %r15
   mov %r15, %r12
   mov %r12, %r14
   mov %r14, %r13
   mov %r13, %r11
-  mov %r11, %r15 
+  mov %r11, %r15
   mov %r15, %r12
   mov %r12, %r14
   mov %r14, %r13
   mov %r13, %r11
-  mov %r11, %r15 
+  mov %r11, %r15
   sub %r9, %rdi
   jnz depmovtest_loop
   pop %r10
@@ -4450,7 +4450,7 @@ indepmovtest:
   push %r13
   push %r12
   push %r11
-  push %r10 
+  push %r10
   mov $1, %r8
   mov $20, %r9
   xor %rbx, %rbx
@@ -4464,17 +4464,17 @@ indepmovtest_loop:
   mov %r11, %r14
   mov %r12, %r13
   mov %rax, %r15
-  mov %rcx, %r14 
+  mov %rcx, %r14
   mov %r10, %r15
   mov %r11, %r14
   mov %r12, %r13
   mov %rax, %r15
-  mov %rcx, %r14 
+  mov %rcx, %r14
   mov %r10, %r15
   mov %r11, %r14
   mov %r12, %r13
   mov %rax, %r15
-  mov %rcx, %r14 
+  mov %rcx, %r14
   sub %r9, %rdi
   jnz indepmovtest_loop
   pop %r10
@@ -4482,12 +4482,12 @@ indepmovtest_loop:
   pop %r12
   pop %r13
   pop %r14
-  pop %r15 
+  pop %r15
   pop %r9
   pop %r8
   pop %rcx
   pop %rbx
-  ret 
+  ret
 
 movzerotest:
   push %rbx
@@ -4499,7 +4499,7 @@ movzerotest:
   push %r13
   push %r12
   push %r11
-  push %r10 
+  push %r10
   mov $1, %r8
   mov $20, %r9
   xor %rbx, %rbx
@@ -4513,17 +4513,17 @@ movzerotest_loop:
   mov $0, %r15
   mov $0, %r15
   mov $0, %r15
-  mov $0, %r15 
   mov $0, %r15
   mov $0, %r15
   mov $0, %r15
   mov $0, %r15
-  mov $0, %r15 
   mov $0, %r15
   mov $0, %r15
   mov $0, %r15
   mov $0, %r15
-  mov $0, %r15 
+  mov $0, %r15
+  mov $0, %r15
+  mov $0, %r15
   sub %r9, %rdi
   jnz movzerotest_loop
   pop %r10
@@ -4531,12 +4531,12 @@ movzerotest_loop:
   pop %r12
   pop %r13
   pop %r14
-  pop %r15 
+  pop %r15
   pop %r9
   pop %r8
   pop %rcx
   pop %rbx
-  ret  
+  ret
 
 xorzerotest:
   push %rbx
@@ -4548,7 +4548,7 @@ xorzerotest:
   push %r13
   push %r12
   push %r11
-  push %r10 
+  push %r10
   mov $1, %r8
   mov $20, %r9
   xor %rbx, %rbx
@@ -4562,17 +4562,17 @@ xorzerotest_loop:
   xor %r15, %r15
   xor %r15, %r15
   xor %r15, %r15
-  xor %r15, %r15 
   xor %r15, %r15
   xor %r15, %r15
   xor %r15, %r15
   xor %r15, %r15
-  xor %r15, %r15 
   xor %r15, %r15
   xor %r15, %r15
   xor %r15, %r15
   xor %r15, %r15
-  xor %r15, %r15 
+  xor %r15, %r15
+  xor %r15, %r15
+  xor %r15, %r15
   sub %r9, %rdi
   jnz xorzerotest_loop
   pop %r10
@@ -4580,12 +4580,12 @@ xorzerotest_loop:
   pop %r12
   pop %r13
   pop %r14
-  pop %r15 
+  pop %r15
   pop %r9
   pop %r8
   pop %rcx
   pop %rbx
-  ret 
+  ret
 
 subzerotest:
   push %rbx
@@ -4597,7 +4597,7 @@ subzerotest:
   push %r13
   push %r12
   push %r11
-  push %r10 
+  push %r10
   mov $1, %r8
   mov $20, %r9
   xor %rbx, %rbx
@@ -4611,17 +4611,17 @@ subzerotest_loop:
   sub %r15, %r15
   sub %r15, %r15
   sub %r15, %r15
-  sub %r15, %r15 
   sub %r15, %r15
   sub %r15, %r15
   sub %r15, %r15
   sub %r15, %r15
-  sub %r15, %r15 
   sub %r15, %r15
   sub %r15, %r15
   sub %r15, %r15
   sub %r15, %r15
-  sub %r15, %r15 
+  sub %r15, %r15
+  sub %r15, %r15
+  sub %r15, %r15
   sub %r9, %rdi
   jnz subzerotest_loop
   pop %r10
@@ -4629,12 +4629,12 @@ subzerotest_loop:
   pop %r12
   pop %r13
   pop %r14
-  pop %r15 
+  pop %r15
   pop %r9
   pop %r8
   pop %rcx
   pop %rbx
-  ret 
+  ret
 
 depaddimmtest:
   push %rbx
@@ -4646,7 +4646,7 @@ depaddimmtest:
   push %r13
   push %r12
   push %r11
-  push %r10 
+  push %r10
   mov $1, %r8
   mov $20, %r9
   xor %rbx, %rbx
@@ -4660,17 +4660,17 @@ depaddimmtest_loop:
   add $7, %r15
   add $8, %r15
   add $9, %r15
-  add $10, %r15 
+  add $10, %r15
   add $11, %r15
   add $12, %r15
   add $13, %r15
   add $14, %r15
-  add $15, %r15 
+  add $15, %r15
   add $16, %r15
   add $17, %r15
   add $18, %r15
   add $19, %r15
-  add $20, %r15 
+  add $20, %r15
   sub %r9, %rdi
   jnz depaddimmtest_loop
   pop %r10
@@ -4678,12 +4678,12 @@ depaddimmtest_loop:
   pop %r12
   pop %r13
   pop %r14
-  pop %r15 
+  pop %r15
   pop %r9
   pop %r8
   pop %rcx
   pop %rbx
-  ret  
+  ret
 
 depinctest:
   push %rbx
@@ -4695,7 +4695,7 @@ depinctest:
   push %r13
   push %r12
   push %r11
-  push %r10 
+  push %r10
   mov $1, %r8
   mov $20, %r9
   xor %rbx, %rbx
@@ -4709,17 +4709,17 @@ depinctest_loop:
   inc %r15
   inc %r15
   inc %r15
-  inc %r15 
   inc %r15
   inc %r15
   inc %r15
   inc %r15
-  inc %r15 
   inc %r15
   inc %r15
   inc %r15
   inc %r15
-  inc %r15 
+  inc %r15
+  inc %r15
+  inc %r15
   sub %r9, %rdi
   jnz depinctest_loop
   pop %r10
@@ -4727,12 +4727,12 @@ depinctest_loop:
   pop %r12
   pop %r13
   pop %r14
-  pop %r15 
+  pop %r15
   pop %r9
   pop %r8
   pop %rcx
   pop %rbx
-  ret  
+  ret
 
 depdectest:
   push %rbx
@@ -4744,7 +4744,7 @@ depdectest:
   push %r13
   push %r12
   push %r11
-  push %r10 
+  push %r10
   mov $1, %r8
   mov $20, %r9
   xor %r15, %r15
@@ -4760,17 +4760,17 @@ depdectest_loop:
   dec %r15
   dec %r15
   dec %r15
-  dec %r15 
   dec %r15
   dec %r15
   dec %r15
   dec %r15
-  dec %r15 
   dec %r15
   dec %r15
   dec %r15
   dec %r15
-  dec %r15 
+  dec %r15
+  dec %r15
+  dec %r15
   sub %r9, %rdi
   jnz depdectest_loop
   pop %r10
@@ -4778,9 +4778,9 @@ depdectest_loop:
   pop %r12
   pop %r13
   pop %r14
-  pop %r15 
+  pop %r15
   pop %r9
   pop %r8
   pop %rcx
   pop %rbx
-  ret   
+  ret

@@ -98,7 +98,7 @@ int main(int argc, char *argv[]) {
 
         free(latenciesPtr);
     }
-    
+
     free(latencies);
     _aligned_free(bouncyBase);
     return 0;

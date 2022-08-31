@@ -105,7 +105,7 @@ namespace AsmGen
             cSourceFile.AppendLine(commonFunctions);
 
             foreach (IUarchTest test in tests) test.GenerateExternLines(cSourceFile);
-            
+
             AddCommonInitCode(cSourceFile, tests);
             cSourceFile.AppendLine("  struct timeval startTv, endTv;");
             cSourceFile.AppendLine("  struct timezone startTz, endTz;");
@@ -121,7 +121,7 @@ namespace AsmGen
             vsCSourceFile.AppendLine(commonFunctions);
 
             foreach (IUarchTest test in tests) test.GenerateVsExternLines(vsCSourceFile);
-            
+
             AddCommonInitCode(vsCSourceFile, tests);
             vsCSourceFile.AppendLine("  struct timeb start, end;");
 

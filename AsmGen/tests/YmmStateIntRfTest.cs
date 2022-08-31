@@ -16,7 +16,7 @@ namespace AsmGen
 
         public override void GenerateX86GccAsm(StringBuilder sb)
         {
-            string initInstrs = "  vmovups (%r8), %ymm1\n" + 
+            string initInstrs = "  vmovups (%r8), %ymm1\n" +
                 "  vmovaps %ymm1, %ymm0\n" +
                 "  vmovaps %ymm1, %ymm2\n" +
                 "  vaddps %ymm1, %ymm2, %ymm3\n" +
@@ -81,7 +81,7 @@ namespace AsmGen
             unrolledAdds[6] = "  add r15, r11";
             unrolledAdds[7] = "  add r14, r11";
             unrolledAdds[8] = "  add r13, r11";
-            unrolledAdds[9] = "  add r12, r11"; 
+            unrolledAdds[9] = "  add r12, r11";
             unrolledAdds[10] = "  add r8, r11";
             UarchTestHelpers.GenerateX86NasmStructureTestFuncs(sb, this.Counts, this.Prefix, unrolledAdds, unrolledAdds, true, initInstrs: initInstrs, postLoadInstrs1: postLoadInstr, postLoadInstrs2: postLoadInstr);
         }

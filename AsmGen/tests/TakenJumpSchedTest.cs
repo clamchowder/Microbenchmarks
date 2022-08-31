@@ -46,7 +46,7 @@ namespace AsmGen
                 {
                     string labelName = funcName + "part" + fillerIdx;
                     sb.AppendLine("  cmp %rdi, %r15");   // r15 is well past list size and therefore should never equal the ptr chasing idx
-                    sb.AppendLine("  jne " + labelName); 
+                    sb.AppendLine("  jne " + labelName);
                     sb.AppendLine("  inc %rax");
                     sb.AppendLine(".align 16");
                     sb.AppendLine(labelName + ":");

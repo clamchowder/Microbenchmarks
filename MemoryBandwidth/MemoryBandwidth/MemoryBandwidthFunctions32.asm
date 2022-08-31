@@ -70,9 +70,9 @@ sse_read32_pass_loop:
   jge sse_read32_pass_loop
 
   ; zero the index, get back to start, decrement iteration count
-  xor esi, esi              
-  lea edi, [ecx + esi * 4]  
-  dec eax                   
+  xor esi, esi
+  lea edi, [ecx + esi * 4]
+  dec eax
   jnz sse_read32_pass_loop
   pop edi
   pop esi
@@ -138,9 +138,9 @@ mmx_read32_pass_loop:
   jge mmx_read32_pass_loop
 
   ; zero the index, get back to start, decrement iteration count
-  xor esi, esi              
-  lea edi, [ecx + esi * 4]  
-  dec eax                   
+  xor esi, esi
+  lea edi, [ecx + esi * 4]
+  dec eax
   jnz mmx_read32_pass_loop
   pop edi
   pop esi
@@ -205,9 +205,9 @@ scalar_read32_pass_loop:
   jge scalar_read32_pass_loop
 
   ; zero the index, get back to start, decrement iteration count
-  xor esi, esi              
-  lea edi, [ecx + esi * 4]  
-  dec dword [esp + 24]               
+  xor esi, esi
+  lea edi, [ecx + esi * 4]
+  dec dword [esp + 24]
   jnz scalar_read32_pass_loop
   pop edi
   pop esi

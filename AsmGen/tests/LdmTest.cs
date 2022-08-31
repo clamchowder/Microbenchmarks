@@ -25,13 +25,13 @@ namespace AsmGen
 
             string postLoadInstr2 = "  add %rsi, %r11";
             UarchTestHelpers.GenerateX86AsmStructureTestFuncs(
-                sb, 
-                this.Counts, 
-                this.Prefix, 
-                unrolledAdds, 
-                unrolledAdds, 
-                false, 
-                postLoadInstrs1: postLoadInstr1, 
+                sb,
+                this.Counts,
+                this.Prefix,
+                unrolledAdds,
+                unrolledAdds,
+                false,
+                postLoadInstrs1: postLoadInstr1,
                 postLoadInstrs2: postLoadInstr2);
         }
 
@@ -46,11 +46,11 @@ namespace AsmGen
 
             string postLoadInstr2 = "  add r11, rsi";
             UarchTestHelpers.GenerateX86NasmStructureTestFuncs(
-                sb, 
-                this.Counts, 
-                this.Prefix, 
-                unrolledAdds, 
-                unrolledAdds, 
+                sb,
+                this.Counts,
+                this.Prefix,
+                unrolledAdds,
+                unrolledAdds,
                 false,
                 postLoadInstrs1: postLoadInstr1,
                 postLoadInstrs2: postLoadInstr2);
@@ -67,10 +67,10 @@ namespace AsmGen
             unrolledAdds[3] = "  add x12, x12, x25";
 
             UarchTestHelpers.GenerateArmAsmStructureTestFuncs(
-                sb, 
-                this.Counts, 
-                this.Prefix, 
-                unrolledAdds, 
+                sb,
+                this.Counts,
+                this.Prefix,
+                unrolledAdds,
                 unrolledAdds,
                 false,
                 postLoadInstrs1: postLoadInstr1,

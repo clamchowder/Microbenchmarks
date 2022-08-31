@@ -1,5 +1,5 @@
 # Microbenchmark Generator
-C# project to generate C and assembly for CPU structure size benchmarks that use different code for each data point, making them 
+C# project to generate C and assembly for CPU structure size benchmarks that use different code for each data point, making them
 impractical to write by hand. For more details on methodology for out-of-order structure size measurement, see https://blog.stuffedcow.net/2013/05/measuring-rob-capacity/
 
 Branch predictor benchmarks are different:

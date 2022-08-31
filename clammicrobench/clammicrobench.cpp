@@ -61833,7 +61833,7 @@ for (uint32_t branchCountIdx = 0; branchCountIdx < maxIndirectBranchCount; branc
         printf("Testing branch count %d target count %d:", branchCount, testSize);
         results[branchCountIdx * testSizeCount + targetCountIdx] = runIndirectBranchTest(branchCountIdx, targetCountIdx, 0);
         refResults[branchCountIdx * testSizeCount + targetCountIdx] = runIndirectBranchTest(branchCountIdx, targetCountIdx, 2);
-        printf("%f ns, reference %f ns\n",  
+        printf("%f ns, reference %f ns\n",
             results[branchCountIdx * testSizeCount + targetCountIdx],
             refResults[branchCountIdx * testSizeCount + targetCountIdx]);
     }
