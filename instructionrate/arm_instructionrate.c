@@ -4,7 +4,7 @@
 #include <stdint.h>
 
 extern uint64_t noptest(uint64_t iterations);
-extern uint64_t clktest(uint64_t iterations); 
+extern uint64_t clktest(uint64_t iterations);
 
 extern uint64_t addtest(uint64_t iterations);
 extern uint64_t addmultest(uint64_t iterations);
@@ -28,7 +28,7 @@ extern uint64_t latfaddtest(uint64_t iterations, float arr[4]);
 extern uint64_t vecfadd128test(uint64_t iterations, float arr[4]);
 extern uint64_t vecfmul128test(uint64_t iterations, float arr[4]);
 extern uint64_t latvecfadd128test(uint64_t iterations, float arr[4]);
-extern uint64_t latvecfmul128test(uint64_t iterations, float arr[4]); 
+extern uint64_t latvecfmul128test(uint64_t iterations, float arr[4]);
 extern uint64_t mixvecfaddfmul128test(uint64_t iterations, float arr[4]);
 extern uint64_t vecfma128test(uint64_t iterations, float arr[4]);
 extern uint64_t scalarfmatest(uint64_t iterations, float arr[4]);
@@ -90,9 +90,9 @@ uint64_t mixvecmulfmulwrapper(uint64_t iterations);
 uint64_t mixvecaddfaddwrapper(uint64_t iterations);
 uint64_t mixjmpvecaddwrapper(uint64_t iterations);
 uint64_t mixjmpvecmulwrapper(uint64_t iterations);
-uint64_t vecloadwrapper(uint64_t iterations); 
-uint64_t loadwrapper(uint64_t iterations); 
-uint64_t vecstorewrapper(uint64_t iterations); 
+uint64_t vecloadwrapper(uint64_t iterations);
+uint64_t loadwrapper(uint64_t iterations);
+uint64_t vecstorewrapper(uint64_t iterations);
 uint64_t mixloadstorewrapper(uint64_t iterations);
 uint64_t mix21loadstorewrapper(uint64_t iterations);
 uint64_t vecfma128wrapper(uint64_t iterations);
@@ -103,19 +103,19 @@ uint64_t mixvecfmulfma128wrapper(uint64_t iterations);
 uint64_t latvecfma128wrapper(uint64_t iteration);
 
 int main(int argc, char *argv[]) {
-  struct timeval startTv, endTv; 
+  struct timeval startTv, endTv;
   struct timezone startTz, endTz;
   uint64_t iterations = 1500000000;
   uint64_t iterationsHigh = iterations * 5;
   uint64_t time_diff_ms;
   float latency, opsPerNs, clockSpeedGhz;
-  
+
   // figure out clock speed
   gettimeofday(&startTv, &startTz);
   clktest(iterations);
-  gettimeofday(&endTv, &endTz);  
+  gettimeofday(&endTv, &endTz);
   time_diff_ms = 1000 * (endTv.tv_sec - startTv.tv_sec) + ((endTv.tv_usec - startTv.tv_usec) / 1000);
-  latency = 1e6 * (float)time_diff_ms / (float)iterations; 
+  latency = 1e6 * (float)time_diff_ms / (float)iterations;
   // clk speed should be 1/latency, assuming we got one add per clk, roughly
   clockSpeedGhz = 1/latency;
   printf("Estimated clock speed: %.2f GHz\n", clockSpeedGhz);
@@ -176,18 +176,18 @@ int main(int argc, char *argv[]) {
 }
 
 float measureFunction(uint64_t iterations, float clockSpeedGhz, uint64_t (*testfunc)(uint64_t)) {
-  struct timeval startTv, endTv; 
-  struct timezone startTz, endTz; 
+  struct timeval startTv, endTv;
+  struct timezone startTz, endTz;
   uint64_t time_diff_ms;
   float latency, opsPerNs;
-  
+
   gettimeofday(&startTv, &startTz);
   testfunc(iterations);
-  gettimeofday(&endTv, &endTz);  
+  gettimeofday(&endTv, &endTz);
   time_diff_ms = 1000 * (endTv.tv_sec - startTv.tv_sec) + ((endTv.tv_usec - startTv.tv_usec) / 1000);
-  latency = 1e6 * (float)time_diff_ms / (float)iterations; 
+  latency = 1e6 * (float)time_diff_ms / (float)iterations;
   opsPerNs = 1/latency;
-  //printf("%f adds/ns, %f adds/clk?\n", opsPerNs, opsPerNs / clockSpeedGhz);  
+  //printf("%f adds/ns, %f adds/clk?\n", opsPerNs, opsPerNs / clockSpeedGhz);
   return opsPerNs / clockSpeedGhz;
 }
 
@@ -205,7 +205,7 @@ uint64_t latvecadd128wrapper(uint64_t iterations) {
 
 uint64_t latvecmul128wrapper(uint64_t iterations) {
   return latvecmul128test(iterations, intTestArr);
-} 
+}
 
 uint64_t mixvecaddmul128wrapper(uint64_t iterations) {
   return mixvecaddmul128test(iterations, intTestArr);
@@ -218,7 +218,7 @@ uint64_t faddwrapper(uint64_t iterations) {
 uint64_t latfaddwrapper(uint64_t iterations) {
   return latfaddtest(iterations, fpTestArr);
 }
-  
+
 uint64_t latvecfadd128wrapper(uint64_t iterations) {
   return latvecfadd128test(iterations, fpTestArr);
 }
@@ -233,10 +233,10 @@ uint64_t vecfadd128wrapper(uint64_t iterations) {
 
 uint64_t vecfmul128wrapper(uint64_t iterations) {
   return vecfmul128test(iterations, fpTestArr);
-} 
+}
 uint64_t mixvecfaddfmul128wrapper(uint64_t iterations) {
   return mixvecfaddfmul128test(iterations, fpTestArr);
-} 
+}
 
 uint64_t mixaddvecadd128wrapper(uint64_t iterations) {
   return mixaddvecadd128test(iterations, intTestArr);
@@ -292,7 +292,7 @@ uint64_t mixloadstorewrapper(uint64_t iterations) {
 
 uint64_t mix21loadstorewrapper(uint64_t iterations) {
   return mix21loadstoretest(iterations, intTestArr, sinkArr);
-} 
+}
 
 uint64_t vecfma128wrapper(uint64_t iterations) {
   return vecfma128test(iterations, fpTestArr);
@@ -316,4 +316,4 @@ uint64_t mixvecfmulfma128wrapper(uint64_t iterations) {
 
 uint64_t mixvecfaddfma128wrapper(uint64_t iterations) {
   return mixvecfaddfma128test(iterations, fpTestArr);
-} 
+}

@@ -4,7 +4,7 @@
 #include <time.h>
 #include <stdint.h>
 #include <stdlib.h>
-#include <string.h> 
+#include <string.h>
 #include <pthread.h>
 #include <sys/sysinfo.h>
 #include <sys/time.h>
@@ -15,7 +15,7 @@
 #define MSR_RAPL_PWR_UNIT 0xC0010299
 #define HWCR 0xC0010015
 #define MSR_CORE_ENERGY_STAT 0xC001029A
-#define MSR_PKG_ENERGY_STAT 0xC001029B  
+#define MSR_PKG_ENERGY_STAT 0xC001029B
 
 #define INTEL_MSR_RAPL_PWR_UNIT 0x606
 #define INTEL_MSR_PP0_ENERGY_STATUS 0x639
@@ -24,12 +24,12 @@
 extern uint64_t clktest(uint64_t iterations) __attribute((sysv_abi));
 
 void detectCpuMaker();
-void setBoost(int on); 
+void setBoost(int on);
 void setAffinity(int core);
 int openMsr(int core);
 uint64_t readMsr(int fd, uint32_t addr);
-void writeMsr(int fd, uint32_t addr, uint64_t value); 
-float getEnergyStatusUnits(); 
+void writeMsr(int fd, uint32_t addr, uint64_t value);
+float getEnergyStatusUnits();
 uint64_t getCoreEnergyStat(int core);
 uint64_t getPkgEnergyStat(int core);
 uint64_t getTotalCoreEnergy();
@@ -43,13 +43,13 @@ int main(int argc, char *argv[]) {
     float latency, clockSpeedGhz, energyUnits;
     uint64_t startEnergy, endEnergy, startPkgEnergy, endPkgEnergy;
     uint64_t iterationsHigh = 8e9;
-  
+
     detectCpuMaker();
     numProcs = get_nprocs();
     fprintf(stderr, "Number of CPUs: %u\n", numProcs);
     msrFds = (int *)malloc(sizeof(int) * numProcs);
     memset(msrFds, 0, sizeof(int) * numProcs);
-    
+
     if (argc > 1 && strncmp(argv[1], "disableboost", 12) == 0) {
         setBoost(0);
     } else if (argc > 1 && strncmp(argv[1], "enableboost", 11) == 0) {
@@ -61,20 +61,20 @@ int main(int argc, char *argv[]) {
         for (int i = 0; i < numProcs; i++) {
             setAffinity(i);
 
-            gettimeofday(&startTv, NULL);  
+            gettimeofday(&startTv, NULL);
             startEnergy = getCoreEnergyStat(i);
             startPkgEnergy = getPkgEnergyStat(i);
             clktest(iterationsHigh);
             endPkgEnergy = getPkgEnergyStat(i);
 	    endEnergy = getCoreEnergyStat(i);
-            gettimeofday(&endTv, NULL); 
+            gettimeofday(&endTv, NULL);
 
             time_diff_ms = 1000 * (endTv.tv_sec - startTv.tv_sec) + ((endTv.tv_usec - startTv.tv_usec) / 1000);
-            latency = 1e6 * (float)time_diff_ms / (float)iterationsHigh; 
+            latency = 1e6 * (float)time_diff_ms / (float)iterationsHigh;
             clockSpeedGhz = 1 / latency;
             //printf("runtime: %llu ms\n", time_diff_ms);
             //printf("%d, %f GHz\n", i, clockSpeedGhz);
-	    printf("%d, %f, %f\n", i, 
+	    printf("%d, %f, %f\n", i,
 	        ((endEnergy - startEnergy) * energyUnits) / (time_diff_ms / 1000),
 	        ((endPkgEnergy - startPkgEnergy) * energyUnits) / (time_diff_ms / 1000));
         }
@@ -83,7 +83,7 @@ int main(int argc, char *argv[]) {
 	float coreJoules, pkgJoules;
         fprintf(stderr, "argv[2] is %s\nOnly handling Intel at the moment\n", argv[2]);
 	energyUnits = getEnergyStatusUnits();
-	
+
 	gettimeofday(&startTv, NULL);
 	startEnergy = getTotalCoreEnergy();
 	startPkgEnergy = getPkgEnergyStat(0);
@@ -104,17 +104,17 @@ int main(int argc, char *argv[]) {
         for (int i = 0; i < numProcs; i++) {
             setAffinity(i);
 
-            gettimeofday(&startTv, NULL);  
+            gettimeofday(&startTv, NULL);
             clktest(iterationsHigh);
-            gettimeofday(&endTv, NULL);  
+            gettimeofday(&endTv, NULL);
             time_diff_ms = 1000 * (endTv.tv_sec - startTv.tv_sec) + ((endTv.tv_usec - startTv.tv_usec) / 1000);
-            latency = 1e6 * (float)time_diff_ms / (float)iterationsHigh; 
+            latency = 1e6 * (float)time_diff_ms / (float)iterationsHigh;
             clockSpeedGhz = 1 / latency;
             //printf("runtime: %llu ms\n", time_diff_ms);
             printf("%d, %f GHz\n", i, clockSpeedGhz);
         }
     }
-  
+
     free(msrFds);
     return 0;
 }
@@ -149,7 +149,7 @@ void setAffinity(int core) {
     rc = pthread_setaffinity_np(thread, sizeof(cpuset), &cpuset);
     if (rc != 0) {
         fprintf(stderr, "unable to set thread affinity to %d\n", core);
-    } 
+    }
 }
 
 int openMsr(int core) {
@@ -195,7 +195,7 @@ void setBoost(int on) {
         if (on) {
 	    hwcrValue &= ~(1UL << 25);  // unset bit to request CPB on
 	    //fprintf(stderr, "Requesting CPB on (unsetting bit 25 in HWCR): 0x%08x\n", hwcrValue);
-	} else { 
+	} else {
 	    hwcrValue |= (1UL << 25);      // set bit to disable CPB
 	    //fprintf(stderr, "Requesting CPB off (setting bit 25 in HWCR): 0x%08x\n", hwcrValue);
 	}
@@ -211,8 +211,8 @@ float getEnergyStatusUnits() {
 
     if (amdCpu) {
         raplPwrUnit = readMsr(msrFds[0], MSR_RAPL_PWR_UNIT);
-    } 
-    else 
+    }
+    else
     {
         raplPwrUnit = readMsr(msrFds[0], INTEL_MSR_RAPL_PWR_UNIT);
     }
@@ -224,7 +224,7 @@ float getEnergyStatusUnits() {
 uint64_t getCoreEnergyStat(int core) {
     if (!msrFds[core]) msrFds[core] = openMsr(core);
 
-    if (amdCpu) 
+    if (amdCpu)
         return readMsr(msrFds[core], MSR_CORE_ENERGY_STAT);
     else
         return readMsr(msrFds[core], INTEL_MSR_PP0_ENERGY_STATUS);
@@ -232,9 +232,9 @@ uint64_t getCoreEnergyStat(int core) {
 
 uint64_t getPkgEnergyStat(int core) {
     if (!msrFds[core]) msrFds[core] = openMsr(core);
-    if (amdCpu) 
+    if (amdCpu)
         return readMsr(msrFds[core], MSR_PKG_ENERGY_STAT);
-    else 
+    else
         return readMsr(msrFds[core], INTEL_MSR_PKG_ENERGY_STATUS);
 }
 

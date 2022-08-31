@@ -33,7 +33,7 @@ preplatencyarr_loop:
   ret
 
 /* ecx = iterations
-   edx = ptr to arr 
+   edx = ptr to arr
    do pointer chasing for specified iteration count
 */
 latencytest:
@@ -50,7 +50,7 @@ latencytest_loop:
   ret
 
 /* ecx = iterations
-   edx = ptr to array. first two 32-bit ints in array are store and load offsets respectively 
+   edx = ptr to array. first two 32-bit ints in array are store and load offsets respectively
    mismatch load and store sizes by using 16-bit loads and 32-bit stores
 */
 stlftest:
@@ -68,11 +68,11 @@ stlftest_loop:
   mov %eax, (%esi)
   mov (%edi), %ax
   mov %eax, (%esi)
-  mov (%edi), %ax 
+  mov (%edi), %ax
   mov %eax, (%esi)
-  mov (%edi), %ax 
+  mov (%edi), %ax
   mov %eax, (%esi)
-  mov (%edi), %ax 
+  mov (%edi), %ax
   sub $5, %ecx
   jg stlftest_loop
   pop %edi
@@ -89,18 +89,18 @@ matchedstlftest:
   add %edx, %esi     /* esi = store ptr */
   add %edx, %edi     /* edi = load ptr */
 matchedstlftest_loop:
-  mov %eax, (%esi)   
-  mov (%edi), %eax  
   mov %eax, (%esi)
   mov (%edi), %eax
   mov %eax, (%esi)
-  mov (%edi), %eax 
+  mov (%edi), %eax
   mov %eax, (%esi)
-  mov (%edi), %eax 
+  mov (%edi), %eax
   mov %eax, (%esi)
-  mov (%edi), %eax 
+  mov (%edi), %eax
+  mov %eax, (%esi)
+  mov (%edi), %eax
   sub $5, %ecx
   jg matchedstlftest_loop
   pop %edi
   pop %esi
-  ret 
+  ret

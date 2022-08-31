@@ -46,7 +46,7 @@ avx_asm_read_pass_loop:
   vmovaps 192(%rdi), %ymm2
   vmovaps 224(%rdi), %ymm3
   add $64, %rsi
-  add %r15, %rdi 
+  add %r15, %rdi
   cmp %rsi, %rdx
   jge asm_avx_test_iteration_count
   mov %rbx, %rsi
@@ -57,12 +57,12 @@ asm_avx_test_iteration_count:
   jnz avx_asm_read_pass_loop /* skip iteration decrement if we're not back to start */
   dec %r8
   jnz avx_asm_read_pass_loop
-  pop %r14 
-  pop %r15 
-  pop %rbx 
-  pop %rdi 
-  pop %rsi 
-  ret 
+  pop %r14
+  pop %r15
+  pop %rbx
+  pop %rdi
+  pop %rsi
+  ret
 
 asm_write:
   push %rsi
@@ -96,9 +96,9 @@ avx_asm_write_pass_loop:
   vmovaps %ymm0, 128(%rdi)
   vmovaps %ymm0, 160(%rdi)
   vmovaps %ymm0, 192(%rdi)
-  vmovaps %ymm0, 224(%rdi) 
+  vmovaps %ymm0, 224(%rdi)
   add $64, %rsi
-  add %r15, %rdi 
+  add %r15, %rdi
   cmp %rsi, %rdx
   jge asm_avx_write_iteration_count
   mov %rbx, %rsi
@@ -109,12 +109,12 @@ asm_avx_write_iteration_count:
   jnz avx_asm_write_pass_loop /* skip iteration decrement if we're not back to start */
   dec %r8
   jnz avx_asm_write_pass_loop
-  pop %r14 
-  pop %r15 
-  pop %rbx 
-  pop %rdi 
-  pop %rsi 
-  ret  
+  pop %r14
+  pop %r15
+  pop %rbx
+  pop %rdi
+  pop %rsi
+  ret
 
 /* rcx = ptr to arr
    rdx = arr_length
@@ -163,12 +163,12 @@ avx_asm_copy_pass_loop:
   dec %r8                 /* decrement iteration counter */
   jnz avx_asm_copy_pass_loop
   pop %r13
-  pop %r14 
-  pop %r15 
-  pop %rbx 
-  pop %rdi 
-  pop %rsi 
-  ret 
+  pop %r14
+  pop %r15
+  pop %rbx
+  pop %rdi
+  pop %rsi
+  ret
 
 
 asm_cflip:
@@ -220,7 +220,7 @@ avx_asm_cflip_pass_loop:
   vmovaps %ymm2, 160(%rdi)
   vmovaps %ymm3, 128(%rdi)
   add $64, %rsi
-  add %r15, %rdi 
+  add %r15, %rdi
   cmp %rsi, %rdx
   jge asm_avx_cflip_iteration_count
   mov %rbx, %rsi
@@ -230,12 +230,12 @@ asm_avx_cflip_iteration_count:
   jnz avx_asm_cflip_pass_loop /* skip iteration decrement if we're not back to start */
   sub $2, %r8  /* each iteration counts as two (hitting each element twice) */
   jnz avx_asm_cflip_pass_loop
-  pop %r14 
-  pop %r15 
-  pop %rbx 
-  pop %rdi 
-  pop %rsi 
-  ret 
+  pop %r14
+  pop %r15
+  pop %rbx
+  pop %rdi
+  pop %rsi
+  ret
 
 asm_add:
   push %rsi
@@ -266,7 +266,7 @@ avx_asm_add_pass_loop:
   vmovaps %ymm0, 128(%rdi)
   vmovaps %ymm1, 160(%rdi)
   vmovaps %ymm2, 192(%rdi)
-  vmovaps %ymm3, 224(%rdi) 
+  vmovaps %ymm3, 224(%rdi)
   add $64, %rsi
   add %r15, %rdi
   vaddps (%rdi), %ymm4, %ymm0
@@ -284,9 +284,9 @@ avx_asm_add_pass_loop:
   vmovaps %ymm0, 128(%rdi)
   vmovaps %ymm1, 160(%rdi)
   vmovaps %ymm2, 192(%rdi)
-  vmovaps %ymm3, 224(%rdi)  
+  vmovaps %ymm3, 224(%rdi)
   add $64, %rsi
-  add %r15, %rdi 
+  add %r15, %rdi
   cmp %rsi, %rdx
   jge asm_avx_add_iteration_count
   mov %rbx, %rsi
@@ -296,13 +296,13 @@ asm_avx_add_iteration_count:
   jnz avx_asm_add_pass_loop /* skip iteration decrement if we're not back to start */
   sub $2, %r8
   jg avx_asm_add_pass_loop
-  pop %r14 
-  pop %r15 
-  pop %rbx 
-  pop %rdi 
-  pop %rsi 
+  pop %r14
+  pop %r15
+  pop %rbx
+  pop %rdi
+  pop %rsi
   movss (%rdi), %xmm0
-  ret  
+  ret
 
 sse_read:
   push %rsi
@@ -353,7 +353,7 @@ sse_read_pass_loop:
   movaps 224(%rdi), %xmm2
   movaps 240(%rdi), %xmm3
   add $64, %rsi
-  add %r15, %rdi  
+  add %r15, %rdi
   cmp %rsi, %rdx
   jge sse_test_iteration_count
   mov %rbx, %rsi
@@ -364,12 +364,12 @@ sse_test_iteration_count:
   jnz sse_read_pass_loop /* skip iteration decrement if we're not back to start */
   dec %r8
   jnz sse_read_pass_loop
-  pop %r14 
-  pop %r15 
-  pop %rbx 
-  pop %rdi 
-  pop %rsi 
-  ret  
+  pop %r14
+  pop %r15
+  pop %rbx
+  pop %rdi
+  pop %rsi
+  ret
 
 sse_write:
   push %rsi
@@ -389,42 +389,42 @@ sse_write:
   movaps 48(%rdi), %xmm3
 sse_write_pass_loop:
 
-  movaps %xmm0, (%rdi)    
-  movaps %xmm1, 16(%rdi)  
-  movaps %xmm2, 32(%rdi)  
-  movaps %xmm3, 48(%rdi)  
-  movaps %xmm0, 64(%rdi)  
-  movaps %xmm1, 80(%rdi)  
-  movaps %xmm2, 96(%rdi)  
-  movaps %xmm3, 112(%rdi) 
-  movaps %xmm0, 128(%rdi) 
-  movaps %xmm1, 144(%rdi) 
-  movaps %xmm2, 160(%rdi) 
-  movaps %xmm3, 176(%rdi) 
-  movaps %xmm0, 192(%rdi) 
-  movaps %xmm1, 208(%rdi) 
-  movaps %xmm2, 224(%rdi) 
-  movaps %xmm3, 240(%rdi) 
+  movaps %xmm0, (%rdi)
+  movaps %xmm1, 16(%rdi)
+  movaps %xmm2, 32(%rdi)
+  movaps %xmm3, 48(%rdi)
+  movaps %xmm0, 64(%rdi)
+  movaps %xmm1, 80(%rdi)
+  movaps %xmm2, 96(%rdi)
+  movaps %xmm3, 112(%rdi)
+  movaps %xmm0, 128(%rdi)
+  movaps %xmm1, 144(%rdi)
+  movaps %xmm2, 160(%rdi)
+  movaps %xmm3, 176(%rdi)
+  movaps %xmm0, 192(%rdi)
+  movaps %xmm1, 208(%rdi)
+  movaps %xmm2, 224(%rdi)
+  movaps %xmm3, 240(%rdi)
   add $64, %rsi
   add %r15, %rdi
-  movaps %xmm0, (%rdi)    
-  movaps %xmm1, 16(%rdi)  
-  movaps %xmm2, 32(%rdi)  
-  movaps %xmm3, 48(%rdi)  
-  movaps %xmm0, 64(%rdi)  
-  movaps %xmm1, 80(%rdi)  
-  movaps %xmm2, 96(%rdi)  
-  movaps %xmm3, 112(%rdi) 
-  movaps %xmm0, 128(%rdi) 
-  movaps %xmm1, 144(%rdi) 
-  movaps %xmm2, 160(%rdi) 
-  movaps %xmm3, 176(%rdi) 
-  movaps %xmm0, 192(%rdi) 
-  movaps %xmm1, 208(%rdi) 
-  movaps %xmm2, 224(%rdi) 
-  movaps %xmm3, 240(%rdi)  
+  movaps %xmm0, (%rdi)
+  movaps %xmm1, 16(%rdi)
+  movaps %xmm2, 32(%rdi)
+  movaps %xmm3, 48(%rdi)
+  movaps %xmm0, 64(%rdi)
+  movaps %xmm1, 80(%rdi)
+  movaps %xmm2, 96(%rdi)
+  movaps %xmm3, 112(%rdi)
+  movaps %xmm0, 128(%rdi)
+  movaps %xmm1, 144(%rdi)
+  movaps %xmm2, 160(%rdi)
+  movaps %xmm3, 176(%rdi)
+  movaps %xmm0, 192(%rdi)
+  movaps %xmm1, 208(%rdi)
+  movaps %xmm2, 224(%rdi)
+  movaps %xmm3, 240(%rdi)
   add $64, %rsi
-  add %r15, %rdi  
+  add %r15, %rdi
   cmp %rsi, %rdx
   jge sse_write_iteration_count
   mov %rbx, %rsi
@@ -436,12 +436,12 @@ sse_write_iteration_count:
   dec %r8
   jnz sse_write_pass_loop
   movaps (%rcx), %xmm0
-  pop %r14 
-  pop %r15 
-  pop %rbx 
-  pop %rdi 
-  pop %rsi 
-  ret  
+  pop %r14
+  pop %r15
+  pop %rbx
+  pop %rdi
+  pop %rsi
+  ret
 
 
 avx512_read:
@@ -469,7 +469,7 @@ avx512_read_pass_loop:
   vmovaps 128(%rdi), %zmm2
   vmovaps 192(%rdi), %zmm3
   add $64, %rsi
-  add %r15, %rdi 
+  add %r15, %rdi
   cmp %rsi, %rdx
   jge avx512_test_iteration_count
   mov %rbx, %rsi
@@ -480,12 +480,12 @@ avx512_test_iteration_count:
   jnz avx512_read_pass_loop /* skip iteration decrement if we're not back to start */
   dec %r8
   jnz avx512_read_pass_loop
-  pop %r14 
-  pop %r15 
-  pop %rbx 
-  pop %rdi 
-  pop %rsi 
-  ret 
+  pop %r14
+  pop %r15
+  pop %rbx
+  pop %rdi
+  pop %rsi
+  ret
 
 avx512_write:
   push %rsi
@@ -510,9 +510,9 @@ avx512_write_pass_loop:
   vmovaps %zmm0, (%rdi)
   vmovaps %zmm1, 64(%rdi)
   vmovaps %zmm2, 128(%rdi)
-  vmovaps %zmm3, 192(%rdi) 
+  vmovaps %zmm3, 192(%rdi)
   add $64, %rsi
-  add %r15, %rdi 
+  add %r15, %rdi
   cmp %rsi, %rdx
   jge avx512_write_iteration_count
   mov %rbx, %rsi
@@ -523,12 +523,12 @@ avx512_write_iteration_count:
   jnz avx512_write_pass_loop /* skip iteration decrement if we're not back to start */
   dec %r8
   jnz avx512_write_pass_loop
-  pop %r14 
-  pop %r15 
-  pop %rbx 
-  pop %rdi 
-  pop %rsi 
-  ret 
+  pop %r14
+  pop %r15
+  pop %rbx
+  pop %rdi
+  pop %rsi
+  ret
 
 /* rcx = ptr to arr
    rdx = arr_length
@@ -577,12 +577,12 @@ avx512_copy_pass_loop:
   dec %r8                 /* decrement iteration counter */
   jnz avx512_copy_pass_loop
   pop %r13
-  pop %r14 
-  pop %r15 
-  pop %rbx 
-  pop %rdi 
-  pop %rsi 
-  ret  
+  pop %r14
+  pop %r15
+  pop %rbx
+  pop %rdi
+  pop %rsi
+  ret
 
 avx512_add:
   push %rsi
@@ -613,9 +613,9 @@ avx512_add_pass_loop:
   vmovaps %zmm0, 256(%rdi)
   vmovaps %zmm1, 320(%rdi)
   vmovaps %zmm2, 384(%rdi)
-  vmovaps %zmm3, 448(%rdi) 
+  vmovaps %zmm3, 448(%rdi)
   add $128, %rsi
-  add %r15, %rdi 
+  add %r15, %rdi
   cmp %rsi, %rdx
   jge avx512_add_iteration_count
   mov %rbx, %rsi
@@ -626,13 +626,13 @@ avx512_add_iteration_count:
   jnz avx512_add_pass_loop /* skip iteration decrement if we're not back to start */
   sub $2, %r8
   jg avx512_add_pass_loop
-  pop %r14 
-  pop %r15 
-  pop %rbx 
-  pop %rdi 
+  pop %r14
+  pop %r15
+  pop %rbx
+  pop %rdi
   pop %rsi
   movss (%rcx), %xmm0
-  ret  
+  ret
 
 /* Tests for cache bank conflicts by reading from two locations, spaced by some
    number of bytes
@@ -663,22 +663,7 @@ readbankconflict_loop:
    mov (%rsi), %r11
    inc %rdi
    inc %rsi
-   
-   mov (%rdi), %r10
-   mov (%rsi), %r11
-   inc %rdi
-   inc %rsi
-   
-   mov (%rdi), %r10
-   mov (%rsi), %r11
-   inc %rdi
-   inc %rsi
-   
-   mov (%rdi), %r10
-   mov (%rsi), %r11
-   inc %rdi
-   inc %rsi
-   
+
    mov (%rdi), %r10
    mov (%rsi), %r11
    inc %rdi
@@ -687,27 +672,42 @@ readbankconflict_loop:
    mov (%rdi), %r10
    mov (%rsi), %r11
    inc %rdi
-   inc %rsi 
-   
-   mov (%rdi), %r10
-   mov (%rsi), %r11
-   inc %rdi
-   inc %rsi   
+   inc %rsi
 
    mov (%rdi), %r10
    mov (%rsi), %r11
    inc %rdi
-   inc %rsi 
-   
+   inc %rsi
+
    mov (%rdi), %r10
    mov (%rsi), %r11
    inc %rdi
-   inc %rsi    
- 
+   inc %rsi
+
    mov (%rdi), %r10
    mov (%rsi), %r11
    inc %rdi
-   inc %rsi     
+   inc %rsi
+
+   mov (%rdi), %r10
+   mov (%rsi), %r11
+   inc %rdi
+   inc %rsi
+
+   mov (%rdi), %r10
+   mov (%rsi), %r11
+   inc %rdi
+   inc %rsi
+
+   mov (%rdi), %r10
+   mov (%rsi), %r11
+   inc %rdi
+   inc %rsi
+
+   mov (%rdi), %r10
+   mov (%rsi), %r11
+   inc %rdi
+   inc %rsi
 
    sub $20, %r9
    jl readbankconflict_end

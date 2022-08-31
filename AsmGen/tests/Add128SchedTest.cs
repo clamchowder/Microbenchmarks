@@ -25,13 +25,13 @@ namespace AsmGen
             unrolledAdds[2] = "  paddd %xmm0, %xmm3";
             unrolledAdds[3] = "  paddd %xmm0, %xmm4";
 
-            UarchTestHelpers.GenerateX86AsmStructureTestFuncs(sb, 
-                this.Counts, 
-                this.Prefix, 
-                unrolledAdds, 
-                unrolledAdds, 
-                includePtrChasingLoads: false, 
-                postLoadInstrs1: postLoadInstr1, 
+            UarchTestHelpers.GenerateX86AsmStructureTestFuncs(sb,
+                this.Counts,
+                this.Prefix,
+                unrolledAdds,
+                unrolledAdds,
+                includePtrChasingLoads: false,
+                postLoadInstrs1: postLoadInstr1,
                 postLoadInstrs2: postLoadInstr2);
         }
 
