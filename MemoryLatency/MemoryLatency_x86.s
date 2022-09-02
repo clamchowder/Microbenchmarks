@@ -29,7 +29,7 @@ preplatencyarr_loop:
   ret
 
 /* rcx = iterations
-   rdx = ptr to arr 
+   rdx = ptr to arr
    do pointer chasing for specified iteration count
 */
 latencytest:
@@ -60,11 +60,11 @@ stlftest_loop:
   mov %rax, (%rsi)
   mov (%rdi), %eax
   mov %rax, (%rsi)
-  mov (%rdi), %eax 
+  mov (%rdi), %eax
   mov %rax, (%rsi)
-  mov (%rdi), %eax 
+  mov (%rdi), %eax
   mov %rax, (%rsi)
-  mov (%rdi), %eax 
+  mov (%rdi), %eax
   sub $5, %rcx
   jg stlftest_loop
   pop %rdi
@@ -85,16 +85,16 @@ stlftest32_loop:
   mov %eax, (%rsi)
   mov (%rdi), %ax
   mov %eax, (%rsi)
-  mov (%rdi), %ax 
+  mov (%rdi), %ax
   mov %eax, (%rsi)
-  mov (%rdi), %ax 
+  mov (%rdi), %ax
   mov %eax, (%rsi)
-  mov (%rdi), %ax 
+  mov (%rdi), %ax
   sub $5, %rcx
   jg stlftest32_loop
   pop %rdi
   pop %rsi
-  ret 
+  ret
 
 matchedstlftest:
   push %rsi
@@ -110,13 +110,13 @@ matchedstlftest_loop:
   mov %rax, (%rsi)
   mov (%rdi), %rax
   mov %rax, (%rsi)
-  mov (%rdi), %rax 
+  mov (%rdi), %rax
   mov %rax, (%rsi)
-  mov (%rdi), %rax 
+  mov (%rdi), %rax
   mov %rax, (%rsi)
-  mov (%rdi), %rax 
+  mov (%rdi), %rax
   sub $5, %rcx
   jg matchedstlftest_loop
   pop %rdi
   pop %rsi
-  ret 
+  ret

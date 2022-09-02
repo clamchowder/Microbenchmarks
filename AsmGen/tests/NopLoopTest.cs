@@ -5,7 +5,7 @@ namespace AsmGen
     public class NopLoopTest : UarchTest
     {
         /// <summary>
-        /// 
+        ///
         /// </summary>
         /// <param name="low">must be greater than 2</param>
         /// <param name="high"></param>

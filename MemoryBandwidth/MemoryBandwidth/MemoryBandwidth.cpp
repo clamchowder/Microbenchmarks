@@ -209,7 +209,7 @@ int main(int argc, char *argv[]) {
                 else if (_strnicmp(argv[argIdx], "seq", 3) == 0) {
                     numa = NUMA_SEQ;
                 }
-                
+
                 if (numa == NUMA_SEQ) fprintf(stderr, "Filling NUMA nodes one by one\n");
                 else if (numa == NUMA_STRIPE) fprintf(stderr, "Striping threads across NUMA nodes\n");
             }
@@ -282,7 +282,7 @@ int main(int argc, char *argv[]) {
     if (instr) {
         bw_func = instr_read;
     }
-    
+
     if (singleSize) {
         float bw = MeasureBw(singleSize, GetIterationCount(singleSize, threads), threads, shared, instr);
         printf("%d,%f\n", singleSize, bw);
@@ -306,9 +306,9 @@ int main(int argc, char *argv[]) {
                 memNode = memNodeIdx;
                 numa = NUMA_CROSSNODE; // hacky, oh well
                 float bw = MeasureBw(
-                    default_test_sizes[(sizeof(default_test_sizes) / sizeof(int)) - 1], 
-                    GetIterationCount(default_test_sizes[(sizeof(default_test_sizes) / sizeof(int)) - 1], threads), 
-                    threads, 
+                    default_test_sizes[(sizeof(default_test_sizes) / sizeof(int)) - 1],
+                    GetIterationCount(default_test_sizes[(sizeof(default_test_sizes) / sizeof(int)) - 1], threads),
+                    threads,
                     shared,
                     instr);
                 printf(",%f", bw);
@@ -575,7 +575,7 @@ float __fastcall scalar_read(void* a, uint32_t arr_length, uint32_t iterations) 
         if (i + 7 >= arr_length) i = 0;
         if (i == 0) iter_idx++;
     }
-        
+
     sum += s1 + s2 + s3 + s4 + s5 + s6 + s7 + s8;
 
     return sum;
@@ -619,7 +619,7 @@ float sse_read(float* arr, uint64_t arr_length, uint64_t iterations) {
         if (i == 0) iter_idx++;
     }
 
-    iterSum = _mm_cvtss_f32(s1) + _mm_cvtss_f32(s2) + _mm_cvtss_f32(s3) + _mm_cvtss_f32(s4) + 
+    iterSum = _mm_cvtss_f32(s1) + _mm_cvtss_f32(s2) + _mm_cvtss_f32(s3) + _mm_cvtss_f32(s4) +
         _mm_cvtss_f32(s5) + _mm_cvtss_f32(s6) + _mm_cvtss_f32(s7) + _mm_cvtss_f32(s8);
     sum = iterSum;
     return sum;

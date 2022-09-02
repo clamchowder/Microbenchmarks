@@ -6,7 +6,7 @@
 int grid_x_length, grid_y_length;
 float *average_latency_map;
 
-void bf(int*, int, int); 
+void bf(int*, int, int);
 void print_grid(int*);
 void print_float_grid(float*);
 void reset_grid(int*);
@@ -20,7 +20,7 @@ int main(int argc, char *argv[]) {
     grid_x_length = atoi(argv[1]);
     grid_y_length = atoi(argv[2]);
   }
-  
+
   printf("Using %dx%d grid\n", grid_x_length, grid_y_length);
   average_latency_map = (float *)malloc(sizeof(float) * grid_x_length * grid_y_length);
   memset(average_latency_map, 0, sizeof(float) * grid_x_length * grid_y_length);
@@ -36,7 +36,7 @@ int main(int argc, char *argv[]) {
       //print_grid(grid);
 
       float avg = average_grid(grid);
-      //printf("average for %d, %d: %f\n", start_x, start_y, avg); 
+      //printf("average for %d, %d: %f\n", start_x, start_y, avg);
       average_latency_map[start_y * grid_x_length + start_x] = avg;
       free(grid);
     }

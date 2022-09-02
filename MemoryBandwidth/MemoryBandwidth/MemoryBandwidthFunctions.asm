@@ -119,7 +119,7 @@ asm_avx_write_iteration_count:
 
 ; rcx = ptr to arr
 ; rdx = arr_length
-; r8 = iterations 
+; r8 = iterations
 avx_asm_copy:
   push rsi
   push rdi
@@ -129,8 +129,8 @@ avx_asm_copy:
   push r13
   xor rsi, rsi
   mov r9, rdx
-  shr r9, 1    ; start destination at array + length / 2 
-  mov r15, 256 ; load in blocks of 128 bytes 
+  shr r9, 1    ; start destination at array + length / 2
+  mov r15, 256 ; load in blocks of 128 bytes
   mov r13, r9
   sub r13, 64
   lea rdi, [rcx + rsi * 4]
@@ -155,20 +155,20 @@ avx_copy_pass_loop:
   add rsi, 64
   add rdi, r15  ; increment src/dst pointers
   add r14, r15
-  cmp r13, rsi  ; end location is at half 
+  cmp r13, rsi  ; end location is at half
   jge avx_copy_pass_loop
   xor rsi, rsi
   lea rdi, [rcx + rsi * 4] ; back to start
   lea r14, [rcx + r9 * 4]
-  dec r8                  ; decrement iteration counter 
+  dec r8                  ; decrement iteration counter
   jnz avx_copy_pass_loop
   pop r13
-  pop r14 
-  pop r15 
-  pop rbx 
-  pop rdi 
-  pop rsi 
-  ret 
+  pop r14
+  pop r15
+  pop rbx
+  pop rdi
+  pop rsi
+  ret
 
 
 ; changes the ordering of vector sized elements within a cacheline
@@ -490,7 +490,7 @@ sse_write_iteration_count:
 
 ; rcx = ptr to arr
 ; rdx = arr_length
-; r8 = iterations 
+; r8 = iterations
 sse_asm_copy:
   push rsi
   push rdi
@@ -500,8 +500,8 @@ sse_asm_copy:
   push r13
   xor rsi, rsi
   mov r9, rdx
-  shr r9, 1    ; start destination at array + length / 2 
-  mov r15, 256 ; load in blocks of 128 bytes 
+  shr r9, 1    ; start destination at array + length / 2
+  mov r15, 256 ; load in blocks of 128 bytes
   mov r13, r9
   sub r13, 64
   lea rdi, [rcx + rsi * 4]
@@ -544,20 +544,20 @@ sse_copy_pass_loop:
   add rsi, 64
   add rdi, r15  ; increment src/dst pointers
   add r14, r15
-  cmp r13, rsi  ; end location is at half 
+  cmp r13, rsi  ; end location is at half
   jge sse_copy_pass_loop
   xor rsi, rsi
   lea rdi, [rcx + rsi * 4] ; back to start
   lea r14, [rcx + r9 * 4]
-  dec r8                  ; decrement iteration counter 
+  dec r8                  ; decrement iteration counter
   jnz sse_copy_pass_loop
   pop r13
-  pop r14 
-  pop r15 
-  pop rbx 
-  pop rdi 
-  pop rsi 
-  ret 
+  pop r14
+  pop r15
+  pop rbx
+  pop rdi
+  pop rsi
+  ret
 
 sse_asm_add:
   push rsi

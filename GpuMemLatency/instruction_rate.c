@@ -100,7 +100,7 @@ float instruction_rate_test(cl_context context,
 
     // 4x int4 * 8 per iteration, and count the loop increment too
     opsPerIteration = 4.0f * 8.0f + 1.0f;
-    float int32_add_rate = run_rate_test(context, command_queue, int32_add_rate_kernel, thread_count, local_size, chase_iterations, 
+    float int32_add_rate = run_rate_test(context, command_queue, int32_add_rate_kernel, thread_count, local_size, chase_iterations,
         float4_element_count, a_mem_obj, result_obj, A, result, opsPerIteration);
     fprintf(stderr, "INT32 G Adds/sec: %f\n", int32_add_rate);
 
@@ -123,7 +123,7 @@ float instruction_rate_test(cl_context context,
     }
 
     opsPerIteration = 4.0f * 8.0f;
-    float fp32_add_rate = run_rate_test(context, command_queue, fp32_add_rate_kernel, thread_count, local_size, chase_iterations, 
+    float fp32_add_rate = run_rate_test(context, command_queue, fp32_add_rate_kernel, thread_count, local_size, chase_iterations,
         float4_element_count, a_mem_obj, result_obj, A, result, opsPerIteration);
     fprintf(stderr, "FP32 G Adds/sec: %f\n", fp32_add_rate);
 
@@ -397,7 +397,7 @@ float fp64_instruction_rate_test(cl_context context,
     cl_kernel fp64_add_rate_kernel = clCreateKernel(program, "fp64_add_rate_test", &ret);
     cl_kernel fp64_fma_rate_kernel = clCreateKernel(program, "fp64_fma_rate_test", &ret);
     totalOps = 2.0f * 8.0f;
-    gOpsPerSec = run_rate_test(context, command_queue, fp64_add_rate_kernel, thread_count, local_size, low_chase_iterations, 
+    gOpsPerSec = run_rate_test(context, command_queue, fp64_add_rate_kernel, thread_count, local_size, low_chase_iterations,
         float4_element_count, a_mem_obj, result_obj, A, result, totalOps);
     fprintf(stderr, "FP64 G Adds/sec: %f\n", gOpsPerSec);
     gOpsPerSec = run_rate_test(context, command_queue, fp64_fma_rate_kernel, thread_count, local_size, low_chase_iterations,

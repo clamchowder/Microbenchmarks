@@ -36,4 +36,4 @@ clktest_loop:
   pop %r9
   pop %r8
   pop %rbx
-  ret 
+  ret

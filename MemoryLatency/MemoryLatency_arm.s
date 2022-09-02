@@ -1,7 +1,7 @@
 .text
 
 .global latencytest
-.global preplatencyarr 
+.global preplatencyarr
 .global stlftest
 .global stlftest32
 .global matchedstlftest
@@ -51,20 +51,20 @@ stlftest:
   stp x12, x13, [sp, #0x20]  /* x12 = store ptr, x13 = load ptr */
   ldr x15, [x1]
   ldr w12, [x1]
-  ldr w13, [x1, 4] 
+  ldr w13, [x1, 4]
   add x12, x12, x1
   add x13, x13, x1
 stlftest_loop:
   str x15, [x12]
   ldr w15, [x13]
   str x15, [x12]
-  ldr w15, [x13] 
+  ldr w15, [x13]
   str x15, [x12]
-  ldr w15, [x13]  
+  ldr w15, [x13]
   str x15, [x12]
-  ldr w15, [x13]  
+  ldr w15, [x13]
   str x15, [x12]
-  ldr w15, [x13]  
+  ldr w15, [x13]
   sub x0, x0, 5
   cmp x0, 0
   b.gt stlftest_loop
@@ -79,27 +79,27 @@ stlftest32:
   stp x12, x13, [sp, #0x20]  /* x12 = store ptr, x13 = load ptr */
   ldr x15, [x1]
   ldr w12, [x1]
-  ldr w13, [x1, 4] 
+  ldr w13, [x1, 4]
   add x12, x12, x1
   add x13, x13, x1
 stlftest32_loop:
   str w15, [x12]
   ldrh w15, [x13]
   str w15, [x12]
-  ldrh w15, [x13] 
+  ldrh w15, [x13]
   str w15, [x12]
-  ldrh w15, [x13]  
+  ldrh w15, [x13]
   str w15, [x12]
-  ldrh w15, [x13]  
+  ldrh w15, [x13]
   str w15, [x12]
-  ldrh w15, [x13]  
+  ldrh w15, [x13]
   sub x0, x0, 5
   cmp x0, 0
   b.gt stlftest32_loop
   ldp x12, x13, [sp, #0x10]
   ldp x14, x15, [sp, #0x10]
   add sp, sp, #0x40
-  ret 
+  ret
 
 matchedstlftest:
   sub sp, sp, #0x40
@@ -107,24 +107,24 @@ matchedstlftest:
   stp x12, x13, [sp, #0x20]  /* x12 = store ptr, x13 = load ptr */
   ldr x15, [x1]
   ldr w12, [x1]
-  ldr w13, [x1, 4] 
+  ldr w13, [x1, 4]
   add x12, x12, x1
   add x13, x13, x1
 matchedstlftest_loop:
   str x15, [x12]
   ldr x15, [x13]
   str x15, [x12]
-  ldr x15, [x13] 
+  ldr x15, [x13]
   str x15, [x12]
-  ldr x15, [x13]  
+  ldr x15, [x13]
   str x15, [x12]
-  ldr x15, [x13]  
+  ldr x15, [x13]
   str x15, [x12]
-  ldr x15, [x13]  
+  ldr x15, [x13]
   sub x0, x0, 5
   cmp x0, 0
   b.gt matchedstlftest_loop
   ldp x12, x13, [sp, #0x10]
   ldp x14, x15, [sp, #0x10]
   add sp, sp, #0x40
-  ret 
+  ret

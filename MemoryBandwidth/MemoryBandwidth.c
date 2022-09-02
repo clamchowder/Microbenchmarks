@@ -45,10 +45,10 @@ extern float avx512_write(float* arr, uint64_t arr_length, uint64_t iterations, 
 extern float avx512_copy(float* arr, uint64_t arr_length, uint64_t iterations, uint64_t start) __attribute__((ms_abi));
 extern float avx512_add(float* arr, uint64_t arr_length, uint64_t iterations, uint64_t start) __attribute__((ms_abi));
 extern uint32_t readbankconflict(uint32_t *arr, uint64_t arr_length, uint64_t spacing, uint64_t iterations) __attribute__((ms_abi));
-float (*bw_func)(float*, uint64_t, uint64_t, uint64_t start) __attribute__((ms_abi)); 
+float (*bw_func)(float*, uint64_t, uint64_t, uint64_t start) __attribute__((ms_abi));
 #else
 float scalar_read(float* arr, uint64_t arr_length, uint64_t iterations, uint64_t start);
-float (*bw_func)(float*, uint64_t, uint64_t, uint64_t start); 
+float (*bw_func)(float*, uint64_t, uint64_t, uint64_t start);
 extern uint32_t readbankconflict(uint32_t *arr, uint64_t arr_length, uint64_t spacing, uint64_t iterations);
 #endif
 
@@ -62,8 +62,8 @@ extern float asm_add(float *arr, uint64_t arr_length, uint64_t iterations, uint6
 extern void flush_icache(void *arr, uint64_t length);
 #endif
 
-float MeasureInstructionBw(uint64_t sizeKb, uint64_t iterations, int nopSize, int branchInterval); 
-void TestBankConflicts(); 
+float MeasureInstructionBw(uint64_t sizeKb, uint64_t iterations, int nopSize, int branchInterval);
+void TestBankConflicts();
 uint64_t GetIterationCount(uint64_t testSize, uint64_t threads);
 void *ReadBandwidthTestThread(void *param);
 uint64_t gbToTransfer = 512;
@@ -76,7 +76,7 @@ int main(int argc, char *argv[]) {
     int methodSet = 0, testInstructionBandwidth = 0, nopBytes = 8, branchInterval = 0, testBankConflict = 0;
     int singleSize = 0, autothreads = 0;
     int testSizeCount = sizeof(default_test_sizes) / sizeof(int);
-    
+
 #ifdef __x86_64
     int sseSupported = 0, avxSupported = 0, avx512Supported = 0;
     sseSupported = __builtin_cpu_supports("sse");
@@ -84,13 +84,13 @@ int main(int argc, char *argv[]) {
     avxSupported = __builtin_cpu_supports("avx");
     if (avxSupported) fprintf(stderr, "AVX supported\n");
     // gcc has no __builtin_cpu_supports for avx512, so check by hand.
-    // eax = 7 -> extended features, bit 16 of ebx = avx512f 
+    // eax = 7 -> extended features, bit 16 of ebx = avx512f
     uint32_t cpuidEax, cpuidEbx, cpuidEcx, cpuidEdx;
     __cpuid_count(7, 0, cpuidEax, cpuidEbx, cpuidEcx, cpuidEdx);
-    if (cpuidEbx & (1UL << 16)) { 
+    if (cpuidEbx & (1UL << 16)) {
         fprintf(stderr, "AVX512 supported\n");
         avx512Supported = 1;
-    } 
+    }
 #endif
 
     bw_func = asm_read;
@@ -106,7 +106,7 @@ int main(int argc, char *argv[]) {
                 fprintf(stderr, "Using shared array\n");
             } else if (strncmp(arg, "sleep", 5) == 0) {
                 argIdx++;
-                sleepTime = atoi(argv[argIdx]); 
+                sleepTime = atoi(argv[argIdx]);
                 fprintf(stderr, "Sleeping for %d second between tests\n", sleepTime);
             } else if (strncmp(arg, "private", 7) == 0) {
                 shared = 0;
@@ -155,7 +155,7 @@ int main(int argc, char *argv[]) {
                         fprintf(stderr, "Using AVX-512 because that's supported\n");
                         bw_func = avx512_copy;
                     }
-                    #endif 
+                    #endif
                 } else if (strncmp(argv[argIdx], "cflip", 5) == 0) {
                     bw_func = asm_cflip;
                     fprintf(stderr, "Using ASM code (AVX or NEON), flipping order of elements within cacheline\n");
@@ -167,18 +167,18 @@ int main(int argc, char *argv[]) {
                         fprintf(stderr, "Using AVX-512 because that's supported\n");
                         bw_func = avx512_add;
                     }
-                    #endif  
-                } 
-                
+                    #endif
+                }
+
                 else if (strncmp(argv[argIdx], "instr8", 6) == 0) {
-                    testInstructionBandwidth = 1; 
+                    testInstructionBandwidth = 1;
                     nopBytes = 8;
                     fprintf(stderr, "Testing instruction fetch bandwidth with 8 byte instructions. Threads/shared/private args will be ignored\n");
                 } else if (strncmp(argv[argIdx], "instr4", 6) == 0) {
-                    testInstructionBandwidth = 1; 
+                    testInstructionBandwidth = 1;
                     nopBytes = 4;
                     fprintf(stderr, "Testing instruction fetch bandwidth with 4 byte instructions. Threads/shared/private args will be ignored\n");
-                } 
+                }
                 #ifdef __x86_64
                 else if (strncmp(argv[argIdx], "avx512", 6) == 0) {
                     bw_func = avx512_read;
@@ -229,14 +229,14 @@ int main(int argc, char *argv[]) {
             {
                 printf("%d,%f\n", default_test_sizes[i], MeasureInstructionBw(default_test_sizes[i], GetIterationCount(default_test_sizes[i], threads), nopBytes, branchInterval));
                 if (sleepTime > 0) sleep(sleepTime);
-            } 
+            }
         }
-        else 
+        else
         {
             printf("%d,%f\n", singleSize, MeasureInstructionBw(singleSize, GetIterationCount(singleSize, threads), nopBytes, branchInterval));
         }
     } else if (testBankConflict) {
-        TestBankConflicts(); 
+        TestBankConflicts();
     } else if (autothreads > 0) {
         float *threadResults = (float *)malloc(sizeof(float) * autothreads * testSizeCount);
         printf("Auto threads mode, up to %d threads\n", autothreads);
@@ -275,7 +275,7 @@ int main(int argc, char *argv[]) {
     }
     else {
         printf("Using %d threads\n", threads);
-        if (singleSize == 0) 
+        if (singleSize == 0)
         {
             for (int i = 0; i < testSizeCount; i++)
             {
@@ -327,18 +327,18 @@ void TestBankConflicts() {
 
         for (int spacing = 0; spacing <= maxSpacing; spacing++) {
             *arr = spacing;
-            
+
             gettimeofday(&startTv, NULL);
             int rc = readbankconflict(arr, testSize, spacing, totalLoads);
             gettimeofday(&endTv, NULL);
             time_diff_ms = 1e6 * (endTv.tv_sec - startTv.tv_sec) + (endTv.tv_usec - startTv.tv_usec);
             // want loads per ns
             float loadsPerNs = (float)totalLoads / (time_diff_ms * 1e3);
-            fprintf(stderr, "%d KB, %d spacing: %f loads per ns\n", testSize, spacing, loadsPerNs); 
-            resultArr[spacing * testPoints + sizeIdx] = loadsPerNs; 
+            fprintf(stderr, "%d KB, %d spacing: %f loads per ns\n", testSize, spacing, loadsPerNs);
+            resultArr[spacing * testPoints + sizeIdx] = loadsPerNs;
             if (rc != 0) fprintf(stderr, "asm code returned error\n");
         }
-        
+
         free(arr);
         arr = NULL;
     }
@@ -373,14 +373,14 @@ float MeasureInstructionBw(uint64_t sizeKb, uint64_t iterations, int nopSize, in
 
     // hack this to deal with graviton 1 / A72
     // nop + add x0, x0, 0
-    char nop8b[9] = { 0x1F, 0x20, 0x03, 0xD5, 0x00, 0x00, 0x00, 0x91 }; 
+    char nop8b[9] = { 0x1F, 0x20, 0x03, 0xD5, 0x00, 0x00, 0x00, 0x91 };
     // mov x0, 0 + add x10, x10, 0
-    char nop8b1[9] = { 0x00, 0x00, 0x80, 0xD2, 0x8c, 0x01, 0x00, 0x91 }; 
+    char nop8b1[9] = { 0x00, 0x00, 0x80, 0xD2, 0x8c, 0x01, 0x00, 0x91 };
 #endif
 
     struct timeval startTv, endTv;
     struct timezone startTz, endTz;
-    float bw = 0; 
+    float bw = 0;
     uint64_t *nops;
     uint64_t elements = sizeKb * 1024 / 8;
     size_t funcLen = sizeKb * 1024 + 4;   // add 4 bytes to cover for aarch64 ret as well. doesn't hurt for x86
@@ -414,11 +414,11 @@ float MeasureInstructionBw(uint64_t sizeKb, uint64_t iterations, int nopSize, in
     }
 
     // ret
-    #ifdef __x86_64 
+    #ifdef __x86_64
     unsigned char *functionEnd = (unsigned char *)(nops + elements);
     functionEnd[0] = 0xC3;
     #endif
-    #ifdef __aarch64__ 
+    #ifdef __aarch64__
     uint64_t *functionEnd = (uint64_t *)(nops + elements);
     functionEnd[0] = 0XD65F03C0;
     flush_icache((void *)nops, funcLen);
@@ -427,19 +427,19 @@ float MeasureInstructionBw(uint64_t sizeKb, uint64_t iterations, int nopSize, in
     uint64_t nopfuncPage = (~0xFFF) & (uint64_t)(nops);
     size_t mprotectLen = (0xFFF & (uint64_t)(nops)) + funcLen;
     if (mprotect((void *)nopfuncPage, mprotectLen, PROT_EXEC | PROT_READ | PROT_WRITE) < 0) {
-        fprintf(stderr, "mprotect failed, errno %d\n", errno); 
+        fprintf(stderr, "mprotect failed, errno %d\n", errno);
         return 0;
-    }  
+    }
 
     nopfunc = (__attribute((ms_abi)) void(*)(uint64_t))nops;
     gettimeofday(&startTv, &startTz);
     for (int iterIdx = 0; iterIdx < iterations; iterIdx++) nopfunc(iterations);
     gettimeofday(&endTv, &endTz);
- 
+
     uint64_t time_diff_ms = 1000 * (endTv.tv_sec - startTv.tv_sec) + ((endTv.tv_usec - startTv.tv_usec) / 1000);
     double gbTransferred = (iterations * 8 * elements + 1)  / (double)1e9;
     //fprintf(stderr, "%lf GB transferred in %ld ms\n", gbTransferred, time_diff_ms);
-    bw = 1000 * gbTransferred / (double)time_diff_ms; 
+    bw = 1000 * gbTransferred / (double)time_diff_ms;
 
     free(nops);
     return bw;
@@ -465,7 +465,7 @@ float MeasureBw(uint64_t sizeKb, uint64_t iterations, uint64_t threads, int shar
 
     // make array and fill it with something, if shared
     float* testArr = NULL;
-    if (shared){ 
+    if (shared){
         //testArr = (float*)aligned_alloc(64, elements * sizeof(float));
 	if (0 != posix_memalign((void **)(&testArr), 64, elements * sizeof(float))) {
             fprintf(stderr, "Could not allocate memory\n");
@@ -476,7 +476,7 @@ float MeasureBw(uint64_t sizeKb, uint64_t iterations, uint64_t threads, int shar
             testArr[i] = i + 0.5f;
         }
     }
-    else 
+    else
     {
         elements = private_elements; // will fill arrays below, per-thread
     }
@@ -485,7 +485,7 @@ float MeasureBw(uint64_t sizeKb, uint64_t iterations, uint64_t threads, int shar
     struct BandwidthTestThreadData* threadData = (struct BandwidthTestThreadData*)malloc(threads * sizeof(struct BandwidthTestThreadData));
 
     for (uint64_t i = 0; i < threads; i++) {
-        if (shared) 
+        if (shared)
         {
             threadData[i].arr = testArr;
             threadData[i].iterations = iterations;
@@ -560,7 +560,7 @@ float scalar_read(float* arr, uint64_t arr_length, uint64_t iterations, uint64_t
         if (i + 7 >= arr_length) i = 0;
         if (i == start) iter_idx++;
     }
-        
+
     sum += s1 + s2 + s3 + s4 + s5 + s6 + s7 + s8;
 
     return sum;
