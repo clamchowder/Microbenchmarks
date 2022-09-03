@@ -3,6 +3,8 @@
 .global clktest
 .global addtest
 .global addmultest
+.global addmul21test
+.global mixaddjmp21test
 .global mul32test
 .global mul64test
 .global latmul64test
@@ -235,6 +237,56 @@ addmultest_loop:
   ldp x14, x15, [sp, #0x10]
   add sp, sp, #0x50
   ret 
+
+addmul21test:
+  sub sp, sp, #0x50
+  stp x14, x15, [sp, #0x10]
+  stp x12, x13, [sp, #0x20]
+  stp x10, x11, [sp, #0x30]
+  stp x8, x9, [sp, #0x40]
+  mov x15, 2
+  mov x14, 24
+  mov x13, 2
+  eor x12, x12, x12
+  mov x11, 2
+  eor x10, x10, x10
+  mov x9, 2
+  mov x8, 2
+addmul21test_loop:
+  mul w13, w13, w15
+  add x12, x12, x15
+  add x10, x10, x15
+  mul w11, w11, w15
+  add x12, x12, x15
+  add x10, x10, x15
+  mul w9, w9, w15
+  add x12, x12, x15
+  add x10, x10, x15
+  mul w8, w8, w15
+  add x12, x12, x15
+  add x10, x10, x15
+  mul w13, w13, w15
+  add x12, x12, x15
+  add x10, x10, x15
+  mul w11, w11, w15
+  add x12, x12, x15
+  add x10, x10, x15
+  mul w9, w9, w15
+  add x12, x12, x15
+  add x10, x10, x15
+  mul w8, w8, w15
+  add x12, x12, x15
+  add x10, x10, x15
+  sub x0, x0, x14
+  cmp x0, 0
+  b.gt addmul21test_loop
+  ldp x8, x9, [sp, #0x40]
+  ldp x10, x11, [sp, #0x30]
+  ldp x12, x13, [sp, #0x20]
+  ldp x14, x15, [sp, #0x10]
+  add sp, sp, #0x50
+  ret 
+
 
 mul32test:
   sub sp, sp, #0x50
@@ -1864,6 +1916,52 @@ mixaddjmptest_jellydonut:
   ldp x14, x15, [sp, #0x10]
   add sp, sp, #0x50 
   ret 
+
+mixaddjmp21test:
+  sub sp, sp, #0x50
+  stp x14, x15, [sp, #0x10]
+  stp x12, x13, [sp, #0x20]
+  stp x10, x11, [sp, #0x30]
+  stp x8, x9, [sp, #0x40] 
+  mov x8, 7
+  mov x9, 6
+  mov x10, 1
+  mov x11, 2
+  mov x12, 3
+  mov x13, 4
+  mov x15, 5
+  mov x14, 15
+mixaddjmp21test_loop:
+  add x10, x10, x15
+  add x11, x11, x15
+  cbz x0, mixaddjmp21test_jellydonut
+  
+  add x12, x12, x15
+  add x13, x13, x15
+  cbz x0, mixaddjmp21test_jellydonut
+  
+  add x9, x9, x15
+  add x8, x8, x15
+  cbz x0, mixaddjmp21test_jellydonut
+  
+  add x10, x10, x15
+  add x11, x11, x15
+  cbz x0, mixaddjmp21test_jellydonut
+  
+  add x12, x12, x15
+  add x13, x13, x15
+  cbz x0, mixaddjmp21test_jellydonut
+
+  sub x0, x0, x14
+  cmp x0, 0
+  b.gt mixaddjmp21test_loop
+mixaddjmp21test_jellydonut:
+  ldp x8, x9, [sp, #0x40]
+  ldp x10, x11, [sp, #0x30]
+  ldp x12, x13, [sp, #0x20]
+  ldp x14, x15, [sp, #0x10]
+  add sp, sp, #0x50 
+  ret
 
 
 mixmulrortest:
