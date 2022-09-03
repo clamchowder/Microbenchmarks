@@ -372,10 +372,10 @@ float MeasureInstructionBw(uint64_t sizeKb, uint64_t iterations, int nopSize, in
     char nop4b[8] = { 0x1F, 0x20, 0x03, 0xD5, 0x1F, 0x20, 0x03, 0xD5 };
 
     // hack this to deal with graviton 1 / A72
-    // nop + add x0, x0, 0
-    char nop8b[9] = { 0x1F, 0x20, 0x03, 0xD5, 0x00, 0x00, 0x00, 0x91 }; 
-    // mov x0, 0 + add x10, x10, 0
-    char nop8b1[9] = { 0x00, 0x00, 0x80, 0xD2, 0x8c, 0x01, 0x00, 0x91 }; 
+    // nop + mov x0, 0
+    char nop8b[9] = { 0x1F, 0x20, 0x03, 0xD5, 0x00, 0x00, 0x80, 0xD2 }; 
+    // mov x0, 0 + ldr x0, [sp] 
+    char nop8b1[9] = { 0x00, 0x00, 0x80, 0xD2, 0xe0, 0x03, 0x40, 0xf9 }; 
 #endif
 
     struct timeval startTv, endTv;
@@ -408,8 +408,10 @@ float MeasureInstructionBw(uint64_t sizeKb, uint64_t iterations, int nopSize, in
 	if (branchInterval > 1 && nopIdx % branchInterval == 0) nops[nopIdx] = *nopBranchPtr;
 #endif
 #ifdef __aarch64__
-        //uint64_t *otherNops = (uint64_t *)nop8b1;
-        //if (nopIdx & 1) nops[nopIdx] = *otherNops;
+	if (nopSize == 8) {
+          uint64_t *otherNops = (uint64_t *)nop8b1;
+          if (nopIdx & 1) nops[nopIdx] = *otherNops;
+	}
 #endif
     }
 
@@ -422,6 +424,7 @@ float MeasureInstructionBw(uint64_t sizeKb, uint64_t iterations, int nopSize, in
     uint64_t *functionEnd = (uint64_t *)(nops + elements);
     functionEnd[0] = 0XD65F03C0;
     flush_icache((void *)nops, funcLen);
+    __builtin___clear_cache(nops, functionEnd);
     #endif
 
     uint64_t nopfuncPage = (~0xFFF) & (uint64_t)(nops);
