@@ -8,6 +8,7 @@ extern uint64_t clktest(uint64_t iterations);
 
 extern uint64_t addtest(uint64_t iterations);
 extern uint64_t addmultest(uint64_t iterations);
+extern uint64_t addmul21test(uint64_t iterations);
 extern uint64_t mul32test(uint64_t iterations);
 extern uint64_t mul64test(uint64_t iterations);
 extern uint64_t latmul64test(uint64_t iterations);
@@ -16,6 +17,7 @@ extern uint64_t fusejmptest(uint64_t iterations);
 extern uint64_t mixmuljmptest(uint64_t iterations);
 extern uint64_t mixmuljmptest21(uint64_t iterations);
 extern uint64_t mixaddjmptest(uint64_t iterations);
+extern uint64_t mixaddjmp21test(uint64_t iterations);
 extern uint64_t rortest(uint64_t iterations);
 extern uint64_t mixmulrortest(uint64_t iterations);
 extern uint64_t vecadd128test(uint64_t iterations, int arr[4]);
@@ -134,7 +136,9 @@ int main(int argc, char *argv[]) {
   printf("1:1 mixed not taken jmps / muls per clk: %.2f\n", measureFunction(iterationsHigh, clockSpeedGhz, mixmuljmptest));
   printf("1:2 mixed not taken jmps / muls per clk: %.2f\n", measureFunction(iterationsHigh, clockSpeedGhz, mixmuljmptest21));
   printf("1:1 mixed not taken jmps / adds per clk: %.2f\n", measureFunction(iterationsHigh, clockSpeedGhz, mixaddjmptest));
+  printf("1:2 mixed not taken jmps / adds per clk: %.2f\n", measureFunction(iterationsHigh, clockSpeedGhz, mixaddjmp21test));
   printf("1:1 mixed add/mul per clk: %.2f\n", measureFunction(iterationsHigh, clockSpeedGhz, addmultest));
+  printf("2:1 mixed add/mul per clk: %.2f\n", measureFunction(iterationsHigh, clockSpeedGhz, addmul21test));
   printf("ror per clk: %.2f\n", measureFunction(iterationsHigh, clockSpeedGhz, rortest));
   printf("1:1 mixed mul/ror per clk: %.2f\n", measureFunction(iterationsHigh, clockSpeedGhz, mixmulrortest));
   printf("32-bit mul per clk: %.2f\n", measureFunction(iterationsHigh, clockSpeedGhz, mul32test));
