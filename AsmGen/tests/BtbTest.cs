@@ -36,7 +36,7 @@ namespace AsmGen
         /// <param name="conditional">If true, use conditional branches (still always taken)</param>
         public BtbTest(int spacing, BranchType branchType, bool varyspacing = false)
         {
-            this.Counts = new int[] { 1, 2, 4, 8, 16, 32, 64, 128, 256, 512, 1024, 1536, 2048,
+            this.Counts = new int[] { 1, 2, 4, 8, 16, 32, 64, 128, 256, 512, 768, 1024, 1536, 2048,
                 3072, 4096, 4608, 5120, 6144, 7168, 8192, 10240, 16384, 32768 };
             this.Prefix = "btb" + spacing + (varyspacing ? "v" : "") + branchType;
             this.Description = $"Branch Target Buffer, " + branchType + $" branch every {spacing} bytes " + (varyspacing ? " (varied spacing)" : "");
@@ -181,6 +181,11 @@ namespace AsmGen
             {
                 paddingAlign = "  nop\n  nop\n  nop\n  nop\n  nop\n  nop\n  nop";
             }
+            else if (spacing == 64)
+            {
+                paddingAlign = "  nop\n  nop\n  nop\n  nop\n  nop\n  nop\n  nop\n";
+                paddingAlign += "  nop\n  nop\n  nop\n  nop\n  nop\n  nop\n  nop\n  nop";
+            }
             else if (spacing != 4)
             {
                 Console.WriteLine($"Unsupported padding value {spacing}");
@@ -190,14 +195,16 @@ namespace AsmGen
             for (int i = 0; i < Counts.Length; i++)
             {
                 string funcName = GetBranchFuncName(Counts[i]);
+                string funcTargetName = GetBranchFuncName(Counts[i]) + "_itarget";
                 sb.AppendLine(funcName + ":");
-                /*sb.AppendLine($"  adrp x2, {funcName}");
-                sb.AppendLine($"  add x2, x2, :lo12:{funcName}");*/
+                sb.AppendLine($"  adrp x2, {funcName}");
+                sb.AppendLine($"  add x2, x2, :lo12:{funcName}");
                 sb.AppendLine("  mov x1, 1");
+                sb.AppendLine(".align 16");
+                sb.AppendLine(funcTargetName + ":");
                 for (int branchIdx = 1; branchIdx < Counts[i]; branchIdx++)
                 {
                     string labelName = GetLabelName(funcName, branchIdx);
-
                     if (branchType == BranchType.Unconditional)
                         sb.AppendLine("  b " + labelName);
                     else if (branchType == BranchType.Conditional)
@@ -219,13 +226,17 @@ namespace AsmGen
                 if (spacing * Counts[i] >= (1024 * 1024 - 20))
                 {
                     string workaroundTarget = funcName + "_aarch64_indirect_workaround";
-                    sb.AppendLine("  cbz x0, " + workaroundTarget);  // jump over indirect branch to return, on zero
+
+                    // jump over indirect branch to return, on zero
+                    // this branch should be not taken for all except the last iteration, and should have minimal
+                    // impact on results because a predicted NT branch is sort of 'free' on most architectures
+                    sb.AppendLine("  cbz x0, " + workaroundTarget);  
                     sb.AppendLine("  br x2");
                     sb.AppendLine(workaroundTarget + ":");
                 }
                 else
                 {
-                    sb.AppendLine("  cbnz x0, " + funcName);
+                    sb.AppendLine("  cbnz x0, " + funcTargetName);
                 }
 
                 sb.AppendLine("  ret\n\n");
