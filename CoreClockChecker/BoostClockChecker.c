@@ -4,12 +4,14 @@
 #include <stdint.h>
 #include <stdlib.h> 
 #include <string.h>
+#include <unistd.h>
 
 extern uint64_t clktsctest(uint64_t iterations) __attribute((ms_abi));
 
 int main(int argc, char *argv[]) {
     struct timeval startTv, endTv;
     uint64_t iterations = 500000, samples = 100;
+    unsigned int sleepSeconds = 5;
     time_t time_diff_ms;
 
     for (int argIdx = 1; argIdx < argc; argIdx++) {
@@ -21,13 +23,14 @@ int main(int argc, char *argv[]) {
 	    } else if (strncmp(arg, "iterations", 10) == 0) {
 	        argIdx++;
 		iterations = atol(argv[argIdx]);
+            } else if (strncmp(arg, "sleep", 5) == 0) {
+	        argIdx++;
+		sleepSeconds = atoi(argv[argIdx]);
 	    }
 	}
     }
 
-    fflush(stdin);
-    printf("Hit ENTER to start\n");
-    getchar();
+    sleep(sleepSeconds);
 
     uint64_t *measuredTscs = malloc(samples * sizeof(uint64_t));
     for (uint64_t sampleIdx = 0; sampleIdx < samples; sampleIdx++) {
