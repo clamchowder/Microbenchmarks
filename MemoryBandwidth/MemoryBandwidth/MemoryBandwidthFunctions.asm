@@ -5,9 +5,11 @@ bits 64
 global sse_asm_read
 global sse_asm_copy
 global sse_asm_write
+global sse_asm_ntwrite
 global sse_asm_add
 global avx_asm_read
 global avx_asm_write
+global avx_asm_ntwrite
 global avx_asm_copy
 global avx_asm_cflip
 global avx_asm_add
@@ -110,6 +112,57 @@ asm_avx_write_iteration_count:
   jnz avx_asm_write_pass_loop ; skip iteration decrement if we're not back to start
   dec r8
   jnz avx_asm_write_pass_loop
+  pop r14
+  pop r15
+  pop rbx
+  pop rdi
+  pop rsi
+  ret
+
+avx_asm_ntwrite:
+  push rsi
+  push rdi
+  push rbx
+  push r15
+  push r14
+  mov r15, 256 ; load in blocks of 256 bytes
+  sub rdx, 128 ; last iteration: rsi == rdx. rsi > rdx = break
+  xor r9, r9   ; not doing start anymore, too lazy to clean up code
+  mov rsi, r9  ; assume we're passed in an aligned start location O.o
+  xor rbx, rbx
+  lea rdi, [rcx + rsi * 4]
+  mov r14, rdi
+  vmovaps ymm0, [rcx]
+avx_asm_ntwrite_pass_loop:
+  vmovntps [rdi], ymm0
+  vmovntps [rdi + 32], ymm0
+  vmovntps [rdi + 64], ymm0
+  vmovntps [rdi + 96], ymm0
+  vmovntps [rdi + 128], ymm0
+  vmovntps [rdi + 160], ymm0
+  vmovntps [rdi + 192], ymm0
+  vmovntps [rdi + 224], ymm0
+  add rsi, 64
+  add rdi, r15
+  vmovntps [rdi], ymm0
+  vmovntps [rdi + 32], ymm0
+  vmovntps [rdi + 64], ymm0
+  vmovntps [rdi + 96], ymm0
+  vmovntps [rdi + 128], ymm0
+  vmovntps [rdi + 160], ymm0
+  vmovntps [rdi + 192], ymm0
+  vmovntps [rdi + 224], ymm0
+  add rsi, 64
+  add rdi, r15
+  cmp rdx, rsi
+  jge asm_avx_ntwrite_iteration_count
+  mov rsi, rbx
+  lea rdi, [rcx + rsi * 4]  ; back to start
+asm_avx_ntwrite_iteration_count:
+  cmp r9, rsi
+  jnz avx_asm_ntwrite_pass_loop ; skip iteration decrement if we're not back to start
+  dec r8
+  jnz avx_asm_ntwrite_pass_loop
   pop r14
   pop r15
   pop rbx
@@ -480,6 +533,73 @@ sse_write_iteration_count:
   jnz sse_write_pass_loop ; skip iteration decrement if we're not back to start
   dec r8
   jg sse_write_pass_loop
+  pop r14
+  pop r15
+  pop rbx
+  pop rdi
+  pop rsi
+  ret
+
+sse_asm_ntwrite:
+  push rsi
+  push rdi
+  push rbx
+  push r15
+  push r14
+  mov r15, 256 ; load in blocks of 256 bytes
+  sub rdx, 128 ; last iteration: rsi == rdx. rsi > rdx = break
+  xor r9, r9
+  xor rsi, rsi
+  xor rbx, rbx
+  lea rdi, [rcx + rsi * 4]
+  mov r14, rdi
+  movaps xmm0, [rdi]
+sse_ntwrite_pass_loop:
+  movntps [rdi], xmm0
+  movntps [rdi + 16], xmm0
+  movntps [rdi + 32], xmm0
+  movntps [rdi + 48], xmm0
+  movntps [rdi + 64], xmm0
+  movntps [rdi + 80], xmm0
+  movntps [rdi + 96], xmm0
+  movntps [rdi + 112], xmm0
+  movntps [rdi + 128], xmm0
+  movntps [rdi + 144], xmm0
+  movntps [rdi + 160], xmm0
+  movntps [rdi + 176], xmm0
+  movntps [rdi + 192], xmm0
+  movntps [rdi + 208], xmm0
+  movntps [rdi + 224], xmm0
+  movntps [rdi + 240], xmm0
+  add rsi, 64
+  add rdi, r15
+  movntps [rdi], xmm0
+  movntps [rdi + 16], xmm0
+  movntps [rdi + 32], xmm0
+  movntps [rdi + 48], xmm0
+  movntps [rdi + 64], xmm0
+  movntps [rdi + 80], xmm0
+  movntps [rdi + 96], xmm0
+  movntps [rdi + 112], xmm0
+  movntps [rdi + 128], xmm0
+  movntps [rdi + 144], xmm0
+  movntps [rdi + 160], xmm0
+  movntps [rdi + 176], xmm0
+  movntps [rdi + 192], xmm0
+  movntps [rdi + 208], xmm0
+  movntps [rdi + 224], xmm0
+  movntps [rdi + 240], xmm0
+  add rsi, 64
+  add rdi, r15
+  cmp rdx, rsi
+  jge sse_ntwrite_iteration_count
+  mov rsi, rbx
+  lea rdi, [rcx + rsi * 4]  ; back to start
+sse_ntwrite_iteration_count:
+  cmp r9, rsi
+  jnz sse_ntwrite_pass_loop ; skip iteration decrement if we're not back to start
+  dec r8
+  jg sse_ntwrite_pass_loop
   pop r14
   pop r15
   pop rbx
