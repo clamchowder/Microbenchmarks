@@ -6,7 +6,11 @@
 #include <math.h>
 #include <sys/time.h>
 #include <unistd.h>
+
+#ifndef __MINGW32__
 #include <sys/mman.h>
+#endif
+
 #include <errno.h>
 
 // TODO: possibly get this programatically
@@ -114,7 +118,9 @@ int main(int argc, char* argv[]) {
                 argIdx++;
                 ITERATIONS = atoi(argv[argIdx]);
                 fprintf(stderr, "Base iterations: %u\n", ITERATIONS);
-            } else if (strncmp(arg, "hugepages", 9) == 0) {
+            } 
+#ifndef __MINGW32__
+            else if (strncmp(arg, "hugepages", 9) == 0) {
 	              hugePages = 1;
 	              fprintf(stderr, "If applicable, will use huge pages. Will allocate max memory at start, make sure system has enough memory.\n");
 	          } else if (strncmp(arg, "sizekb", 6) == 0) {
@@ -122,6 +128,7 @@ int main(int argc, char* argv[]) {
                 singleSize = atoi(argv[argIdx]);
                 fprintf(stderr, "Testing %u KB only\n", singleSize);
             }
+#endif
             else {
                 fprintf(stderr, "Unrecognized option: %s\n", arg);
             }
@@ -132,6 +139,7 @@ int main(int argc, char* argv[]) {
         fprintf(stderr, "Usage: [-test <c/asm/tlb/mlp>] [-maxsizemb <max test size in MB>] [-iter <base iterations, default 100000000]\n");
     }
 
+#ifndef __MINGW32__
     if (hugePages) {
        size_t hugePageSize = 1 << 21;
        size_t maxMemRequired = default_test_sizes[testSizeCount - 1] * 1024;
@@ -150,6 +158,7 @@ int main(int argc, char* argv[]) {
            madvise(hugePagesArr, maxMemRequired, MADV_HUGEPAGE);
        }
     }
+#endif
 
     if (mlpTest) {
         // allocate arr to hold results

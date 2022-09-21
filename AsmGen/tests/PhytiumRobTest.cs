@@ -59,7 +59,7 @@ namespace AsmGen
         public override void GenerateArmAsm(StringBuilder sb)
         {
             const uint nopCount = 30;
-            const uint intrfCount = 60;
+            const uint intrfCount = 90;
             const uint fprfCount = 100;
             string initInstrs = "  ldr s17, [x2]\n" +
                 "  ldr s18, [x2, 4]\n" +

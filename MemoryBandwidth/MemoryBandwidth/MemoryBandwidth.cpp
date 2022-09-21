@@ -48,6 +48,7 @@ float _fastcall scalar_read(void* arr, uint32_t arr_length, uint32_t iterations)
 #ifdef _WIN64
 extern "C" float sse_asm_read(void* arr, uint64_t arr_length, uint64_t iterations);
 extern "C" float sse_asm_write(void* arr, uint64_t arr_length, uint64_t iterations);
+extern "C" float sse_asm_ntwrite(void* arr, uint64_t arr_length, uint64_t iterations);
 extern "C" float sse_asm_copy(void* arr, uint64_t arr_length, uint64_t iterations);
 extern "C" float sse_asm_add(void* arr, uint64_t arr_length, uint64_t iterations);
 extern "C" float avx_asm_read(void* arr, uint64_t arr_length, uint64_t iterations);
@@ -149,6 +150,10 @@ int main(int argc, char *argv[]) {
                 else if (_strnicmp(argv[argIdx], "write_asm_sse", 13) == 0) {
                     bw_func = sse_asm_write;
                     fprintf(stderr, "Using SSE assembly, writing\n");
+                }
+                else if (_strnicmp(argv[argIdx], "ntwrite_asm_sse", 13) == 0) {
+                    bw_func = sse_asm_ntwrite;
+                    fprintf(stderr, "Using SSE assembly, non-temporal writes\n");
                 }
                 else if (_strnicmp(argv[argIdx], "add_asm_sse", 11) == 0) {
                     bw_func = sse_asm_add;
