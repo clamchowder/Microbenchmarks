@@ -20,6 +20,7 @@ __global__ void latencyKernel(int *a, int *count, int *ret)
     int current = a[0];
     int result;
     for (int i = 0; i < *count; i++) {
+        // asm("add.s32 %0, %1, %2;" : "=r"(i) : "r"(j), "r"(k));
         result += current;
         current = a[current];
     }
@@ -47,7 +48,7 @@ void FillPatternArr(uint32_t* pattern_arr, uint32_t list_size, uint32_t byte_inc
 int main()
 {
     for (int size_idx = 0; size_idx < sizeof(default_test_sizes) / sizeof(int); size_idx++) {
-        TestCudaLatency(default_test_sizes[size_idx], 1e6);
+        TestCudaLatency(default_test_sizes[size_idx], 1e6 * 7);
     }
 
     // cudaDeviceReset must be called before exiting in order for profiling and
@@ -136,7 +137,7 @@ cudaError_t TestCudaLatency(int sizeKb, uint32_t chase_iterations)
 
     time_diff_ms = end_timing();
     latency = 1e6 * (float)time_diff_ms / (float)chase_iterations;
-    printf("Latency for %d KB: %f ns\n", sizeKb, latency);
+    printf("%d,%f\n", sizeKb, latency);
 
     // Copy output vector from GPU buffer to host memory.
     cudaStatus = cudaMemcpy(&result, dev_result, sizeof(uint32_t), cudaMemcpyDeviceToHost);
