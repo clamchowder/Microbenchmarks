@@ -98,6 +98,9 @@
 .global aesencfadd128
 .global aesencmul128
 
+.global fma4_256
+.global fma4_128
+
 /*
   %rdi = arg0 = iteration count
 */
@@ -4783,4 +4786,97 @@ depdectest_loop:
   pop %r8
   pop %rcx
   pop %rbx
+  ret
+
+/* FMA4 tests */
+fma4_256:
+  push %r9
+  push %r8
+  mov $20, %r9
+  movq %r9, %xmm1
+  cvtsi2ss %r9, %xmm6
+  vbroadcastss %xmm6, %ymm6
+  vmovups %ymm6, %ymm5
+  vmovups %ymm6, %ymm7
+  vmovups %ymm6, %ymm8
+  vmovups %ymm6, %ymm9
+  vmovups %ymm6, %ymm10
+  vmovups %ymm6, %ymm11
+  vmovups %ymm6, %ymm12
+  vmovups %ymm6, %ymm13
+  vmovups %ymm6, %ymm14
+  vmovups %ymm6, %ymm15
+fma4_256_loop:
+  vfmaddps %ymm6, %ymm6, %ymm5, %ymm5
+  vfmaddps %ymm6, %ymm6, %ymm7, %ymm7
+  vfmaddps %ymm6, %ymm6, %ymm8, %ymm8
+  vfmaddps %ymm6, %ymm6, %ymm9, %ymm9
+  vfmaddps %ymm6, %ymm6, %ymm10, %ymm10
+  vfmaddps %ymm6, %ymm6, %ymm11, %ymm11
+  vfmaddps %ymm6, %ymm6, %ymm12, %ymm12
+  vfmaddps %ymm6, %ymm6, %ymm13, %ymm13
+  vfmaddps %ymm6, %ymm6, %ymm14, %ymm14
+  vfmaddps %ymm6, %ymm6, %ymm15, %ymm15
+  vfmaddps %ymm6, %ymm6, %ymm5, %ymm5
+  vfmaddps %ymm6, %ymm6, %ymm7, %ymm7
+  vfmaddps %ymm6, %ymm6, %ymm8, %ymm8
+  vfmaddps %ymm6, %ymm6, %ymm9, %ymm9
+  vfmaddps %ymm6, %ymm6, %ymm10, %ymm10
+  vfmaddps %ymm6, %ymm6, %ymm11, %ymm11
+  vfmaddps %ymm6, %ymm6, %ymm12, %ymm12
+  vfmaddps %ymm6, %ymm6, %ymm13, %ymm13
+  vfmaddps %ymm6, %ymm6, %ymm14, %ymm14
+  vfmaddps %ymm6, %ymm6, %ymm15, %ymm15
+  sub %r9, %rdi
+  jnz fma4_256_loop
+  movq %xmm1, %rax
+  vzeroupper
+  pop %r8
+  pop %r9
+  ret
+
+fma4_128:
+  push %r9
+  push %r8
+  mov $20, %r9
+  movq %r9, %xmm1
+  cvtsi2ss %r9, %xmm6
+  vbroadcastss %xmm6, %xmm6
+  movups %xmm6, %xmm5
+  movups %xmm6, %xmm7
+  movups %xmm6, %xmm8
+  movups %xmm6, %xmm9
+  movups %xmm6, %xmm10
+  movups %xmm6, %xmm11
+  movups %xmm6, %xmm12
+  movups %xmm6, %xmm13
+  movups %xmm6, %xmm14
+  movups %xmm6, %xmm15
+fma4_128_loop:
+  vfmaddps %xmm6, %xmm6, %xmm5, %xmm5
+  vfmaddps %xmm6, %xmm6, %xmm7, %xmm7
+  vfmaddps %xmm6, %xmm6, %xmm8, %xmm8
+  vfmaddps %xmm6, %xmm6, %xmm9, %xmm9
+  vfmaddps %xmm6, %xmm6, %xmm10, %xmm10
+  vfmaddps %xmm6, %xmm6, %xmm11, %xmm11
+  vfmaddps %xmm6, %xmm6, %xmm12, %xmm12
+  vfmaddps %xmm6, %xmm6, %xmm13, %xmm13
+  vfmaddps %xmm6, %xmm6, %xmm14, %xmm14
+  vfmaddps %xmm6, %xmm6, %xmm15, %xmm15
+  vfmaddps %xmm6, %xmm6, %xmm5, %xmm5
+  vfmaddps %xmm6, %xmm6, %xmm7, %xmm7
+  vfmaddps %xmm6, %xmm6, %xmm8, %xmm8
+  vfmaddps %xmm6, %xmm6, %xmm9, %xmm9
+  vfmaddps %xmm6, %xmm6, %xmm10, %xmm10
+  vfmaddps %xmm6, %xmm6, %xmm11, %xmm11
+  vfmaddps %xmm6, %xmm6, %xmm12, %xmm12
+  vfmaddps %xmm6, %xmm6, %xmm13, %xmm13
+  vfmaddps %xmm6, %xmm6, %xmm14, %xmm14
+  vfmaddps %xmm6, %xmm6, %xmm15, %xmm15
+  sub %r9, %rdi
+  jnz fma4_128_loop
+  movq %xmm1, %rax
+  vzeroupper
+  pop %r8
+  pop %r9
   ret

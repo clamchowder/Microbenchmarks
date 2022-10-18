@@ -94,6 +94,7 @@ namespace AsmGen
             tests.Add(new LoadDivNsqTest(4, 64, 1));
             tests.Add(new MixLoadStoreDivSchedTest(4, 64, 1));
             tests.Add(new MmxRfTest(4, 256, 1));
+            tests.Add(new MixMmxSseRf(4, 256, 1));
             tests.Add(new MxcsrFeTest(4, 256, 1));
 
             StringBuilder cSourceFile = new StringBuilder();

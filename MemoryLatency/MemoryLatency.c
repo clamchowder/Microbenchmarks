@@ -39,8 +39,8 @@ void (*stlfFunc)(uint32_t, uint32_t *) __attribute__((fastcall)) = stlftest;
 extern void preplatencyarr(uint64_t *arr, uint32_t len);
 extern uint32_t latencytest(uint64_t iterations, uint64_t *arr);
 extern void matchedstlftest(uint64_t iterations, uint32_t *arr);
-extern void stlftest(uint64_t iterations, uint32_t *arr);
-extern void stlftest32(uint64_t iterations, uint32_t *arr);
+extern void stlftest(uint64_t iterations, char *arr);
+extern void stlftest32(uint64_t iterations, char *arr);
 void (*stlfFunc)(uint64_t, uint32_t *) = stlftest;
 #else
 #define UNKNOWN_ARCH 1
@@ -52,7 +52,7 @@ float RunTest(uint32_t size_kb, uint32_t iterations, uint32_t *preallocatedArr);
 float RunAsmTest(uint32_t size_kb, uint32_t iterations, uint32_t *preallocatedArr);
 float RunTlbTest(uint32_t size_kb, uint32_t iterations, uint32_t *preallocatedArr);
 float RunMlpTest(uint32_t size_kb, uint32_t iterations, uint32_t parallelism);
-void RunStlfTest(uint32_t iterations, int mode);
+void RunStlfTest(uint32_t iterations, int mode, int pageEnd);
 
 float (*testFunc)(uint32_t, uint32_t, uint32_t *) = RunTest;
 
@@ -64,6 +64,7 @@ int main(int argc, char* argv[]) {
     uint32_t testSizeCount = sizeof(default_test_sizes) / sizeof(int);
     int mlpTest = 0;  // if > 0, run MLP test with (value) levels of parallelism max
     int stlf = 0, hugePages = 0;
+    int stlfPageEnd = 0;
     uint32_t *hugePagesArr = NULL;
     for (int argIdx = 1; argIdx < argc; argIdx++) {
         if (*(argv[argIdx]) == '-') {
@@ -93,6 +94,11 @@ int main(int argc, char* argv[]) {
                     stlf = 1;
                     stlfFunc = matchedstlftest;
                     fprintf(stderr, "Running store to load forwarding test, with matched load/store sizes\n");
+                }
+                else if (strncmp(testType, "stlf_page_end", 13) == 0) {
+                    argIdx++;
+                    stlfPageEnd = atoi(argv[argIdx]);
+                    fprintf(stderr, "Store to load forwarding test will be pushed to end of %d byte page\n", stlfPageEnd);
                 }
 		#ifndef BITS_32
                 else if (strncmp(testType, "dword_stlf", 9) == 0) {
@@ -186,7 +192,7 @@ int main(int argc, char* argv[]) {
 
         free(results);
     } else if (stlf) {
-        RunStlfTest(ITERATIONS, stlf);
+        RunStlfTest(ITERATIONS, stlf, stlfPageEnd);
     } else {
         if (singleSize == 0) {
         printf("Region,Latency (ns)\n");
@@ -472,27 +478,40 @@ float RunTlbTest(uint32_t size_kb, uint32_t iterations, uint32_t *preallocatedAr
 
 // Run store to load forwarding test, as described in https://blog.stuffedcow.net/2014/01/x86-memory-disambiguation/
 // uses 4B loads and 8B stores to see when/if store forwarding can succeed when sizes are not matched
-void RunStlfTest(uint32_t iterations, int mode) {
+// pageEnd = push test to the end of (pageEnd) sized page. 0 = just test cacheline
+void RunStlfTest(uint32_t iterations, int mode, int pageEnd) {
     struct timeval startTv, endTv;
     struct timezone startTz, endTz;
     uint64_t time_diff_ms;
     float latency;
     float stlfResults[64][64];
-    int *arr;
+    char *arr; 
+    char *allocArr;
+
+    // defaults: grab a couple of cachelines
+    int testAlignment = 64, testAllocSize = 128, testOffset = 0;
+
+    if (pageEnd != 0) {
+        testAlignment = pageEnd;
+        testAllocSize = pageEnd * 2;
+        testOffset = pageEnd - 64;
+    }
 
     // obtain a couple of cachelines, assuming 64B cacheline size
 #ifdef _WIN32
-    arr = (int *)_aligned_malloc(128, 64);
-    if (arr == NULL) {
+    allocArr = (int *)_aligned_malloc(testAllocSize, testAlignment);
+    if (allocArr == NULL) {
         fprintf(stderr, "Could not obtain aligned memory\n");
         return;
     }
 #else
-    if (0 != posix_memalign((void **)(&arr), 64, 128)) {
+    if (0 != posix_memalign((void **)(&allocArr), testAlignment, testAllocSize)) {
         fprintf(stderr, "Could not obtain aligned memory\n");
         return;
     }
 #endif
+
+    arr = allocArr + testOffset;
 
     for (int storeOffset = 0; storeOffset < 64; storeOffset++)
         for (int loadOffset = 0; loadOffset < 64; loadOffset++) {
@@ -518,9 +537,9 @@ void RunStlfTest(uint32_t iterations, int mode) {
         printf("\n");
     }
 #ifdef _WIN32
-    _aligned_free(arr);
+    _aligned_free(allocArr);
 #else
-    free(arr);
+    free(allocArr);
 #endif
     return;
 }
