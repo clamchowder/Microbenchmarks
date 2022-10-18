@@ -24,28 +24,28 @@ int default_test_sizes[37] = { 2, 4, 8, 12, 16, 24, 32, 48, 64, 96, 128, 192, 25
 #ifdef __x86_64
 extern void preplatencyarr(uint64_t *arr, uint32_t len) __attribute__((ms_abi));
 extern uint32_t latencytest(uint64_t iterations, uint64_t *arr) __attribute((ms_abi));
-extern void stlftest(uint64_t iterations, uint32_t *arr) __attribute((ms_abi));
-extern void matchedstlftest(uint64_t iterations, uint32_t *arr) __attribute((ms_abi));
-extern void stlftest32(uint64_t iterations, uint32_t *arr) __attribute((ms_abi));
-void (*stlfFunc)(uint64_t, uint32_t *) __attribute__((ms_abi)) = stlftest;
+extern void stlftest(uint64_t iterations, char *arr) __attribute((ms_abi));
+extern void matchedstlftest(uint64_t iterations, char *arr) __attribute((ms_abi));
+extern void stlftest32(uint64_t iterations, char *arr) __attribute((ms_abi));
+void (*stlfFunc)(uint64_t, char *) __attribute__((ms_abi)) = stlftest;
 #elif __i686
 extern void preplatencyarr(uint32_t *arr, uint32_t len) __attribute__((fastcall));
 extern uint32_t latencytest(uint32_t iterations, uint32_t *arr) __attribute((fastcall));
-extern void stlftest(uint32_t iterations, uint32_t *arr) __attribute((fastcall));
-extern void matchedstlftest(uint32_t iterations, uint32_t *arr) __attribute((fastcall));
-void (*stlfFunc)(uint32_t, uint32_t *) __attribute__((fastcall)) = stlftest;
+extern void stlftest(uint32_t iterations, char *arr) __attribute((fastcall));
+extern void matchedstlftest(uint32_t iterations, char *arr) __attribute((fastcall));
+void (*stlfFunc)(uint32_t, char *) __attribute__((fastcall)) = stlftest;
 #define BITS_32
 #elif __aarch64__
 extern void preplatencyarr(uint64_t *arr, uint32_t len);
 extern uint32_t latencytest(uint64_t iterations, uint64_t *arr);
-extern void matchedstlftest(uint64_t iterations, uint32_t *arr);
+extern void matchedstlftest(uint64_t iterations, char *arr);
 extern void stlftest(uint64_t iterations, char *arr);
 extern void stlftest32(uint64_t iterations, char *arr);
-void (*stlfFunc)(uint64_t, uint32_t *) = stlftest;
+void (*stlfFunc)(uint64_t, char *) = stlftest;
 #else
 #define UNKNOWN_ARCH 1
 extern uint32_t latencytest(uint64_t iterations, uint64_t *arr);
-void (*stlfFunc)(uint64_t, uint32_t *) = NULL;
+void (*stlfFunc)(uint64_t, char *) = NULL;
 #endif
 
 float RunTest(uint32_t size_kb, uint32_t iterations, uint32_t *preallocatedArr);
@@ -95,11 +95,6 @@ int main(int argc, char* argv[]) {
                     stlfFunc = matchedstlftest;
                     fprintf(stderr, "Running store to load forwarding test, with matched load/store sizes\n");
                 }
-                else if (strncmp(testType, "stlf_page_end", 13) == 0) {
-                    argIdx++;
-                    stlfPageEnd = atoi(argv[argIdx]);
-                    fprintf(stderr, "Store to load forwarding test will be pushed to end of %d byte page\n", stlfPageEnd);
-                }
 		#ifndef BITS_32
                 else if (strncmp(testType, "dword_stlf", 9) == 0) {
                     stlf = 2;
@@ -125,6 +120,11 @@ int main(int argc, char* argv[]) {
                 ITERATIONS = atoi(argv[argIdx]);
                 fprintf(stderr, "Base iterations: %u\n", ITERATIONS);
             } 
+            else if (strncmp(arg, "stlf_page_end", 13) == 0) {
+                    argIdx++;
+                    stlfPageEnd = atoi(argv[argIdx]);
+                    fprintf(stderr, "Store to load forwarding test will be pushed to end of %d byte page\n", stlfPageEnd);
+            }
 #ifndef __MINGW32__
             else if (strncmp(arg, "hugepages", 9) == 0) {
 	              hugePages = 1;
@@ -499,7 +499,7 @@ void RunStlfTest(uint32_t iterations, int mode, int pageEnd) {
 
     // obtain a couple of cachelines, assuming 64B cacheline size
 #ifdef _WIN32
-    allocArr = (int *)_aligned_malloc(testAllocSize, testAlignment);
+    allocArr = (char *)_aligned_malloc(testAllocSize, testAlignment);
     if (allocArr == NULL) {
         fprintf(stderr, "Could not obtain aligned memory\n");
         return;
@@ -515,8 +515,8 @@ void RunStlfTest(uint32_t iterations, int mode, int pageEnd) {
 
     for (int storeOffset = 0; storeOffset < 64; storeOffset++)
         for (int loadOffset = 0; loadOffset < 64; loadOffset++) {
-            arr[0] = storeOffset;
-            arr[1] = loadOffset;
+            ((uint32_t *)(arr))[0] = storeOffset;
+            ((uint32_t *)(arr))[1] = loadOffset;
             gettimeofday(&startTv, &startTz);
             stlfFunc(iterations, arr);
             gettimeofday(&endTv, &endTz);
