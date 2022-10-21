@@ -7,11 +7,17 @@
 .global asm_add
 .global sse_read
 .global sse_write
+.global sse_ntwrite
 .global avx512_read
 .global avx512_write
 .global avx512_copy
 .global avx512_add
 .global readbankconflict
+
+.global repstosd_write
+.global repstosb_write
+.global repmovsb_copy
+.global repmovsd_copy
 
 asm_read:
   push %rsi
@@ -443,6 +449,77 @@ sse_write_iteration_count:
   pop %rsi
   ret
 
+sse_ntwrite:
+  push %rsi
+  push %rdi
+  push %rbx
+  push %r15
+  push %r14
+  mov $256, %r15 /* load in blocks of 256 bytes */
+  sub $128, %rdx /* last iteration: rsi == rdx. rsi > rdx = break */
+  mov %r9, %rsi  /* assume we're passed in an aligned start location O.o */
+  xor %rbx, %rbx
+  lea (%rcx,%rsi,4), %rdi
+  mov %rdi, %r14
+  movaps (%rdi), %xmm0
+  movaps 16(%rdi), %xmm1
+  movaps 32(%rdi), %xmm2
+  movaps 48(%rdi), %xmm3
+sse_ntwrite_pass_loop:
+  movntps %xmm0, (%rdi)
+  movntps %xmm1, 16(%rdi)
+  movntps %xmm2, 32(%rdi)
+  movntps %xmm3, 48(%rdi)
+  movntps %xmm0, 64(%rdi)
+  movntps %xmm1, 80(%rdi)
+  movntps %xmm2, 96(%rdi)
+  movntps %xmm3, 112(%rdi)
+  movntps %xmm0, 128(%rdi)
+  movntps %xmm1, 144(%rdi)
+  movntps %xmm2, 160(%rdi)
+  movntps %xmm3, 176(%rdi)
+  movntps %xmm0, 192(%rdi)
+  movntps %xmm1, 208(%rdi)
+  movntps %xmm2, 224(%rdi)
+  movntps %xmm3, 240(%rdi)
+  add $64, %rsi
+  add %r15, %rdi
+  movntps %xmm0, (%rdi)
+  movntps %xmm1, 16(%rdi)
+  movntps %xmm2, 32(%rdi)
+  movntps %xmm3, 48(%rdi)
+  movntps %xmm0, 64(%rdi)
+  movntps %xmm1, 80(%rdi)
+  movntps %xmm2, 96(%rdi)
+  movntps %xmm3, 112(%rdi)
+  movntps %xmm0, 128(%rdi)
+  movntps %xmm1, 144(%rdi)
+  movntps %xmm2, 160(%rdi)
+  movntps %xmm3, 176(%rdi)
+  movntps %xmm0, 192(%rdi)
+  movntps %xmm1, 208(%rdi)
+  movntps %xmm2, 224(%rdi)
+  movntps %xmm3, 240(%rdi)
+  add $64, %rsi
+  add %r15, %rdi
+  cmp %rsi, %rdx
+  jge sse_ntwrite_iteration_count
+  mov %rbx, %rsi
+  lea (%rcx,%rsi,4), %rdi /* back to start */
+sse_ntwrite_iteration_count:
+
+  cmp %rsi, %r9
+  jnz sse_ntwrite_pass_loop /* skip iteration decrement if we're not back to start */
+  dec %r8
+  jnz sse_ntwrite_pass_loop
+  movaps (%rcx), %xmm0
+  pop %r14
+  pop %r15
+  pop %rbx
+  pop %rdi
+  pop %rsi
+  ret 
+
 
 avx512_read:
   push %rsi
@@ -633,6 +710,127 @@ avx512_add_iteration_count:
   pop %rsi
   movss (%rcx), %xmm0
   ret
+
+/* rcx = ptr to arr, rdx = nr of fp32 elements in arr, r8 = iteration count */
+repmovsb_copy:
+  push %r15
+  push %r14
+  push %r13
+  push %r12
+  push %rsi
+  push %rdi
+  cld
+  mov %rcx, %rsi  /* set source */
+  shr $1, %rdx    /* point destination to second half of array, or rcx + (rdx / 2) */
+  mov %rcx, %rdi
+  add %rdx, %rdi
+  mov %rdx, %rcx  /* rcx = count. set to (size / 2) * (4 bytes per FP32 element) */
+  shl $2, %rcx
+  mov %rsi, %r12
+  mov %rdi, %r13
+  mov %rcx, %r14
+repmovsb_copy_pass_loop:
+  mov %r12, %rsi
+  mov %r13, %rdi
+  mov %r14, %rcx
+  rep movsb
+  dec %r8
+  jnz repmovsb_copy_pass_loop
+  movss (%r12), %xmm0
+  pop %rdi
+  pop %rsi
+  pop %r12
+  pop %r13
+  pop %r14
+  pop %r15
+  ret
+
+
+repmovsd_copy:
+  push %r15
+  push %r14
+  push %r13
+  push %r12
+  push %rsi
+  push %rdi
+  cld
+  mov %rcx, %rsi  /* set source */
+  shr $1, %rdx    /* point destination to second half of array, or rcx + (rdx / 2) */
+  mov %rcx, %rdi
+  add %rdx, %rdi
+  mov %rdx, %rcx  /* rcx = count. set to (size / 2) */
+  mov %rsi, %r12
+  mov %rdi, %r13
+  mov %rcx, %r14
+repmovsd_copy_pass_loop:
+  mov %r12, %rsi
+  mov %r13, %rdi
+  mov %r14, %rcx
+  rep movsd
+  dec %r8
+  jnz repmovsd_copy_pass_loop
+  movss (%r12), %xmm0
+  pop %rdi
+  pop %rsi
+  pop %r12
+  pop %r13
+  pop %r14
+  pop %r15
+  ret 
+
+repstosb_write:
+  push %r15
+  push %r14
+  push %r13
+  push %r12
+  push %rsi
+  push %rdi
+  cld
+  mov $1, %al     /* set source (1) */
+  mov %rcx, %r13  /* save destination into r13 */
+  mov %rdx, %r14  /* save count into r14 */
+  shl $2, %r14    /* multiply count by 4 because count is in FP32 elements and stosb works with bytes */
+repstosb_copy_pass_loop:
+  mov %r13, %rdi
+  mov %r14, %rcx
+  rep stosb
+  dec %r8
+  jnz repstosb_copy_pass_loop
+  movss (%r12), %xmm0
+  pop %rdi
+  pop %rsi
+  pop %r12
+  pop %r13
+  pop %r14
+  pop %r15
+  ret  
+
+repstosd_write:
+  push %r15
+  push %r14
+  push %r13
+  push %r12
+  push %rsi
+  push %rdi
+  cld
+  mov $1, %al     /* set source (1) */
+  mov %rcx, %r13  /* save destination into r13 */
+  mov %rdx, %r14  /* save count into r14 */
+repstosd_copy_pass_loop:
+  mov %r13, %rdi
+  mov %r14, %rcx
+  rep stosl
+  dec %r8
+  jnz repstosd_copy_pass_loop
+  movss (%r12), %xmm0
+  pop %rdi
+  pop %rsi
+  pop %r12
+  pop %r13
+  pop %r14
+  pop %r15
+  ret   
+
 
 /* Tests for cache bank conflicts by reading from two locations, spaced by some
    number of bytes

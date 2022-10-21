@@ -40,10 +40,15 @@ float MeasureBw(uint64_t sizeKb, uint64_t iterations, uint64_t threads, int shar
 float scalar_read(float* arr, uint64_t arr_length, uint64_t iterations, uint64_t start) __attribute((ms_abi));
 extern float sse_read(float* arr, uint64_t arr_length, uint64_t iterations, uint64_t start) __attribute__((ms_abi));
 extern float sse_write(float* arr, uint64_t arr_length, uint64_t iterations, uint64_t start) __attribute__((ms_abi));
+extern float sse_ntwrite(float* arr, uint64_t arr_length, uint64_t iterations, uint64_t start) __attribute__((ms_abi));
 extern float avx512_read(float* arr, uint64_t arr_length, uint64_t iterations, uint64_t start) __attribute__((ms_abi));
 extern float avx512_write(float* arr, uint64_t arr_length, uint64_t iterations, uint64_t start) __attribute__((ms_abi));
 extern float avx512_copy(float* arr, uint64_t arr_length, uint64_t iterations, uint64_t start) __attribute__((ms_abi));
 extern float avx512_add(float* arr, uint64_t arr_length, uint64_t iterations, uint64_t start) __attribute__((ms_abi));
+extern float repmovsb_copy(float *arr, uint64_t arr_length, uint64_t iterations, uint64_t start) __attribute__((ms_abi));
+extern float repmovsd_copy(float *arr, uint64_t arr_length, uint64_t iterations, uint64_t start) __attribute__((ms_abi));
+extern float repstosb_write(float *arr, uint64_t arr_length, uint64_t iterations, uint64_t start) __attribute__((ms_abi));
+extern float repstosd_write(float *arr, uint64_t arr_length, uint64_t iterations, uint64_t start) __attribute__((ms_abi));
 extern uint32_t readbankconflict(uint32_t *arr, uint64_t arr_length, uint64_t spacing, uint64_t iterations) __attribute__((ms_abi));
 float (*bw_func)(float*, uint64_t, uint64_t, uint64_t start) __attribute__((ms_abi));
 #else
@@ -192,10 +197,34 @@ int main(int argc, char *argv[]) {
                     bw_func = sse_write;
                     fprintf(stderr, "Using SSE to test write bandwidth\n");
                 }
+                else if (strncmp(argv[argIdx], "sse_ntwrite", 11) == 0) {
+                    bw_func = sse_ntwrite;
+                    fprintf(stderr, "Using SSE NT writes to test write bandwidth\n");
+                } 
                 else if (strncmp(argv[argIdx], "sse", 3) == 0) {
                     bw_func = sse_read;
                     fprintf(stderr, "Using ASM code, SSE\n");
                 }
+                else if (strncmp(argv[argIdx], "avx", 3) == 0) {
+                    bw_func = asm_read;
+                    fprintf(stderr, "Using ASM code, AVX\n");
+                } 
+                else if (strncmp(argv[argIdx], "repmovsb", 8) == 0) {
+                    bw_func = repmovsb_copy;
+                    fprintf(stderr, "Using REP MOVSB to copy\n");
+                }
+                else if (strncmp(argv[argIdx], "repmovsd", 8) == 0) {
+                    bw_func = repmovsd_copy;
+                    fprintf(stderr, "Using REP MOVSD to copy\n");
+                }
+                else if (strncmp(argv[argIdx], "repstosb", 9) == 0) {
+                    bw_func = repstosb_write;
+                    fprintf(stderr, "Using REP STOSB to write\n");
+                } 
+                else if (strncmp(argv[argIdx], "repstosd", 9) == 0) {
+                    bw_func = repstosd_write;
+                    fprintf(stderr, "Using REP STOSD to write\n");
+                }  
                 else if (strncmp(argv[argIdx], "readbankconflict", 13) == 0) {
                     testBankConflict = 1;
                 }
