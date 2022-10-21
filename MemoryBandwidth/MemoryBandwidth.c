@@ -178,7 +178,11 @@ int main(int argc, char *argv[]) {
                     testInstructionBandwidth = 1;
                     nopBytes = 4;
                     fprintf(stderr, "Testing instruction fetch bandwidth with 4 byte instructions. Threads/shared/private args will be ignored\n");
-                }
+                } else if (strncmp(argv[argIdx], "instr2", 6) == 0) {
+		    testInstructionBandwidth = 1;
+		    nopBytes = 2;
+		    fprintf(stderr, "Testing instruction fetch bandwith with 2 byte instructions. Threads/shared/private args will be ignored\n");
+		}
                 #ifdef __x86_64
                 else if (strncmp(argv[argIdx], "avx512", 6) == 0) {
                     bw_func = avx512_read;
@@ -358,6 +362,8 @@ void TestBankConflicts() {
 
 float MeasureInstructionBw(uint64_t sizeKb, uint64_t iterations, int nopSize, int branchInterval) {
 #ifdef __x86_64
+    char nop2b[8] = { 0x66, 0x90, 0x66, 0x90, 0x66, 0x90, 0x66, 0x90 };
+    char nop2b_xor[8] = { 0x31, 0xc0, 0x31, 0xc0, 0x31, 0xc0, 0x31, 0xc0 };
     char nop8b[8] = { 0x0F, 0x1F, 0x84, 0x00, 0x00, 0x00, 0x00, 0x00 };
 
     // zen/piledriver optimization manual uses this pattern
@@ -397,6 +403,7 @@ float MeasureInstructionBw(uint64_t sizeKb, uint64_t iterations, int nopSize, in
     uint64_t *nop8bptr;
     if (nopSize == 8) nop8bptr = (uint64_t *)(nop8b);
     else if (nopSize == 4) nop8bptr = (uint64_t *)(nop4b);
+    else if (nopSize == 2) nop8bptr = (uint64_t *)(nop2b_xor);
     else {
         fprintf(stderr, "%d byte instruction length isn't supported :(\n", nopSize);
     }
