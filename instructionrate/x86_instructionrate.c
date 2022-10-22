@@ -153,7 +153,9 @@ int main(int argc, char *argv[]) {
   }
 
   if (argc > 2) {
-    iterationsHigh =  1500000000 * (uint64_t)atol(argv[2]);
+    uint64_t scaleFactor = (uint64_t)atol(argv[2]);
+    iterationsHigh =  iterationsHigh * scaleFactor;
+    iterations *= scaleFactor;
     printf("setting %lu iterations\n", iterationsHigh);
   }
 
