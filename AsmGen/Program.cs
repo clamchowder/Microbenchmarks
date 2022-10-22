@@ -17,7 +17,14 @@ namespace AsmGen
         {
             List<IUarchTest> tests = new List<IUarchTest>();
             tests.Add(new RobTest(4, 384, 1));
-            tests.Add(new PhytiumRobTest(4, 256, 1));
+            //tests.Add(new PhytiumRobTest(4, 256, 1));
+            tests.Add(new RobTest(4, 2048, 1));
+            tests.Add(new Zen4RobTest(4, 350, 1));
+            tests.Add(new MovElimRobTest(64, 384, 1));
+            tests.Add(new ZeroElimIntRf(64, 384, 1));
+            tests.Add(new Stq512Test(10, 100, 1));
+            tests.Add(new VecMovElimRobTest(64, 340, 1));
+            tests.Add(new ZeroElimVecRfTest(64, 340, 1));
             tests.Add(new IntRfTest(4, 384, 1));
             tests.Add(new FpRfTest(4, 384, 1));
             tests.Add(new VecRfTest(4, 384, 1));
@@ -42,7 +49,7 @@ namespace AsmGen
             tests.Add(new LdqTest(4, 256, 1));
             tests.Add(new StqTest(4, 160, 1));
             tests.Add(new LdqStqTest(4, 128, 1));
-            tests.Add(new ReturnStackTest(1, 64, 1));
+            tests.Add(new ReturnStackTest(1, 128, 1));
             tests.Add(new MshrsTest(1, 12, 1));
             tests.Add(new CvtSchedTest(1, 128, 1));
             tests.Add(new RorSchedTest(1, 48, 1));
@@ -52,6 +59,7 @@ namespace AsmGen
             tests.Add(new YmmStateIntRfTest(1, 64, 1));
             tests.Add(new Add256RfTest(1, 256, 1));
             tests.Add(new Add256SchedTest(1, 256, 1));
+            tests.Add(new Add512SchedTest(20, 256, 1));
             tests.Add(new Add128SchedTest(1, 256, 1));
             tests.Add(new BtbTest(4, BtbTest.BranchType.Unconditional));
             tests.Add(new BtbTest(8, BtbTest.BranchType.Unconditional));
@@ -66,7 +74,7 @@ namespace AsmGen
             tests.Add(new MaskRfTest(1, 256, 1));
             tests.Add(new NotIntRfTest(1, 450, 1));
             tests.Add(new MovImmIntRfTest(1, 450, 1));
-            tests.Add(new FaddNsqTest(4, 120, 1));
+            tests.Add(new FaddNsqTest(4, 135, 1));
             tests.Add(new Add128NsqTest(4, 120, 1));
             tests.Add(new LoadNsqTest(4, 50, 1));
             tests.Add(new MixLoadStoreSchedTest(4, 120, 1));
@@ -246,7 +254,11 @@ namespace AsmGen
             sb.AppendLine("      A[j] = tmp;");
             sb.AppendLine("  }");
 
-            sb.AppendLine("  B = (int*)malloc(sizeof(int) * list_size);\n");
+            sb.AppendLine("#ifdef _WIN32");
+            sb.AppendLine("  B = (int*)_aligned_malloc(sizeof(int) * list_size, 64);\n");
+            sb.AppendLine("#else");
+            sb.AppendLine("  B = (int*)aligned_alloc(64, sizeof(int) * list_size);\n");
+            sb.AppendLine("#endif");
             sb.AppendLine("  for (int i = 0; i < list_size; i++) { B[i] = i; }\n");
             sb.AppendLine("  fpArr = (float*)malloc(sizeof(float) * list_size);\n");
             sb.AppendLine("  for (int i = 0;i < list_size; i++) { fpArr[i] = i + .1; }\n");
