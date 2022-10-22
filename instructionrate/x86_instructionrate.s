@@ -14,8 +14,10 @@
 .global leamultest
 .global rorbtstest
 .global btsmultest
-.global indepmovtest
 .global depmovtest
+.global indepmovtest
+.global vecindepmovtest
+.global vecdepmovtest
 .global xorzerotest
 .global movzerotest
 .global subzerotest
@@ -4440,6 +4442,108 @@ depmovtest_loop:
   pop %r15
   pop %r9
   pop %r8
+  pop %rbx
+  ret
+
+vecdepmovtest:
+  push %rbx
+  push %r8
+  push %r9
+  push %r15
+  push %r14
+  push %r13
+  push %r12
+  push %r11
+  push %r10
+  mov $1, %r8
+  mov $20, %r9
+  cvtsi2ss %r9, %xmm15
+  xor %rbx, %rbx
+vecdepmovtest_loop:
+  movaps %xmm15, %xmm12
+  movaps %xmm12, %xmm14
+  movaps %xmm14, %xmm13
+  movaps %xmm13, %xmm11
+  movaps %xmm11, %xmm15
+  movaps %xmm15, %xmm12
+  movaps %xmm12, %xmm14
+  movaps %xmm14, %xmm13
+  movaps %xmm13, %xmm11
+  movaps %xmm11, %xmm15
+  movaps %xmm15, %xmm12
+  movaps %xmm12, %xmm14
+  movaps %xmm14, %xmm13
+  movaps %xmm13, %xmm11
+  movaps %xmm11, %xmm15
+  movaps %xmm15, %xmm12
+  movaps %xmm12, %xmm14
+  movaps %xmm14, %xmm13
+  movaps %xmm13, %xmm11
+  movaps %xmm11, %xmm15
+  sub %r9, %rdi
+  jnz vecdepmovtest_loop
+  pop %r10
+  pop %r11
+  pop %r12
+  pop %r13
+  pop %r14
+  pop %r15
+  pop %r9
+  pop %r8
+  pop %rbx
+  ret 
+
+vecindepmovtest:
+  push %rbx
+  push %rcx
+  push %r8
+  push %r9
+  push %r15
+  push %r14
+  push %r13
+  push %r12
+  push %r11
+  push %r10
+  mov $1, %r8
+  mov $20, %r9
+  cvtsi2ss %r9, %xmm0
+  movaps %xmm0, %xmm1
+  movaps %xmm0, %xmm10
+  movaps %xmm0, %xmm11
+  movaps %xmm0, %xmm12
+  xor %rbx, %rbx
+vecindepmovtest_loop:
+  movaps %xmm10, %xmm15
+  movaps %xmm11, %xmm14
+  movaps %xmm12, %xmm13
+  movaps %xmm0, %xmm15
+  movaps %xmm1, %xmm14
+  movaps %xmm10, %xmm15
+  movaps %xmm11, %xmm14
+  movaps %xmm12, %xmm13
+  movaps %xmm0, %xmm15
+  movaps %xmm1, %xmm14
+  movaps %xmm10, %xmm15
+  movaps %xmm11, %xmm14
+  movaps %xmm12, %xmm13
+  movaps %xmm0, %xmm15
+  movaps %xmm1, %xmm14
+  movaps %xmm10, %xmm15
+  movaps %xmm11, %xmm14
+  movaps %xmm12, %xmm13
+  movaps %xmm0, %xmm15
+  movaps %xmm1, %xmm14
+  sub %r9, %rdi
+  jnz vecindepmovtest_loop
+  pop %r10
+  pop %r11
+  pop %r12
+  pop %r13
+  pop %r14
+  pop %r15
+  pop %r9
+  pop %r8
+  pop %rcx
   pop %rbx
   ret
 
