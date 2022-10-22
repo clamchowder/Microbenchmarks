@@ -19,8 +19,10 @@
 .global vecindepmovtest
 .global vecdepmovtest
 .global xorzerotest
+.global vecxorzerotest
 .global movzerotest
 .global subzerotest
+.global vecsubzerotest
 .global depinctest
 .global depdectest
 .global depaddimmtest
@@ -4694,6 +4696,56 @@ xorzerotest_loop:
   pop %rbx
   ret
 
+vecxorzerotest:
+  push %rbx
+  push %rcx
+  push %r8
+  push %r9
+  push %r15
+  push %r14
+  push %r13
+  push %r12
+  push %r11
+  push %r10
+  mov $1, %r8
+  mov $20, %r9
+  cvtsi2ss %r9, %xmm0
+  xor %rbx, %rbx
+vecxorzerotest_loop:
+  xorps %xmm0, %xmm0
+  xorps %xmm0, %xmm0
+  xorps %xmm0, %xmm0
+  xorps %xmm0, %xmm0
+  xorps %xmm0, %xmm0
+  xorps %xmm0, %xmm0
+  xorps %xmm0, %xmm0
+  xorps %xmm0, %xmm0
+  xorps %xmm0, %xmm0
+  xorps %xmm0, %xmm0
+  xorps %xmm0, %xmm0
+  xorps %xmm0, %xmm0
+  xorps %xmm0, %xmm0
+  xorps %xmm0, %xmm0
+  xorps %xmm0, %xmm0
+  xorps %xmm0, %xmm0
+  xorps %xmm0, %xmm0
+  xorps %xmm0, %xmm0
+  xorps %xmm0, %xmm0
+  xorps %xmm0, %xmm0
+  sub %r9, %rdi
+  jnz vecxorzerotest_loop
+  pop %r10
+  pop %r11
+  pop %r12
+  pop %r13
+  pop %r14
+  pop %r15
+  pop %r9
+  pop %r8
+  pop %rcx
+  pop %rbx
+  ret 
+
 subzerotest:
   push %rbx
   push %rcx
@@ -4742,6 +4794,56 @@ subzerotest_loop:
   pop %rcx
   pop %rbx
   ret
+
+vecsubzerotest:
+  push %rbx
+  push %rcx
+  push %r8
+  push %r9
+  push %r15
+  push %r14
+  push %r13
+  push %r12
+  push %r11
+  push %r10
+  mov $1, %r8
+  mov $20, %r9
+  cvtsi2ss %r9, %xmm15
+  xor %rbx, %rbx
+vecsubzerotest_loop:
+  subss %xmm15, %xmm15
+  subss %xmm15, %xmm15
+  subss %xmm15, %xmm15
+  subss %xmm15, %xmm15
+  subss %xmm15, %xmm15
+  subss %xmm15, %xmm15
+  subss %xmm15, %xmm15
+  subss %xmm15, %xmm15
+  subss %xmm15, %xmm15
+  subss %xmm15, %xmm15
+  subss %xmm15, %xmm15
+  subss %xmm15, %xmm15
+  subss %xmm15, %xmm15
+  subss %xmm15, %xmm15
+  subss %xmm15, %xmm15
+  subss %xmm15, %xmm15
+  subss %xmm15, %xmm15
+  subss %xmm15, %xmm15
+  subss %xmm15, %xmm15
+  subss %xmm15, %xmm15
+  sub %r9, %rdi
+  jnz subzerotest_loop
+  pop %r10
+  pop %r11
+  pop %r12
+  pop %r13
+  pop %r14
+  pop %r15
+  pop %r9
+  pop %r8
+  pop %rcx
+  pop %rbx
+  ret 
 
 depaddimmtest:
   push %rbx

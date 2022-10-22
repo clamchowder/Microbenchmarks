@@ -99,8 +99,10 @@ extern uint64_t vecindepmovtest(uint64_t iterations) __attribute((sysv_abi));
 extern uint64_t depmovtest(uint64_t iterations) __attribute((sysv_abi));
 extern uint64_t vecdepmovtest(uint64_t iterations) __attribute((sysv_abi));
 extern uint64_t xorzerotest(uint64_t iterations) __attribute((sysv_abi));
+extern uint64_t vecxorzerotest(uint64_t iterations) __attribute((sysv_abi));
 extern uint64_t movzerotest(uint64_t iterations) __attribute((sysv_abi));
 extern uint64_t subzerotest(uint64_t iterations) __attribute((sysv_abi));
+extern uint64_t vecsubzerotest(uint64_t iterations) __attribute((sysv_abi));
 extern uint64_t depinctest(uint64_t iterations) __attribute((sysv_abi));
 extern uint64_t depdectest(uint64_t iterations) __attribute((sysv_abi));
 extern uint64_t depaddimmtest(uint64_t iterations) __attribute((sysv_abi));
@@ -283,7 +285,11 @@ int main(int argc, char *argv[]) {
   if (argc == 1 || argc > 1 && strncmp(argv[1], "vecdepmov", 9) == 0)
     printf("Dependent vec movs per clk: %.2f\n", measureFunction(iterationsHigh, clockSpeedGhz, vecdepmovtest));
   if (argc == 1 || argc > 1 && strncmp(argv[1], "vecindepmov", 12) == 0)
-    printf("Dependent vec movs per clk: %.2f\n", measureFunction(iterationsHigh, clockSpeedGhz, vecindepmovtest));
+    printf("Independent vec movs per clk: %.2f\n", measureFunction(iterationsHigh, clockSpeedGhz, vecindepmovtest));
+  if (argc == 1 || argc > 1 && strncmp(argv[1], "vecxorzero", 10) == 0)
+    printf("xor xmm -> 0 per clk: %.2f\n", measureFunction(iterationsHigh, clockSpeedGhz, vecxorzerotest));
+  if (argc == 1 || argc > 1 && strncmp(argv[1], "vecsubzero", 10) == 0)
+    printf("sub xmm -> 0 per clk: %.2f\n", measureFunction(iterationsHigh, clockSpeedGhz, vecsubzerotest));
 
   // misc mixed integer tests
   if (argc == 1 || argc > 1 && strncmp(argv[1], "miximuladd", 10) == 0)
