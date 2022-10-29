@@ -64,6 +64,7 @@ extern uint64_t add128fp(uint64_t iterations) __attribute((sysv_abi));
 extern uint64_t mul128fp(uint64_t iterations) __attribute((sysv_abi));
 extern uint64_t fma512(uint64_t iterations) __attribute((sysv_abi));
 extern uint64_t mixfma256fma512(uint64_t iterations) __attribute((sysv_abi));
+extern uint64_t mix21fma256fma512(uint64_t iterations) __attribute((sysv_abi));
 extern uint64_t fma256(uint64_t iterations) __attribute((sysv_abi));
 extern uint64_t fma128(uint64_t iterations) __attribute((sysv_abi));
 extern uint64_t mixfmafadd256(uint64_t iterations) __attribute((sysv_abi));
@@ -212,6 +213,8 @@ int main(int argc, char *argv[]) {
       printf("512-bit FMA latency: %.2f clocks\n", 1 / measureFunction(iterations, clockSpeedGhz, latfma512));
     if (argc == 1 || argc > 1 && strncmp(argv[1], "mixfma256fma512", 15) == 0)
       printf("1:1 256-bit/512-bit FMA per clk: %.2f\n", measureFunction(iterations, clockSpeedGhz, mixfma256fma512));
+    if (argc == 1 || argc > 1 && strncmp(argv[1], "mix21fma256fma512", 17) == 0)
+      printf("2:1 256-bit/512-bit FMA per clk: %.2f\n", measureFunction(iterations, clockSpeedGhz, mix21fma256fma512));
     if (argc == 1 || argc > 1 && strncmp(argv[1], "nemesfpumix21", 13) == 0)
       printf("1:2 512b FMA:FADD per clk (nemes): %.2f\n", measureFunction(iterations * 22, clockSpeedGhz, nemesfpu512mix21));
     if (argc == 1 || argc > 1 && strncmp(argv[1], "add512int", 9) == 0)
