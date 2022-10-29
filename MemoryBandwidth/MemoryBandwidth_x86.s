@@ -13,6 +13,7 @@
 .global avx512_copy
 .global avx512_add
 .global readbankconflict
+.global readbankconflict128
 
 .global repstosd_write
 .global repstosb_write
@@ -859,54 +860,24 @@ readbankconflict:
 readbankconflict_loop:
    mov (%rdi), %r10
    mov (%rsi), %r11
-   inc %rdi
-   inc %rsi
-
    mov (%rdi), %r10
    mov (%rsi), %r11
-   inc %rdi
-   inc %rsi
-
    mov (%rdi), %r10
    mov (%rsi), %r11
-   inc %rdi
-   inc %rsi
-
    mov (%rdi), %r10
    mov (%rsi), %r11
-   inc %rdi
-   inc %rsi
-
    mov (%rdi), %r10
    mov (%rsi), %r11
-   inc %rdi
-   inc %rsi
-
    mov (%rdi), %r10
    mov (%rsi), %r11
-   inc %rdi
-   inc %rsi
-
    mov (%rdi), %r10
    mov (%rsi), %r11
-   inc %rdi
-   inc %rsi
-
    mov (%rdi), %r10
    mov (%rsi), %r11
-   inc %rdi
-   inc %rsi
-
    mov (%rdi), %r10
    mov (%rsi), %r11
-   inc %rdi
-   inc %rsi
-
    mov (%rdi), %r10
    mov (%rsi), %r11
-   inc %rdi
-   inc %rsi
-
    sub $20, %r9
    jl readbankconflict_end
    cmp %rsi, %r12  /* subtract leading location from end location */
@@ -923,3 +894,59 @@ readbankconflict_end:
    pop %rdi
    pop %rbx
    ret
+
+readbankconflict128:
+   push %rbx
+   push %rdi
+   push %rsi
+   push %r10
+   push %r11
+   push %r12
+   mov $1, %rax
+   cmp %r8, %rdx  /* basic check - subtract load spacing from array len */
+   jle readbankconflict128_end /* exit immediately if we don't have enough space to iterate */
+   xor %rax, %rax
+   mov %rcx, %rdi
+   mov %rcx, %rsi
+   mov %rcx, %r12
+   add %rdx, %r12  /* set end location */
+   sub $10, %r12   /* we're reading 10B ahead */
+   add %r8, %rsi   /* rdi = first load location, rsi = second load location */
+   mov (%rcx), %rbx  /* rbx = increment */
+readbankconflict128_loop:
+   movups (%rdi), %xmm0
+   movups (%rsi), %xmm1
+   movups (%rdi), %xmm0
+   movups (%rsi), %xmm1
+   movups (%rdi), %xmm0
+   movups (%rsi), %xmm1
+   movups (%rdi), %xmm0
+   movups (%rsi), %xmm1
+   movups (%rdi), %xmm0
+   movups (%rsi), %xmm1
+   movups (%rdi), %xmm0
+   movups (%rsi), %xmm1
+   movups (%rdi), %xmm0
+   movups (%rsi), %xmm1
+   movups (%rdi), %xmm0
+   movups (%rsi), %xmm1
+   movups (%rdi), %xmm0
+   movups (%rsi), %xmm1
+   movups (%rdi), %xmm0
+   movups (%rsi), %xmm1
+   sub $20, %r9
+   jl readbankconflict128_end
+   cmp %rsi, %r12  /* subtract leading location from end location */
+   jg readbankconflict128_loop /* if positive or equal, continue loop */
+   mov %rcx, %rdi  /* reset to start */
+   mov %rcx, %rsi
+   add %r8, %rsi
+   jmp readbankconflict128_loop
+readbankconflict128_end:
+   pop %r12
+   pop %r11
+   pop %r10
+   pop %rsi
+   pop %rdi
+   pop %rbx
+   ret 
