@@ -231,9 +231,9 @@ int main(int argc, char* argv[]) {
         printf("\nSattolo, global memory latency (up to %lu K) unroll:\n", max_global_test_size / 1024);
 
         cl_kernel globalMemLatencyKernel = latency_kernel;
-        if (latency_kernel_amdworkaround) 
+        if (amdLatencyWorkaround)
         {
-            fprintf(stderr, "Using workaround to hit vector cache on AMD GPUs, GCN and later, instead of the scalar cache");
+            fprintf(stderr, "Using workaround to hit vector cache on AMD GPUs, GCN and later, instead of the scalar cache\n");
             globalMemLatencyKernel = latency_kernel_amdworkaround;
         }
 
@@ -259,7 +259,7 @@ int main(int argc, char* argv[]) {
             if (max_constant_test_size < sizeof(int) * 256 * default_test_sizes[size_idx]) {
                 printf("%d K would exceed device's max constant buffer size of %lu K, stopping here.\n", default_test_sizes[size_idx], max_constant_test_size / 1024);
             }
-            result = latency_test(context, command_queue, constant_kernel, 256 * default_test_sizes[size_idx], scale_iterations(default_test_sizes[size_idx], chase_iterations), true);
+            result = latency_test(context, command_queue, constant_kernel, 256 * default_test_sizes[size_idx], scale_iterations(default_test_sizes[size_idx], chase_iterations), true, false);
             printf("%d,%f\n", default_test_sizes[size_idx], result);
             if (result == 0) {
                 printf("Something went wrong, not testing anything bigger.\n");

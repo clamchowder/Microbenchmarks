@@ -5,7 +5,8 @@ float latency_test(cl_context context,
     cl_kernel kernel,
     uint32_t list_size,
     uint32_t chase_iterations,
-    short sattolo)
+    short sattolo,
+    short amdworkaround)
 {
     size_t global_item_size = 1, local_item_size = 1;
     cl_int ret;
@@ -25,6 +26,12 @@ float latency_test(cl_context context,
         {
             A[i] = (i + stride) % list_size;
         }
+    }
+
+    if (amdworkaround)
+    {
+        local_item_size = 2;
+        global_item_size = 2;
     }
 
     // copy array to device
