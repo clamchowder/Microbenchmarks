@@ -242,7 +242,7 @@ int main(int argc, char* argv[]) {
                 printf("%d K would exceed device's max buffer size of %lu K, stopping here.\n", default_test_sizes[size_idx], max_global_test_size / 1024);
                 break;
             }
-            result = latency_test(context, command_queue, latency_kernel, 256 * default_test_sizes[size_idx], (default_test_sizes[size_idx], chase_iterations), true, amdLatencyWorkaround);
+            result = latency_test(context, command_queue, globalMemLatencyKernel, 256 * default_test_sizes[size_idx], (default_test_sizes[size_idx], chase_iterations), true, amdLatencyWorkaround);
             printf("%d,%f\n", default_test_sizes[size_idx], result);
             if (result == 0) {
                 printf("Something went wrong, not testing anything bigger.\n");
