@@ -45,6 +45,7 @@ int main(int argc, char* argv[]) {
     uint32_t thread_count = 1, local_size = 1, skip = 0;
     float result;
     int platform_index = -1, device_index = -1;
+    short amdLatencyWorkaround = false;
 
     enum TestType testType = GlobalMemLatency;
 
@@ -90,6 +91,10 @@ int main(int argc, char* argv[]) {
                 argIdx++;
                 skip = atoi(argv[argIdx]);
                 fprintf(stderr, "Workgroups will be spaced %u apart\n", skip);
+            }
+            else if (_strnicmp(arg, "amdlatencyworkaround", 20) == 0) {
+                amdLatencyWorkaround = true;
+                fprintf(stderr, "Using workaround to hit AMD vector cache (not scalar cache)\n");
             }
             else if (_strnicmp(arg, "test", 4) == 0) {
                 argIdx++;
@@ -198,6 +203,7 @@ int main(int argc, char* argv[]) {
     }
 
     cl_kernel latency_kernel = clCreateKernel(program, "unrolled_latency_test", &ret);
+    cl_kernel latency_kernel_amdworkaround = clCreateKernel(program, "unrolled_latency_test_amdvectorworkaround", &ret);
     cl_kernel bw_kernel = clCreateKernel(program, "sum_bw_test", &ret);
     cl_kernel constant_kernel = clCreateKernel(program, "constant_unrolled_latency_test", &ret);
     cl_kernel int_exec_latency_test_kernel = clCreateKernel(program, "int_exec_latency_test", &ret);
@@ -224,12 +230,19 @@ int main(int argc, char* argv[]) {
         fprintf(stderr, "Doing %d K p-chase iterations with stride %d over %d KiB region\n", chase_iterations / 1000, stride, list_size * 4 / 1024);
         printf("\nSattolo, global memory latency (up to %lu K) unroll:\n", max_global_test_size / 1024);
 
+        cl_kernel globalMemLatencyKernel = latency_kernel;
+        if (latency_kernel_amdworkaround) 
+        {
+            fprintf(stderr, "Using workaround to hit vector cache on AMD GPUs, GCN and later, instead of the scalar cache");
+            globalMemLatencyKernel = latency_kernel_amdworkaround;
+        }
+
         for (int size_idx = 0; size_idx < sizeof(default_test_sizes) / sizeof(int); size_idx++) {
             if (max_global_test_size < sizeof(int) * 256 * default_test_sizes[size_idx]) {
                 printf("%d K would exceed device's max buffer size of %lu K, stopping here.\n", default_test_sizes[size_idx], max_global_test_size / 1024);
                 break;
             }
-            result = latency_test(context, command_queue, latency_kernel, 256 * default_test_sizes[size_idx], (default_test_sizes[size_idx], chase_iterations), true);
+            result = latency_test(context, command_queue, latency_kernel, 256 * default_test_sizes[size_idx], (default_test_sizes[size_idx], chase_iterations), true, amdLatencyWorkaround);
             printf("%d,%f\n", default_test_sizes[size_idx], result);
             if (result == 0) {
                 printf("Something went wrong, not testing anything bigger.\n");
@@ -257,7 +270,7 @@ int main(int argc, char* argv[]) {
     else if (testType == LocalMemLatency)
     {
         cl_kernel local_kernel = clCreateKernel(program, "local_unrolled_latency_test", &ret);
-        result = latency_test(context, command_queue, local_kernel, 1024, chase_iterations, true);
+        result = latency_test(context, command_queue, local_kernel, 1024, chase_iterations, true, false);
         printf("Local mem latency: %f\n", result);
     }
     else if (testType == GlobalMemBandwidth)

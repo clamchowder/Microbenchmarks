@@ -16,6 +16,7 @@ float latency_test(cl_context context,
     uint32_t element_count = list_size / CACHELINE_SIZE;
     uint32_t increment = CACHELINE_SIZE / sizeof(uint32_t);
     uint32_t* A = (uint32_t*)malloc(sizeof(uint32_t) * list_size);
+    memset(A, 0, sizeof(uint32_t) * list_size);
     if (sattolo) {
         FillPatternArr((uint32_t*)A, list_size, CACHELINE_SIZE);
     }
