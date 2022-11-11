@@ -17,12 +17,13 @@
 #define PAGE_SIZE 4096
 #define CACHELINE_SIZE 64
 
-int default_test_sizes[37] = { 2, 4, 8, 12, 16, 24, 32, 48, 64, 96, 128, 192, 256, 384, 512, 600, 768, 1024, 1536, 2048,
+int default_test_sizes[] = { 2, 4, 8, 12, 16, 24, 32, 48, 64, 96, 128, 192, 256, 384, 512, 600, 768, 1024, 1536, 2048,
                                3072, 4096, 5120, 6144, 8192, 10240, 12288, 16384, 24567, 32768, 65536, 98304,
-                               131072, 262144, 393216, 524288, 1048576 };
+                               131072, 262144, 393216, 524288, 1048576, 2097152, 4194304, 8388608, 16777216, 33554432,
+                               67108864 };
 
 #ifdef __x86_64
-extern void preplatencyarr(uint64_t *arr, uint32_t len) __attribute__((ms_abi));
+extern void preplatencyarr(uint64_t *arr, uint64_t len) __attribute__((ms_abi));
 extern uint32_t latencytest(uint64_t iterations, uint64_t *arr) __attribute((ms_abi));
 extern void stlftest(uint64_t iterations, char *arr) __attribute((ms_abi));
 extern void matchedstlftest(uint64_t iterations, char *arr) __attribute((ms_abi));
@@ -36,7 +37,7 @@ extern void matchedstlftest(uint32_t iterations, char *arr) __attribute((fastcal
 void (*stlfFunc)(uint32_t, char *) __attribute__((fastcall)) = stlftest;
 #define BITS_32
 #elif __aarch64__
-extern void preplatencyarr(uint64_t *arr, uint32_t len);
+extern void preplatencyarr(uint64_t *arr, uint64_t len);
 extern uint32_t latencytest(uint64_t iterations, uint64_t *arr);
 extern void matchedstlftest(uint64_t iterations, char *arr);
 extern void stlftest(uint64_t iterations, char *arr);
@@ -49,7 +50,7 @@ void (*stlfFunc)(uint64_t, char *) = NULL;
 #endif
 
 float RunTest(uint32_t size_kb, uint32_t iterations, uint32_t *preallocatedArr);
-float RunAsmTest(uint32_t size_kb, uint32_t iterations, uint32_t *preallocatedArr);
+float RunAsmTest(uint64_t size_kb, uint32_t iterations, uint32_t *preallocatedArr);
 float RunTlbTest(uint32_t size_kb, uint32_t iterations, uint32_t *preallocatedArr);
 float RunMlpTest(uint32_t size_kb, uint32_t iterations, uint32_t parallelism);
 void RunStlfTest(uint32_t iterations, int mode, int pageEnd);
@@ -148,7 +149,7 @@ int main(int argc, char* argv[]) {
 #ifndef __MINGW32__
     if (hugePages) {
        size_t hugePageSize = 1 << 21;
-       size_t maxMemRequired = default_test_sizes[testSizeCount - 1] * 1024;
+       size_t maxMemRequired = default_test_sizes[testSizeCount - 1] * (size_t)1024;
        if (maxTestSizeMb > 0 && maxMemRequired > maxTestSizeMb * 1024 * 1024) maxMemRequired = maxTestSizeMb * 1024 * 1024;
        maxMemRequired = (((maxMemRequired - 1) / hugePageSize) + 1) * hugePageSize;
        fprintf(stderr, "mmap-ing %lu bytes\n", maxMemRequired);
@@ -348,10 +349,10 @@ float RunMlpTest(uint32_t size_kb, uint32_t iterations, uint32_t parallelism) {
 #endif
 
 #ifndef UNKNOWN_ARCH
-float RunAsmTest(uint32_t size_kb, uint32_t iterations, uint32_t *preallocatedArr) {
+float RunAsmTest(uint64_t size_kb, uint32_t iterations, uint32_t *preallocatedArr) {
     struct timeval startTv, endTv;
     struct timezone startTz, endTz;
-    uint32_t list_size = size_kb * 1024 / POINTER_SIZE; // using 32-bit pointers
+    uint64_t list_size = size_kb * 1024 / POINTER_SIZE; // using 32-bit pointers
     uint32_t sum = 0, current;
 
     // Fill list to create random access pattern
