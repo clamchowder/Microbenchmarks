@@ -27,6 +27,7 @@ extern uint32_t latencytest(uint64_t iterations, uint64_t *arr) __attribute((ms_
 extern void stlftest(uint64_t iterations, char *arr) __attribute((ms_abi));
 extern void matchedstlftest(uint64_t iterations, char *arr) __attribute((ms_abi));
 extern void stlftest32(uint64_t iterations, char *arr) __attribute((ms_abi));
+extern void stlftest128(uint64_t iterations, char *arr) __attribute((ms_abi));
 void (*stlfFunc)(uint64_t, char *) __attribute__((ms_abi)) = stlftest;
 #elif __i686
 extern void preplatencyarr(uint32_t *arr, uint32_t len) __attribute__((fastcall));
