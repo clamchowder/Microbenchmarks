@@ -28,6 +28,7 @@ extern uint32_t latencytest(uint64_t iterations, uint64_t *arr) __attribute((ms_
 extern void stlftest(uint64_t iterations, char *arr) __attribute((ms_abi));
 extern void matchedstlftest(uint64_t iterations, char *arr) __attribute((ms_abi));
 extern void stlftest32(uint64_t iterations, char *arr) __attribute((ms_abi));
+extern void stlftest128(uint64_t iterations, char *arr) __attribute((ms_abi));
 void (*stlfFunc)(uint64_t, char *) __attribute__((ms_abi)) = stlftest;
 #elif __i686
 extern void preplatencyarr(uint32_t *arr, uint32_t len) __attribute__((fastcall));
@@ -42,6 +43,7 @@ extern uint32_t latencytest(uint64_t iterations, uint64_t *arr);
 extern void matchedstlftest(uint64_t iterations, char *arr);
 extern void stlftest(uint64_t iterations, char *arr);
 extern void stlftest32(uint64_t iterations, char *arr);
+extern void stlftest128(uint64_t iterations, char *arr);
 void (*stlfFunc)(uint64_t, char *) = stlftest;
 #else
 #define UNKNOWN_ARCH 1
@@ -95,6 +97,10 @@ int main(int argc, char* argv[]) {
                     stlf = 1;
                     stlfFunc = matchedstlftest;
                     fprintf(stderr, "Running store to load forwarding test, with matched load/store sizes\n");
+                } else if (strncmp(testType, "128_stlf", 4) == 0) {
+                    stlf = 1;
+                    stlfFunc = stlftest128;
+                    fprintf(stderr, "Running store to load forwarding test, with 128-bit store, 64-bit load\n");
                 }
 		#ifndef BITS_32
                 else if (strncmp(testType, "dword_stlf", 9) == 0) {
