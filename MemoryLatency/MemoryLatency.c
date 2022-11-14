@@ -19,8 +19,7 @@
 
 int default_test_sizes[] = { 2, 4, 8, 12, 16, 24, 32, 48, 64, 96, 128, 192, 256, 384, 512, 600, 768, 1024, 1536, 2048,
                                3072, 4096, 5120, 6144, 8192, 10240, 12288, 16384, 24567, 32768, 65536, 98304,
-                               131072, 262144, 393216, 524288, 1048576, 2097152, 4194304, 8388608, 16777216, 33554432,
-                               67108864 };
+                               131072, 262144, 393216, 524288, 1048576, 2097152 };
 
 #ifdef __x86_64
 extern void preplatencyarr(uint64_t *arr, uint64_t len) __attribute__((ms_abi));
@@ -366,7 +365,7 @@ float RunAsmTest(uint64_t size_kb, uint32_t iterations, uint32_t *preallocatedAr
     if (preallocatedArr == NULL) {
         A = (POINTER_INT *)malloc(POINTER_SIZE * list_size);
         if (!A) {
-            fprintf(stderr, "Failed to allocate memory for %u KB test\n", size_kb);
+            fprintf(stderr, "Failed to allocate memory for %lu KB test\n", size_kb);
             return 0;
 	      }
     } else {
