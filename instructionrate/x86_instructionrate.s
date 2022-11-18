@@ -14,11 +14,15 @@
 .global leamultest
 .global rorbtstest
 .global btsmultest
-.global indepmovtest
 .global depmovtest
+.global indepmovtest
+.global vecindepmovtest
+.global vecdepmovtest
 .global xorzerotest
+.global vecxorzerotest
 .global movzerotest
 .global subzerotest
+.global vecsubzerotest
 .global depinctest
 .global depdectest
 .global depaddimmtest
@@ -50,6 +54,7 @@
 .global latadd128fp
 .global fma512
 .global mixfma256fma512
+.global mix21fma256fma512
 .global fma256
 .global fma128
 .global mixfmafadd256
@@ -1601,7 +1606,8 @@ mix256fp:
   mov $20, %r9
   movq %r9, %xmm1
   cvtsi2ss %r9, %xmm6
-  vbroadcastss %xmm6, %ymm6
+  movups %xmm6, -32(%rsp)
+  vbroadcastss -32(%rsp), %ymm6
   vmovups %ymm6, %ymm5
   vmovups %ymm6, %ymm7
   vmovups %ymm6, %ymm8
@@ -2495,7 +2501,8 @@ latadd256fp:
   mov $20, %r9
   movq %r9, %xmm1
   cvtsi2ss %r9, %xmm6
-  vbroadcastss %xmm6, %ymm6
+  movups %xmm6, -32(%rsp)
+  vbroadcastss -32(%rsp), %ymm6
 latadd256fp_loop:
   vaddps %ymm6, %ymm6, %ymm6
   vaddps %ymm6, %ymm6, %ymm6
@@ -2530,7 +2537,8 @@ mul256fp:
   push %r8
   mov $20, %r9
   cvtsi2ss %r9, %xmm0
-  vbroadcastss %xmm0, %ymm6
+  movups %xmm0, -32(%rsp)
+  vbroadcastss -32(%rsp), %ymm6
   vmovdqa %ymm0, %ymm1
   vmovdqa %ymm0, %ymm2
   vmovdqa %ymm0, %ymm3
@@ -2575,7 +2583,8 @@ add256fp:
   push %r8
   mov $20, %r9
   cvtsi2ss %r9, %xmm0
-  vbroadcastss %xmm0, %ymm6
+  movups %xmm0, -32(%rsp)
+  vbroadcastss -32(%rsp), %ymm6
   vmovdqa %ymm0, %ymm1
   vmovdqa %ymm0, %ymm2
   vmovdqa %ymm0, %ymm3
@@ -2622,7 +2631,8 @@ latmul256fp:
   mov $20, %r9
   movq %r9, %xmm1
   cvtsi2ss %r9, %xmm6
-  vbroadcastss %xmm6, %ymm6
+  movups %xmm6, -32(%rsp)
+  vbroadcastss -32(%rsp), %ymm6
 latmul256fp_loop:
   vmulps %ymm6, %ymm6, %ymm6
   vmulps %ymm6, %ymm6, %ymm6
@@ -2698,6 +2708,50 @@ fma512_loop:
   pop %r9
   ret
 
+mix21fma256fma512:
+  push %r9
+  push %r8
+  mov $18, %r9
+  movq %r9, %xmm1
+  cvtsi2ss %r9, %xmm6
+  vbroadcastss %xmm6, %zmm6
+  vmovups %zmm6, %zmm5
+  vmovups %zmm6, %zmm7
+  vmovups %zmm6, %zmm8
+  vmovups %zmm6, %zmm9
+  vmovups %zmm6, %zmm10
+  vmovups %zmm6, %zmm11
+  vmovups %zmm6, %zmm12
+  vmovups %zmm6, %zmm13
+  vmovups %zmm6, %zmm14
+  vmovups %zmm6, %zmm15
+mix21fma256fma512_loop:
+  vfmadd132ps %ymm6, %ymm5, %ymm5
+  vfmadd132ps %ymm6, %ymm7, %ymm7
+  vfmadd132ps %zmm6, %zmm8, %zmm8
+  vfmadd132ps %ymm6, %ymm9, %ymm9
+  vfmadd132ps %ymm6, %ymm10, %ymm10
+  vfmadd132ps %zmm6, %zmm11, %zmm11
+  vfmadd132ps %ymm6, %ymm12, %ymm12
+  vfmadd132ps %ymm6, %ymm13, %ymm13
+  vfmadd132ps %zmm6, %zmm14, %zmm14
+  vfmadd132ps %ymm6, %ymm5, %ymm5
+  vfmadd132ps %ymm6, %ymm7, %ymm7
+  vfmadd132ps %zmm6, %zmm8, %zmm8
+  vfmadd132ps %ymm6, %ymm9, %ymm9
+  vfmadd132ps %ymm6, %ymm10, %ymm10
+  vfmadd132ps %zmm6, %zmm11, %zmm11
+  vfmadd132ps %ymm6, %ymm12, %ymm12
+  vfmadd132ps %ymm6, %ymm13, %ymm13
+  vfmadd132ps %zmm6, %zmm14, %zmm14 
+  sub %r9, %rdi
+  jg mix21fma256fma512_loop
+  movq %xmm1, %rax
+  vzeroupper
+  pop %r8
+  pop %r9
+  ret 
+
 mixfma256fma512:
   push %r9
   push %r8
@@ -2750,7 +2804,8 @@ fma256:
   mov $20, %r9
   movq %r9, %xmm1
   cvtsi2ss %r9, %xmm6
-  vbroadcastss %xmm6, %ymm6
+  movups %xmm6, -32(%rsp)
+  vbroadcastss -32(%rsp), %ymm6
   vmovups %ymm6, %ymm5
   vmovups %ymm6, %ymm7
   vmovups %ymm6, %ymm8
@@ -2797,7 +2852,8 @@ fma128:
   mov $20, %r9
   movq %r9, %xmm1
   cvtsi2ss %r9, %xmm6
-  vbroadcastss %xmm6, %xmm6
+  movups %xmm6, -16(%rsp)
+  vbroadcastss -16(%rsp), %xmm6
   vmovups %xmm6, %xmm5
   vmovups %xmm6, %xmm7
   vmovups %xmm6, %xmm8
@@ -4443,6 +4499,108 @@ depmovtest_loop:
   pop %rbx
   ret
 
+vecdepmovtest:
+  push %rbx
+  push %r8
+  push %r9
+  push %r15
+  push %r14
+  push %r13
+  push %r12
+  push %r11
+  push %r10
+  mov $1, %r8
+  mov $20, %r9
+  cvtsi2ss %r9, %xmm15
+  xor %rbx, %rbx
+vecdepmovtest_loop:
+  movaps %xmm15, %xmm12
+  movaps %xmm12, %xmm14
+  movaps %xmm14, %xmm13
+  movaps %xmm13, %xmm11
+  movaps %xmm11, %xmm15
+  movaps %xmm15, %xmm12
+  movaps %xmm12, %xmm14
+  movaps %xmm14, %xmm13
+  movaps %xmm13, %xmm11
+  movaps %xmm11, %xmm15
+  movaps %xmm15, %xmm12
+  movaps %xmm12, %xmm14
+  movaps %xmm14, %xmm13
+  movaps %xmm13, %xmm11
+  movaps %xmm11, %xmm15
+  movaps %xmm15, %xmm12
+  movaps %xmm12, %xmm14
+  movaps %xmm14, %xmm13
+  movaps %xmm13, %xmm11
+  movaps %xmm11, %xmm15
+  sub %r9, %rdi
+  jnz vecdepmovtest_loop
+  pop %r10
+  pop %r11
+  pop %r12
+  pop %r13
+  pop %r14
+  pop %r15
+  pop %r9
+  pop %r8
+  pop %rbx
+  ret 
+
+vecindepmovtest:
+  push %rbx
+  push %rcx
+  push %r8
+  push %r9
+  push %r15
+  push %r14
+  push %r13
+  push %r12
+  push %r11
+  push %r10
+  mov $1, %r8
+  mov $20, %r9
+  cvtsi2ss %r9, %xmm0
+  movaps %xmm0, %xmm1
+  movaps %xmm0, %xmm10
+  movaps %xmm0, %xmm11
+  movaps %xmm0, %xmm12
+  xor %rbx, %rbx
+vecindepmovtest_loop:
+  movaps %xmm10, %xmm15
+  movaps %xmm11, %xmm14
+  movaps %xmm12, %xmm13
+  movaps %xmm0, %xmm15
+  movaps %xmm1, %xmm14
+  movaps %xmm10, %xmm15
+  movaps %xmm11, %xmm14
+  movaps %xmm12, %xmm13
+  movaps %xmm0, %xmm15
+  movaps %xmm1, %xmm14
+  movaps %xmm10, %xmm15
+  movaps %xmm11, %xmm14
+  movaps %xmm12, %xmm13
+  movaps %xmm0, %xmm15
+  movaps %xmm1, %xmm14
+  movaps %xmm10, %xmm15
+  movaps %xmm11, %xmm14
+  movaps %xmm12, %xmm13
+  movaps %xmm0, %xmm15
+  movaps %xmm1, %xmm14
+  sub %r9, %rdi
+  jnz vecindepmovtest_loop
+  pop %r10
+  pop %r11
+  pop %r12
+  pop %r13
+  pop %r14
+  pop %r15
+  pop %r9
+  pop %r8
+  pop %rcx
+  pop %rbx
+  ret
+
 indepmovtest:
   push %rbx
   push %rcx
@@ -4590,6 +4748,56 @@ xorzerotest_loop:
   pop %rbx
   ret
 
+vecxorzerotest:
+  push %rbx
+  push %rcx
+  push %r8
+  push %r9
+  push %r15
+  push %r14
+  push %r13
+  push %r12
+  push %r11
+  push %r10
+  mov $1, %r8
+  mov $20, %r9
+  cvtsi2ss %r9, %xmm0
+  xor %rbx, %rbx
+vecxorzerotest_loop:
+  xorps %xmm0, %xmm0
+  xorps %xmm0, %xmm0
+  xorps %xmm0, %xmm0
+  xorps %xmm0, %xmm0
+  xorps %xmm0, %xmm0
+  xorps %xmm0, %xmm0
+  xorps %xmm0, %xmm0
+  xorps %xmm0, %xmm0
+  xorps %xmm0, %xmm0
+  xorps %xmm0, %xmm0
+  xorps %xmm0, %xmm0
+  xorps %xmm0, %xmm0
+  xorps %xmm0, %xmm0
+  xorps %xmm0, %xmm0
+  xorps %xmm0, %xmm0
+  xorps %xmm0, %xmm0
+  xorps %xmm0, %xmm0
+  xorps %xmm0, %xmm0
+  xorps %xmm0, %xmm0
+  xorps %xmm0, %xmm0
+  sub %r9, %rdi
+  jnz vecxorzerotest_loop
+  pop %r10
+  pop %r11
+  pop %r12
+  pop %r13
+  pop %r14
+  pop %r15
+  pop %r9
+  pop %r8
+  pop %rcx
+  pop %rbx
+  ret 
+
 subzerotest:
   push %rbx
   push %rcx
@@ -4638,6 +4846,56 @@ subzerotest_loop:
   pop %rcx
   pop %rbx
   ret
+
+vecsubzerotest:
+  push %rbx
+  push %rcx
+  push %r8
+  push %r9
+  push %r15
+  push %r14
+  push %r13
+  push %r12
+  push %r11
+  push %r10
+  mov $1, %r8
+  mov $20, %r9
+  cvtsi2ss %r9, %xmm15
+  xor %rbx, %rbx
+vecsubzerotest_loop:
+  subss %xmm15, %xmm15
+  subss %xmm15, %xmm15
+  subss %xmm15, %xmm15
+  subss %xmm15, %xmm15
+  subss %xmm15, %xmm15
+  subss %xmm15, %xmm15
+  subss %xmm15, %xmm15
+  subss %xmm15, %xmm15
+  subss %xmm15, %xmm15
+  subss %xmm15, %xmm15
+  subss %xmm15, %xmm15
+  subss %xmm15, %xmm15
+  subss %xmm15, %xmm15
+  subss %xmm15, %xmm15
+  subss %xmm15, %xmm15
+  subss %xmm15, %xmm15
+  subss %xmm15, %xmm15
+  subss %xmm15, %xmm15
+  subss %xmm15, %xmm15
+  subss %xmm15, %xmm15
+  sub %r9, %rdi
+  jnz subzerotest_loop
+  pop %r10
+  pop %r11
+  pop %r12
+  pop %r13
+  pop %r14
+  pop %r15
+  pop %r9
+  pop %r8
+  pop %rcx
+  pop %rbx
+  ret 
 
 depaddimmtest:
   push %rbx
@@ -4795,7 +5053,8 @@ fma4_256:
   mov $20, %r9
   movq %r9, %xmm1
   cvtsi2ss %r9, %xmm6
-  vbroadcastss %xmm6, %ymm6
+  movups %xmm6, -32(%rsp)
+  vbroadcastss -32(%rsp), %ymm6
   vmovups %ymm6, %ymm5
   vmovups %ymm6, %ymm7
   vmovups %ymm6, %ymm8
@@ -4841,7 +5100,8 @@ fma4_128:
   mov $20, %r9
   movq %r9, %xmm1
   cvtsi2ss %r9, %xmm6
-  vbroadcastss %xmm6, %xmm6
+  movups %xmm6, -32(%rsp)
+  vbroadcastss -32(%rsp), %xmm6
   movups %xmm6, %xmm5
   movups %xmm6, %xmm7
   movups %xmm6, %xmm8

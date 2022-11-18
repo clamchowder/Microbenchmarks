@@ -40,11 +40,17 @@ float MeasureBw(uint64_t sizeKb, uint64_t iterations, uint64_t threads, int shar
 float scalar_read(float* arr, uint64_t arr_length, uint64_t iterations, uint64_t start) __attribute((ms_abi));
 extern float sse_read(float* arr, uint64_t arr_length, uint64_t iterations, uint64_t start) __attribute__((ms_abi));
 extern float sse_write(float* arr, uint64_t arr_length, uint64_t iterations, uint64_t start) __attribute__((ms_abi));
+extern float sse_ntwrite(float* arr, uint64_t arr_length, uint64_t iterations, uint64_t start) __attribute__((ms_abi));
 extern float avx512_read(float* arr, uint64_t arr_length, uint64_t iterations, uint64_t start) __attribute__((ms_abi));
 extern float avx512_write(float* arr, uint64_t arr_length, uint64_t iterations, uint64_t start) __attribute__((ms_abi));
 extern float avx512_copy(float* arr, uint64_t arr_length, uint64_t iterations, uint64_t start) __attribute__((ms_abi));
 extern float avx512_add(float* arr, uint64_t arr_length, uint64_t iterations, uint64_t start) __attribute__((ms_abi));
+extern float repmovsb_copy(float *arr, uint64_t arr_length, uint64_t iterations, uint64_t start) __attribute__((ms_abi));
+extern float repmovsd_copy(float *arr, uint64_t arr_length, uint64_t iterations, uint64_t start) __attribute__((ms_abi));
+extern float repstosb_write(float *arr, uint64_t arr_length, uint64_t iterations, uint64_t start) __attribute__((ms_abi));
+extern float repstosd_write(float *arr, uint64_t arr_length, uint64_t iterations, uint64_t start) __attribute__((ms_abi));
 extern uint32_t readbankconflict(uint32_t *arr, uint64_t arr_length, uint64_t spacing, uint64_t iterations) __attribute__((ms_abi));
+extern uint32_t readbankconflict128(uint32_t *arr, uint64_t arr_length, uint64_t spacing, uint64_t iterations) __attribute__((ms_abi));
 float (*bw_func)(float*, uint64_t, uint64_t, uint64_t start) __attribute__((ms_abi));
 #else
 float scalar_read(float* arr, uint64_t arr_length, uint64_t iterations, uint64_t start);
@@ -63,7 +69,7 @@ extern void flush_icache(void *arr, uint64_t length);
 #endif
 
 float MeasureInstructionBw(uint64_t sizeKb, uint64_t iterations, int nopSize, int branchInterval);
-void TestBankConflicts();
+void TestBankConflicts(int type);
 uint64_t GetIterationCount(uint64_t testSize, uint64_t threads);
 void *ReadBandwidthTestThread(void *param);
 uint64_t gbToTransfer = 512;
@@ -74,6 +80,7 @@ int main(int argc, char *argv[]) {
     int shared = 1;
     int sleepTime = 0;
     int methodSet = 0, testInstructionBandwidth = 0, nopBytes = 8, branchInterval = 0, testBankConflict = 0;
+    int testBankConflict128 = 0;
     int singleSize = 0, autothreads = 0;
     int testSizeCount = sizeof(default_test_sizes) / sizeof(int);
 
@@ -178,7 +185,11 @@ int main(int argc, char *argv[]) {
                     testInstructionBandwidth = 1;
                     nopBytes = 4;
                     fprintf(stderr, "Testing instruction fetch bandwidth with 4 byte instructions. Threads/shared/private args will be ignored\n");
-                }
+                } else if (strncmp(argv[argIdx], "instr2", 6) == 0) {
+		    testInstructionBandwidth = 1;
+		    nopBytes = 2;
+		    fprintf(stderr, "Testing instruction fetch bandwith with 2 byte instructions. Threads/shared/private args will be ignored\n");
+		}
                 #ifdef __x86_64
                 else if (strncmp(argv[argIdx], "avx512", 6) == 0) {
                     bw_func = avx512_read;
@@ -188,12 +199,39 @@ int main(int argc, char *argv[]) {
                     bw_func = sse_write;
                     fprintf(stderr, "Using SSE to test write bandwidth\n");
                 }
+                else if (strncmp(argv[argIdx], "sse_ntwrite", 11) == 0) {
+                    bw_func = sse_ntwrite;
+                    fprintf(stderr, "Using SSE NT writes to test write bandwidth\n");
+                } 
                 else if (strncmp(argv[argIdx], "sse", 3) == 0) {
                     bw_func = sse_read;
                     fprintf(stderr, "Using ASM code, SSE\n");
                 }
-                else if (strncmp(argv[argIdx], "readbankconflict", 13) == 0) {
+                else if (strncmp(argv[argIdx], "avx", 3) == 0) {
+                    bw_func = asm_read;
+                    fprintf(stderr, "Using ASM code, AVX\n");
+                } 
+                else if (strncmp(argv[argIdx], "repmovsb", 8) == 0) {
+                    bw_func = repmovsb_copy;
+                    fprintf(stderr, "Using REP MOVSB to copy\n");
+                }
+                else if (strncmp(argv[argIdx], "repmovsd", 8) == 0) {
+                    bw_func = repmovsd_copy;
+                    fprintf(stderr, "Using REP MOVSD to copy\n");
+                }
+                else if (strncmp(argv[argIdx], "repstosb", 9) == 0) {
+                    bw_func = repstosb_write;
+                    fprintf(stderr, "Using REP STOSB to write\n");
+                } 
+                else if (strncmp(argv[argIdx], "repstosd", 9) == 0) {
+                    bw_func = repstosd_write;
+                    fprintf(stderr, "Using REP STOSD to write\n");
+                }  
+                else if (strncmp(argv[argIdx], "readbankconflict", 16) == 0) {
                     testBankConflict = 1;
+                }
+                else if (strncmp(argv[argIdx], "read128bankconflict", 19) == 0) {
+                    testBankConflict128 = 1;
                 }
                 #endif
             }
@@ -236,7 +274,9 @@ int main(int argc, char *argv[]) {
             printf("%d,%f\n", singleSize, MeasureInstructionBw(singleSize, GetIterationCount(singleSize, threads), nopBytes, branchInterval));
         }
     } else if (testBankConflict) {
-        TestBankConflicts();
+        TestBankConflicts(0);
+    } else if (testBankConflict128) {
+        TestBankConflicts(1);
     } else if (autothreads > 0) {
         float *threadResults = (float *)malloc(sizeof(float) * autothreads * testSizeCount);
         printf("Auto threads mode, up to %d threads\n", autothreads);
@@ -309,48 +349,44 @@ uint64_t GetIterationCount(uint64_t testSize, uint64_t threads)
     else return iterations;
 }
 
-void TestBankConflicts() {
+// 0 = scalar, 1 = 128-bit
+void TestBankConflicts(int type) {
     struct timeval startTv, endTv;
     time_t time_diff_ms;
     uint32_t *arr;
-    uint32_t maxSpacing = 64;
+    uint32_t maxSpacing = 256;
     uint64_t totalLoads = 6e9;
-    int testPoints = 10;
 
-    float *resultArr = malloc((maxSpacing + 1) * testPoints * sizeof(float));
-    for (int sizeIdx = 0; sizeIdx < testPoints; sizeIdx++) {
-        int testSize = default_test_sizes[sizeIdx] * 1024;
-        if (0 != posix_memalign((void **)(&arr), 64, testSize)) {
-            fprintf(stderr, "Could not allocate memory for size %d\n", testSize);
-            return;
-        }
-
-        for (int spacing = 0; spacing <= maxSpacing; spacing++) {
-            *arr = spacing;
-
-            gettimeofday(&startTv, NULL);
-            int rc = readbankconflict(arr, testSize, spacing, totalLoads);
-            gettimeofday(&endTv, NULL);
-            time_diff_ms = 1e6 * (endTv.tv_sec - startTv.tv_sec) + (endTv.tv_usec - startTv.tv_usec);
-            // want loads per ns
-            float loadsPerNs = (float)totalLoads / (time_diff_ms * 1e3);
-            fprintf(stderr, "%d KB, %d spacing: %f loads per ns\n", testSize, spacing, loadsPerNs);
-            resultArr[spacing * testPoints + sizeIdx] = loadsPerNs;
-            if (rc != 0) fprintf(stderr, "asm code returned error\n");
-        }
-
-        free(arr);
-        arr = NULL;
+    float *resultArr = malloc((maxSpacing + 1) * sizeof(float));
+    int testSize = 4096;
+    if (0 != posix_memalign((void **)(&arr), testSize, testSize)) {
+        fprintf(stderr, "Could not allocate memory for size %d\n", testSize);
+        return;
     }
+
+    for (int spacing = 0; spacing <= maxSpacing; spacing++) {
+        *arr = spacing;
+
+        gettimeofday(&startTv, NULL);
+        int rc;
+        if (type == 0) rc = readbankconflict(arr, testSize, spacing, totalLoads);
+        else if (type == 1) rc = readbankconflict128(arr, testSize, spacing, totalLoads);
+        gettimeofday(&endTv, NULL);
+        time_diff_ms = 1e6 * (endTv.tv_sec - startTv.tv_sec) + (endTv.tv_usec - startTv.tv_usec);
+        // want loads per ns
+        float loadsPerNs = (float)totalLoads / (time_diff_ms * 1e3);
+        fprintf(stderr, "%d KB, %d spacing: %f loads per ns\n", testSize, spacing, loadsPerNs);
+        resultArr[spacing] = loadsPerNs;
+        if (rc != 0) fprintf(stderr, "asm code returned error\n");
+    }
+
+    free(arr);
+    arr = NULL;
 
     for (int spacing = 0; spacing <= maxSpacing; spacing++) printf(",%d", spacing);
     printf("\n");
-    for (int sizeIdx = 0; sizeIdx < testPoints; sizeIdx++) {
-        printf("%d", default_test_sizes[sizeIdx]);
-        for (int spacing = 0; spacing <= maxSpacing; spacing++) {
-              printf(",%f", resultArr[spacing * testPoints + sizeIdx]);
-        }
-        printf("\n");
+    for (int spacing = 0; spacing <= maxSpacing; spacing++) {
+          printf("%d,%f\n", spacing, resultArr[spacing]);
     }
 
     free(resultArr);
@@ -358,6 +394,8 @@ void TestBankConflicts() {
 
 float MeasureInstructionBw(uint64_t sizeKb, uint64_t iterations, int nopSize, int branchInterval) {
 #ifdef __x86_64
+    char nop2b[8] = { 0x66, 0x90, 0x66, 0x90, 0x66, 0x90, 0x66, 0x90 };
+    char nop2b_xor[8] = { 0x31, 0xc0, 0x31, 0xc0, 0x31, 0xc0, 0x31, 0xc0 };
     char nop8b[8] = { 0x0F, 0x1F, 0x84, 0x00, 0x00, 0x00, 0x00, 0x00 };
 
     // zen/piledriver optimization manual uses this pattern
@@ -397,6 +435,7 @@ float MeasureInstructionBw(uint64_t sizeKb, uint64_t iterations, int nopSize, in
     uint64_t *nop8bptr;
     if (nopSize == 8) nop8bptr = (uint64_t *)(nop8b);
     else if (nopSize == 4) nop8bptr = (uint64_t *)(nop4b);
+    else if (nopSize == 2) nop8bptr = (uint64_t *)(nop2b_xor);
     else {
         fprintf(stderr, "%d byte instruction length isn't supported :(\n", nopSize);
     }
