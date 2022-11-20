@@ -8,7 +8,7 @@ float runBranchHistTest(uint32_t historyLen, uint32_t branchCountIdx, int random
     struct timeval startTv, endTv;
     struct timezone startTz, endTz;
     uint32_t branchCount = branchCounts[branchCountIdx];
-    uint64_t iterations = 160000000 / branchCount;
+    uint64_t iterations = 320000000 / branchCount;
     uint64_t(*branchtestFunc)(uint64_t, uint32_t**, uint32_t) __attribute((sysv_abi)) = branchtestFuncArr[branchCountIdx];
 
     uint32_t** testArrToArr = (uint32_t**)malloc(sizeof(uint32_t*) * branchCount);

@@ -57,6 +57,8 @@ extern "C" float avx_asm_copy(void* arr, uint64_t arr_length, uint64_t iteration
 extern "C" float avx_asm_cflip(void* arr, uint64_t arr_length, uint64_t iterations);
 extern "C" float avx_asm_add(void* arr, uint64_t arr_length, uint64_t iterations);
 extern "C" float avx512_asm_read(void* arr, uint64_t arr_length, uint64_t iterations);
+extern "C" float repmovsb_copy(void* arr, uint64_t arr_length, uint64_t iterations);
+extern "C" float repstosb_write(void* arr, uint64_t arr_length, uint64_t iterations);
 float (*bw_func)(void*, uint64_t, uint64_t) = sse_asm_read;
 
 #else
@@ -158,6 +160,14 @@ int main(int argc, char *argv[]) {
                 else if (_strnicmp(argv[argIdx], "add_asm_sse", 11) == 0) {
                     bw_func = sse_asm_add;
                     fprintf(stderr, "Using SSE assembly, adding constant to array\n");
+                }
+                else if (_strnicmp(argv[argIdx], "copy_repmovsb", 11) == 0) {
+                    bw_func = repmovsb_copy;
+                    fprintf(stderr, "Using assembly, rep movsb to copy one half of the array to the other\n");
+                }
+                else if (_strnicmp(argv[argIdx], "write_repstosb", 11) == 0) {
+                    bw_func = repstosb_write;
+                    fprintf(stderr, "Using assembly, rep stosb to set array contents to 1\n");
                 }
 #else
                 if (_strnicmp(argv[argIdx], "scalar", 6) == 0) {

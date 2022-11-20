@@ -15,6 +15,9 @@ global avx_asm_cflip
 global avx_asm_add
 global avx512_asm_read
 
+global repmovsb_copy
+global repstosb_write
+
 ; rcx = float ptr to arr, rdx = fp32 elements in arr, r8 = iterations, r9 = start index
 ; return something in xmm0
 avx_asm_read:
@@ -815,4 +818,73 @@ sse_add_iteration_count:
   pop rbx
   pop rdi
   pop rsi
+  ret
+
+
+; rcx = float ptr to arr, rdx = fp32 elements in arr, r8 = iterations
+repmovsb_copy:
+  push r15
+  push r14
+  push r13
+  push r12
+  push rsi
+  push rdi
+  push rax
+  cld
+  ; source = rsi, destination = rdi, count (in bytes) = rcx
+  mov rsi, rcx  ; set source
+  shr rdx, 1    ; set destination = source + (size / 2)
+  mov rdi, rcx
+  add rdi, rdx
+  mov rcx, rdx  ; set count = (size / 2) * (4 bytes per fp32 element)
+  shl rcx, 2
+  mov r12, rsi
+  mov r13, rdi
+  mov r14, rcx
+repmovsb_copy_pass_loop:
+  mov rsi, r12
+  mov rdi, r13
+  mov rcx, r14
+  rep movsb
+  dec r8
+  jnz repmovsb_copy_pass_loop
+  movss xmm0, [r12]
+  pop rax
+  pop rdi
+  pop rsi
+  pop r12
+  pop r13
+  pop r14
+  pop r15
+  ret
+
+; rcx = float ptr to arr, rdx = fp32 elements in arr, r8 = iterations
+repstosb_write:
+  push r15
+  push r14
+  push r13
+  push r12
+  push rsi
+  push rdi
+  push rax
+  cld
+  ; source = value in al, destination = rdi, count (in bytes) = rcx
+  mov al, 1  ; set source
+  mov r13, rcx  ; destination = start of arr
+  mov r14, rdx  
+  shl r14, 2    ; count = (nr of FP32 elements) * 4
+repstosb_write_pass_loop:
+  mov rdi, r13
+  mov rcx, r14
+  rep stosb
+  dec r8
+  jnz repstosb_write_pass_loop
+  movss xmm0, [r13]
+  pop rax
+  pop rdi
+  pop rsi
+  pop r12
+  pop r13
+  pop r14
+  pop r15
   ret

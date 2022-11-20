@@ -1,5 +1,4 @@
-﻿using System.Diagnostics.Metrics;
-using System.Security.Cryptography;
+﻿using System.Security.Cryptography;
 using System.Text;
 
 namespace AsmGen
