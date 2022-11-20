@@ -64,6 +64,7 @@ extern uint64_t add128fp(uint64_t iterations) __attribute((sysv_abi));
 extern uint64_t mul128fp(uint64_t iterations) __attribute((sysv_abi));
 extern uint64_t fma512(uint64_t iterations) __attribute((sysv_abi));
 extern uint64_t mixfma256fma512(uint64_t iterations) __attribute((sysv_abi));
+extern uint64_t mix21fma256fma512(uint64_t iterations) __attribute((sysv_abi));
 extern uint64_t fma256(uint64_t iterations) __attribute((sysv_abi));
 extern uint64_t fma128(uint64_t iterations) __attribute((sysv_abi));
 extern uint64_t mixfmafadd256(uint64_t iterations) __attribute((sysv_abi));
@@ -95,10 +96,14 @@ extern uint64_t pdeptest(uint64_t iterations) __attribute((sysv_abi));
 extern uint64_t pdepmultest(uint64_t iterations) __attribute((sysv_abi));
 extern uint64_t pexttest(uint64_t iterations) __attribute((sysv_abi));
 extern uint64_t indepmovtest(uint64_t iterations) __attribute((sysv_abi));
+extern uint64_t vecindepmovtest(uint64_t iterations) __attribute((sysv_abi));
 extern uint64_t depmovtest(uint64_t iterations) __attribute((sysv_abi));
+extern uint64_t vecdepmovtest(uint64_t iterations) __attribute((sysv_abi));
 extern uint64_t xorzerotest(uint64_t iterations) __attribute((sysv_abi));
+extern uint64_t vecxorzerotest(uint64_t iterations) __attribute((sysv_abi));
 extern uint64_t movzerotest(uint64_t iterations) __attribute((sysv_abi));
 extern uint64_t subzerotest(uint64_t iterations) __attribute((sysv_abi));
+extern uint64_t vecsubzerotest(uint64_t iterations) __attribute((sysv_abi));
 extern uint64_t depinctest(uint64_t iterations) __attribute((sysv_abi));
 extern uint64_t depdectest(uint64_t iterations) __attribute((sysv_abi));
 extern uint64_t depaddimmtest(uint64_t iterations) __attribute((sysv_abi));
@@ -149,7 +154,9 @@ int main(int argc, char *argv[]) {
   }
 
   if (argc > 2) {
-    iterationsHigh =  1500000000 * (uint64_t)atol(argv[2]);
+    uint64_t scaleFactor = (uint64_t)atol(argv[2]);
+    iterationsHigh =  iterationsHigh * scaleFactor;
+    iterations *= scaleFactor;
     printf("setting %lu iterations\n", iterationsHigh);
   }
 
@@ -206,6 +213,8 @@ int main(int argc, char *argv[]) {
       printf("512-bit FMA latency: %.2f clocks\n", 1 / measureFunction(iterations, clockSpeedGhz, latfma512));
     if (argc == 1 || argc > 1 && strncmp(argv[1], "mixfma256fma512", 15) == 0)
       printf("1:1 256-bit/512-bit FMA per clk: %.2f\n", measureFunction(iterations, clockSpeedGhz, mixfma256fma512));
+    if (argc == 1 || argc > 1 && strncmp(argv[1], "mix21fma256fma512", 17) == 0)
+      printf("2:1 256-bit/512-bit FMA per clk: %.2f\n", measureFunction(iterations, clockSpeedGhz, mix21fma256fma512));
     if (argc == 1 || argc > 1 && strncmp(argv[1], "nemesfpumix21", 13) == 0)
       printf("1:2 512b FMA:FADD per clk (nemes): %.2f\n", measureFunction(iterations * 22, clockSpeedGhz, nemesfpu512mix21));
     if (argc == 1 || argc > 1 && strncmp(argv[1], "add512int", 9) == 0)
@@ -278,6 +287,14 @@ int main(int argc, char *argv[]) {
     printf("dep add immediate per clk: %.2f\n", measureFunction(iterationsHigh, clockSpeedGhz, depaddimmtest));
   if (argc == 1 || argc > 1 && strncmp(argv[1], "clkmov", 6) == 0)
     printf("dep add + mov pair per clk: %.2f\n", measureFunction(iterationsHigh, clockSpeedGhz, clkmovtest));
+  if (argc == 1 || argc > 1 && strncmp(argv[1], "vecdepmov", 9) == 0)
+    printf("Dependent vec movs per clk: %.2f\n", measureFunction(iterationsHigh, clockSpeedGhz, vecdepmovtest));
+  if (argc == 1 || argc > 1 && strncmp(argv[1], "vecindepmov", 12) == 0)
+    printf("Independent vec movs per clk: %.2f\n", measureFunction(iterationsHigh, clockSpeedGhz, vecindepmovtest));
+  if (argc == 1 || argc > 1 && strncmp(argv[1], "vecxorzero", 10) == 0)
+    printf("xor xmm -> 0 per clk: %.2f\n", measureFunction(iterationsHigh, clockSpeedGhz, vecxorzerotest));
+  if (argc == 1 || argc > 1 && strncmp(argv[1], "vecsubzero", 10) == 0)
+    printf("sub xmm -> 0 per clk: %.2f\n", measureFunction(iterationsHigh, clockSpeedGhz, vecsubzerotest));
 
   // misc mixed integer tests
   if (argc == 1 || argc > 1 && strncmp(argv[1], "miximuladd", 10) == 0)
