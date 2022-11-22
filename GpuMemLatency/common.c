@@ -34,6 +34,19 @@ cl_uint getCuCount() {
     return cuCount;
 }
 
+size_t getMaxWorkgroupSize()
+{
+    size_t maxWorkgroupSize;
+    size_t workgroupSizeLen = sizeof(size_t);
+    if (CL_SUCCESS != clGetDeviceInfo(selected_device_id, CL_DEVICE_MAX_WORK_GROUP_SIZE, workgroupSizeLen, &maxWorkgroupSize, &workgroupSizeLen))
+    {
+        fprintf(stderr, "Could not get number of compute units\n");
+        return 0;
+    }
+
+    return maxWorkgroupSize;
+}
+
 short checkExtensionSupport(const char *extension_name) {
     size_t extensionLen = 0;
     char* extensions;
@@ -201,6 +214,7 @@ cl_context get_context_from_user(int platform_index, int device_index) {
     // Create an OpenCL context
     context = clCreateContext(NULL, 1, &selected_device_id, NULL, NULL, &ret);
     fprintf(stderr, "clCreateContext returned %d\n", ret);
+    fprintf(stderr, "Max workgroup size for device: %u\n", getMaxWorkgroupSize());
 
 get_context_from_user_end:
     free(platforms);

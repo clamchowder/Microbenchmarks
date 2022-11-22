@@ -32,6 +32,7 @@ cl_context get_context_from_user(int platform_index, int device_index);
 cl_program build_program(cl_context context, const char* fname);
 void FillPatternArr(uint32_t* pattern_arr, uint32_t list_size, uint32_t byte_increment);
 cl_uint getCuCount();
+size_t getMaxWorkgroupSize();
 
 float int_atomic_latency_test(cl_context context,
     cl_command_queue command_queue,
