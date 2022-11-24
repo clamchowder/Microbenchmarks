@@ -362,6 +362,20 @@ int main(int argc, char *argv[]) {
                 }
             }
 
+            for (int memNode = 0; memNode < numaNodeCount; memNode++) {
+	        printf(",%d", memNode);
+	    }
+
+	    printf("\n");
+	    for (int cpuNode = 0; cpuNode < numaNodeCount; cpuNode++) {
+	        printf("%d", cpuNode);
+	        for (int memNode = 0; memNode < numaNodeCount; memNode++) {
+		    printf(",%f", crossnodeBandwidths[cpuNode * numaNodeCount + memNode]);
+		}
+
+		printf("\n");
+	    }
+
             numa_free_cpumask(nodeBitmask);
 	    free(crossnodeBandwidths);
         }
