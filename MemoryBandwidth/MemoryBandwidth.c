@@ -165,7 +165,13 @@ int main(int argc, char *argv[]) {
 	            fprintf(stderr, "Testing node to node bandwidth, 1 GB test size\n");
 	    	    numa = NUMA_CROSSNODE;
 	            singleSize = 1048576;
-	        }
+	        } else if (strncmp(argv[argIdx], "seq", 3) == 0) {
+		    fprintf(stderr, "Filling NUMA nodes one by one\n");
+		    numa = NUMA_SEQ;
+		} else if (strncmp(argv[argIdx], "stripe", 6) == 0) {
+		    fprintf(stderr, "Striping threads across NUMA nodes\n");
+		    numa = NUMA_STRIPE;
+		}
 	    }
             else if (strncmp(arg, "method", 6) == 0) {
                 methodSet = 1;
@@ -332,52 +338,50 @@ int main(int argc, char *argv[]) {
         }
 
         free(threadResults);
-    } else if (numa) {
+    } else if (numa == NUMA_CROSSNODE) {
         if (numa_available() == -1) {
 	    fprintf(stderr, "NUMA is not available\n");
 	    return 0;
 	}
 
-        if (numa == NUMA_CROSSNODE) {
-            struct bitmask *nodeBitmask = numa_allocate_cpumask();
-	    int numaNodeCount = numa_max_node() + 1;
-	    fprintf(stderr, "System has %d NUMA nodes\n", numaNodeCount);
-            float *crossnodeBandwidths = (float *)malloc(sizeof(float) * numaNodeCount * numaNodeCount);
-	    memset(crossnodeBandwidths, 0, sizeof(float) * numaNodeCount * numaNodeCount);
-            for (int cpuNode = 0; cpuNode < numaNodeCount; cpuNode++) {
-                numa_node_to_cpus(cpuNode, nodeBitmask);
-		int nodeCpuCount = numa_bitmask_weight(nodeBitmask);
-		if (nodeCpuCount == 0) {
-		    fprintf(stderr, "Node %d has no cores\n", cpuNode);
-		    continue;
-		}
+        struct bitmask *nodeBitmask = numa_allocate_cpumask();
+	int numaNodeCount = numa_max_node() + 1;
+	fprintf(stderr, "System has %d NUMA nodes\n", numaNodeCount);
+        float *crossnodeBandwidths = (float *)malloc(sizeof(float) * numaNodeCount * numaNodeCount);
+	memset(crossnodeBandwidths, 0, sizeof(float) * numaNodeCount * numaNodeCount);
+        for (int cpuNode = 0; cpuNode < numaNodeCount; cpuNode++) {
+            numa_node_to_cpus(cpuNode, nodeBitmask);
+	    int nodeCpuCount = numa_bitmask_weight(nodeBitmask);
+	    if (nodeCpuCount == 0) {
+	        fprintf(stderr, "Node %d has no cores\n", cpuNode);
+	        continue;
+	    }
 
-		fprintf(stderr, "Node %d has %d cores\n", cpuNode, nodeCpuCount);
-                for (int memNode = 0; memNode < numaNodeCount; memNode++) {
-		    fprintf(stderr, "Testing CPU node %d to mem node %d\n", cpuNode, memNode);
-                    crossnodeBandwidths[cpuNode * numaNodeCount + memNode] = 
-		        MeasureBw(singleSize, GetIterationCount(singleSize, nodeCpuCount), nodeCpuCount, shared, nopBytes, cpuNode, memNode);
-		    fprintf(stderr, "CPU node %d <- mem node %d: %f\n", cpuNode, memNode, crossnodeBandwidths[cpuNode * numaNodeCount + memNode]);
-                }
-            }
-
+	    fprintf(stderr, "Node %d has %d cores\n", cpuNode, nodeCpuCount);
             for (int memNode = 0; memNode < numaNodeCount; memNode++) {
-	        printf(",%d", memNode);
+	        fprintf(stderr, "Testing CPU node %d to mem node %d\n", cpuNode, memNode);
+                crossnodeBandwidths[cpuNode * numaNodeCount + memNode] = 
+	            MeasureBw(singleSize, GetIterationCount(singleSize, nodeCpuCount), nodeCpuCount, shared, nopBytes, cpuNode, memNode);
+	        fprintf(stderr, "CPU node %d <- mem node %d: %f\n", cpuNode, memNode, crossnodeBandwidths[cpuNode * numaNodeCount + memNode]);
+            }
+        }
+
+        for (int memNode = 0; memNode < numaNodeCount; memNode++) {
+	    printf(",%d", memNode);
+	}
+
+	printf("\n");
+	for (int cpuNode = 0; cpuNode < numaNodeCount; cpuNode++) {
+	    printf("%d", cpuNode);
+	    for (int memNode = 0; memNode < numaNodeCount; memNode++) {
+	        printf(",%f", crossnodeBandwidths[cpuNode * numaNodeCount + memNode]);
 	    }
 
 	    printf("\n");
-	    for (int cpuNode = 0; cpuNode < numaNodeCount; cpuNode++) {
-	        printf("%d", cpuNode);
-	        for (int memNode = 0; memNode < numaNodeCount; memNode++) {
-		    printf(",%f", crossnodeBandwidths[cpuNode * numaNodeCount + memNode]);
-		}
+	}
 
-		printf("\n");
-	    }
-
-            numa_free_cpumask(nodeBitmask);
-	    free(crossnodeBandwidths);
-        }
+        numa_free_cpumask(nodeBitmask);
+	free(crossnodeBandwidths);
     }
     else {
         printf("Using %d threads\n", threads);
@@ -620,6 +624,8 @@ void FillInstructionArray(uint64_t *nops, uint64_t sizeKb, int nopSize, int bran
     }
 }
 
+// If coreNode and memNode are set, use the specified numa config
+// otherwise if numa is set to stripe or seq, respect that
 float MeasureBw(uint64_t sizeKb, uint64_t iterations, uint64_t threads, int shared, int nopBytes, int coreNode, int memNode) {
     struct timeval startTv, endTv;
     struct timezone startTz, endTz;
@@ -665,8 +671,8 @@ float MeasureBw(uint64_t sizeKb, uint64_t iterations, uint64_t threads, int shar
     struct bitmask *nodeBitmask = NULL;
     cpu_set_t cpuset;
     
-    if (numa && numa == NUMA_CROSSNODE) {
-        struct bitmask *nodeBitmask = numa_allocate_cpumask();
+    if (numa == NUMA_CROSSNODE) {
+        nodeBitmask = numa_allocate_cpumask();
 	int nprocs = get_nprocs();
         numa_node_to_cpus(coreNode, nodeBitmask); 
 	CPU_ZERO(&cpuset);
@@ -690,12 +696,54 @@ float MeasureBw(uint64_t sizeKb, uint64_t iterations, uint64_t threads, int shar
         }
         else
         {
-            //threadData[i].arr = (float*)aligned_alloc(64, elements * sizeof(float));
-	    if (numa) {
+	    int cpuCount = get_nprocs();
+	    if (numa == NUMA_CROSSNODE) {
 	        threadData[i].arr = numa_alloc_onnode(elements * sizeof(float), memNode);
 		threadData[i].cpuset = cpuset;
+	    } else if (numa) {
+	        // Figure out which nodes actually have CPUs and memory
+	        //int numaNodeCount = numa_max_node() + 1;
+		int numaNodeCount = 4;   // for knl. geez
+	        if (numa == NUMA_SEQ) {
+		    // unimplemented
+		    fprintf(stderr, "sequential numa node fill not implemented yet\n");
+		} else if (numa == NUMA_STRIPE) {
+		    memNode = i % numaNodeCount;
+		    coreNode = memNode;
+		}
+
+                for(int cpuIdx = 0; cpuIdx < get_nprocs(); cpuIdx++) {
+                    CPU_ZERO(&(threadData[i].cpuset));
+                    if(CPU_ISSET(i, &(threadData[i].cpuset))) {
+                        fprintf(stderr, "bitmask not cleared\n");
+                    }
+                }
+
+		threadData[i].arr = numa_alloc_onnode(elements * sizeof(float), memNode);
+
+                for(int cpuIdx = 0; cpuIdx < get_nprocs(); cpuIdx++) {
+                    CPU_ZERO(&(threadData[i].cpuset));
+                    if(CPU_ISSET(i, &(threadData[i].cpuset))) {
+                        fprintf(stderr, "bitmask not cleared\n");
+                    }
+                }
+
+		// cpu node affinity has to be set for each thread
+		nodeBitmask = numa_allocate_cpumask();
+                numa_node_to_cpus(coreNode, nodeBitmask); 
+	        CPU_ZERO(&(threadData[i].cpuset));
+		//fprintf(stderr, "Node %d has CPUs:", coreNode);
+                for (int cpuIdx = 0; cpuIdx < cpuCount; cpuIdx++) { 
+	            if (numa_bitmask_isbitset(nodeBitmask, cpuIdx))  {
+		        CPU_SET(cpuIdx, &(threadData[i].cpuset)); 
+			//fprintf(stderr, " %d", cpuIdx);
+		    }
+		}
+
+		//fprintf(stderr, "\n\n");
 	    }
 
+            //threadData[i].arr = (float*)aligned_alloc(64, elements * sizeof(float));
 	    if (0 != posix_memalign((void **)(&(threadData[i].arr)), 4096, elements * sizeof(float)))
             {
                 fprintf(stderr, "Could not allocate memory for thread %ld\n", i);
@@ -735,7 +783,8 @@ float MeasureBw(uint64_t sizeKb, uint64_t iterations, uint64_t threads, int shar
 
     if (!shared) {
         for (uint64_t i = 0; i < threads; i++) {
-            free(threadData[i].arr);
+	    if (numa) numa_free(threadData[i].arr, elements * sizeof(float));
+            else free(threadData[i].arr);
         }
     }
 
@@ -778,6 +827,7 @@ void *ReadBandwidthTestThread(void *param) {
         int affinity_rc = sched_setaffinity(gettid(), sizeof(cpu_set_t), &(bwTestData->cpuset));
 	if (affinity_rc != 0) {
 	    fprintf(stderr, "wtf set affinity failed: %s\n",strerror(errno));
+	    
 	}
     }
     float sum = bw_func(bwTestData->arr, bwTestData->arr_length, bwTestData->iterations, bwTestData->start);
