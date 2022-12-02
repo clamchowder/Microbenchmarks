@@ -21,7 +21,6 @@
 #include <sys/sysinfo.h>
 #include <errno.h>
 #include <numa.h>
-#include <hwloc/linux-libnuma.h>
 
 #pragma GCC diagnostic ignored "-Wattributes"
 
@@ -671,8 +670,16 @@ float MeasureBw(uint64_t sizeKb, uint64_t iterations, uint64_t threads, int shar
 	int nprocs = get_nprocs();
         numa_node_to_cpus(coreNode, nodeBitmask); 
 	CPU_ZERO(&cpuset);
-	for (int i = 0; i < nprocs; i++)
-	  if (numa_bitmask_isbitset(nodeBitmask, i)) CPU_SET(i, &cpuset);
+
+	// provided functions for manipultaing bitmask don't work
+	// for (int i = 0; i < nprocs; i++)
+	//   if (numa_bitmask_isbitset(nodeBitmask, i)) CPU_SET(i, &cpuset);
+	// bitmask has fields:
+	// - size = number of bits
+	// - maskp = pointer to bitmap
+	// cpu_set_t has field __bits. have to assume it's CPU_SETSIZE bits
+	// also assume bitmap size is divisible by 8 (byte size)
+	memcpy(cpuset.__bits, nodeBitmask->maskp, nodeBitmask->size / 8);
     }
 
     for (uint64_t i = 0; i < threads; i++) {
@@ -767,6 +774,12 @@ float scalar_read(float* arr, uint64_t arr_length, uint64_t iterations, uint64_t
 
 void *ReadBandwidthTestThread(void *param) {
     BandwidthTestThreadData* bwTestData = (BandwidthTestThreadData*)param;
+    if (numa) {
+        int affinity_rc = sched_setaffinity(gettid(), sizeof(cpu_set_t), &(bwTestData->cpuset));
+	if (affinity_rc != 0) {
+	    fprintf(stderr, "wtf set affinity failed: %s\n",strerror(errno));
+	}
+    }
     float sum = bw_func(bwTestData->arr, bwTestData->arr_length, bwTestData->iterations, bwTestData->start);
     if (sum == 0) printf("woohoo\n");
     pthread_exit(NULL);
