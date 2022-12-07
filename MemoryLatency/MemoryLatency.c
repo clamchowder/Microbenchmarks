@@ -13,10 +13,12 @@
 #include <sys/mman.h>
 #endif
 
+#ifdef NUMA
 #include <numa.h>
 #include <numaif.h>
-#include <sched.h>
+#endif
 #include <errno.h>
+#include <sched.h>
 
 // TODO: possibly get this programatically
 #define PAGE_SIZE 4096
@@ -147,11 +149,13 @@ int main(int argc, char* argv[]) {
                 fprintf(stderr, "Testing %u KB only\n", singleSize);
             }
 #endif
+#ifdef NUMA
             else if (strncmp(arg, "numa", 4) == 0) {
 	        numa = 1;
 		singleSize = 1048576;
 		fprintf(stderr, "Testing node to node latency. If test size is not set, it will be 1 GB\n");
 	    }
+#endif
 	    else {
                 fprintf(stderr, "Unrecognized option: %s\n", arg);
             }
@@ -212,7 +216,9 @@ int main(int argc, char* argv[]) {
         free(results);
     } else if (stlf) {
         RunStlfTest(ITERATIONS, stlf, stlfPageEnd);
-    } else if (numa) {
+    } 
+#ifdef NUMA
+    else if (numa) {
         if (numa_available() == -1) {
 	    fprintf(stderr, "NUMA is not available\n");
 	    return 0;
@@ -282,6 +288,7 @@ int main(int argc, char* argv[]) {
 
 	free(crossnodeLatencies);
     }
+#endif
     else {
         if (singleSize == 0) {
         printf("Region,Latency (ns)\n");
