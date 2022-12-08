@@ -61,7 +61,7 @@ float RunTest(uint32_t size_kb, uint32_t iterations, uint32_t *preallocatedArr);
 float RunAsmTest(uint64_t size_kb, uint32_t iterations, uint32_t *preallocatedArr);
 float RunTlbTest(uint32_t size_kb, uint32_t iterations, uint32_t *preallocatedArr);
 float RunMlpTest(uint32_t size_kb, uint32_t iterations, uint32_t parallelism);
-void RunStlfTest(uint32_t iterations, int mode, int pageEnd);
+void RunStlfTest(uint32_t iterations, int mode, int pageEnd, int loadDistance);
 
 float (*testFunc)(uint32_t, uint32_t, uint32_t *) = RunTest;
 
@@ -73,7 +73,7 @@ int main(int argc, char* argv[]) {
     uint32_t testSizeCount = sizeof(default_test_sizes) / sizeof(int);
     int mlpTest = 0;  // if > 0, run MLP test with (value) levels of parallelism max
     int stlf = 0, hugePages = 0;
-    int stlfPageEnd = 0, numa = 0;
+    int stlfPageEnd = 0, numa = 0, stlfLoadDistance = 0;
     uint32_t *hugePagesArr = NULL;
     size_t hugePagesAllocatedBytes = 0;
     for (int argIdx = 1; argIdx < argc; argIdx++) {
@@ -138,6 +138,11 @@ int main(int argc, char* argv[]) {
                     argIdx++;
                     stlfPageEnd = atoi(argv[argIdx]);
                     fprintf(stderr, "Store to load forwarding test will be pushed to end of %d byte page\n", stlfPageEnd);
+            }
+            else if (strncmp(arg, "stlf_load_offset", 16) == 0) {
+                    argIdx++;
+                    stlfLoadDistance = atoi(argv[argIdx]);
+                    fprintf(stderr, "Loads will be offset by %d bytes\n", stlfLoadDistance);
             }
 #ifndef __MINGW32__
             else if (strncmp(arg, "hugepages", 9) == 0) {
@@ -215,7 +220,7 @@ int main(int argc, char* argv[]) {
 
         free(results);
     } else if (stlf) {
-        RunStlfTest(ITERATIONS, stlf, stlfPageEnd);
+        RunStlfTest(ITERATIONS, stlf, stlfPageEnd, stlfLoadDistance);
     } 
 #ifdef NUMA
     else if (numa) {
@@ -575,7 +580,9 @@ float RunTlbTest(uint32_t size_kb, uint32_t iterations, uint32_t *preallocatedAr
 // Run store to load forwarding test, as described in https://blog.stuffedcow.net/2014/01/x86-memory-disambiguation/
 // uses 4B loads and 8B stores to see when/if store forwarding can succeed when sizes are not matched
 // pageEnd = push test to the end of (pageEnd) sized page. 0 = just test cacheline
-void RunStlfTest(uint32_t iterations, int mode, int pageEnd) {
+// loadDistance = how far ahead to push the load (for testing aliasing)
+// cannot set both pageEnd and loadDistance
+void RunStlfTest(uint32_t iterations, int mode, int pageEnd, int loadDistance) {
     struct timeval startTv, endTv;
     struct timezone startTz, endTz;
     uint64_t time_diff_ms;
@@ -591,6 +598,9 @@ void RunStlfTest(uint32_t iterations, int mode, int pageEnd) {
         testAlignment = pageEnd;
         testAllocSize = pageEnd * 2;
         testOffset = pageEnd - 64;
+    } else if (loadDistance != 0) {
+        testAlignment = 4096;
+        testAllocSize = loadDistance + 128; // enough if I ever go to avx-512 loads
     }
 
     // obtain a couple of cachelines, assuming 64B cacheline size
@@ -612,7 +622,7 @@ void RunStlfTest(uint32_t iterations, int mode, int pageEnd) {
     for (int storeOffset = 0; storeOffset < 64; storeOffset++)
         for (int loadOffset = 0; loadOffset < 64; loadOffset++) {
             ((uint32_t *)(arr))[0] = storeOffset;
-            ((uint32_t *)(arr))[1] = loadOffset;
+            ((uint32_t *)(arr))[1] = loadOffset + loadDistance;
             gettimeofday(&startTv, &startTz);
             stlfFunc(iterations, arr);
             gettimeofday(&endTv, &endTz);
