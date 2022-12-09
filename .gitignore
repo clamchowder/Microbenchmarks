@@ -11,6 +11,9 @@
 *.sln.docstates
 *.swp
 *generatednasm*
+*.exe
+MemoryBandwidth/membw_*
+MemoryLatency/MemoryLatency
 
 # User-specific files (MonoDevelop/Xamarin Studio)
 *.userprefs

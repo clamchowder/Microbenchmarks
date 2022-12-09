@@ -1,6 +1,7 @@
 // MemoryBandwidth.c : Version for linux (x86 and ARM)
 // Mostly the same as the x86-only VS version, but a bit more manual
 
+#define _GNU_SOURCE
 #include <stdio.h>
 #include <stdlib.h>
 #include <stdint.h>
@@ -14,9 +15,12 @@
 #include <unistd.h>
 #include <sched.h>
 #include <pthread.h>
+#include <sched.h>
 #include <math.h>
 #include <sys/mman.h>
+#include <sys/sysinfo.h>
 #include <errno.h>
+#include <numa.h>
 
 #pragma GCC diagnostic ignored "-Wattributes"
 
@@ -30,9 +34,10 @@ typedef struct BandwidthTestThreadData {
     uint64_t start;
     float* arr;
     float bw; // written to by the thread
+    cpu_set_t cpuset; // if numa set, will set affinity
 } BandwidthTestThreadData;
 
-float MeasureBw(uint64_t sizeKb, uint64_t iterations, uint64_t threads, int shared);
+float MeasureBw(uint64_t sizeKb, uint64_t iterations, uint64_t threads, int shared, int nopBytes, int coreNode, int memNode);
 
 
 #ifdef __x86_64
@@ -68,18 +73,35 @@ extern float asm_add(float *arr, uint64_t arr_length, uint64_t iterations, uint6
 extern void flush_icache(void *arr, uint64_t length);
 #endif
 
-float MeasureInstructionBw(uint64_t sizeKb, uint64_t iterations, int nopSize, int branchInterval);
+#ifdef __x86_64
+__attribute((ms_abi)) float instr_read(float *arr, uint64_t arr_length, uint64_t iterations, uint64_t start) {
+#else
+float instr_read(float *arr, uint64_t arr_length, uint64_t iterations, uint64_t start) { 
+#endif
+    void (*nopfunc)(uint64_t) __attribute((ms_abi)) = (__attribute((ms_abi)) void(*)(uint64_t))arr;
+    for (int iterIdx = 0; iterIdx < iterations; iterIdx++) nopfunc(iterations);
+    return 1.1f;
+}
+
+void FillInstructionArray(uint64_t *nops, uint64_t sizeKb, int nopSize, int branchInterval); 
 void TestBankConflicts(int type);
 uint64_t GetIterationCount(uint64_t testSize, uint64_t threads);
 void *ReadBandwidthTestThread(void *param);
 uint64_t gbToTransfer = 512;
+int branchInterval = 0; 
+
+#define NUMA_STRIPE 1
+#define NUMA_SEQ 2
+#define NUMA_CROSSNODE 3
+#define NUMA_AUTO 4
+int numa = 0;
 
 int main(int argc, char *argv[]) {
     int threads = 1;
     int cpuid_data[4];
     int shared = 1;
     int sleepTime = 0;
-    int methodSet = 0, testInstructionBandwidth = 0, nopBytes = 8, branchInterval = 0, testBankConflict = 0;
+    int methodSet = 0, nopBytes = 0, testBankConflict = 0;
     int testBankConflict128 = 0;
     int singleSize = 0, autothreads = 0;
     int testSizeCount = sizeof(default_test_sizes) / sizeof(int);
@@ -124,7 +146,7 @@ int main(int argc, char *argv[]) {
                 fprintf(stderr, "Will add a branch roughly every %d bytes\n", branchInterval * 8);
             } else if (strncmp(arg, "sizekb", 6) == 0) {
                 argIdx++;
-		        singleSize = atoi(argv[argIdx]);
+		singleSize = atoi(argv[argIdx]);
                 fprintf(stderr, "Testing %d KB\n", singleSize);
             } else if (strncmp(arg, "data", 4) == 0) {
                 argIdx++;
@@ -136,6 +158,21 @@ int main(int argc, char *argv[]) {
                 autothreads = atoi(argv[argIdx]);
                 fprintf(stderr, "Testing bw scaling up to %d threads\n", autothreads);
             }
+            else if (strncmp(arg, "numa", 4) == 0) {
+	        argIdx++;
+	        fprintf(stderr, "Attempting to be NUMA aware\n");
+	        if (strncmp(argv[argIdx], "crossnode", 4) == 0) {
+	            fprintf(stderr, "Testing node to node bandwidth, 1 GB test size\n");
+	    	    numa = NUMA_CROSSNODE;
+	            singleSize = 1048576;
+	        } else if (strncmp(argv[argIdx], "seq", 3) == 0) {
+		    fprintf(stderr, "Filling NUMA nodes one by one\n");
+		    numa = NUMA_SEQ;
+		} else if (strncmp(argv[argIdx], "stripe", 6) == 0) {
+		    fprintf(stderr, "Striping threads across NUMA nodes\n");
+		    numa = NUMA_STRIPE;
+		}
+	    }
             else if (strncmp(arg, "method", 6) == 0) {
                 methodSet = 1;
                 argIdx++;
@@ -178,17 +215,17 @@ int main(int argc, char *argv[]) {
                 }
 
                 else if (strncmp(argv[argIdx], "instr8", 6) == 0) {
-                    testInstructionBandwidth = 1;
                     nopBytes = 8;
-                    fprintf(stderr, "Testing instruction fetch bandwidth with 8 byte instructions. Threads/shared/private args will be ignored\n");
+		    bw_func = instr_read;
+                    fprintf(stderr, "Testing instruction fetch bandwidth with 8 byte instructions.\n");
                 } else if (strncmp(argv[argIdx], "instr4", 6) == 0) {
-                    testInstructionBandwidth = 1;
                     nopBytes = 4;
-                    fprintf(stderr, "Testing instruction fetch bandwidth with 4 byte instructions. Threads/shared/private args will be ignored\n");
+		    bw_func = instr_read;
+                    fprintf(stderr, "Testing instruction fetch bandwidth with 4 byte instructions.\n");
                 } else if (strncmp(argv[argIdx], "instr2", 6) == 0) {
-		    testInstructionBandwidth = 1;
 		    nopBytes = 2;
-		    fprintf(stderr, "Testing instruction fetch bandwith with 2 byte instructions. Threads/shared/private args will be ignored\n");
+		    bw_func = instr_read;
+		    fprintf(stderr, "Testing instruction fetch bandwith with 2 byte instructions.\n");
 		}
                 #ifdef __x86_64
                 else if (strncmp(argv[argIdx], "avx512", 6) == 0) {
@@ -234,6 +271,7 @@ int main(int argc, char *argv[]) {
                     testBankConflict128 = 1;
                 }
                 #endif
+		
             }
         } else {
             fprintf(stderr, "Expected - parameter\n");
@@ -261,19 +299,7 @@ int main(int argc, char *argv[]) {
     }
 #endif
 
-    if (testInstructionBandwidth) {
-        if (singleSize == 0) {
-            for (int i = 0; i < testSizeCount; i++)
-            {
-                printf("%d,%f\n", default_test_sizes[i], MeasureInstructionBw(default_test_sizes[i], GetIterationCount(default_test_sizes[i], threads), nopBytes, branchInterval));
-                if (sleepTime > 0) sleep(sleepTime);
-            }
-        }
-        else
-        {
-            printf("%d,%f\n", singleSize, MeasureInstructionBw(singleSize, GetIterationCount(singleSize, threads), nopBytes, branchInterval));
-        }
-    } else if (testBankConflict) {
+    if (testBankConflict) {
         TestBankConflicts(0);
     } else if (testBankConflict128) {
         TestBankConflicts(1);
@@ -282,13 +308,13 @@ int main(int argc, char *argv[]) {
         printf("Auto threads mode, up to %d threads\n", autothreads);
         for (int threadIdx = 1; threadIdx <= autothreads; threadIdx++) {
             if (singleSize != 0) {
-                threadResults[threadIdx - 1] = MeasureBw(singleSize, GetIterationCount(singleSize, threadIdx), threadIdx, shared);
+                threadResults[threadIdx - 1] = MeasureBw(singleSize, GetIterationCount(singleSize, threadIdx), threadIdx, shared, nopBytes, 0, 0);
                 fprintf(stderr, "%d threads: %f GB/s\n", threadIdx, threadResults[threadIdx - 1]);
             } else {
                 for (int i = 0; i < testSizeCount; i++) {
                     int currentTestSize = default_test_sizes[i];
                     //fprintf(stderr, "Testing size %d\n", currentTestSize);
-                    threadResults[(threadIdx - 1) * testSizeCount + i] = MeasureBw(currentTestSize, GetIterationCount(currentTestSize, threadIdx), threadIdx, shared);
+                    threadResults[(threadIdx - 1) * testSizeCount + i] = MeasureBw(currentTestSize, GetIterationCount(currentTestSize, threadIdx), threadIdx, shared, nopBytes, 0, 0);
                     fprintf(stderr, "%d threads, %d KB total: %f GB/s\n", threadIdx, currentTestSize, threadResults[(threadIdx - 1) * testSizeCount + i]);
                 }
             }
@@ -312,6 +338,50 @@ int main(int argc, char *argv[]) {
         }
 
         free(threadResults);
+    } else if (numa == NUMA_CROSSNODE) {
+        if (numa_available() == -1) {
+	    fprintf(stderr, "NUMA is not available\n");
+	    return 0;
+	}
+
+        struct bitmask *nodeBitmask = numa_allocate_cpumask();
+	int numaNodeCount = numa_max_node() + 1;
+	fprintf(stderr, "System has %d NUMA nodes\n", numaNodeCount);
+        float *crossnodeBandwidths = (float *)malloc(sizeof(float) * numaNodeCount * numaNodeCount);
+	memset(crossnodeBandwidths, 0, sizeof(float) * numaNodeCount * numaNodeCount);
+        for (int cpuNode = 0; cpuNode < numaNodeCount; cpuNode++) {
+            numa_node_to_cpus(cpuNode, nodeBitmask);
+	    int nodeCpuCount = numa_bitmask_weight(nodeBitmask);
+	    if (nodeCpuCount == 0) {
+	        fprintf(stderr, "Node %d has no cores\n", cpuNode);
+	        continue;
+	    }
+
+	    fprintf(stderr, "Node %d has %d cores\n", cpuNode, nodeCpuCount);
+            for (int memNode = 0; memNode < numaNodeCount; memNode++) {
+	        fprintf(stderr, "Testing CPU node %d to mem node %d\n", cpuNode, memNode);
+                crossnodeBandwidths[cpuNode * numaNodeCount + memNode] = 
+	            MeasureBw(singleSize, GetIterationCount(singleSize, nodeCpuCount), nodeCpuCount, shared, nopBytes, cpuNode, memNode);
+	        fprintf(stderr, "CPU node %d <- mem node %d: %f\n", cpuNode, memNode, crossnodeBandwidths[cpuNode * numaNodeCount + memNode]);
+            }
+        }
+
+        for (int memNode = 0; memNode < numaNodeCount; memNode++) {
+	    printf(",%d", memNode);
+	}
+
+	printf("\n");
+	for (int cpuNode = 0; cpuNode < numaNodeCount; cpuNode++) {
+	    printf("%d", cpuNode);
+	    for (int memNode = 0; memNode < numaNodeCount; memNode++) {
+	        printf(",%f", crossnodeBandwidths[cpuNode * numaNodeCount + memNode]);
+	    }
+
+	    printf("\n");
+	}
+
+        numa_free_cpumask(nodeBitmask);
+	free(crossnodeBandwidths);
     }
     else {
         printf("Using %d threads\n", threads);
@@ -319,13 +389,13 @@ int main(int argc, char *argv[]) {
         {
             for (int i = 0; i < testSizeCount; i++)
             {
-                printf("%d,%f\n", default_test_sizes[i], MeasureBw(default_test_sizes[i], GetIterationCount(default_test_sizes[i], threads), threads, shared));
+                printf("%d,%f\n", default_test_sizes[i], MeasureBw(default_test_sizes[i], GetIterationCount(default_test_sizes[i], threads), threads, shared, nopBytes, 0, 0));
                 if (sleepTime > 0) sleep(sleepTime);
             }
         }
         else
         {
-            printf("%d,%f\n", singleSize, MeasureBw(singleSize, GetIterationCount(singleSize, threads), threads, shared));
+            printf("%d,%f\n", singleSize, MeasureBw(singleSize, GetIterationCount(singleSize, threads), threads, shared, nopBytes, 0, 0));
         }
     }
 
@@ -487,7 +557,76 @@ float MeasureInstructionBw(uint64_t sizeKb, uint64_t iterations, int nopSize, in
     return bw;
 }
 
-float MeasureBw(uint64_t sizeKb, uint64_t iterations, uint64_t threads, int shared) {
+void FillInstructionArray(uint64_t *nops, uint64_t sizeKb, int nopSize, int branchInterval) {
+#ifdef __x86_64
+    char nop2b[8] = { 0x66, 0x90, 0x66, 0x90, 0x66, 0x90, 0x66, 0x90 };
+    char nop2b_xor[8] = { 0x31, 0xc0, 0x31, 0xc0, 0x31, 0xc0, 0x31, 0xc0 };
+    char nop8b[8] = { 0x0F, 0x1F, 0x84, 0x00, 0x00, 0x00, 0x00, 0x00 };
+
+    // zen/piledriver optimization manual uses this pattern
+    char nop4b[8] = { 0x0F, 0x1F, 0x40, 0x00, 0x0F, 0x1F, 0x40, 0x00 };
+
+    // athlon64 (K8) optimization manual pattern
+    char k8_nop4b[8] = { 0x66, 0x66, 0x66, 0x90, 0x66, 0x66, 0x66, 0x90 };
+    char nop4b_with_branch[8] = { 0x0F, 0x1F, 0x40, 0x00, 0xEB, 0x00, 0x66, 0x90 };
+#endif
+
+#ifdef __aarch64__
+    char nop4b[8] = { 0x1F, 0x20, 0x03, 0xD5, 0x1F, 0x20, 0x03, 0xD5 };
+
+    // hack this to deal with graviton 1 / A72
+    // nop + mov x0, 0
+    char nop8b[9] = { 0x1F, 0x20, 0x03, 0xD5, 0x00, 0x00, 0x80, 0xD2 }; 
+    // mov x0, 0 + ldr x0, [sp] 
+    char nop8b1[9] = { 0x00, 0x00, 0x80, 0xD2, 0xe0, 0x03, 0x40, 0xf9 }; 
+#endif
+    
+    uint64_t *nop8bptr;
+    if (nopSize == 8) nop8bptr = (uint64_t *)(nop8b);
+    else if (nopSize == 4) nop8bptr = (uint64_t *)(nop4b);
+    else if (nopSize == 2) nop8bptr = (uint64_t *)(nop2b_xor);
+    else {
+        fprintf(stderr, "%d byte instruction length isn't supported :(\n", nopSize);
+    }
+
+    uint64_t elements = sizeKb * 1024 / 8 - 1;
+    for (uint64_t nopIdx = 0; nopIdx < elements; nopIdx++) {
+        nops[nopIdx] = *nop8bptr;
+#ifdef __x86_64
+	uint64_t *nopBranchPtr = (uint64_t *)nop4b_with_branch;
+	if (branchInterval > 1 && nopIdx % branchInterval == 0) nops[nopIdx] = *nopBranchPtr;
+#endif
+#ifdef __aarch64__
+	if (nopSize == 8) {
+          uint64_t *otherNops = (uint64_t *)nop8b1;
+          if (nopIdx & 1) nops[nopIdx] = *otherNops;
+	}
+#endif
+    }
+
+    // ret
+    #ifdef __x86_64
+    unsigned char *functionEnd = (unsigned char *)(nops + elements);
+    functionEnd[0] = 0xC3;
+    #endif
+    #ifdef __aarch64__
+    uint64_t *functionEnd = (uint64_t *)(nops + elements);
+    functionEnd[0] = 0XD65F03C0;
+    flush_icache((void *)nops, funcLen);
+    __builtin___clear_cache(nops, functionEnd);
+    #endif
+
+    size_t funcLen = sizeKb * 1024;
+    uint64_t nopfuncPage = (~0xFFF) & (uint64_t)(nops);
+    size_t mprotectLen = (0xFFF & (uint64_t)(nops)) + funcLen;
+    if (mprotect((void *)nopfuncPage, mprotectLen, PROT_EXEC | PROT_READ | PROT_WRITE) < 0) {
+        fprintf(stderr, "mprotect failed, errno %d\n", errno);
+    }
+}
+
+// If coreNode and memNode are set, use the specified numa config
+// otherwise if numa is set to stripe or seq, respect that
+float MeasureBw(uint64_t sizeKb, uint64_t iterations, uint64_t threads, int shared, int nopBytes, int coreNode, int memNode) {
     struct timeval startTv, endTv;
     struct timezone startTz, endTz;
     float bw = 0;
@@ -509,14 +648,16 @@ float MeasureBw(uint64_t sizeKb, uint64_t iterations, uint64_t threads, int shar
     float* testArr = NULL;
     if (shared){
         //testArr = (float*)aligned_alloc(64, elements * sizeof(float));
-	if (0 != posix_memalign((void **)(&testArr), 64, elements * sizeof(float))) {
+	if (0 != posix_memalign((void **)(&testArr), 4096, elements * sizeof(float))) {
             fprintf(stderr, "Could not allocate memory\n");
             return 0;
 	}
 
-        for (uint64_t i = 0; i < elements; i++) {
-            testArr[i] = i + 0.5f;
-        }
+        if (nopBytes == 0) {
+          for (uint64_t i = 0; i < elements; i++) {
+              testArr[i] = i + 0.5f;
+          }
+	} else FillInstructionArray((uint64_t *)testArr, sizeKb, nopBytes, branchInterval);
     }
     else
     {
@@ -526,6 +667,27 @@ float MeasureBw(uint64_t sizeKb, uint64_t iterations, uint64_t threads, int shar
     pthread_t* testThreads = (pthread_t*)malloc(threads * sizeof(pthread_t));
     struct BandwidthTestThreadData* threadData = (struct BandwidthTestThreadData*)malloc(threads * sizeof(struct BandwidthTestThreadData));
 
+    // if numa, tell each thread to set an affinity mask
+    struct bitmask *nodeBitmask = NULL;
+    cpu_set_t cpuset;
+    
+    if (numa == NUMA_CROSSNODE) {
+        nodeBitmask = numa_allocate_cpumask();
+	int nprocs = get_nprocs();
+        numa_node_to_cpus(coreNode, nodeBitmask); 
+	CPU_ZERO(&cpuset);
+
+	// provided functions for manipultaing bitmask don't work
+	// for (int i = 0; i < nprocs; i++)
+	//   if (numa_bitmask_isbitset(nodeBitmask, i)) CPU_SET(i, &cpuset);
+	// bitmask has fields:
+	// - size = number of bits
+	// - maskp = pointer to bitmap
+	// cpu_set_t has field __bits. have to assume it's CPU_SETSIZE bits
+	// also assume bitmap size is divisible by 8 (byte size)
+	memcpy(cpuset.__bits, nodeBitmask->maskp, nodeBitmask->size / 8);
+    }
+
     for (uint64_t i = 0; i < threads; i++) {
         if (shared)
         {
@@ -534,16 +696,64 @@ float MeasureBw(uint64_t sizeKb, uint64_t iterations, uint64_t threads, int shar
         }
         else
         {
+	    int cpuCount = get_nprocs();
+	    if (numa == NUMA_CROSSNODE) {
+	        threadData[i].arr = numa_alloc_onnode(elements * sizeof(float), memNode);
+		threadData[i].cpuset = cpuset;
+	    } else if (numa) {
+	        // Figure out which nodes actually have CPUs and memory
+	        //int numaNodeCount = numa_max_node() + 1;
+		int numaNodeCount = 4;   // for knl. geez
+	        if (numa == NUMA_SEQ) {
+		    // unimplemented
+		    fprintf(stderr, "sequential numa node fill not implemented yet\n");
+		} else if (numa == NUMA_STRIPE) {
+		    memNode = i % numaNodeCount;
+		    coreNode = memNode;
+		}
+
+                for(int cpuIdx = 0; cpuIdx < get_nprocs(); cpuIdx++) {
+                    CPU_ZERO(&(threadData[i].cpuset));
+                    if(CPU_ISSET(i, &(threadData[i].cpuset))) {
+                        fprintf(stderr, "bitmask not cleared\n");
+                    }
+                }
+
+		threadData[i].arr = numa_alloc_onnode(elements * sizeof(float), memNode);
+
+                for(int cpuIdx = 0; cpuIdx < get_nprocs(); cpuIdx++) {
+                    CPU_ZERO(&(threadData[i].cpuset));
+                    if(CPU_ISSET(i, &(threadData[i].cpuset))) {
+                        fprintf(stderr, "bitmask not cleared\n");
+                    }
+                }
+
+		// cpu node affinity has to be set for each thread
+		nodeBitmask = numa_allocate_cpumask();
+                numa_node_to_cpus(coreNode, nodeBitmask); 
+	        CPU_ZERO(&(threadData[i].cpuset));
+		//fprintf(stderr, "Node %d has CPUs:", coreNode);
+                for (int cpuIdx = 0; cpuIdx < cpuCount; cpuIdx++) { 
+	            if (numa_bitmask_isbitset(nodeBitmask, cpuIdx))  {
+		        CPU_SET(cpuIdx, &(threadData[i].cpuset)); 
+			//fprintf(stderr, " %d", cpuIdx);
+		    }
+		}
+
+		//fprintf(stderr, "\n\n");
+	    }
+
             //threadData[i].arr = (float*)aligned_alloc(64, elements * sizeof(float));
-	    if (0 != posix_memalign((void **)(&(threadData[i].arr)), 64, elements * sizeof(float)))
+	    if (0 != posix_memalign((void **)(&(threadData[i].arr)), 4096, elements * sizeof(float)))
             {
                 fprintf(stderr, "Could not allocate memory for thread %ld\n", i);
                 return 0;
             }
-
-            for (uint64_t arr_idx = 0; arr_idx < elements; arr_idx++) {
-                threadData[i].arr[arr_idx] = arr_idx + i + 0.5f;
-            }
+            if (nopBytes == 0) {
+                for (uint64_t arr_idx = 0; arr_idx < elements; arr_idx++) {
+                    threadData[i].arr[arr_idx] = arr_idx + i + 0.5f;
+                }
+	    } else FillInstructionArray((uint64_t *)threadData[i].arr, elements * sizeof(float) / 1024, nopBytes, branchInterval);
 
             threadData[i].iterations = iterations * threads;
         }
@@ -554,6 +764,7 @@ float MeasureBw(uint64_t sizeKb, uint64_t iterations, uint64_t threads, int shar
         //if (elements > 8192 * 1024) threadData[i].start = 4096 * i; // must be multiple of 128 because of unrolling
         //int pthreadRc = pthread_create(testThreads + i, NULL, ReadBandwidthTestThread, (void *)(threadData + i));
     }
+
 
     gettimeofday(&startTv, &startTz);
     for (uint64_t i = 0; i < threads; i++) pthread_create(testThreads + i, NULL, ReadBandwidthTestThread, (void *)(threadData + i));
@@ -566,12 +777,14 @@ float MeasureBw(uint64_t sizeKb, uint64_t iterations, uint64_t threads, int shar
     if (!shared) bw = bw * threads; // iteration count is divided by thread count if in thread private mode
     //printf("%f GB, %lu ms\n", gbTransferred, time_diff_ms);
 
+    if (numa) numa_free_cpumask(nodeBitmask);
     free(testThreads);
     free(testArr); // should be null in not-shared (private) mode
 
     if (!shared) {
         for (uint64_t i = 0; i < threads; i++) {
-            free(threadData[i].arr);
+	    if (numa) numa_free(threadData[i].arr, elements * sizeof(float));
+            else free(threadData[i].arr);
         }
     }
 
@@ -610,6 +823,13 @@ float scalar_read(float* arr, uint64_t arr_length, uint64_t iterations, uint64_t
 
 void *ReadBandwidthTestThread(void *param) {
     BandwidthTestThreadData* bwTestData = (BandwidthTestThreadData*)param;
+    if (numa) {
+        int affinity_rc = sched_setaffinity(gettid(), sizeof(cpu_set_t), &(bwTestData->cpuset));
+	if (affinity_rc != 0) {
+	    fprintf(stderr, "wtf set affinity failed: %s\n",strerror(errno));
+	    
+	}
+    }
     float sum = bw_func(bwTestData->arr, bwTestData->arr_length, bwTestData->iterations, bwTestData->start);
     if (sum == 0) printf("woohoo\n");
     pthread_exit(NULL);

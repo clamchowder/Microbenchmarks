@@ -1,3 +1,4 @@
+#define _GNU_SOURCE
 #include <stdio.h>
 #include <stdint.h>
 #include <stdlib.h>
@@ -11,7 +12,13 @@
 #include <sys/mman.h>
 #endif
 
+#ifdef NUMA
+#include <numa.h>
+#include <numaif.h>
+#include <sys/sysinfo.h>
+#endif
 #include <errno.h>
+#include <sched.h>
 
 // TODO: possibly get this programatically
 #define PAGE_SIZE 4096
@@ -19,7 +26,7 @@
 
 int default_test_sizes[] = { 2, 4, 8, 12, 16, 24, 32, 48, 64, 96, 128, 192, 256, 384, 512, 600, 768, 1024, 1536, 2048,
                                3072, 4096, 5120, 6144, 8192, 10240, 12288, 16384, 24567, 32768, 65536, 98304,
-                               131072, 262144, 393216, 524288, 1048576, 2097152 };
+                               131072, 262144, 393216, 524288, 1048576 }; //2097152 };
 
 #ifdef __x86_64
 extern void preplatencyarr(uint64_t *arr, uint64_t len) __attribute__((ms_abi));
@@ -54,7 +61,7 @@ float RunTest(uint32_t size_kb, uint32_t iterations, uint32_t *preallocatedArr);
 float RunAsmTest(uint64_t size_kb, uint32_t iterations, uint32_t *preallocatedArr);
 float RunTlbTest(uint32_t size_kb, uint32_t iterations, uint32_t *preallocatedArr);
 float RunMlpTest(uint32_t size_kb, uint32_t iterations, uint32_t parallelism);
-void RunStlfTest(uint32_t iterations, int mode, int pageEnd);
+void RunStlfTest(uint32_t iterations, int mode, int pageEnd, int loadDistance);
 
 float (*testFunc)(uint32_t, uint32_t, uint32_t *) = RunTest;
 
@@ -66,8 +73,9 @@ int main(int argc, char* argv[]) {
     uint32_t testSizeCount = sizeof(default_test_sizes) / sizeof(int);
     int mlpTest = 0;  // if > 0, run MLP test with (value) levels of parallelism max
     int stlf = 0, hugePages = 0;
-    int stlfPageEnd = 0;
+    int stlfPageEnd = 0, numa = 0, stlfLoadDistance = 0;
     uint32_t *hugePagesArr = NULL;
+    size_t hugePagesAllocatedBytes = 0;
     for (int argIdx = 1; argIdx < argc; argIdx++) {
         if (*(argv[argIdx]) == '-') {
             char *arg = argv[argIdx] + 1;
@@ -131,17 +139,29 @@ int main(int argc, char* argv[]) {
                     stlfPageEnd = atoi(argv[argIdx]);
                     fprintf(stderr, "Store to load forwarding test will be pushed to end of %d byte page\n", stlfPageEnd);
             }
+            else if (strncmp(arg, "stlf_load_offset", 16) == 0) {
+                    argIdx++;
+                    stlfLoadDistance = atoi(argv[argIdx]);
+                    fprintf(stderr, "Loads will be offset by %d bytes\n", stlfLoadDistance);
+            }
 #ifndef __MINGW32__
             else if (strncmp(arg, "hugepages", 9) == 0) {
 	              hugePages = 1;
 	              fprintf(stderr, "If applicable, will use huge pages. Will allocate max memory at start, make sure system has enough memory.\n");
-	          } else if (strncmp(arg, "sizekb", 6) == 0) {
+	    } else if (strncmp(arg, "sizekb", 6) == 0) {
                 argIdx++;
                 singleSize = atoi(argv[argIdx]);
                 fprintf(stderr, "Testing %u KB only\n", singleSize);
             }
 #endif
-            else {
+#ifdef NUMA
+            else if (strncmp(arg, "numa", 4) == 0) {
+	        numa = 1;
+		singleSize = 1048576;
+		fprintf(stderr, "Testing node to node latency. If test size is not set, it will be 1 GB\n");
+	    }
+#endif
+	    else {
                 fprintf(stderr, "Unrecognized option: %s\n", arg);
             }
         }
@@ -154,7 +174,9 @@ int main(int argc, char* argv[]) {
 #ifndef __MINGW32__
     if (hugePages) {
        size_t hugePageSize = 1 << 21;
-       size_t maxMemRequired = default_test_sizes[testSizeCount - 1] * (size_t)1024;
+       size_t testSizeKb = singleSize ? singleSize : default_test_sizes[testSizeCount - 1];
+       size_t maxMemRequired = testSizeKb * (size_t)1024;
+       hugePagesAllocatedBytes = maxMemRequired;
        if (maxTestSizeMb > 0 && maxMemRequired > maxTestSizeMb * 1024 * 1024) maxMemRequired = maxTestSizeMb * 1024 * 1024;
        maxMemRequired = (((maxMemRequired - 1) / hugePageSize) + 1) * hugePageSize;
        fprintf(stderr, "mmap-ing %lu bytes\n", maxMemRequired);
@@ -198,8 +220,81 @@ int main(int argc, char* argv[]) {
 
         free(results);
     } else if (stlf) {
-        RunStlfTest(ITERATIONS, stlf, stlfPageEnd);
-    } else {
+        RunStlfTest(ITERATIONS, stlf, stlfPageEnd, stlfLoadDistance);
+    } 
+#ifdef NUMA
+    else if (numa) {
+        if (numa_available() == -1) {
+	    fprintf(stderr, "NUMA is not available\n");
+	    return 0;
+	}
+
+	int numaNodeCount = numa_max_node() + 1;
+	if (numaNodeCount > 64) {
+	    fprintf(stderr, "Too many NUMA nodes. Go home.\n");
+	    return 0;
+	}
+
+	struct bitmask *nodeBitmask = numa_allocate_cpumask();
+	float *crossnodeLatencies = (float *)malloc(sizeof(float) * numaNodeCount * numaNodeCount);
+	memset(crossnodeLatencies, 0, sizeof(float) * numaNodeCount * numaNodeCount);
+        for (int cpuNode = 0; cpuNode < numaNodeCount; cpuNode++) {
+	    numa_node_to_cpus(cpuNode, nodeBitmask);
+	    int nodeCpuCount = numa_bitmask_weight(nodeBitmask);
+	    if (nodeCpuCount == 0) {
+	        fprintf(stderr, "Node %d has no cores\n", cpuNode);
+		continue;
+	    }
+
+            fprintf(stderr, "Node %d has %d cores\n", cpuNode, nodeCpuCount);
+	    cpu_set_t cpuset;
+	    memcpy(cpuset.__bits, nodeBitmask->maskp, nodeBitmask->size / 8);
+            // for (int i = 0; i < get_nprocs(); i++) 
+            //  if (numa_bitmask_isbitset(nodeBitmask, i)) CPU_SET(i, &cpuset); 
+
+	    sched_setaffinity(gettid(), sizeof(cpu_set_t), &cpuset);
+
+	    for (int memNode = 0; memNode < numaNodeCount; memNode++) {
+	        uint64_t nodeMask = 1UL << memNode;
+		uint32_t *arr;
+	        if (hugePagesArr) {
+		    fprintf(stderr, "mbind-ing pre-allocated arr, size %lu bytes\n", hugePagesAllocatedBytes);
+		    long mbind_rc = mbind(hugePagesArr, hugePagesAllocatedBytes, MPOL_BIND, &nodeMask, 64, MPOL_MF_STRICT | MPOL_MF_MOVE);
+		    fprintf(stderr, "mbind returned %ld\n", mbind_rc);
+		    if (mbind_rc != 0) {
+		        fprintf(stderr, "errno: %d\n", errno);
+		    }
+		    arr = hugePagesArr;
+		} else {
+                    arr = numa_alloc_onnode(singleSize * 1024, memNode);
+                    madvise(arr, singleSize * 1024, MADV_HUGEPAGE);
+		}
+	        
+		float latency = testFunc(singleSize, ITERATIONS, arr);
+		crossnodeLatencies[cpuNode * numaNodeCount + memNode] = latency;
+		fprintf(stderr, "CPU node %d -> mem node %d: %f ns\n", cpuNode, memNode, latency);
+		if (!hugePages) numa_free(arr, singleSize * 1024);
+	    }
+	}
+
+	for (int memNode = 0; memNode < numaNodeCount; memNode++) {
+	    printf(",%d", memNode);
+	}
+
+	printf("\n");
+	for (int cpuNode = 0; cpuNode < numaNodeCount; cpuNode++) {
+	    printf("%d", cpuNode);
+	    for (int memNode = 0; memNode < numaNodeCount; memNode++) {
+	        printf(",%f", crossnodeLatencies[cpuNode * numaNodeCount + memNode]);
+	    }
+
+	    printf("\n");
+	}
+
+	free(crossnodeLatencies);
+    }
+#endif
+    else {
         if (singleSize == 0) {
         printf("Region,Latency (ns)\n");
             for (int i = 0; i < testSizeCount; i++) {
@@ -485,7 +580,9 @@ float RunTlbTest(uint32_t size_kb, uint32_t iterations, uint32_t *preallocatedAr
 // Run store to load forwarding test, as described in https://blog.stuffedcow.net/2014/01/x86-memory-disambiguation/
 // uses 4B loads and 8B stores to see when/if store forwarding can succeed when sizes are not matched
 // pageEnd = push test to the end of (pageEnd) sized page. 0 = just test cacheline
-void RunStlfTest(uint32_t iterations, int mode, int pageEnd) {
+// loadDistance = how far ahead to push the load (for testing aliasing)
+// cannot set both pageEnd and loadDistance
+void RunStlfTest(uint32_t iterations, int mode, int pageEnd, int loadDistance) {
     struct timeval startTv, endTv;
     struct timezone startTz, endTz;
     uint64_t time_diff_ms;
@@ -501,6 +598,9 @@ void RunStlfTest(uint32_t iterations, int mode, int pageEnd) {
         testAlignment = pageEnd;
         testAllocSize = pageEnd * 2;
         testOffset = pageEnd - 64;
+    } else if (loadDistance != 0) {
+        testAlignment = 4096;
+        testAllocSize = loadDistance + 128; // enough if I ever go to avx-512 loads
     }
 
     // obtain a couple of cachelines, assuming 64B cacheline size
@@ -522,7 +622,7 @@ void RunStlfTest(uint32_t iterations, int mode, int pageEnd) {
     for (int storeOffset = 0; storeOffset < 64; storeOffset++)
         for (int loadOffset = 0; loadOffset < 64; loadOffset++) {
             ((uint32_t *)(arr))[0] = storeOffset;
-            ((uint32_t *)(arr))[1] = loadOffset;
+            ((uint32_t *)(arr))[1] = loadOffset + loadDistance;
             gettimeofday(&startTv, &startTz);
             stlfFunc(iterations, arr);
             gettimeofday(&endTv, &endTz);
