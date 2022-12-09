@@ -6,7 +6,6 @@
 #include <limits.h>
 #include <math.h>
 #include <sys/time.h>
-#include <sys/sysinfo.h>
 #include <unistd.h>
 
 #ifndef __MINGW32__
@@ -16,6 +15,7 @@
 #ifdef NUMA
 #include <numa.h>
 #include <numaif.h>
+#include <sys/sysinfo.h>
 #endif
 #include <errno.h>
 #include <sched.h>
