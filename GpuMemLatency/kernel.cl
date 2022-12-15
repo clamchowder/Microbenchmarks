@@ -259,7 +259,7 @@ __kernel void c2c_atomic_exec_latency_test(__global int* A, int count, __global 
                 current += 2;
             }
         }
-        ret = current;
+        ret[0] = current;
     }
 }
 
