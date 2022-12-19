@@ -29,6 +29,7 @@ enum TestType {
     GlobalAtomicLatency,
     LocalAtomicLatency,
     GlobalMemBandwidth,
+    LocalMemBandwidth,
     MemBandwidthWorkgroupScaling,
     CoreToCore,
     LinkBandwidth,
@@ -127,6 +128,13 @@ int main(int argc, char* argv[]) {
                     if (!local_size_set) local_size = 256;
                     if (!chase_iterations_set) chase_iterations = 500000;
                 }
+                else if (_strnicmp(argv[argIdx], "localbw", 7) == 0) {
+                    testType = LocalMemBandwidth;
+                    fprintf(stderr, "Testing local memory bandwidth\n");
+                    if (!thread_count_set) thread_count = 262144;
+                    if (!local_size_set) local_size = 256;
+                    if (!chase_iterations_set) chase_iterations = 5000000;
+                }
                 else if (_strnicmp(argv[argIdx], "scaling", 7) == 0)
                 {
                     testType = MemBandwidthWorkgroupScaling;
@@ -211,6 +219,7 @@ int main(int argc, char* argv[]) {
     cl_kernel local_atomic_latency_test_kernel = clCreateKernel(program, "local_atomic_latency_test", &ret);
     cl_kernel c2c_atomic_latency_test_kernel = clCreateKernel(program, "c2c_atomic_exec_latency_test", &ret);
     cl_kernel dummy_add_kernel = clCreateKernel(program, "dummy_add", &ret);
+    cl_kernel local_bw_kernel = clCreateKernel(program, "local_bw_test", &ret);
 #pragma endregion opencl_overhead
 
     max_global_test_size = get_max_buffer_size();
@@ -299,6 +308,13 @@ int main(int argc, char* argv[]) {
                 break;
             }
         }
+    }
+    else if (testType == LocalMemBandwidth)
+    {
+        fprintf(stderr, "Using %u threads, %u local size, %u base iterations\n", thread_count, local_size, chase_iterations / 1000);
+        printf("\nLocal memory bandwidth: ");
+        result = local_bw_test(context, command_queue, local_bw_kernel, thread_count, local_size, chase_iterations);
+        printf("%f GB/s\n", result);
     }
     else if (testType == MemBandwidthWorkgroupScaling)
     {
