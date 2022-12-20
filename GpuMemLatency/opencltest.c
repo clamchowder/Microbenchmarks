@@ -330,7 +330,12 @@ int main(int argc, char* argv[]) {
                     thread_count, local_size, chase_iterations, result, elapsed_ms);
                 if (elapsed_ms < 25) chase_iterations *= 2;
                 else chase_iterations = (uint32_t)((float)chase_iterations * (target_ms / elapsed_ms));
-            }
+                if (result == 0)
+                {
+                    fprintf(stderr, "Run failed\n");
+                    break;
+                }
+        }
 
             printf("Local memory bandwidth: %f GB/s\n", result);
         }
