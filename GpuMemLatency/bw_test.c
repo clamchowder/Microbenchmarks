@@ -140,7 +140,8 @@ float local_bw_test(cl_context context,
     cl_kernel kernel,
     uint32_t thread_count,
     uint32_t local_size,
-    uint32_t chase_iterations)
+    uint32_t chase_iterations,
+    int64_t *time_ms)
 {
     size_t global_item_size = thread_count;
     size_t local_item_size = local_size;
@@ -190,6 +191,7 @@ float local_bw_test(cl_context context,
     }
 
     time_diff_ms = end_timing();
+    *time_ms = time_diff_ms;
 
     // each thread does iterations reads
     total_data_gb = sizeof(float) * ((float)chase_iterations * thread_count + thread_count) / 1e9;
