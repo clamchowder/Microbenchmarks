@@ -242,6 +242,8 @@ uint32_t adjust_iterations(uint32_t iterations, uint64_t time_ms)
     return chase_iterations;
 }
 
+int debug = 0;
+
 float run_rate_test(cl_context context,
     cl_command_queue command_queue,
     cl_kernel kernel,
@@ -293,6 +295,22 @@ float run_rate_test(cl_context context,
         time_diff_ms = end_timing();
         chase_iterations = adjust_iterations(chase_iterations, time_diff_ms);
         clSetKernelArg(kernel, 1, sizeof(cl_int), (void*)&chase_iterations);
+    }
+
+    if (debug) {
+        printf("Running test repeatedly for capture purposes\n");
+        for (int i = 0; i < 100; i++) {
+            start_timing();
+            clSetKernelArg(kernel, 1, sizeof(cl_int), (void*)&chase_iterations);
+            ret = clEnqueueNDRangeKernel(command_queue, kernel, 1, NULL, &global_item_size, &local_item_size, 0, NULL, NULL);
+            ret = clFinish(command_queue);
+            time_diff_ms = end_timing();
+
+            float totalOps = (float)chase_iterations * opsPerIteration * (float)thread_count;
+            gOpsPerSec = ((float)totalOps / 1e9) / ((float)time_diff_ms / 1000);
+            fprintf(stderr, "chase iterations: %d, thread count: %d\n", chase_iterations, thread_count);
+            fprintf(stderr, "total ops: %f (%.2f G)\ntotal time: %llu ms\n", totalOps, totalOps / 1e9, time_diff_ms);
+        }
     }
 
     float totalOps = (float)chase_iterations * opsPerIteration * (float)thread_count;
@@ -438,6 +456,7 @@ float fp16_instruction_rate_test(cl_context context,
     cl_program program = build_program(context, "instruction_rate_fp16_kernel.cl");
     cl_kernel fp16_add_rate_kernel = clCreateKernel(program, "fp16_add_rate_test", &ret);
     cl_kernel fp16_fma_rate_kernel = clCreateKernel(program, "fp16_fma_rate_test", &ret);
+    cl_kernel fp16_dot_rate_kernel = clCreateKernel(program, "fp16_dot_rate_test", &ret);
     totalOps = 8.0f * 8.0f;
     gOpsPerSec = run_rate_test(context, command_queue, fp16_add_rate_kernel, thread_count, local_size, low_chase_iterations,
         float4_element_count, a_mem_obj, result_obj, A, result, totalOps);
@@ -445,6 +464,13 @@ float fp16_instruction_rate_test(cl_context context,
     gOpsPerSec = run_rate_test(context, command_queue, fp16_fma_rate_kernel, thread_count, local_size, low_chase_iterations,
         float4_element_count, a_mem_obj, result_obj, A, result, totalOps);
     fprintf(stderr, "FP16 G FMAs/sec: %f : %f FP16 GFLOPs\n", gOpsPerSec, gOpsPerSec * 2);
+
+    // 4x unroll. half4 dot product = 4 multiplies, 3 adds. accumulate is another add
+    totalOps = 4;
+    debug = 1;
+    gOpsPerSec = run_rate_test(context, command_queue, fp16_dot_rate_kernel, thread_count, local_size, low_chase_iterations,
+        float4_element_count, a_mem_obj, result_obj, A, result, totalOps);
+    fprintf(stderr, "FP16 -> FP32 G dots/sec: %f : %f FP16 GFLOPs\n", gOpsPerSec, gOpsPerSec * (4 + 8));
 
     return gOpsPerSec;
 }
