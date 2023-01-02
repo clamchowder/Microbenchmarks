@@ -486,7 +486,7 @@ float MeasureBw(uint32_t sizeKb, uint32_t iterations, uint32_t threads, int shar
     //printf("%f GB, %lu ms\n", gbTransferred, time_diff_ms);
 
     free(testThreads);
-    if (shared) _aligned_free(testArr);
+    if (shared) VirtualFree(testArr, elements * sizeof(float), MEM_RELEASE);
     free(tids);
 
     if (!shared) {
