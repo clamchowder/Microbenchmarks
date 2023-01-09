@@ -22,11 +22,6 @@ namespace AsmGen
             UarchTestHelpers.GenerateX86AsmStructureTestFuncs(sb, this.Counts, this.Prefix, nops, nops, true);
         }
 
-        public override void GenerateX86NasmAsm(StringBuilder sb)
-        {
-            UarchTestHelpers.GenerateX86NasmStructureTestFuncs(sb, this.Counts, this.Prefix, nops, nops, true);
-        }
-
         public override void GenerateArmAsm(StringBuilder sb)
         {
             UarchTestHelpers.GenerateArmAsmStructureTestFuncs(sb, this.Counts, this.Prefix, nops, nops, true);

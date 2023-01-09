@@ -1,4 +1,5 @@
-﻿using System.Text;
+﻿using System.Runtime.Serialization;
+using System.Text;
 
 namespace AsmGen
 {
@@ -16,10 +17,7 @@ namespace AsmGen
 
         public bool DivideTimeByCount { get; set; }
 
-        public abstract void GenerateArmAsm(StringBuilder sb);
-
-        public abstract void GenerateX86GccAsm(StringBuilder sb);
-        public abstract void GenerateX86NasmAsm(StringBuilder sb);
+        public abstract void GenerateAsm(StringBuilder sb, IUarchTest.ISA isa);
 
         public void GenerateNasmGlobalLines(StringBuilder sb)
         {
@@ -37,12 +35,6 @@ namespace AsmGen
         {
             for (int i = 0; i < Counts.Length; i++)
                 sb.AppendLine("extern uint64_t " + Prefix + Counts[i] + $"({FunctionDefinitionParameters}) __attribute((sysv_abi));"); ;
-        }
-
-        public void GenerateVsExternLines(StringBuilder sb)
-        {
-            for (int i = 0; i < Counts.Length; i++)
-                sb.AppendLine("extern \"C\" uint64_t " + Prefix + Counts[i] + $"({FunctionDefinitionParameters});");
         }
 
         public void GenerateTestBlock(StringBuilder sb)
@@ -69,38 +61,6 @@ namespace AsmGen
                 else
                     sb.AppendLine("    latency = 1e6 * (float)time_diff_ms / (float)(structIterations);");
                 sb.AppendLine("    printf(\"" + Counts[i] + ",%f\\n\", latency);\n");
-
-                if (DivideTimeByCount)
-                {
-                    sb.AppendLine("    structIterations = tmp;");
-                }
-            }
-
-            sb.AppendLine("  }\n");
-        }
-
-        public void GenerateVsTestBlock(StringBuilder sb)
-        {
-            sb.AppendLine("  if (argc > 1 && _strnicmp(argv[1], \"" + Prefix + "\", " + Prefix.Length + ") == 0) {");
-            sb.AppendLine("  printf(\"" + Description + ":\\n\");");
-
-            for (int i = 0; i < Counts.Length; i++)
-            {
-                if (DivideTimeByCount)
-                {
-                    sb.AppendLine("    tmp = structIterations;");
-                    sb.AppendLine("    structIterations = iterations / " + Counts[i] + ";");
-                }
-
-                sb.AppendLine("  ftime(&start);");
-                sb.AppendLine("  " + Prefix + Counts[i] + $"({GetFunctionCallParameters});");
-                sb.AppendLine("  ftime(&end);");
-                sb.AppendLine("  time_diff_ms = 1000 * (end.time - start.time) + (end.millitm - start.millitm);");
-                if (DivideTimeByCount)
-                    sb.AppendLine("    latency = 1e6 * (float)time_diff_ms / (float)(iterations);");
-                else
-                    sb.AppendLine("    latency = 1e6 * (float)time_diff_ms / (float)(structIterations);");
-                sb.AppendLine("  printf(\"" + Counts[i] + ",%f\\n\", latency);\n");
 
                 if (DivideTimeByCount)
                 {
