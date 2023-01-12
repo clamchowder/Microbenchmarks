@@ -29,6 +29,7 @@ enum TestType {
     GlobalAtomicLatency,
     LocalAtomicLatency,
     GlobalMemBandwidth,
+    LocalMemBandwidth,
     MemBandwidthWorkgroupScaling,
     CoreToCore,
     LinkBandwidth,
@@ -127,6 +128,10 @@ int main(int argc, char* argv[]) {
                     if (!local_size_set) local_size = 256;
                     if (!chase_iterations_set) chase_iterations = 500000;
                 }
+                else if (_strnicmp(argv[argIdx], "localbw", 7) == 0) {
+                    testType = LocalMemBandwidth;
+                    fprintf(stderr, "Testing local memory bandwidth\n");
+                }
                 else if (_strnicmp(argv[argIdx], "scaling", 7) == 0)
                 {
                     testType = MemBandwidthWorkgroupScaling;
@@ -211,6 +216,7 @@ int main(int argc, char* argv[]) {
     cl_kernel local_atomic_latency_test_kernel = clCreateKernel(program, "local_atomic_latency_test", &ret);
     cl_kernel c2c_atomic_latency_test_kernel = clCreateKernel(program, "c2c_atomic_exec_latency_test", &ret);
     cl_kernel dummy_add_kernel = clCreateKernel(program, "dummy_add", &ret);
+    cl_kernel local_bw_kernel = clCreateKernel(program, "local_bw_test", &ret);
 #pragma endregion opencl_overhead
 
     max_global_test_size = get_max_buffer_size();
@@ -275,7 +281,7 @@ int main(int argc, char* argv[]) {
     }
     else if (testType == GlobalMemBandwidth)
     {
-        fprintf(stderr, "Using %u threads, %u local size, %u base iterations\n", thread_count, local_size, chase_iterations / 1000);
+        fprintf(stderr, "Using %u threads, %u local size, %u base iterations\n", thread_count, local_size, chase_iterations);
         printf("\nMemory bandwidth (up to %lu K):\n", max_global_test_size / 1024);
 
         for (int size_idx = 0; size_idx < sizeof(default_bw_test_sizes) / sizeof(unsigned long long); size_idx++) {
@@ -298,6 +304,40 @@ int main(int argc, char* argv[]) {
                 printf("Something went wrong, not testing anything bigger.\n");
                 break;
             }
+        }
+    }
+    else if (testType == LocalMemBandwidth)
+    {
+        if (chase_iterations_set) 
+        {
+            fprintf(stderr, "Using %u threads, %u local size, %u base iterations\n", thread_count, local_size, chase_iterations);
+            printf("\nLocal memory bandwidth: ");
+            int64_t elapsed_ms = 0;
+            result = local_bw_test(context, command_queue, local_bw_kernel, thread_count, local_size, chase_iterations, &elapsed_ms);
+            printf("%f GB/s\n", result);
+            fprintf(stderr, "Elapsed time: %lld ms", elapsed_ms);
+        }
+        else
+        {
+            int64_t elapsed_ms = 0, target_ms = 1500;
+            thread_count = 262144;
+            local_size = 256;
+            chase_iterations = 500000;
+            while (elapsed_ms < target_ms / 2)
+            {
+                result = local_bw_test(context, command_queue, local_bw_kernel, thread_count, local_size, chase_iterations, &elapsed_ms);
+                fprintf(stderr, "%u threads, %u local size, %u iterations ==> %f GB/s, elapsed time %lld ms\n", 
+                    thread_count, local_size, chase_iterations, result, elapsed_ms);
+                if (elapsed_ms < 25) chase_iterations *= 2;
+                else chase_iterations = (uint32_t)((float)chase_iterations * (target_ms / elapsed_ms));
+                if (result == 0)
+                {
+                    fprintf(stderr, "Run failed\n");
+                    break;
+                }
+        }
+
+            printf("Local memory bandwidth: %f GB/s\n", result);
         }
     }
     else if (testType == MemBandwidthWorkgroupScaling)
@@ -365,8 +405,8 @@ int main(int argc, char* argv[]) {
         instruction_rate_test(context, command_queue, thread_count, local_size, chase_iterations);
     }
 
-    printf("If you didn't run this through cmd, now you can copy the results. And press ctrl+c to close");
-    scanf("\n");
+    //printf("If you didn't run this through cmd, now you can copy the results. And press ctrl+c to close");
+    //scanf("\n");
 
     // Clean up
     cleanup:

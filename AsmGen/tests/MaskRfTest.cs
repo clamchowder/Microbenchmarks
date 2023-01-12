@@ -17,20 +17,20 @@ namespace AsmGen
         public override void GenerateX86GccAsm(StringBuilder sb)
         {
             string[] unrolledAdds = new string[4];
-            unrolledAdds[0] = "  kaddb %k0, %k1, %k1";
-            unrolledAdds[1] = "  kaddb %k0, %k2, %k2";
-            unrolledAdds[2] = "  kaddb %k0, %k3, %k3";
-            unrolledAdds[3] = "  kaddb %k0, %k4, %k4";
+            unrolledAdds[0] = "  kandw %k0, %k1, %k1";
+            unrolledAdds[1] = "  kandw %k0, %k2, %k2";
+            unrolledAdds[2] = "  kandw %k0, %k3, %k3";
+            unrolledAdds[3] = "  kandw %k0, %k4, %k4";
             UarchTestHelpers.GenerateX86AsmStructureTestFuncs(sb, this.Counts, this.Prefix, unrolledAdds, unrolledAdds, false);
         }
 
         public override void GenerateX86NasmAsm(StringBuilder sb)
         {
             string[] unrolledAdds = new string[4];
-            unrolledAdds[0] = "  kaddb k1, k1, k0";
-            unrolledAdds[1] = "  kaddb k2, k2, k0";
-            unrolledAdds[2] = "  kaddb k3, k3, k0";
-            unrolledAdds[3] = "  kaddb k4, k4, k0";
+            unrolledAdds[0] = "  kandw k1, k1, k0";
+            unrolledAdds[1] = "  kandw k2, k2, k0";
+            unrolledAdds[2] = "  kandw k3, k3, k0";
+            unrolledAdds[3] = "  kandw k4, k4, k0";
             UarchTestHelpers.GenerateX86NasmStructureTestFuncs(sb, this.Counts, this.Prefix, unrolledAdds, unrolledAdds, false);
         }
 

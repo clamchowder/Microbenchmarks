@@ -54,6 +54,13 @@ float bw_test(cl_context context,
     uint32_t local_size,
     uint32_t skip,
     uint32_t chase_iterations);
+float local_bw_test(cl_context context,
+    cl_command_queue command_queue,
+    cl_kernel kernel,
+    uint32_t thread_count,
+    uint32_t local_size,
+    uint32_t chase_iterations,
+    int64_t *time_ms);
 void link_bw_test(cl_context context,
     cl_command_queue command_queue,
     cl_kernel kernel,
