@@ -51,6 +51,14 @@ extern void stlftest(uint64_t iterations, char *arr);
 extern void stlftest32(uint64_t iterations, char *arr);
 extern void stlftest128(uint64_t iterations, char *arr);
 void (*stlfFunc)(uint64_t, char *) = stlftest;
+#elif __loongarch64
+extern void preplatencyarr(uint64_t *arr, uint64_t len);
+extern uint32_t latencytest(uint64_t iterations, uint64_t *arr);
+extern void stlftest(uint64_t iterations, char *arr);
+extern void matchedstlftest(uint32_t iterations, char *arr);
+extern void stlftest32(uint64_t iterations, char *arr);
+extern void stlftest128(uint64_t iterations, char *arr);
+void (*stlfFunc)(uint64_t, char *) = stlftest;
 #else
 #define UNKNOWN_ARCH 1
 extern uint32_t latencytest(uint64_t iterations, uint64_t *arr);

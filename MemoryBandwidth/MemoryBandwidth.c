@@ -6,6 +6,7 @@
 #include <stdlib.h>
 #include <stdint.h>
 #include <string.h>
+#include <unistd.h>
 
 #ifndef __MINGW32__
 #include <sys/syscall.h>
@@ -23,6 +24,8 @@
 #include <numa.h>
 
 #pragma GCC diagnostic ignored "-Wattributes"
+
+#define gettid() ((pid_t)syscall(SYS_gettid))
 
 int default_test_sizes[39] = { 2, 4, 8, 12, 16, 24, 32, 48, 64, 96, 128, 192, 256, 512, 600, 768, 1024, 1536, 2048,
                                3072, 4096, 5120, 6144, 8192, 10240, 12288, 16384, 24567, 32768, 65536, 98304,
@@ -462,101 +465,6 @@ void TestBankConflicts(int type) {
     free(resultArr);
 }
 
-float MeasureInstructionBw(uint64_t sizeKb, uint64_t iterations, int nopSize, int branchInterval) {
-#ifdef __x86_64
-    char nop2b[8] = { 0x66, 0x90, 0x66, 0x90, 0x66, 0x90, 0x66, 0x90 };
-    char nop2b_xor[8] = { 0x31, 0xc0, 0x31, 0xc0, 0x31, 0xc0, 0x31, 0xc0 };
-    char nop8b[8] = { 0x0F, 0x1F, 0x84, 0x00, 0x00, 0x00, 0x00, 0x00 };
-
-    // zen/piledriver optimization manual uses this pattern
-    char nop4b[8] = { 0x0F, 0x1F, 0x40, 0x00, 0x0F, 0x1F, 0x40, 0x00 };
-
-    // athlon64 (K8) optimization manual pattern
-    char k8_nop4b[8] = { 0x66, 0x66, 0x66, 0x90, 0x66, 0x66, 0x66, 0x90 };
-    char nop4b_with_branch[8] = { 0x0F, 0x1F, 0x40, 0x00, 0xEB, 0x00, 0x66, 0x90 };
-#endif
-
-#ifdef __aarch64__
-    char nop4b[8] = { 0x1F, 0x20, 0x03, 0xD5, 0x1F, 0x20, 0x03, 0xD5 };
-
-    // hack this to deal with graviton 1 / A72
-    // nop + mov x0, 0
-    char nop8b[9] = { 0x1F, 0x20, 0x03, 0xD5, 0x00, 0x00, 0x80, 0xD2 }; 
-    // mov x0, 0 + ldr x0, [sp] 
-    char nop8b1[9] = { 0x00, 0x00, 0x80, 0xD2, 0xe0, 0x03, 0x40, 0xf9 }; 
-#endif
-
-    struct timeval startTv, endTv;
-    struct timezone startTz, endTz;
-    float bw = 0;
-    uint64_t *nops;
-    uint64_t elements = sizeKb * 1024 / 8;
-    size_t funcLen = sizeKb * 1024 + 4;   // add 4 bytes to cover for aarch64 ret as well. doesn't hurt for x86
-
-    void (*nopfunc)(uint64_t) __attribute((ms_abi));
-
-    // nops, dec rcx (3 bytes), jump if zero flag set to 32-bit displacement (6 bytes), ret (1 byte)
-    //nops = (uint64_t *)malloc(funcLen);
-    if (0 != posix_memalign((void **)(&nops), 4096, funcLen)) {
-        fprintf(stderr, "Failed to allocate memory for size %lu\n", sizeKb);
-        return 0;
-    }
-
-    uint64_t *nop8bptr;
-    if (nopSize == 8) nop8bptr = (uint64_t *)(nop8b);
-    else if (nopSize == 4) nop8bptr = (uint64_t *)(nop4b);
-    else if (nopSize == 2) nop8bptr = (uint64_t *)(nop2b_xor);
-    else {
-        fprintf(stderr, "%d byte instruction length isn't supported :(\n", nopSize);
-    }
-
-    for (uint64_t nopIdx = 0; nopIdx < elements; nopIdx++) {
-        nops[nopIdx] = *nop8bptr;
-#ifdef __x86_64
-	uint64_t *nopBranchPtr = (uint64_t *)nop4b_with_branch;
-	if (branchInterval > 1 && nopIdx % branchInterval == 0) nops[nopIdx] = *nopBranchPtr;
-#endif
-#ifdef __aarch64__
-	if (nopSize == 8) {
-          uint64_t *otherNops = (uint64_t *)nop8b1;
-          if (nopIdx & 1) nops[nopIdx] = *otherNops;
-	}
-#endif
-    }
-
-    // ret
-    #ifdef __x86_64
-    unsigned char *functionEnd = (unsigned char *)(nops + elements);
-    functionEnd[0] = 0xC3;
-    #endif
-    #ifdef __aarch64__
-    uint64_t *functionEnd = (uint64_t *)(nops + elements);
-    functionEnd[0] = 0XD65F03C0;
-    flush_icache((void *)nops, funcLen);
-    __builtin___clear_cache(nops, functionEnd);
-    #endif
-
-    uint64_t nopfuncPage = (~0xFFF) & (uint64_t)(nops);
-    size_t mprotectLen = (0xFFF & (uint64_t)(nops)) + funcLen;
-    if (mprotect((void *)nopfuncPage, mprotectLen, PROT_EXEC | PROT_READ | PROT_WRITE) < 0) {
-        fprintf(stderr, "mprotect failed, errno %d\n", errno);
-        return 0;
-    }
-
-    nopfunc = (__attribute((ms_abi)) void(*)(uint64_t))nops;
-    gettimeofday(&startTv, &startTz);
-    for (int iterIdx = 0; iterIdx < iterations; iterIdx++) nopfunc(iterations);
-    gettimeofday(&endTv, &endTz);
-
-    uint64_t time_diff_ms = 1000 * (endTv.tv_sec - startTv.tv_sec) + ((endTv.tv_usec - startTv.tv_usec) / 1000);
-    double gbTransferred = (iterations * 8 * elements + 1)  / (double)1e9;
-    //fprintf(stderr, "%lf GB transferred in %ld ms\n", gbTransferred, time_diff_ms);
-    bw = 1000 * gbTransferred / (double)time_diff_ms;
-
-    free(nops);
-    return bw;
-}
-
 void FillInstructionArray(uint64_t *nops, uint64_t sizeKb, int nopSize, int branchInterval) {
 #ifdef __x86_64
     char nop2b[8] = { 0x66, 0x90, 0x66, 0x90, 0x66, 0x90, 0x66, 0x90 };
@@ -580,11 +488,18 @@ void FillInstructionArray(uint64_t *nops, uint64_t sizeKb, int nopSize, int bran
     // mov x0, 0 + ldr x0, [sp] 
     char nop8b1[9] = { 0x00, 0x00, 0x80, 0xD2, 0xe0, 0x03, 0x40, 0xf9 }; 
 #endif
+
+#ifdef __loongarch64
+    char nop4b[8] = { 0x00, 0x00, 0x40, 0x03, 0x00, 0x00, 0x40, 0x03 };
+    char nop8b[8] = { 0x00, 0x08, 0x00, 0x50, 0x00, 0x00, 0x00, 0x00 };
+#endif
     
     uint64_t *nop8bptr;
     if (nopSize == 8) nop8bptr = (uint64_t *)(nop8b);
     else if (nopSize == 4) nop8bptr = (uint64_t *)(nop4b);
+#ifdef __x86_64
     else if (nopSize == 2) nop8bptr = (uint64_t *)(nop2b_xor);
+#endif
     else {
         fprintf(stderr, "%d byte instruction length isn't supported :(\n", nopSize);
     }
@@ -615,10 +530,19 @@ void FillInstructionArray(uint64_t *nops, uint64_t sizeKb, int nopSize, int bran
     flush_icache((void *)nops, funcLen);
     __builtin___clear_cache(nops, functionEnd);
     #endif
+#ifdef __loongarch64
+    uint64_t *functionEnd = (uint64_t *)(nops + elements);
+    functionEnd[0] = 0x4C000020;
+#endif
 
     size_t funcLen = sizeKb * 1024;
     uint64_t nopfuncPage = (~0xFFF) & (uint64_t)(nops);
     size_t mprotectLen = (0xFFF & (uint64_t)(nops)) + funcLen;
+#ifdef __loongarch64
+    // hack this for 16 KB page size
+    nopfuncPage = (~0x3FFF) & (uint64_t)(nops);
+    mprotectLen = (0x3FFF & (uint64_t)(nops)) + funcLen;
+#endif
     if (mprotect((void *)nopfuncPage, mprotectLen, PROT_EXEC | PROT_READ | PROT_WRITE) < 0) {
         fprintf(stderr, "mprotect failed, errno %d\n", errno);
     }
