@@ -17,14 +17,28 @@ namespace AsmGen
             this.nops = new string[] { "nop" };
         }
 
-        public override void GenerateX86GccAsm(StringBuilder sb)
+        public override bool SupportsIsa(IUarchTest.ISA isa)
         {
-            UarchTestHelpers.GenerateX86AsmStructureTestFuncs(sb, this.Counts, this.Prefix, nops, nops, true);
+            if (isa == IUarchTest.ISA.amd64) return true;
+            if (isa == IUarchTest.ISA.aarch64) return true;
+            if (isa == IUarchTest.ISA.mips64) return true;
+            return false;
         }
 
-        public override void GenerateArmAsm(StringBuilder sb)
+        public override void GenerateAsm(StringBuilder sb, IUarchTest.ISA isa)
         {
-            UarchTestHelpers.GenerateArmAsmStructureTestFuncs(sb, this.Counts, this.Prefix, nops, nops, true);
+            if (isa == IUarchTest.ISA.amd64)
+            {
+                UarchTestHelpers.GenerateX86AsmStructureTestFuncs(sb, this.Counts, this.Prefix, nops, nops, true);
+            }
+            else if (isa == IUarchTest.ISA.aarch64)
+            {
+                UarchTestHelpers.GenerateArmAsmStructureTestFuncs(sb, this.Counts, this.Prefix, nops, nops, true);
+            }
+            else if (isa == IUarchTest.ISA.mips64)
+            {
+                UarchTestHelpers.GenerateMipsAsmStructureTestFuncs(sb, this.Counts, this.Prefix, nops, nops, includePtrChasingLoads: true);
+            }
         }
     }
 }

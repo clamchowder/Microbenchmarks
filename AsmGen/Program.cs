@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.IO;
 using System.Text;
+using static System.Net.Mime.MediaTypeNames;
 
 namespace AsmGen
 {
@@ -18,44 +19,53 @@ namespace AsmGen
             List<IUarchTest> tests = new List<IUarchTest>();
             tests.Add(new RobTest(4, 384, 1));
 
-            StringBuilder cSourceFile = new StringBuilder();
-            StringBuilder armAsmFile = new StringBuilder();
-            StringBuilder x86AsmFile = new StringBuilder();
-            StringBuilder x86NasmFile = new StringBuilder();
+            GenerateCFile(tests, IUarchTest.ISA.amd64);
+            GenerateCFile(tests, IUarchTest.ISA.aarch64);
+            GenerateCFile(tests, IUarchTest.ISA.mips64);
 
-            string commonFunctions = File.ReadAllText($"{DataFilesDir}\\CommonFunctions.c");
-
-            // Generate C file for linux
-            cSourceFile.AppendLine("#include <stdio.h>\n#include<stdint.h>\n#include<sys/time.h>\n#include <stdlib.h>\n#include <string.h>\n#include <time.h>\n");
-            cSourceFile.AppendLine("#pragma GCC diagnostic ignored \"-Wattributes\"");
-            cSourceFile.AppendLine(commonFunctions);
-
-            foreach (IUarchTest test in tests) test.GenerateExternLines(cSourceFile);
-
-            AddCommonInitCode(cSourceFile, tests);
-            cSourceFile.AppendLine("  struct timeval startTv, endTv;");
-            cSourceFile.AppendLine("  struct timezone startTz, endTz;");
-
-            foreach (IUarchTest test in tests) test.GenerateTestBlock(cSourceFile);
-            cSourceFile.AppendLine("  free(A); free(B); free(fpArr);");
-            cSourceFile.AppendLine("  return 0; }");
-            File.WriteAllText("clammicrobench.c", cSourceFile.ToString());
-
-            armAsmFile.AppendLine(".arch armv8-a\n.text\n");
-            foreach (IUarchTest test in tests) test.GenerateAsmGlobalLines(armAsmFile);
-            foreach (IUarchTest test in tests) test.GenerateAsm(armAsmFile, IUarchTest.ISA.aarch64);
-            File.WriteAllText("clammicrobench_arm.s", armAsmFile.ToString());
-
-            x86AsmFile.AppendLine(".text\n");
-
-            foreach (IUarchTest test in tests) test.GenerateAsmGlobalLines(x86AsmFile);
-            foreach (IUarchTest test in tests) test.GenerateAsm(x86AsmFile, IUarchTest.ISA.amd64);
-
-            File.WriteAllText("clammicrobench_x86.s", x86AsmFile.ToString());
-
-            x86NasmFile.AppendLine("section .text");
-            x86NasmFile.AppendLine("bits 64\n");
+            GenerateAsmFile(tests, IUarchTest.ISA.amd64);
+            GenerateAsmFile(tests, IUarchTest.ISA.aarch64);
+            GenerateAsmFile(tests, IUarchTest.ISA.mips64);
         }
+
+        static void GenerateCFile(List<IUarchTest> tests, IUarchTest.ISA isa)
+        {
+            StringBuilder sb = new StringBuilder();
+            sb.AppendLine("#include <stdio.h>\n#include<stdint.h>\n#include<sys/time.h>\n#include <stdlib.h>\n#include <string.h>\n#include <time.h>\n");
+            sb.AppendLine("#pragma GCC diagnostic ignored \"-Wattributes\"");
+            string commonFunctions = File.ReadAllText($"{DataFilesDir}\\CommonFunctions.c");
+            sb.AppendLine(commonFunctions);
+            foreach (IUarchTest test in tests)
+            {
+                if (test.SupportsIsa(isa)) test.GenerateExternLines(sb);
+            }
+
+            AddCommonInitCode(sb, tests);
+            foreach(IUarchTest test in tests)
+            {
+                if (test.SupportsIsa(isa)) test.GenerateTestBlock(sb, isa);
+            }
+
+            AddCommonEndCode(sb);
+
+            File.WriteAllText("clammicrobench_" + isa.ToString() + ".c", sb.ToString());
+        }
+
+        static void GenerateAsmFile(List<IUarchTest> tests, IUarchTest.ISA isa)
+        {
+            StringBuilder sb = new StringBuilder();
+            sb.AppendLine(".text");
+            foreach (IUarchTest test in tests)
+            {
+                if (test.SupportsIsa(isa))
+                {
+                    test.GenerateAsmGlobalLines(sb);
+                    test.GenerateAsm(sb, isa);
+                }
+            }
+            File.WriteAllText("clammicrobench_" + isa.ToString() + ".s", sb.ToString());
+        }
+
         static void AddCommonInitCode(StringBuilder sb, List<IUarchTest> tests)
         {
             sb.AppendLine("int main(int argc, char *argv[]) {");
@@ -74,6 +84,15 @@ namespace AsmGen
             sb.AppendLine("  if (argc == 1 || argc > 1 && strncmp(argv[1], \"branchtest\", 9) != 0) {");
             GenerateLatencyTestArray(sb);
             sb.AppendLine("  }");
+            sb.AppendLine("  struct timeval startTv, endTv;");
+            sb.AppendLine("  struct timezone startTz, endTz;");
+        }
+
+
+        static void AddCommonEndCode(StringBuilder sb)
+        {
+            sb.AppendLine("  free(A); free(B); free(fpArr);");
+            sb.AppendLine("  return 0; }");
         }
 
         static void GenerateLatencyTestArray(StringBuilder sb)

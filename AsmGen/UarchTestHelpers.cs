@@ -1044,5 +1044,46 @@ namespace AsmGen
                 sb.AppendLine("  ret\n\n");
             }
         }
+
+        public static void GenerateMipsAsmStructureTestFuncs(StringBuilder sb,
+            int[] counts,
+            string funcNamePrefix,
+            string[] fillerInstrs1,
+            string[] fillerInstrs2,
+            bool includePtrChasingLoads = false,
+            string initInstrs = null,
+            string postLoadInstrs1 = null,
+            string postLoadInstrs2 = null,
+            bool dsb = false)
+        {
+            for (int i = 0; i < counts.Length; i++)
+            {
+                string funcName = funcNamePrefix + counts[i];
+
+                // args in r4 = iterations, r5 = list size, r6 = list (sink)
+                // use r12 and r13 for ptr chasing loads, r14 as decrement for iteration count
+                sb.AppendLine("\n" + funcName + ":");
+                sb.AppendLine("  xor $r14, $r14, $r14");
+                sb.AppendLine("  addi.d $r14, $r14, 1");
+                if (initInstrs != null) sb.AppendLine(initInstrs);
+                sb.AppendLine("\n" + funcName + "start:");
+                sb.AppendLine("  ld.w $r12, $r12, 0");
+                int fillerInstrCount = includePtrChasingLoads ? counts[i] - 2 : counts[i];
+                for (int instrIdx = 0, addIdx = 0; instrIdx < fillerInstrCount; instrIdx++)
+                {
+                    sb.AppendLine(fillerInstrs1[addIdx]);
+                    addIdx = (addIdx + 1) % fillerInstrs1.Length;
+                }
+                sb.AppendLine("  ld.w $r13, $r13, 0");
+                for (int instrIdx = 0, addIdx = 0; instrIdx < fillerInstrCount; instrIdx++)
+                {
+                    sb.AppendLine(fillerInstrs1[addIdx]);
+                    addIdx = (addIdx + 1) % fillerInstrs1.Length;
+                }
+                sb.AppendLine("  sub.d $r4, $r4, $r14");
+                sb.AppendLine("  bnez $r4, " + funcName + "start");
+                sb.AppendLine(" jr $r1");
+            }
+        }
     }
 }

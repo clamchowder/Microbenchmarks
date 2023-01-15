@@ -8,9 +8,10 @@ namespace AsmGen
         public string Prefix { get; }
         public string Description { get; }
         public bool DivideTimeByCount { get; }
+        public bool SupportsIsa(ISA isa);
 
         public void GenerateAsm(StringBuilder sb, ISA isa);
-        public void GenerateTestBlock(StringBuilder sb);
+        public void GenerateTestBlock(StringBuilder sb, ISA isa);
         public void GenerateAsmGlobalLines(StringBuilder sb);
         public void GenerateExternLines(StringBuilder sb);
 
