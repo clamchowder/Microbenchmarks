@@ -24,3 +24,20 @@ void printResultFloatArr(float* arr, uint32_t *xCounts, uint32_t xLen, uint32_t 
         printf("\n");
     }
 }
+
+void FillPatternArr(uint32_t* pattern_arr, uint32_t list_size, uint32_t byte_increment) {
+    uint32_t increment = byte_increment / sizeof(uint32_t);
+    uint32_t element_count = list_size / increment;
+    for (int i = 0; i < element_count; i++) {
+        pattern_arr[i * increment] = i * increment;
+    }
+
+    int iter = element_count;
+    while (iter > 1) {
+        iter -= 1;
+        int j = iter - 1 == 0 ? 0 : rand() % (iter - 1);
+        uint32_t tmp = pattern_arr[iter * increment];
+        pattern_arr[iter * increment] = pattern_arr[j * increment];
+        pattern_arr[j * increment] = tmp;
+    }
+}

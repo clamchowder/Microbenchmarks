@@ -17,7 +17,14 @@ namespace AsmGen
         static void Main(string[] args)
         {
             List<IUarchTest> tests = new List<IUarchTest>();
-            tests.Add(new RobTest(4, 384, 1));
+            tests.Add(new RobTest(4, 160, 1));
+            tests.Add(new IntRfTest(4, 160, 1));
+            tests.Add(new FpRfTest(4, 160, 1));
+            tests.Add(new LdqTest(4, 128, 1));
+            tests.Add(new StqTest(4, 128, 1));
+            tests.Add(new AddSchedTest(4, 64, 1));
+            tests.Add(new LoadSchedTest(4, 64, 1));
+            tests.Add(new FaddSchedTest(4, 64, 1));
 
             GenerateCFile(tests, IUarchTest.ISA.amd64);
             GenerateCFile(tests, IUarchTest.ISA.aarch64);
@@ -40,6 +47,11 @@ namespace AsmGen
                 if (test.SupportsIsa(isa)) test.GenerateExternLines(sb);
             }
 
+            if (isa == IUarchTest.ISA.mips64)
+            {
+                sb.AppendLine("extern void preplatencyarr(int *arr, uint32_t list_size);");
+            }
+
             AddCommonInitCode(sb, tests);
             foreach(IUarchTest test in tests)
             {
@@ -55,6 +67,12 @@ namespace AsmGen
         {
             StringBuilder sb = new StringBuilder();
             sb.AppendLine(".text");
+
+            if (isa == IUarchTest.ISA.mips64)
+            {
+                UarchTest.GenerateMipsPrepArrayFunction(sb);
+            }
+
             foreach (IUarchTest test in tests)
             {
                 if (test.SupportsIsa(isa))
@@ -102,16 +120,7 @@ namespace AsmGen
 
             sb.AppendLine("  A = (int*)malloc(sizeof(int) * list_size);");
             sb.AppendLine("  srand(time(NULL));");
-            sb.AppendLine("  for (int i = 0; i < list_size; i++) { A[i] = i; }\n");
-            sb.AppendLine("  int iter = list_size;");
-            sb.AppendLine("  while (iter > 1)");
-            sb.AppendLine("  {");
-            sb.AppendLine("      iter -= 1;");
-            sb.AppendLine("      int j = iter - 1 == 0 ? 0 : rand() % (iter - 1);");
-            sb.AppendLine("      uint32_t tmp = A[iter];");
-            sb.AppendLine("      A[iter] = A[j];");
-            sb.AppendLine("      A[j] = tmp;");
-            sb.AppendLine("  }");
+            sb.AppendLine("  FillPatternArr(A, list_size, 64);\n");
 
             sb.AppendLine("#ifdef _WIN32");
             sb.AppendLine("  B = (int*)_aligned_malloc(sizeof(int) * list_size, 64);\n");

@@ -1060,25 +1060,29 @@ namespace AsmGen
             {
                 string funcName = funcNamePrefix + counts[i];
 
-                // args in r4 = iterations, r5 = list size, r6 = list (sink)
+                // args in r4 = iterations, r5 = list, r6 = list (sink)
                 // use r12 and r13 for ptr chasing loads, r14 as decrement for iteration count
                 sb.AppendLine("\n" + funcName + ":");
+                sb.AppendLine("  ld.d $r12, $r5, 0");
+                sb.AppendLine("  ld.d $r13, $r5, 64");
                 sb.AppendLine("  xor $r14, $r14, $r14");
                 sb.AppendLine("  addi.d $r14, $r14, 1");
                 if (initInstrs != null) sb.AppendLine(initInstrs);
                 sb.AppendLine("\n" + funcName + "start:");
-                sb.AppendLine("  ld.w $r12, $r12, 0");
+                sb.AppendLine("  ld.d $r12, $r12, 0");
+                if (postLoadInstrs1 != null) sb.AppendLine(postLoadInstrs1);
                 int fillerInstrCount = includePtrChasingLoads ? counts[i] - 2 : counts[i];
                 for (int instrIdx = 0, addIdx = 0; instrIdx < fillerInstrCount; instrIdx++)
                 {
                     sb.AppendLine(fillerInstrs1[addIdx]);
                     addIdx = (addIdx + 1) % fillerInstrs1.Length;
                 }
-                sb.AppendLine("  ld.w $r13, $r13, 0");
+                sb.AppendLine("  ld.d $r13, $r13, 0");
+                if (postLoadInstrs2 != null) sb.AppendLine(postLoadInstrs2);
                 for (int instrIdx = 0, addIdx = 0; instrIdx < fillerInstrCount; instrIdx++)
                 {
-                    sb.AppendLine(fillerInstrs1[addIdx]);
-                    addIdx = (addIdx + 1) % fillerInstrs1.Length;
+                    sb.AppendLine(fillerInstrs2[addIdx]);
+                    addIdx = (addIdx + 1) % fillerInstrs2.Length;
                 }
                 sb.AppendLine("  sub.d $r4, $r4, $r14");
                 sb.AppendLine("  bnez $r4, " + funcName + "start");

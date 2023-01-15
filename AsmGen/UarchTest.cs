@@ -37,6 +37,11 @@ namespace AsmGen
             sb.AppendLine("  if (argc > 1 && strncmp(argv[1], \"" + Prefix + "\", " + Prefix.Length + ") == 0) {");
             sb.AppendLine("    printf(\"" + Description + ":\\n\");");
 
+            if (isa == IUarchTest.ISA.mips64)
+            {
+                sb.AppendLine("preplatencyarr(A, list_size);");
+            }
+
             for (int i = 0; i < Counts.Length; i++)
             {
                 // use more iterations (iterations = structIterations * 100) and divide iteration count by tested-thing count
@@ -45,11 +50,6 @@ namespace AsmGen
                 {
                     sb.AppendLine("    tmp = structIterations;");
                     sb.AppendLine("    structIterations = iterations / " + Counts[i] + ";");
-                }
-
-                if (isa == IUarchTest.ISA.mips64)
-                {
-                    sb.AppendLine("preplatencyarr(arr, list_size);");
                 }
 
                 sb.AppendLine("    gettimeofday(&startTv, &startTz);");
@@ -77,25 +77,27 @@ namespace AsmGen
         /// So screw around in order to use direct addressing
         /// </summary>
         /// <param name="sb"></param>
-        public void GenerateMipsPrepArrayFunction(StringBuilder sb)
+        public static void GenerateMipsPrepArrayFunction(StringBuilder sb)
         {
             // r4 = ptr to arr, r5 = arr len, in 32-bit elements
             sb.AppendLine(".global preplatencyarr");
             sb.AppendLine("preplatencyarr:");
-            sb.AppendLine("\n  xor $r12, $r12, $r12");
-            sb.AppendLine("\n  xor $r13, $r13, $r13");
-            sb.AppendLine("\n  xor $r14, $r14, $r14");
-            sb.AppendLine("\n  addi.d $r14, $r14, 1");
+            sb.AppendLine("  xor $r12, $r12, $r12");
+            sb.AppendLine("  xor $r13, $r13, $r13");
+            sb.AppendLine("  xor $r14, $r14, $r14");
+            sb.AppendLine("  xor $r15, $r15, $r15"); // array index
+            sb.AppendLine("  addi.d $r14, $r14, 1");
             sb.AppendLine("preplatencyarr_loop:");
-            sb.AppendLine("\n  alsl.d $r12, $r12, $r0, 0x2"); // shift by 2 = multiply by 4 for 32-bit
-            sb.AppendLine("\n  add.d $r12, $r4, $r12"); // add loaded value to base address
-            sb.AppendLine("\n ld.d $r13, $r12, 0");
-            sb.AppendLine("\n  alsl.d $r13, $r13, $r0, 0x2"); // address calculation for loaded index
-            sb.AppendLine("\n  add.d $r13, $r4, $r13");
-            sb.AppendLine("\n  st.d $r13, $r12, 0");  // save calculated address
-            sb.AppendLine("\n  add.d $r15, $r15, $r14");
-            sb.AppendLine("\n  bne $r15, $r5, preplatencyarr_loop"); // while idx != len
-            sb.AppendLine("\n  jr $r1");
+            sb.AppendLine("  alsl.d $r12, $r15, $r0, 0x3"); // shift by 3 = multiply by 8 for 64-bit
+            sb.AppendLine("  add.d $r12, $r4, $r12"); // add loaded value to base address
+            sb.AppendLine(" ld.d $r13, $r12, 0");
+            sb.AppendLine("  alsl.d $r13, $r13, $r0, 0x2"); // address calculation for loaded index. this is in 32-bit values
+            sb.AppendLine("  add.d $r13, $r4, $r13");
+            sb.AppendLine("  st.d $r13, $r12, 0");  // save calculated address
+            sb.AppendLine("  add.d $r15, $r15, $r14");
+            sb.AppendLine("  alsl.d $r16, $r15, $r0, 0x1"); // muliply 64-bit index by 2 to prevent out of bounds for 32-bit list size count
+            sb.AppendLine("  bne $r16, $r5, preplatencyarr_loop"); // while idx != len
+            sb.AppendLine("  jr $r1");
         }
     }
 }
