@@ -6,3 +6,5 @@ aarch64:
 
 win64:
 	x86_64-w64-mingw32-gcc-win32 -pthread -O3 MemoryBandwidth.c MemoryBandwidth_x86.s -o membw.exe -lm
+mips:
+	gcc -pthread -O3 MemoryBandwidth.c MemoryBandwidth_lng.s -o membw_lng -lm -lnuma

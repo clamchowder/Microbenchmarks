@@ -48,7 +48,32 @@ latencytest_loop:
   bne $r4, $r13, latencytest_loop
   jr $r1
 
+/* r4 = iterations, r5 = pointer to array
+  first two 32-bit ints in array are load and store offsets */
 stlftest:
+  ld.w $r12, $r5, 0 
+  ld.w $r13, $r5, 4 
+  /* store value will be r14 */
+  xor $r14, $r14, $r14
+  addi.d $r14, $r14, 69 
+  add.d $r12, $r12, $r5 /* store pointer */
+  add.d $r13, $r13, $r5 /* load pointer */
+  xor $r15, $r15, $r15
+  xor $r16, $r16, $r16
+  addi.d $r16, $r16, 5 
+stlftest_loop:
+  st.d $r14, $r12, 0
+  ld.w $r14, $r13, 0
+  st.d $r14, $r12, 0
+  ld.w $r14, $r13, 0
+  st.d $r14, $r12, 0
+  ld.w $r14, $r13, 0
+  st.d $r14, $r12, 0
+  ld.w $r14, $r13, 0
+  st.d $r14, $r12, 0
+  ld.w $r14, $r13, 0
+  sub.d $r4, $r4, $r16 
+  bge $r4, $r15, stlftest_loop 
   jr $r1
 
 stlftest32:

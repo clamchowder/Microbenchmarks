@@ -8,3 +8,5 @@ win64:
 	x86_64-w64-mingw32-gcc -O3 MemoryLatency.c MemoryLatency_x86.s -o MemoryLatency.exe -lm
 win32:
 	i686-w64-mingw32-gcc -O3 MemoryLatency.c MemoryLatency_i686.s -o MemoryLatency32.exe -lm
+mips:
+	gcc -O3 MemoryLatency.c MemoryLatency_lng.s -o MemoryLatency -lm
