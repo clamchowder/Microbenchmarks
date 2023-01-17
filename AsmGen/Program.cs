@@ -2,7 +2,7 @@
 using System.Collections.Generic;
 using System.IO;
 using System.Text;
-using static System.Net.Mime.MediaTypeNames;
+using System.Threading.Tasks;
 
 namespace AsmGen
 {
@@ -26,13 +26,17 @@ namespace AsmGen
             tests.Add(new LoadSchedTest(4, 64, 1));
             tests.Add(new FaddSchedTest(4, 64, 1));
 
-            GenerateCFile(tests, IUarchTest.ISA.amd64);
-            GenerateCFile(tests, IUarchTest.ISA.aarch64);
-            GenerateCFile(tests, IUarchTest.ISA.mips64);
+            List<Task> tasks = new List<Task>();
+            tasks.Add(Task.Run(() => GenerateCFile(tests, IUarchTest.ISA.amd64)));
+            tasks.Add(Task.Run(() => GenerateCFile(tests, IUarchTest.ISA.aarch64)));
+            tasks.Add(Task.Run(() => GenerateCFile(tests, IUarchTest.ISA.mips64)));
 
-            GenerateAsmFile(tests, IUarchTest.ISA.amd64);
-            GenerateAsmFile(tests, IUarchTest.ISA.aarch64);
-            GenerateAsmFile(tests, IUarchTest.ISA.mips64);
+            tasks.Add(Task.Run(() => GenerateAsmFile(tests, IUarchTest.ISA.amd64)));
+            tasks.Add(Task.Run(() => GenerateAsmFile(tests, IUarchTest.ISA.aarch64)));
+            tasks.Add(Task.Run(() => GenerateAsmFile(tests, IUarchTest.ISA.mips64)));
+            Task.WaitAll(tasks.ToArray());
+
+            GenerateMakefile();
         }
 
         static void GenerateCFile(List<IUarchTest> tests, IUarchTest.ISA isa)
@@ -82,6 +86,18 @@ namespace AsmGen
                 }
             }
             File.WriteAllText("clammicrobench_" + isa.ToString() + ".s", sb.ToString());
+        }
+
+        static void GenerateMakefile()
+        {
+            StringBuilder sb = new StringBuilder();
+            foreach (IUarchTest.ISA isa in Enum.GetValues(typeof(IUarchTest.ISA)))
+            {
+                sb.AppendLine(isa.ToString() + ":");
+                sb.AppendLine($"\tgcc clammicrobench_{isa.ToString()}.c clammicrobench_{isa.ToString()}.s -o cb");
+            }
+
+            File.WriteAllText("Makefile", sb.ToString());
         }
 
         static void AddCommonInitCode(StringBuilder sb, List<IUarchTest> tests)
