@@ -21,12 +21,6 @@
     <None Update="DataFiles\GccIndirectBranchFunction.c">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
-    <None Update="DataFiles\VsBranchHistFunction.c">
-      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-    </None>
-    <None Update="DataFiles\VsIndirectBranchFunction.c">
-      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-    </None>
     <None Update="DataFiles\CommonFunctions.c">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>

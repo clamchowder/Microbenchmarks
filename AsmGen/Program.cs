@@ -20,11 +20,21 @@ namespace AsmGen
             tests.Add(new RobTest(4, 160, 1));
             tests.Add(new IntRfTest(4, 160, 1));
             tests.Add(new FpRfTest(4, 160, 1));
+            tests.Add(new Fadd256RfTest(4, 160, 1));
+            tests.Add(new MixFAdd256and32RfTest(4, 160, 1));
             tests.Add(new LdqTest(4, 128, 1));
             tests.Add(new StqTest(4, 128, 1));
             tests.Add(new AddSchedTest(4, 64, 1));
             tests.Add(new LoadSchedTest(4, 64, 1));
             tests.Add(new FaddSchedTest(4, 64, 1));
+            tests.Add(new Fadd256SchedTest(4, 64, 1));
+            tests.Add(new Fma256SchedTest(4, 64, 1));
+            tests.Add(new BtbTest(4, BtbTest.BranchType.Unconditional));
+            tests.Add(new BtbTest(8, BtbTest.BranchType.Unconditional));
+            tests.Add(new BtbTest(16, BtbTest.BranchType.Unconditional));
+            tests.Add(new BtbTest(32, BtbTest.BranchType.Unconditional));
+            tests.Add(new ReturnStackTest(1, 128, 1));
+            tests.Add(new BranchBufferTest(1, 192, 1));
 
             List<Task> tasks = new List<Task>();
             tasks.Add(Task.Run(() => GenerateCFile(tests, IUarchTest.ISA.amd64)));
