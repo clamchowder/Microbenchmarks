@@ -16,7 +16,7 @@ namespace AsmGen
 
         public override bool SupportsIsa(IUarchTest.ISA isa)
         {
-            if (isa == IUarchTest.ISA.amd64) return false;
+            if (isa == IUarchTest.ISA.amd64) return true;
             if (isa == IUarchTest.ISA.aarch64) return false;
             if (isa == IUarchTest.ISA.mips64) return true;
             return false;
@@ -27,16 +27,17 @@ namespace AsmGen
             if (isa == IUarchTest.ISA.amd64)
             {
                 string initInstrs = "  vmovups (%r8), %ymm0\n" +
-                 "  vmovups %ymm0, %ymm1\n" +
+                 "  movss (%r8), %xmm1\n" +
                  "  vmovups %ymm0, %ymm2\n" +
-                 "  vmovups %ymm0, %ymm3\n" +
-                 "  vmovups %ymm0, %ymm4\n";
+                 "  movss (%r8), %xmm3\n" +
+                 "  vmovups %ymm0, %ymm4\n" +
+                 "  movss (%r8), %xmm5\n";
 
                 string[] unrolledAdds = new string[4];
                 unrolledAdds[0] = "  vaddps %ymm0, %ymm1, %ymm1";
-                unrolledAdds[1] = "  vaddps %ymm0, %ymm2, %ymm2";
+                unrolledAdds[1] = "  addss %xmm5, %xmm2";
                 unrolledAdds[2] = "  vaddps %ymm0, %ymm3, %ymm3";
-                unrolledAdds[3] = "  vaddps %ymm0, %ymm4, %ymm3";
+                unrolledAdds[3] = "  addss %xmm5, %xmm4";
 
                 UarchTestHelpers.GenerateX86AsmStructureTestFuncs(sb, this.Counts, this.Prefix, unrolledAdds, unrolledAdds, initInstrs: initInstrs);
             }
