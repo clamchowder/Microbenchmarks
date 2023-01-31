@@ -3,12 +3,12 @@ using System.IO;
 
 namespace AsmGen
 {
-    public class IndirectBranchTest : UarchTest
+    public class IndirectBranchTest : IUarchTest
     {
         private int[] branchCounts;
         private int[] targetCounts;
         private int globalHistoryAssistBits;
-        public IndirectBranchTest(int low, int high, int step, bool mixNops = false)
+        public IndirectBranchTest()
         {
             Prefix = "indirectbranch";
             Description = "Indirect branch prediction";
@@ -19,7 +19,7 @@ namespace AsmGen
             globalHistoryAssistBits = 4;
         }
 
-        public override bool SupportsIsa(IUarchTest.ISA isa)
+        public bool SupportsIsa(IUarchTest.ISA isa)
         {
             if (isa == IUarchTest.ISA.amd64) return true;
             if (isa == IUarchTest.ISA.aarch64) return true;
@@ -27,7 +27,7 @@ namespace AsmGen
             return false;
         }
 
-        public override void GenerateAsm(StringBuilder sb, IUarchTest.ISA isa)
+        public void GenerateAsm(StringBuilder sb, IUarchTest.ISA isa)
         {
             if (isa == IUarchTest.ISA.amd64)
             {
@@ -307,21 +307,29 @@ namespace AsmGen
                     // loop through branches for (iterations) times
                     string loopLabel = functionLabel + "_loop";
                     sb.AppendLine("  move $r14, $r0");    // r14 = branch target index
+                    sb.AppendLine("  move $r17, $r0");
+                    sb.AppendLine("  addi.d $r17, $r17, 1"); // use r17 just to store 1
                     sb.AppendLine("\n" + loopLabel + ":");
+                    sb.AppendLine("  move $r12, $r5");      // r12 to hold pointer to target selection array
+                    sb.AppendLine("  move $r13, $r7");      // r13 to hold pointer to jump target array
                     for (int branchIdx = 0; branchIdx < currentBranchCount; branchIdx++)
                     {
-                        // use r15 to calculate array indexing address, to get the jump table for the current branch
-                        sb.AppendLine("  move $r15, $r0");
-                        sb.AppendLine("  addi.d $r15, $r15, " + branchIdx); // get lazy and load immediate
-                        sb.AppendLine("  alsl.d $r15, $r15, $r0, 0x3");
-                        sb.AppendLine("  add.d $r15, $r15, $r7");
-                        sb.AppendLine("  ld.d $r13, $r15, " + branchIdx * 8);       // r13 = jump table base pointer
+                        sb.AppendLine("  ld.d $r16, $r12, 0"); // r16 = base address of target select array
+                        sb.AppendLine("  ld.d $r18, $r13, 0"); // r18 = base address of jump target array
 
-                        // use r14 (branch target index) to get value from jump
-                        sb.AppendLine("  alsl.d $r15, $r14, $r0, 0x3");
-                        sb.AppendLine("  add.d $r15, $r15, $r13");
-                        sb.AppendLine("  ld.d $r14, $r15, 0");
-                        sb.AppendLine("  jr $r14");
+                        // target select array[target index]
+                        sb.AppendLine("  alsl.d $r15, $r14, $r0, 0x2");
+                        sb.AppendLine("  add.d $r15, $r15, $r16");
+                        sb.AppendLine("  ld.w $r19, $r15, 0");          // load 32-bit target index
+
+                        sb.AppendLine("  alsl.d $r15, $r19, $r0, 0x3"); // now index into jump table
+                        sb.AppendLine("  add.d $r15, $r18, $r15");
+                        sb.AppendLine("  ld.d $r20, $r15, 0");
+
+                        // increment pointers for next branch
+                        sb.AppendLine("  addi.d $r12, $r12, 8");
+                        sb.AppendLine("  addi.d $r13, $r13, 8");
+                        sb.AppendLine("  jr $r20");
 
                         // generate targets
                         for (int targetIdx = 0; targetIdx < currentTargetCount; targetIdx++)
@@ -329,24 +337,21 @@ namespace AsmGen
                             sb.AppendLine(GetTargetLabelName(currentBranchCount, currentTargetCount, branchIdx, targetIdx) + ":");
                             sb.AppendLine($"  nop");
                         }
-
-                        // incrememnt pointer into array of jump tables (next jump table)
-                        sb.AppendLine("  addi.d $r12, $r12, 8");
                     }
 
                     // loop back. and try to reset branch index without a branch
                     sb.AppendLine("  addi.d $r14, $r14, 1"); // if r14 == r6 (pattern array length), set r14 back to 0 somehow
                     sb.AppendLine("  sub.d $r12, $r14, $r6"); // 12 = temporary result of comparison
                     sb.AppendLine("  maskeqz $r14, $r14, $r12"); // if r12 = 0, set r14 to 0. otherwise use current value
-                    sb.AppendLine("  sub.d $r4, $r4, 1");
-                    sb.AppendLine("  beqz $r4, " + loopLabel);
+                    sb.AppendLine("  sub.d $r4, $r4, $r17");
+                    sb.AppendLine("  bnez $r4, " + loopLabel);
                     sb.AppendLine("  jr $r1");
                 }
             }
         }
 
         // kinda hack this to put in initialization code we need
-        public new void GenerateExternLines(StringBuilder sb)
+        public void GenerateExternLines(StringBuilder sb)
         {
             for (int branchCountIdx = 0; branchCountIdx < branchCounts.Length; branchCountIdx++)
                 for (int targetCountIdx = 0; targetCountIdx < targetCounts.Length; targetCountIdx++)
@@ -382,6 +387,30 @@ namespace AsmGen
             }
 
             sb.AppendLine("}");
+        }
+
+        // ideally we would extend UarchTest, but since C# doesn't support method overriding, copy/paste all the stuff from
+        // UarchTest here
+        public string Prefix { get; set; }
+        public string Description { get; set; }
+        public int[] Counts;
+        public string FunctionDefinitionParameters { get; set; }
+        public string GetFunctionCallParameters { get; set; }
+        public bool DivideTimeByCount { get; set; }
+        public void GenerateAsmGlobalLines(StringBuilder sb)
+        {
+            for (int branchCountIdx = 0; branchCountIdx < branchCounts.Length; branchCountIdx++)
+                for (int targetCountIdx = 0; targetCountIdx < targetCounts.Length; targetCountIdx++)
+                    sb.AppendLine(".global " + GetFunctionName(branchCounts[branchCountIdx], targetCounts[targetCountIdx]));
+        }
+
+        public void GenerateTestBlock(StringBuilder sb, IUarchTest.ISA isa)
+        {
+            sb.AppendLine("  if (argc > 1 && strncmp(argv[1], \"" + Prefix + "\", " + Prefix.Length + ") == 0) {");
+            sb.AppendLine("    printf(\"" + Description + ":\\n\");");
+            string ibMain = File.ReadAllText($"{Program.DataFilesDir}\\IndirectBranchTestBlock.c");
+            sb.AppendLine(ibMain);
+            sb.AppendLine("  }\n");
         }
     }
 }
