@@ -1,4 +1,5 @@
 ﻿using System.Text;
+using System.IO;
 
 namespace AsmGen
 {
@@ -230,6 +231,7 @@ namespace AsmGen
                             sb.AppendLine($"  jnz {targetName}");
                             sb.AppendLine("  nop");
                             sb.AppendLine($"{targetName}:");
+
                             sb.AppendLine("  shl $1, %esi");
                         }
 
@@ -283,25 +285,103 @@ namespace AsmGen
                     string functionLabel = GetFunctionName(currentBranchCount, currentTargetCount);
                     sb.AppendLine("\n" + functionLabel + ":");
 
-                    // initialize jump table
+                    // initialize jump tables. r12-r20 are temporary regs. 
+                    sb.AppendLine("  move $r13, $r7"); // use r13 to access array of pointers to jump tables
                     for (int branchIdx = 0; branchIdx < currentBranchCount; branchIdx++)
                     {
-                        sb.AppendLine("  mov (%rcx,%r9,8), %r15");
+                        sb.AppendLine("  ld.d $r15, $r13, 0");          // load address of branch's jump table into r15
+
+                        // initialize the jump table. r15 = base addr. rely on C# for bounds :)
                         for (int targetIdx = 0; targetIdx < currentTargetCount; targetIdx++)
                         {
                             // write label addresses into array
                             string targetLabelName = GetTargetLabelName(currentBranchCount, currentTargetCount, branchIdx, targetIdx);
-                            sb.AppendLine($"  lea {targetLabelName}(%rip), %rax");
-                            sb.AppendLine($"  mov %rax, (%r15,%rbx,8)");
-                            sb.AppendLine("  inc %rbx");
+                            sb.AppendLine("  la $r16, " + targetLabelName); // load branch target address into r16
+                            sb.AppendLine("  st.d $r16, $r15, 0");          // store branch target address
+                            sb.AppendLine("  addi.d $r15, $r15, 8");        // increment array pointer
                         }
 
-                        sb.AppendLine("  xor %rbx, %rbx");
-                        sb.AppendLine("  inc %r9");
+                        sb.AppendLine("  addi.d $r13, $r13, 8");    // increment array pointer for array of pointers to jump tables
                     }
+
+                    // loop through branches for (iterations) times
+                    string loopLabel = functionLabel + "_loop";
+                    sb.AppendLine("  move $r14, $r0");    // r14 = branch target index
+                    sb.AppendLine("\n" + loopLabel + ":");
+                    for (int branchIdx = 0; branchIdx < currentBranchCount; branchIdx++)
+                    {
+                        // use r15 to calculate array indexing address, to get the jump table for the current branch
+                        sb.AppendLine("  move $r15, $r0");
+                        sb.AppendLine("  addi.d $r15, $r15, " + branchIdx); // get lazy and load immediate
+                        sb.AppendLine("  alsl.d $r15, $r15, $r0, 0x3");
+                        sb.AppendLine("  add.d $r15, $r15, $r7");
+                        sb.AppendLine("  ld.d $r13, $r15, " + branchIdx * 8);       // r13 = jump table base pointer
+
+                        // use r14 (branch target index) to get value from jump
+                        sb.AppendLine("  alsl.d $r15, $r14, $r0, 0x3");
+                        sb.AppendLine("  add.d $r15, $r15, $r13");
+                        sb.AppendLine("  ld.d $r14, $r15, 0");
+                        sb.AppendLine("  jr $r14");
+
+                        // generate targets
+                        for (int targetIdx = 0; targetIdx < currentTargetCount; targetIdx++)
+                        {
+                            sb.AppendLine(GetTargetLabelName(currentBranchCount, currentTargetCount, branchIdx, targetIdx) + ":");
+                            sb.AppendLine($"  nop");
+                        }
+
+                        // incrememnt pointer into array of jump tables (next jump table)
+                        sb.AppendLine("  addi.d $r12, $r12, 8");
+                    }
+
+                    // loop back. and try to reset branch index without a branch
+                    sb.AppendLine("  addi.d $r14, $r14, 1"); // if r14 == r6 (pattern array length), set r14 back to 0 somehow
+                    sb.AppendLine("  sub.d $r12, $r14, $r6"); // 12 = temporary result of comparison
+                    sb.AppendLine("  maskeqz $r14, $r14, $r12"); // if r12 = 0, set r14 to 0. otherwise use current value
+                    sb.AppendLine("  sub.d $r4, $r4, 1");
+                    sb.AppendLine("  beqz $r4, " + loopLabel);
                     sb.AppendLine("  jr $r1");
                 }
             }
+        }
+
+        // kinda hack this to put in initialization code we need
+        public new void GenerateExternLines(StringBuilder sb)
+        {
+            for (int branchCountIdx = 0; branchCountIdx < branchCounts.Length; branchCountIdx++)
+                for (int targetCountIdx = 0; targetCountIdx < targetCounts.Length; targetCountIdx++)
+                    sb.AppendLine("extern uint64_t " + GetFunctionName(branchCounts[branchCountIdx], targetCounts[targetCountIdx]) + $"({FunctionDefinitionParameters}) __attribute((sysv_abi));");
+
+            GenerateInitializationCode(sb);
+            string gccFunction = File.ReadAllText($"{Program.DataFilesDir}\\GccIndirectBranchFunction.c");
+            sb.AppendLine(gccFunction);
+        }
+
+        public void GenerateInitializationCode(StringBuilder sb)
+        {
+            sb.AppendLine($"uint32_t maxIndirectBranchCount = {branchCounts.Length};");
+            sb.Append($"uint32_t indirectBranchCounts[{branchCounts.Length}] = ");
+            sb.Append("{  " + branchCounts[0]);
+            for (int i = 1; i < branchCounts.Length; i++) sb.Append(", " + branchCounts[i]);
+            sb.AppendLine(" };");
+            sb.Append($"uint32_t indirectBranchTargetCounts[{targetCounts.Length}] = ");
+            sb.Append("{  " + targetCounts[0]);
+            for (int i = 1; i < targetCounts.Length; i++) sb.Append(", " + targetCounts[i]);
+            sb.AppendLine(" };");
+
+            // TODO: need to make this a 2D array - [branch count][target count]
+            sb.AppendLine($"uint64_t (__attribute((sysv_abi)) *indirectBranchTestFuncArr[{branchCounts.Length}][{targetCounts.Length}])({FunctionDefinitionParameters});");
+
+            sb.AppendLine("void initializeIndirectBranchFuncArr() {");
+            for (int i = 0; i < branchCounts.Length; i++)
+            {
+                for (int targetCountIdx = 0; targetCountIdx < targetCounts.Length; targetCountIdx++)
+                {
+                    sb.AppendLine($"  indirectBranchTestFuncArr[{i}][{targetCountIdx}] = {GetFunctionName(branchCounts[i], targetCounts[targetCountIdx])};");
+                }
+            }
+
+            sb.AppendLine("}");
         }
     }
 }
