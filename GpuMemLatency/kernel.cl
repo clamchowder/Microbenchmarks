@@ -241,16 +241,14 @@ __kernel void local_bw_test(__global uint* A, uint count, __global uint* ret) {
 
     // assumes local memory size is at least 1024 float4s
     int idx = localId;
-    for (int i = 0; i < count; i += 8) { // 4x read-modify-write
-        local_a[idx] += acc1;
-        local_a[idx + localSize] += acc2;
-        local_a[idx + localSize * 2] += acc3;
-        local_a[idx + localSize * 3] += acc4;
+    for (int i = 0; i < count; i += 6) { // 4x read-modify-write
+        local_a[idx] += local_a[idx + localSize];
+        local_a[idx + localSize * 2] += local_a[idx + localSize * 3];
         idx += localSize * 4;
         if (idx > max_idx) idx = localId;
     }
 
-    ret[threadId] = local_a[localId] + local_a[localId + localSize];
+    ret[threadId] = local_a[localId];
 }
 
 // A = inputs, fixed size
