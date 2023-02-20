@@ -35,6 +35,7 @@ namespace AsmGen
             tests.Add(new BtbTest(32, BtbTest.BranchType.Unconditional));
             tests.Add(new ReturnStackTest(1, 128, 1));
             tests.Add(new BranchBufferTest(1, 192, 1));
+            tests.Add(new IndirectBranchTest());
 
             List<Task> tasks = new List<Task>();
             tasks.Add(Task.Run(() => GenerateCFile(tests, IUarchTest.ISA.amd64)));
