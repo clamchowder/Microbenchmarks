@@ -505,7 +505,9 @@ float MeasureInstructionBw(uint64_t sizeKb, uint64_t iterations, int nopSize, in
     uint64_t *nop8bptr;
     if (nopSize == 8) nop8bptr = (uint64_t *)(nop8b);
     else if (nopSize == 4) nop8bptr = (uint64_t *)(nop4b);
+    #ifdef __x86_64
     else if (nopSize == 2) nop8bptr = (uint64_t *)(nop2b_xor);
+    #endif
     else {
         fprintf(stderr, "%d byte instruction length isn't supported :(\n", nopSize);
     }
@@ -584,7 +586,9 @@ void FillInstructionArray(uint64_t *nops, uint64_t sizeKb, int nopSize, int bran
     uint64_t *nop8bptr;
     if (nopSize == 8) nop8bptr = (uint64_t *)(nop8b);
     else if (nopSize == 4) nop8bptr = (uint64_t *)(nop4b);
+    #ifdef __x86_64
     else if (nopSize == 2) nop8bptr = (uint64_t *)(nop2b_xor);
+    #endif
     else {
         fprintf(stderr, "%d byte instruction length isn't supported :(\n", nopSize);
     }
@@ -612,7 +616,7 @@ void FillInstructionArray(uint64_t *nops, uint64_t sizeKb, int nopSize, int bran
     #ifdef __aarch64__
     uint64_t *functionEnd = (uint64_t *)(nops + elements);
     functionEnd[0] = 0XD65F03C0;
-    flush_icache((void *)nops, funcLen);
+    //flush_icache((void *)nops, funcLen);
     __builtin___clear_cache(nops, functionEnd);
     #endif
 
