@@ -16,11 +16,8 @@ namespace AsmGen
         static void Main(string[] args)
         {
             List<IUarchTest> tests = new List<IUarchTest>();
-<<<<<<< Updated upstream
             tests.Add(new Zen3RobTest(4, 350, 1));
-            //tests.Add(new PhytiumRobTest(4, 256, 1));
             tests.Add(new RobTest(4, 384, 1));
-            //tests.Add(new PhytiumRobTest(4, 256, 1));
             tests.Add(new RobTest(4, 2048, 1));
             tests.Add(new Zen4RobTest(4, 350, 1));
             tests.Add(new MovElimRobTest(64, 384, 1));
@@ -33,16 +30,6 @@ namespace AsmGen
             tests.Add(new VecRfTest(4, 384, 1));
             tests.Add(new Vec256RfTest(4, 384, 1));
             tests.Add(new Vec512RfTest(32, 384, 1));
-=======
-            tests.Add(new RobTest(4, 160, 1));
-            //tests.Add(new Zen3RobTest(4, 350, 1));
-            //tests.Add(new PhytiumRobTest(4, 256, 1));
-            tests.Add(new IntRfTest(4, 160, 1));
-            tests.Add(new FpRfTest(4, 160, 1));
-            tests.Add(new VecRfTest(4, 160, 1));
-            tests.Add(new Vec256RfTest(4, 160, 1));
-            tests.Add(new Vec512RfTest(4, 160, 1));
->>>>>>> Stashed changes
             tests.Add(new AddSchedTest(4, 160, 1));
             tests.Add(new MulSchedTest(4, 128, 1));
             tests.Add(new Mul16SchedTest(4, 128, 1));
@@ -84,17 +71,10 @@ namespace AsmGen
             tests.Add(new BranchHistoryTest());
             tests.Add(new IndirectBranchTest());
             tests.Add(new MxcsrTest(1, 32, 1));
-<<<<<<< Updated upstream
             tests.Add(new MaskRfTest(1, 256, 1));
             tests.Add(new NotIntRfTest(1, 450, 1));
             tests.Add(new MovImmIntRfTest(1, 450, 1));
             tests.Add(new FaddNsqTest(4, 135, 1));
-=======
-            tests.Add(new MaskRfTest(1, 128, 1));
-            tests.Add(new NotIntRfTest(1, 128, 1));
-            tests.Add(new MovImmIntRfTest(1, 128, 1));
-            tests.Add(new FaddNsqTest(4, 120, 1));
->>>>>>> Stashed changes
             tests.Add(new Add128NsqTest(4, 120, 1));
             tests.Add(new LoadNsqTest(4, 50, 1));
             tests.Add(new MixLoadStoreSchedTest(4, 120, 1));
