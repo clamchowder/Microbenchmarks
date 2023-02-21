@@ -20,7 +20,9 @@
 #include <sys/mman.h>
 #include <sys/sysinfo.h>
 #include <errno.h>
+#ifdef NUMA
 #include <numa.h>
+#endif
 
 #pragma GCC diagnostic ignored "-Wattributes"
 
@@ -90,11 +92,13 @@ void *ReadBandwidthTestThread(void *param);
 uint64_t gbToTransfer = 512;
 int branchInterval = 0; 
 
+#ifdef NUMA
 #define NUMA_STRIPE 1
 #define NUMA_SEQ 2
 #define NUMA_CROSSNODE 3
 #define NUMA_AUTO 4
 int numa = 0;
+#endif
 
 int main(int argc, char *argv[]) {
     int threads = 1;
@@ -158,6 +162,7 @@ int main(int argc, char *argv[]) {
                 autothreads = atoi(argv[argIdx]);
                 fprintf(stderr, "Testing bw scaling up to %d threads\n", autothreads);
             }
+#ifdef NUMA
             else if (strncmp(arg, "numa", 4) == 0) {
 	        argIdx++;
 	        fprintf(stderr, "Attempting to be NUMA aware\n");
@@ -173,6 +178,7 @@ int main(int argc, char *argv[]) {
 		    numa = NUMA_STRIPE;
 		}
 	    }
+#endif
             else if (strncmp(arg, "method", 6) == 0) {
                 methodSet = 1;
                 argIdx++;
@@ -338,7 +344,9 @@ int main(int argc, char *argv[]) {
         }
 
         free(threadResults);
-    } else if (numa == NUMA_CROSSNODE) {
+    } 
+#ifdef NUMA
+    else if (numa == NUMA_CROSSNODE) {
         if (numa_available() == -1) {
 	    fprintf(stderr, "NUMA is not available\n");
 	    return 0;
@@ -383,6 +391,7 @@ int main(int argc, char *argv[]) {
         numa_free_cpumask(nodeBitmask);
 	free(crossnodeBandwidths);
     }
+#endif
     else {
         printf("Using %d threads\n", threads);
         if (singleSize == 0)
@@ -670,7 +679,7 @@ float MeasureBw(uint64_t sizeKb, uint64_t iterations, uint64_t threads, int shar
 
     pthread_t* testThreads = (pthread_t*)malloc(threads * sizeof(pthread_t));
     struct BandwidthTestThreadData* threadData = (struct BandwidthTestThreadData*)malloc(threads * sizeof(struct BandwidthTestThreadData));
-
+#ifdef NUMA
     // if numa, tell each thread to set an affinity mask
     struct bitmask *nodeBitmask = NULL;
     cpu_set_t cpuset;
@@ -691,6 +700,7 @@ float MeasureBw(uint64_t sizeKb, uint64_t iterations, uint64_t threads, int shar
 	// also assume bitmap size is divisible by 8 (byte size)
 	memcpy(cpuset.__bits, nodeBitmask->maskp, nodeBitmask->size / 8);
     }
+#endif
 
     for (uint64_t i = 0; i < threads; i++) {
         if (shared)
@@ -700,6 +710,7 @@ float MeasureBw(uint64_t sizeKb, uint64_t iterations, uint64_t threads, int shar
         }
         else
         {
+#ifdef NUMA
 	    int cpuCount = get_nprocs();
 	    if (numa == NUMA_CROSSNODE) {
 	        threadData[i].arr = numa_alloc_onnode(elements * sizeof(float), memNode);
@@ -746,7 +757,7 @@ float MeasureBw(uint64_t sizeKb, uint64_t iterations, uint64_t threads, int shar
 
 		//fprintf(stderr, "\n\n");
 	    }
-
+#endif
             //threadData[i].arr = (float*)aligned_alloc(64, elements * sizeof(float));
 	    if (0 != posix_memalign((void **)(&(threadData[i].arr)), 4096, elements * sizeof(float)))
             {
@@ -780,15 +791,19 @@ float MeasureBw(uint64_t sizeKb, uint64_t iterations, uint64_t threads, int shar
     bw = 1000 * gbTransferred / (double)time_diff_ms;
     if (!shared) bw = bw * threads; // iteration count is divided by thread count if in thread private mode
     //printf("%f GB, %lu ms\n", gbTransferred, time_diff_ms);
-
+#ifdef NUMA
     if (numa) numa_free_cpumask(nodeBitmask);
+#endif
     free(testThreads);
     free(testArr); // should be null in not-shared (private) mode
 
     if (!shared) {
         for (uint64_t i = 0; i < threads; i++) {
+#ifdef NUMA
 	    if (numa) numa_free(threadData[i].arr, elements * sizeof(float));
-            else free(threadData[i].arr);
+	    else
+#endif
+            free(threadData[i].arr);
         }
     }
 
@@ -827,6 +842,7 @@ float scalar_read(float* arr, uint64_t arr_length, uint64_t iterations, uint64_t
 
 void *ReadBandwidthTestThread(void *param) {
     BandwidthTestThreadData* bwTestData = (BandwidthTestThreadData*)param;
+#ifdef NUMA
     if (numa) {
         int affinity_rc = sched_setaffinity(gettid(), sizeof(cpu_set_t), &(bwTestData->cpuset));
 	if (affinity_rc != 0) {
@@ -834,6 +850,7 @@ void *ReadBandwidthTestThread(void *param) {
 	    
 	}
     }
+#endif
     float sum = bw_func(bwTestData->arr, bwTestData->arr_length, bwTestData->iterations, bwTestData->start);
     if (sum == 0) printf("woohoo\n");
     pthread_exit(NULL);
