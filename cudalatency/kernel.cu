@@ -18,14 +18,12 @@ cudaError_t TestCudaLatency(int size, uint32_t chase_iterations);
 __global__ void latencyKernel(int *a, int *count, int *ret)
 {
     int current = a[0];
-    int result;
     for (int i = 0; i < *count; i++) {
         // asm("add.s32 %0, %1, %2;" : "=r"(i) : "r"(j), "r"(k));
-        result += current;
         current = a[current];
     }
 
-    ret[0] = result;
+    ret[0] = current;
 }
 
 void FillPatternArr(uint32_t* pattern_arr, uint32_t list_size, uint32_t byte_increment) {
@@ -45,10 +43,21 @@ void FillPatternArr(uint32_t* pattern_arr, uint32_t list_size, uint32_t byte_inc
     }
 }
 
-int main()
+int main(int argc, char *argv[])
 {
+    int iter_mul = 7;
+    if (argc > 1) { iter_mul = atoi(argv[1]); }
+    if (argc > 2) {
+        if (argv[2][0] == 'l') cudaDeviceSetCacheConfig(cudaFuncCachePreferL1);
+        else if (argv[2][0] == 's') cudaDeviceSetCacheConfig(cudaFuncCachePreferShared);
+        else if (argv[2][0] == 'e') cudaDeviceSetCacheConfig(cudaFuncCachePreferEqual);
+    }
+
+    fprintf(stderr, "Iterations: %d mil\n", iter_mul);
+    // warmup
+    TestCudaLatency(2, 1e6 * iter_mul);
     for (int size_idx = 0; size_idx < sizeof(default_test_sizes) / sizeof(int); size_idx++) {
-        TestCudaLatency(default_test_sizes[size_idx], 1e6 * 7);
+        TestCudaLatency(default_test_sizes[size_idx], 1e6 * iter_mul);
     }
 
     // cudaDeviceReset must be called before exiting in order for profiling and
@@ -85,11 +94,13 @@ cudaError_t TestCudaLatency(int sizeKb, uint32_t chase_iterations)
     }
 
     // allocate memory for pattern array
-    cudaStatus = cudaMalloc((void**)&dev_a, sizeof(uint32_t) * list_size);
+    cudaStatus = cudaMallocManaged((void**)&dev_a, sizeof(uint32_t) * list_size, cudaMemAttachGlobal);
     if (cudaStatus != cudaSuccess) {
-        fprintf(stderr, "cudaMalloc failed!");
+        fprintf(stderr, "cudaMallocManaged failed!");
         goto Error;
     }
+
+    cudaMemAdvise((void*)dev_a, sizeof(uint32_t) * list_size, cudaMemAdviseSetReadMostly, 0);
 
     // copy result to GPU
     cudaStatus = cudaMemcpy(dev_a, A, list_size * sizeof(uint32_t), cudaMemcpyHostToDevice);
