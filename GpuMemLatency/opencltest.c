@@ -1,7 +1,8 @@
 #include "opencltest.h"
 
 // default test sizes for latency, in KB
-int default_test_sizes[] = { 2, 4, 8, 16, 24, 32, 48, 64, 96, 128, 192, 256, 384, 512, 600, 768, 1024, 1536, 2048, 3072, 4096, 5120, 6144, 8192, 16384, 32768, 65536, 98304, 131072, 196608, 262144, 524288, 1048576 };
+int default_test_sizes[] = { 2, 4, 8, 12, 16, 24, 32, 48, 64, 96, 128, 192, 256, 384, 512, 600, 768, 1024, 1536, 2048, 3072, 4096, 5120, 6144, 
+    8192, 16384, 32768, 65536, 98304, 131072, 196608, 262144, 524288, 1048576 };
 
 // lining this up with nemes's VK bw test sizes. units for this one are in bytes
 const uint64_t default_bw_test_sizes[] = {
@@ -26,6 +27,7 @@ enum TestType {
     GlobalMemLatency,
     ConstantMemLatency,
     LocalMemLatency,
+    TexMemLatency,
     GlobalAtomicLatency,
     LocalAtomicLatency,
     GlobalMemBandwidth,
@@ -114,6 +116,10 @@ int main(int argc, char* argv[]) {
                 else if (_strnicmp(argv[argIdx], "locallatency", 13) == 0) {
                     testType = LocalMemLatency;
                     fprintf(stderr, "Testing local mem latency\n");
+                }
+                else if (_strnicmp(argv[argIdx], "texlatency", 10) == 0) {
+                    testType = TexMemLatency;
+                    fprintf(stderr, "Testing texture mem latency\n");
                 }
                 else if (_strnicmp(argv[argIdx], "localatomic", 11) == 0) {
                     testType = LocalAtomicLatency;
@@ -217,6 +223,7 @@ int main(int argc, char* argv[]) {
     cl_kernel c2c_atomic_latency_test_kernel = clCreateKernel(program, "c2c_atomic_exec_latency_test", &ret);
     cl_kernel dummy_add_kernel = clCreateKernel(program, "dummy_add", &ret);
     cl_kernel local_bw_kernel = clCreateKernel(program, "local_bw_test", &ret);
+    cl_kernel tex_latency_kernel = clCreateKernel(program, "tex_latency_test", &ret);
 #pragma endregion opencl_overhead
 
     max_global_test_size = get_max_buffer_size();
@@ -264,8 +271,26 @@ int main(int argc, char* argv[]) {
         for (int size_idx = 0; size_idx < sizeof(default_test_sizes) / sizeof(int); size_idx++) {
             if (max_constant_test_size < sizeof(int) * 256 * default_test_sizes[size_idx]) {
                 printf("%d K would exceed device's max constant buffer size of %lu K, stopping here.\n", default_test_sizes[size_idx], max_constant_test_size / 1024);
+                break;
             }
             result = latency_test(context, command_queue, constant_kernel, 256 * default_test_sizes[size_idx], scale_iterations(default_test_sizes[size_idx], chase_iterations), true, false);
+            printf("%d,%f\n", default_test_sizes[size_idx], result);
+            if (result == 0) {
+                printf("Something went wrong, not testing anything bigger.\n");
+                break;
+            }
+        }
+    }
+    else if (testType == TexMemLatency)
+    {
+        cl_ulong max_tex_test_size = get_max_tex_buffer_size();
+        for (int size_idx = 0; size_idx < sizeof(default_test_sizes) / sizeof(int); size_idx++) {
+            if (default_test_sizes[size_idx] * 1024 > max_tex_test_size) {
+                printf("%d K would exceed device's texture buffer size of %lu K, stopping here.\n", default_test_sizes[size_idx], max_tex_test_size / 1024);
+                break;
+            }
+
+            result = tex_latency_test(context, command_queue, tex_latency_kernel, 256 * default_test_sizes[size_idx], scale_iterations(default_test_sizes[size_idx], chase_iterations), true, false);
             printf("%d,%f\n", default_test_sizes[size_idx], result);
             if (result == 0) {
                 printf("Something went wrong, not testing anything bigger.\n");
@@ -472,24 +497,6 @@ cleanup:
     clReleaseMemObject(a_mem_obj);
     clReleaseMemObject(result_obj);
     return latency;
-}
-
-cl_ulong get_max_constant_buffer_size() {
-    cl_ulong constant_buffer_size = 0;
-    if (CL_SUCCESS != clGetDeviceInfo(selected_device_id, CL_DEVICE_MAX_CONSTANT_BUFFER_SIZE, sizeof(cl_ulong), &constant_buffer_size, NULL)) {
-        fprintf(stderr, "Failed to get max constant buffer size\n");
-    }
-
-    return constant_buffer_size;
-}
-
-cl_ulong get_max_buffer_size() {
-    cl_ulong buffer_size = 0;
-    if (CL_SUCCESS != clGetDeviceInfo(selected_device_id, CL_DEVICE_MAX_MEM_ALLOC_SIZE, sizeof(cl_ulong), &buffer_size, NULL)) {
-        fprintf(stderr, "Failed to get max constant buffer size\n");
-    }
-
-    return buffer_size;
 }
 
 uint32_t scale_bw_iterations(uint32_t base_iterations, uint32_t size_kb)

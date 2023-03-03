@@ -47,6 +47,33 @@ size_t getMaxWorkgroupSize()
     return maxWorkgroupSize;
 }
 
+cl_ulong get_max_constant_buffer_size() {
+    cl_ulong constant_buffer_size = 0;
+    if (CL_SUCCESS != clGetDeviceInfo(selected_device_id, CL_DEVICE_MAX_CONSTANT_BUFFER_SIZE, sizeof(cl_ulong), &constant_buffer_size, NULL)) {
+        fprintf(stderr, "Failed to get max constant buffer size\n");
+    }
+
+    return constant_buffer_size;
+}
+
+cl_ulong get_max_buffer_size() {
+    cl_ulong buffer_size = 0;
+    if (CL_SUCCESS != clGetDeviceInfo(selected_device_id, CL_DEVICE_MAX_MEM_ALLOC_SIZE, sizeof(cl_ulong), &buffer_size, NULL)) {
+        fprintf(stderr, "Failed to get max constant buffer size\n");
+    }
+
+    return buffer_size;
+}
+
+cl_ulong get_max_tex_buffer_size() {
+    cl_ulong buffer_size = 0;
+    if (CL_SUCCESS != clGetDeviceInfo(selected_device_id, CL_DEVICE_IMAGE_MAX_BUFFER_SIZE, sizeof(cl_ulong), &buffer_size, NULL)) {
+        fprintf(stderr, "Failed to get max texture buffer size\n");
+    }
+
+    return buffer_size;
+}
+
 short checkExtensionSupport(const char *extension_name) {
     size_t extensionLen = 0;
     char* extensions;
