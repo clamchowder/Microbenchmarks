@@ -115,10 +115,10 @@ float tex_latency_test(cl_context context,
     imageDesc.buffer = a_mem_obj;
     imageDesc.image_type = CL_MEM_OBJECT_IMAGE1D_BUFFER;
     imageDesc.image_width = list_size; // width in pixels
-    imageDesc.image_height = 1; // not used for 1D image
-    imageDesc.image_depth = 1;  // not used for 1D image
+    //imageDesc.image_height = 1; // not used for 1D image
+    //imageDesc.image_depth = 1;  // not used for 1D image
     //imageDesc.mem_object = a_mem_obj;
-    tex_obj = clCreateImage(context, CL_MEM_READ_ONLY | CL_MEM_COPY_HOST_PTR, &imageFormat, &imageDesc, A, &ret);
+    tex_obj = clCreateImage(context, CL_MEM_READ_ONLY, &imageFormat, &imageDesc, NULL, &ret);
     if (ret != CL_SUCCESS)
     {
         fprintf(stderr, "Failed to create image: %d\n", ret);
@@ -127,7 +127,7 @@ float tex_latency_test(cl_context context,
 
     size_t origin[] = { 0, 0, 0 };
     size_t region[] = { imageDesc.image_width, 1, 1 };
-    ret = clEnqueueWriteImage(command_queue, tex_obj, CL_TRUE, origin, region, list_size * 4, list_size * 4, A, 0, NULL, NULL);
+    ret = clEnqueueWriteImage(command_queue, tex_obj, CL_TRUE, origin, region, 0, 0, A, 0, NULL, NULL);
     if (ret != CL_SUCCESS)
     {
         fprintf(stderr, "Failed to copy image: %d\n", ret);
