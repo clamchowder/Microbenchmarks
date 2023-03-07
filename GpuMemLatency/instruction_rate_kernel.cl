@@ -301,15 +301,24 @@ __kernel void fp32_fma_rate_test(__global float4 *A, int count, __global float4 
     float4 v7 = v1 + v2;
     float4 acc = local_a[0];
 
-    for (int i = 0; i < count; i++) {
-        v0 += acc * v0;
-        v1 += acc * v1;
-        v2 += acc * v2;
-        v3 += acc * v3;
-        v4 += acc * v4;
-        v5 += acc * v5;
-        v6 += acc * v6;
-        v7 += acc * v7;
+    for (int i = 0; i < count; i += 2) {
+        v0 += v0 * 3.2;
+        v1 += v1 * 3.2;
+        v2 += v2 * 3.2;
+        v3 += v3 * 3.2;
+        v4 += v4 * 3.2;
+        v5 += v5 * 3.2;
+        v6 += v6 * 3.2;
+        v7 += v7 * 3.2;
+
+        v0 += v0 * 3.3;
+        v1 += v1 * 3.3;
+        v2 += v2 * 3.3;
+        v3 += v3 * 3.3;
+        v4 += v4 * 3.3;
+        v5 += v5 * 3.3;
+        v6 += v6 * 3.3;
+        v7 += v7 * 3.3;
     }
 
     ret[get_global_id(0)] = v0 + v1 + v2 + v3 + v4 + v5 + v6 + v7;
