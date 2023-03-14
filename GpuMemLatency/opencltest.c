@@ -32,6 +32,7 @@ enum TestType {
     LocalAtomicLatency,
     GlobalMemBandwidth,
     LocalMemBandwidth,
+    TextureThroughput,
     MemBandwidthWorkgroupScaling,
     CoreToCore,
     LinkBandwidth,
@@ -166,6 +167,11 @@ int main(int argc, char* argv[]) {
                         fprintf(stderr, "Selecting local size = %d, threads = %d\n", local_size, thread_count);
                     }
                 }
+                else if (_strnicmp(argv[argIdx], "tmu", 3) == 0)
+                {
+                    testType = TextureThroughput;
+                    fprintf(stderr, "Testing TMUs\n");
+                }
                 else {
                     fprintf(stderr, "I'm so confused. Unknown test type %s\n", argv[argIdx]);
                 }
@@ -297,6 +303,10 @@ int main(int argc, char* argv[]) {
                 break;
             }
         }
+    }
+    else if (testType == TextureThroughput)
+    {
+
     }
     else if (testType == LocalMemLatency)
     {

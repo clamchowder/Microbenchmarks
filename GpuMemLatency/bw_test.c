@@ -149,8 +149,8 @@ float local_bw_test(cl_context context,
     cl_int ret;
     int64_t time_diff_ms;
 
-    uint32_t* A = (uint32_t*)malloc(sizeof(uint32_t) * local_mem_bw_test_size);
-    uint32_t* result = (uint32_t*)malloc(sizeof(uint32_t) * thread_count);
+    float* A = (uint32_t*)malloc(sizeof(uint32_t) * local_mem_bw_test_size);
+    float* result = (uint32_t*)malloc(sizeof(uint32_t) * thread_count);
 
     if (!A || !result)
     {
@@ -159,7 +159,7 @@ float local_bw_test(cl_context context,
 
     for (uint32_t i = 0; i < 4096; i++)
     {
-        A[i] = i;
+        A[i] = i + .02;
     }
 
     // copy array to device
