@@ -137,6 +137,8 @@ int main(int argc, char* argv[]) {
                 }
                 else if (_strnicmp(argv[argIdx], "localbw", 7) == 0) {
                     testType = LocalMemBandwidth;
+                    if (!thread_count_set) thread_count = 262144;
+                    if (!local_size_set) local_size = 256;
                     fprintf(stderr, "Testing local memory bandwidth\n");
                 }
                 else if (_strnicmp(argv[argIdx], "scaling", 7) == 0)
@@ -355,8 +357,6 @@ int main(int argc, char* argv[]) {
         else
         {
             int64_t elapsed_ms = 0, target_ms = 1500;
-            thread_count = 262144;
-            local_size = 256;
             chase_iterations = 500000;
             while (elapsed_ms < target_ms / 2)
             {
