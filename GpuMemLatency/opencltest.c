@@ -32,6 +32,7 @@ enum TestType {
     LocalAtomicLatency,
     GlobalMemBandwidth,
     LocalMemBandwidth,
+    TextureThroughput,
     MemBandwidthWorkgroupScaling,
     CoreToCore,
     LinkBandwidth,
@@ -136,6 +137,8 @@ int main(int argc, char* argv[]) {
                 }
                 else if (_strnicmp(argv[argIdx], "localbw", 7) == 0) {
                     testType = LocalMemBandwidth;
+                    if (!thread_count_set) thread_count = 262144;
+                    if (!local_size_set) local_size = 256;
                     fprintf(stderr, "Testing local memory bandwidth\n");
                 }
                 else if (_strnicmp(argv[argIdx], "scaling", 7) == 0)
@@ -165,6 +168,11 @@ int main(int argc, char* argv[]) {
                         thread_count = 32768;
                         fprintf(stderr, "Selecting local size = %d, threads = %d\n", local_size, thread_count);
                     }
+                }
+                else if (_strnicmp(argv[argIdx], "tmu", 3) == 0)
+                {
+                    testType = TextureThroughput;
+                    fprintf(stderr, "Testing TMUs\n");
                 }
                 else {
                     fprintf(stderr, "I'm so confused. Unknown test type %s\n", argv[argIdx]);
@@ -298,6 +306,10 @@ int main(int argc, char* argv[]) {
             }
         }
     }
+    else if (testType == TextureThroughput)
+    {
+
+    }
     else if (testType == LocalMemLatency)
     {
         cl_kernel local_kernel = clCreateKernel(program, "local_unrolled_latency_test", &ret);
@@ -345,8 +357,6 @@ int main(int argc, char* argv[]) {
         else
         {
             int64_t elapsed_ms = 0, target_ms = 1500;
-            thread_count = 262144;
-            local_size = 256;
             chase_iterations = 500000;
             while (elapsed_ms < target_ms / 2)
             {
