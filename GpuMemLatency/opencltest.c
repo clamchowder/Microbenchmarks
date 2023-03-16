@@ -315,12 +315,12 @@ int main(int argc, char* argv[]) {
         float gtexels = tex_bw_test(context,
             command_queue,
             tex_bw_kernel,
-            16, // width
-            16, // height
+            256, // width
+            256, // height
             thread_count,
             local_size,
             1,
-            5000);
+            chase_iterations);
         printf("Texels: %f G/s\n", gtexels);
     }
     else if (testType == LocalMemLatency)

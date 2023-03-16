@@ -173,10 +173,11 @@ float tex_bw_test(cl_context context,
     imageDesc.image_width = width;
     imageDesc.image_height = height;
     //imageDesc.mem_object = a_mem_obj;
+    //imageDesc.buffer = A;
     cl_image_format imageFormat;
-    imageFormat.image_channel_order = CL_RGB;
+    imageFormat.image_channel_order = CL_R;
     imageFormat.image_channel_data_type = CL_FLOAT;
-    tex_mem_obj = clCreateImage(context, CL_MEM_READ_ONLY, &imageFormat, &imageDesc, NULL, &ret);
+    tex_mem_obj = clCreateImage(context, CL_MEM_READ_ONLY, &imageFormat, &imageDesc, A, &ret);
     if (ret != CL_SUCCESS)
     {
         fprintf(stderr, "Failed to create 2d texture: %d\n", ret);
@@ -222,6 +223,7 @@ float tex_bw_test(cl_context context,
     }
 
     time_diff_ms = end_timing();
+    fprintf(stderr, "elapsed time: %lld ms\n", time_diff_ms);
 
     // each thread does iterations texel reads
     texels = 1000 * (float)(chase_iterations * thread_count / 1e9) / (float)time_diff_ms;

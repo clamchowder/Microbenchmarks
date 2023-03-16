@@ -63,17 +63,21 @@ __kernel void tex_bw_test(__read_only image2d_t A, int count, __global int* ret)
     float4 tmp1 = read_imagef(A, funny_sampler, current1);
     float4 tmp2 = read_imagef(A, funny_sampler, current2);
     float4 tmp3 = read_imagef(A, funny_sampler, current3);
-    for (int i = 0; i < count; i++)
+    for (int i = 0; i < count; i += 4)
     {
         tmp0 += read_imagef(A, funny_sampler, current0);
         tmp1 += read_imagef(A, funny_sampler, current1);
         tmp2 += read_imagef(A, funny_sampler, current2);
         tmp3 += read_imagef(A, funny_sampler, current3);
+        current0 += increment;
+        current1 += increment;
+        current2 += increment;
+        current3 += increment;
     }
 
     current0 = current0 + current1 + current2 + current3;
-    if (current0.x > 1000 && current0.y > 1000) *ret = 1;
-    else *ret = 2;
+    *ret = current0.x + current1.x + current2.x + current3.x;
+    *ret += current0.y + current1.y + current2.y + current3.y;
 }
 
 // Cacheline size in bytes, must correspond to what's defined for the latency test
