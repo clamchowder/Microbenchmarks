@@ -232,6 +232,7 @@ int main(int argc, char* argv[]) {
     cl_kernel dummy_add_kernel = clCreateKernel(program, "dummy_add", &ret);
     cl_kernel local_bw_kernel = clCreateKernel(program, "local_bw_test", &ret);
     cl_kernel tex_latency_kernel = clCreateKernel(program, "tex_latency_test", &ret);
+    cl_kernel tex_bw_kernel = clCreateKernel(program, "tex_bw_test", &ret);
 #pragma endregion opencl_overhead
 
     max_global_test_size = get_max_buffer_size();
@@ -308,7 +309,19 @@ int main(int argc, char* argv[]) {
     }
     else if (testType == TextureThroughput)
     {
-
+        cl_ulong max_2d_tex_width = get_max_2d_tex_width();
+        cl_ulong max_2d_tex_height = get_max_2d_tex_height();
+        fprintf(stderr, "max 2D texture dimensions: %lu x %lu\n", max_2d_tex_width, max_2d_tex_height);
+        float gtexels = tex_bw_test(context,
+            command_queue,
+            tex_bw_kernel,
+            16, // width
+            16, // height
+            thread_count,
+            local_size,
+            1,
+            5000);
+        printf("Texels: %f G/s\n", gtexels);
     }
     else if (testType == LocalMemLatency)
     {

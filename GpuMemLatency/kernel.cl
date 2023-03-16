@@ -40,6 +40,42 @@ __kernel void tex_latency_test(__read_only image1d_buffer_t A, int count, __glob
     ret[0] = local_a[localId].x;
 }
 
+__constant sampler_t funny_sampler = CLK_NORMALIZED_COORDS_TRUE | // coordinates are from 0 to 1 (float)
+                                        CLK_ADDRESS_REPEAT | // going out of bounds = replicate
+                                        CLK_FILTER_LINEAR;   
+__kernel void tex_bw_test(__read_only image2d_t A, int count, __global int* ret) {
+    int localId = get_local_id(0);
+    float2 increment;
+    increment.x = 0.00001; // guessing
+    increment.y = 0.000001;
+
+    float2 current0, current1, current2, current3;
+    current0.x = increment.x * localId;
+    current0.y = increment.y * localId;
+    current1.x = 0.1 + (localId / 10000);
+    current1.y = 0.1 + (localId / 10000);
+    current2.x = 0.01 + (localId / 10000);
+    current2.y = 0.01 + (localId / 10000);
+    current3.x = 0.002 + (localId / 5000);
+    current3.y = 0.001 + (localId / 5000);
+
+    float4 tmp0 = read_imagef(A, funny_sampler, current0);
+    float4 tmp1 = read_imagef(A, funny_sampler, current1);
+    float4 tmp2 = read_imagef(A, funny_sampler, current2);
+    float4 tmp3 = read_imagef(A, funny_sampler, current3);
+    for (int i = 0; i < count; i++)
+    {
+        tmp0 += read_imagef(A, funny_sampler, current0);
+        tmp1 += read_imagef(A, funny_sampler, current1);
+        tmp2 += read_imagef(A, funny_sampler, current2);
+        tmp3 += read_imagef(A, funny_sampler, current3);
+    }
+
+    current0 = current0 + current1 + current2 + current3;
+    if (current0.x > 1000 && current0.y > 1000) *ret = 1;
+    else *ret = 2;
+}
+
 // Cacheline size in bytes, must correspond to what's defined for the latency test
 #define CACHELINE_SIZE 64
 

@@ -74,6 +74,24 @@ cl_ulong get_max_tex_buffer_size() {
     return buffer_size;
 }
 
+cl_ulong get_max_2d_tex_width() {
+    cl_ulong max_width = 0;
+    if (CL_SUCCESS != clGetDeviceInfo(selected_device_id, CL_DEVICE_IMAGE2D_MAX_WIDTH, sizeof(cl_ulong), &max_width, NULL)) {
+        fprintf(stderr, "Failed to get max texture width\n");
+    }
+
+    return max_width;
+}
+
+cl_ulong get_max_2d_tex_height() {
+    cl_ulong max_width = 0;
+    if (CL_SUCCESS != clGetDeviceInfo(selected_device_id, CL_DEVICE_IMAGE2D_MAX_HEIGHT, sizeof(cl_ulong), &max_width, NULL)) {
+        fprintf(stderr, "Failed to get max texture height\n");
+    }
+
+    return max_width;
+}
+
 short checkExtensionSupport(const char *extension_name) {
     size_t extensionLen = 0;
     char* extensions;
