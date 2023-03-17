@@ -299,7 +299,7 @@ int main(int argc, char* argv[]) {
                 break;
             }
 
-            result = tex_latency_test(context, command_queue, tex_latency_kernel, 256 * default_test_sizes[size_idx], scale_iterations(default_test_sizes[size_idx], chase_iterations), true, false);
+            result = tex_latency_test(context, command_queue, tex_latency_kernel, 256 * default_test_sizes[size_idx], scale_iterations(default_test_sizes[size_idx], chase_iterations));
             printf("%d,%f\n", default_test_sizes[size_idx], result);
             if (result == 0) {
                 printf("Something went wrong, not testing anything bigger.\n");
