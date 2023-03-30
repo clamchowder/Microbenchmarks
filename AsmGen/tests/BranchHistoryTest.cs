@@ -34,7 +34,7 @@ namespace AsmGen
         {
             if (isa == IUarchTest.ISA.amd64) return true;
             if (isa == IUarchTest.ISA.aarch64) return true;
-            //if (isa == IUarchTest.ISA.mips64) return true;
+            if (isa == IUarchTest.ISA.mips64) return true;
             return false;
         }
 
@@ -42,6 +42,7 @@ namespace AsmGen
         {
             if (isa == IUarchTest.ISA.aarch64) GenerateArmAsm(sb);
             if (isa == IUarchTest.ISA.amd64) GenerateX86GccAsm(sb);
+            if (isa == IUarchTest.ISA.mips64) GenerateMipsAsm(sb);
         }
 
         public void GenerateArmAsm(StringBuilder sb)
@@ -145,14 +146,54 @@ namespace AsmGen
             // Generate an array of branch history test functions, one for each branch count
             for (int i = 0; i < branchCounts.Length; i++)
             {
-                string functionLabel = Prefix + branchCounts[i];
-                string loopLabel = functionLabel + "_loop";
-
                 // branchtestFunc(iterations, testArrToArr, historyLen)
-                // r6 = iterations, r7 = array of pointers to pattern arrays for each branch, r8 = history length (length of each array)
+                // r4 = iterations, r5 = array of pointers to pattern arrays for each branch, r6 = history length (length of each array)
                 // temporary registers: r12-r20
-                
+
                 // write code here
+                string functionLabel = Prefix + branchCounts[i];
+                sb.AppendLine("\n" + functionLabel + ":");
+
+                // r12 = branch index, r13 = index into pattern array
+                sb.AppendLine("  move $r13, $r0");
+                sb.AppendLine("  move $r18, $r0");
+                sb.AppendLine("  move $r20, $r0");
+                sb.AppendLine("  addi.d $r20, $r20, 1");
+
+                string loopLabel = functionLabel + "_loop";
+                sb.AppendLine("\n" + loopLabel + ":");
+                sb.AppendLine("  move $r12, $r0"); // set branch index to zero
+
+                // generate branch blocks
+                for (int branchCount = 0; branchCount < branchCounts[i]; branchCount++)
+                {
+                    string jumpTarget = functionLabel + branchCounts[i] + "_zero" + branchCount;
+
+                    // load the branch's pattern array
+                    sb.AppendLine("  alsl.d $r14, $r12, $r0, 0x3");    // get offset into array in bytes, using r12 as array index.
+                    sb.AppendLine("  add.d $r14, $r14, $r5");          // get address into r14
+                    sb.AppendLine("  ld.d $r15, $r14, 0");             // r15 = base address of curent branch's target array
+                    sb.AppendLine("  addi.d $r12, $r12, 1");            // next branch
+
+                    // load element from pattern array indicating where we should branch
+                    sb.AppendLine("  alsl.d $r16, $r13, $r0, 0x2");    // use r13 to index into pattern array
+                    sb.AppendLine("  add.d $r16, $r16, $r15");         // r16 = address of element we want to load
+                    sb.AppendLine("  ld.w $r17, $r16, 0");
+                    sb.AppendLine($"  bnez $r17, {jumpTarget}");       // branch if 1
+                    sb.AppendLine("  addi.d $r18, $r18, 1");
+                    sb.AppendLine(jumpTarget + ":");
+                }
+
+                // increment w16, and basically cmov 0 -> w16 if w16 = list length
+                // increment r13 (idx into pattern array)
+                sb.AppendLine("  addi.d $r13, $r13, 1");
+                sb.AppendLine("  sub.d $r19, $r6, $r13");    // r19 = history length - index
+                sb.AppendLine("  maskeqz $r13, $r13, $r19"); // set index back to 0 to repeat pattern, if history length - index == 0
+                sb.AppendLine("  sub.d $r4, $r4, $r20");            // decrement iteration count
+                sb.AppendLine($"  bnez $r4, {loopLabel}");
+                sb.AppendLine("  move $r4, $r18"); // return the count of NT branches for tracking RNG quality
+
+                sb.AppendLine("  jr $r1");
             }
         }
 
