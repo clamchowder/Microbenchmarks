@@ -53,6 +53,30 @@ extern uint64_t loadtest(uint64_t iterations, void *data);
 extern uint64_t storetest(uint64_t iterations, void *data);
 extern uint64_t load_storetest(uint64_t iterations, void *data);
 
+extern uint64_t gr2frlattest(uint64_t iterations, void *data);
+extern uint64_t gr2frtest(uint64_t iterations, void *data);
+extern uint64_t mixgr2frtest(uint64_t iterations, void *data);
+extern uint64_t mixgr2frvecaddtest(uint64_t iterations, void *data);
+extern uint64_t mixgr2frfaddtest(uint64_t iterations, void *data);
+extern uint64_t mixgr2frfmultest(uint64_t iterations, void *data);
+extern uint64_t fr2grtest(uint64_t iterations, void *data);
+extern uint64_t gr2xrlattest(uint64_t iterations, void *data);
+extern uint64_t xvpermilattest(uint64_t iterations, void *data);
+extern uint64_t xvpermitest(uint64_t iterations, void *data);
+extern uint64_t mixstorefaddtest(uint64_t iterations, void *data);
+extern uint64_t mixstorefmultest(uint64_t iterations, void *data);
+extern uint64_t mixstorevecaddtest(uint64_t iterations, void *data);
+extern uint64_t xvxortest(uint64_t iterations, void *data);
+extern uint64_t xvxorlattest(uint64_t iterations, void *data);
+extern uint64_t xvfaddtest(uint64_t iterations, void *data);
+extern uint64_t xvfaddlattest(uint64_t iterations, void *data);
+extern uint64_t xvfmultest(uint64_t iterations, void *data);
+extern uint64_t xvfmullattest(uint64_t iterations, void *data);
+extern uint64_t vfaddtest(uint64_t iterations, void *data);
+extern uint64_t vfmultest(uint64_t iterations, void *data);
+extern uint64_t xvslltest(uint64_t iterations, void *data);
+extern uint64_t xvslllattest(uint64_t iterations, void *data);
+
 float fpTestArr[8] __attribute__ ((aligned (64))) = { 0.2, 1.5, 2.7, 3.14, 5.16, 6.3, 7.7, 9.45 };
 float fpSinkArr[8] __attribute__ ((aligned (64))) = { 2.1, 3.2, 4.3, 5.4, 6.2, 7.8, 8.3, 9.4 };
 int *intTestArr;
@@ -93,6 +117,8 @@ int main(int argc, char *argv[]) {
   //} else clockSpeedGhz = 1.0f;
 
   printf("Estimated clock speed: %.2f GHz\n", clockSpeedGhz);
+
+
 
   // throughput
   if (argc == 1 || argc > 1 && strncmp(argv[1], "nop", 3) == 0)
@@ -138,7 +164,7 @@ int main(int argc, char *argv[]) {
     printf("128b mul latency in cycles: %.2f\n", 1/measureFunction(iterationsHigh, clockSpeedGhz, NULL, vmullattest));
 
   if (argc == 1 || argc > 1 && strncmp(argv[1], "xmul", 3) == 0)
-    printf("256b muls per clk: %.2f\n", measureFunction(iterationsHigh, clockSpeedGhz, NULL, xmultest));
+    printf("256b muls per clk: %.2f\n", measureFunction(iterationsHigh, clockSpeedGhz, intSinkArr, xmultest));
 
   if (argc == 1 || argc > 1 && strncmp(argv[1], "vmullatency", 3) == 0)
     printf("256b mul latency in cycles: %.2f\n", 1/measureFunction(iterationsHigh, clockSpeedGhz, NULL, xmullattest));
@@ -168,7 +194,7 @@ int main(int argc, char *argv[]) {
     printf("128b fma latency in cycles: %.2f\n", 1/measureFunction(iterationsHigh, clockSpeedGhz, NULL, vfmalattest));
 
   if (argc == 1 || argc > 1 && strncmp(argv[1], "xfma", 3) == 0)
-    printf("256b fmas per clk: %.2f\n", measureFunction(iterationsHigh, clockSpeedGhz, NULL, xfmatest));
+    printf("256b fmas per clk: %.2f\n", measureFunction(iterationsHigh, clockSpeedGhz, fpSinkArr, xfmatest));
 
   if (argc == 1 || argc > 1 && strncmp(argv[1], "xfmalatency", 3) == 0)
     printf("256b fma latency in cycles: %.2f\n", 1/measureFunction(iterationsHigh, clockSpeedGhz, NULL, xfmalattest));
@@ -204,6 +230,53 @@ int main(int argc, char *argv[]) {
 
   if (argc == 1 || argc > 1 && strncmp(argv[1], "1:1 load:store", 4) == 0)
     printf("1:1 load:store per clk: %.2f\n", measureFunction(iterationsHigh, clockSpeedGhz, intSinkArr, load_storetest));
+
+  if (argc == 1 || argc > 1 && strncmp(argv[1], "gr2fr", 5) == 0)
+    printf("GPR -> FR per clk: %.2f\n", measureFunction(iterationsHigh, clockSpeedGhz, intSinkArr, gr2frtest));   
+  if (argc == 1 || argc > 1 && strncmp(argv[1], "fr2gr", 5) == 0)
+    printf("FR -> GPR per clk: %.2f\n", measureFunction(iterationsHigh, clockSpeedGhz, intSinkArr, fr2grtest));   
+  if (argc == 1 || argc > 1 && strncmp(argv[1], "mixgr2fr", 8) == 0)
+    printf("Bidir GPR <-> FR per clk: %.2f\n", measureFunction(iterationsHigh, clockSpeedGhz, intSinkArr, mixgr2frtest));   
+  if (argc == 1 || argc > 1 && strncmp(argv[1], "gr2frlat", 8) == 0)
+    printf("GPR <-> FR roundtrip latency: %.2f cycles\n", 1 / measureFunction(iterationsHigh, clockSpeedGhz, intSinkArr, gr2frlattest));   
+  if (argc == 1 || argc > 1 && strncmp(argv[1], "gr2xr", 5) == 0)
+    printf("GPR <-> XR roundtrip latency: %.2f cycles\n", 1 / measureFunction(iterationsHigh, clockSpeedGhz, intSinkArr, gr2xrlattest));  
+   if (argc == 1 || argc > 1 && strncmp(argv[1], "mixgr2frvecadd", 14) == 0)
+    printf("GPR -> FR, 256b vec add per clk: %.2f\n", measureFunction(iterationsHigh, clockSpeedGhz, intSinkArr, mixgr2frvecaddtest));    
+   if (argc == 1 || argc > 1 && strncmp(argv[1], "mixgr2frfadd", 12) == 0)
+    printf("GPR -> FR, 256b vec fadd per clk: %.2f\n", measureFunction(iterationsHigh, clockSpeedGhz, fpSinkArr, mixgr2frfaddtest));    
+   if (argc == 1 || argc > 1 && strncmp(argv[1], "mixgr2frfmul", 12) == 0)
+    printf("GPR -> FR, 256b vec fmul per clk: %.2f\n", measureFunction(iterationsHigh, clockSpeedGhz, fpSinkArr, mixgr2frfmultest));    
+  if (argc == 1 || argc > 1 && strncmp(argv[1], "xvpermilat", 10) == 0)
+    printf("Permute latency: %.2f cycles\n", 1 / measureFunction(iterationsHigh, clockSpeedGhz, intSinkArr, xvpermilattest));    
+  if (argc == 1 || argc > 1 && strncmp(argv[1], "xvpermi", 7) == 0)
+    printf("Permute per clk: %.2f\n", measureFunction(iterationsHigh, clockSpeedGhz, intSinkArr, xvpermitest));    
+  if (argc == 1 || argc > 1 && strncmp(argv[1], "mixstorefadd", 12) == 0)
+    printf("1:1 256b fadd : 256b store per clk: %.2f\n", measureFunction(iterationsHigh, clockSpeedGhz, fpSinkArr, mixstorefaddtest));    
+  if (argc == 1 || argc > 1 && strncmp(argv[1], "mixstorefmul", 12) == 0)
+    printf("1:1 256b fmul : 256b store per clk: %.2f\n", measureFunction(iterationsHigh, clockSpeedGhz, fpSinkArr, mixstorefmultest));    
+  if (argc == 1 || argc > 1 && strncmp(argv[1], "mixstorevecadd", 14) == 0)
+    printf("1:1 256b add : 256b store per clk: %.2f\n", measureFunction(iterationsHigh, clockSpeedGhz, intSinkArr, mixstorevecaddtest));    
+  if (argc == 1 || argc > 1 && strncmp(argv[1], "xvxor", 5) == 0)
+    printf("256b xor per clk: %.2f\n", measureFunction(iterationsHigh, clockSpeedGhz, fpSinkArr, xvxortest));    
+  if (argc == 1 || argc > 1 && strncmp(argv[1], "xvxorlat", 8) == 0)
+    printf("256b xor latency: %.2f cycles\n", 1/measureFunction(iterationsHigh, clockSpeedGhz, fpSinkArr, xvxorlattest));     
+  if (argc == 1 || argc > 1 && strncmp(argv[1], "xvfadd", 6) == 0)
+    printf("256b fadd.s per clk: %.2f\n", measureFunction(iterationsHigh, clockSpeedGhz, fpSinkArr, xvfaddtest));     
+  if (argc == 1 || argc > 1 && strncmp(argv[1], "xvfadd", 6) == 0)
+    printf("256b fmul.s per clk: %.2f\n", measureFunction(iterationsHigh, clockSpeedGhz, fpSinkArr, xvfmultest));     
+  if (argc == 1 || argc > 1 && strncmp(argv[1], "vfadd", 5) == 0)
+    printf("128b fadd.s per clk: %.2f\n", measureFunction(iterationsHigh, clockSpeedGhz, fpSinkArr, vfaddtest));     
+  if (argc == 1 || argc > 1 && strncmp(argv[1], "vfadd", 5) == 0)
+    printf("128b fmul.s per clk: %.2f\n", measureFunction(iterationsHigh, clockSpeedGhz, fpSinkArr, vfmultest));   
+  if (argc == 1 || argc > 1 && strncmp(argv[1], "xvfaddlat", 8) == 0)
+    printf("256b fadd.s latency: %.2f clk\n", 1/measureFunction(iterationsHigh, clockSpeedGhz, fpSinkArr, xvfaddlattest));     
+  if (argc == 1 || argc > 1 && strncmp(argv[1], "xvfmullat", 8) == 0)
+    printf("256b fmul.s latency: %.2f clk\n", 1/measureFunction(iterationsHigh, clockSpeedGhz, fpSinkArr, xvfmullattest));     
+  if (argc == 1 || argc > 1 && strncmp(argv[1], "xvsll", 5) == 0)
+    printf("256b sll per clk: %.2f\n", measureFunction(iterationsHigh, clockSpeedGhz, intSinkArr, xvslltest));    
+  if (argc == 1 || argc > 1 && strncmp(argv[1], "xvslllat", 8) == 0)
+    printf("256b sll latency: %.2f cycles\n", 1/measureFunction(iterationsHigh, clockSpeedGhz, intSinkArr, xvslllattest));      
   return 0;
 }
 

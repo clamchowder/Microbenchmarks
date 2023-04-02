@@ -38,6 +38,30 @@
 .global storetest
 .global load_storetest
 
+.global mixgr2frvecaddtest
+.global mixgr2frfaddtest
+.global mixgr2frfmultest
+.global gr2frlattest
+.global gr2frtest
+.global mixgr2frtest
+.global fr2grtest
+.global gr2xrlattest
+.global xvpermilattest
+.global xvpermitest
+.global mixstorefaddtest
+.global mixstorefmultest
+.global mixstorevecaddtest
+.global xvxortest
+.global xvxorlattest
+.global xvfaddtest
+.global xvfaddlattest
+.global xvfmultest
+.global xvfmullattest
+.global vfaddtest
+.global vfmultest 
+.global xvslltest
+.global xvslllattest
+
 clktest:
   xor $r12, $r12, $r12
   xor $r13, $r13, $r13   /* r13 is just zero */
@@ -435,26 +459,26 @@ fmultest:
   xor $r18, $r18, $r18
   addi.d $r14, $r14, 20
 fmultest_loop:
+  fmul.d $f8, $f8, $f14
+  fmul.d $f9, $f9, $f14
+  fmul.d $f10, $f10, $f14
+  fmul.d $f11, $f11, $f14
   fmul.d $f12, $f12, $f14
   fmul.d $f13, $f13, $f14
   fmul.d $f15, $f15, $f14
   fmul.d $f16, $f16, $f14
   fmul.d $f17, $f17, $f14
+  fmul.d $f18, $f18, $f14
+  fmul.d $f19, $f19, $f14
+  fmul.d $f20, $f20, $f14
+  fmul.d $f21, $f21, $f14
+  fmul.d $f22, $f22, $f14
+  fmul.d $f23, $f23, $f14
+  fmul.d $f8, $f8, $f14
+  fmul.d $f9, $f9, $f14
+  fmul.d $f10, $f10, $f14
+  fmul.d $f11, $f11, $f14
   fmul.d $f12, $f12, $f14
-  fmul.d $f13, $f13, $f14
-  fmul.d $f15, $f15, $f14
-  fmul.d $f16, $f16, $f14
-  fmul.d $f17, $f17, $f14
-  fmul.d $f12, $f12, $f14
-  fmul.d $f13, $f13, $f14
-  fmul.d $f15, $f15, $f14
-  fmul.d $f16, $f16, $f14
-  fmul.d $f17, $f17, $f14
-  fmul.d $f12, $f12, $f14
-  fmul.d $f13, $f13, $f14
-  fmul.d $f15, $f15, $f14
-  fmul.d $f16, $f16, $f14
-  fmul.d $f17, $f17, $f14
   sub.d $r4, $r4, $r14
   bge $r4, $r18, fmultest_loop
   jr $r1
@@ -564,27 +588,38 @@ xmultest:
   xor $r17, $r17, $r17
   xor $r18, $r18, $r18
   addi.d $r14, $r14, 20
+  xvld $xr8, $r5, 0
+  xvld $xr9, $r5, 0
+  xvld $xr10, $r5, 0
+  xvld $xr11, $r5, 0
+  xvld $xr12, $r5, 0
+  xvld $xr13, $r5, 0
+  xvld $xr14, $r5, 0
+  xvld $xr15, $r5, 0
+  xvld $xr16, $r5, 0
+  xvld $xr17, $r5, 0
+  xvld $xr18, $r5, 0
 xmultest_loop:
+  xvmul.d $xr8, $xr8, $xr14
+  xvmul.d $xr9, $xr9, $xr14
+  xvmul.d $xr10, $xr10, $xr14
+  xvmul.d $xr11, $xr11, $xr14
   xvmul.d $xr12, $xr12, $xr14
   xvmul.d $xr13, $xr13, $xr14
   xvmul.d $xr15, $xr15, $xr14
   xvmul.d $xr16, $xr16, $xr14
   xvmul.d $xr17, $xr17, $xr14
+  xvmul.d $xr18, $xr18, $xr14
+  xvmul.d $xr19, $xr19, $xr14
+  xvmul.d $xr20, $xr20, $xr14
+  xvmul.d $xr21, $xr21, $xr14
+  xvmul.d $xr22, $xr22, $xr14
+  xvmul.d $xr23, $xr23, $xr14
   xvmul.d $xr12, $xr12, $xr14
-  xvmul.d $xr13, $xr13, $xr14
-  xvmul.d $xr15, $xr15, $xr14
-  xvmul.d $xr16, $xr16, $xr14
-  xvmul.d $xr17, $xr17, $xr14
-  xvmul.d $xr12, $xr12, $xr14
-  xvmul.d $xr13, $xr13, $xr14
-  xvmul.d $xr15, $xr15, $xr14
-  xvmul.d $xr16, $xr16, $xr14
-  xvmul.d $xr17, $xr17, $xr14
-  xvmul.d $xr12, $xr12, $xr14
-  xvmul.d $xr13, $xr13, $xr14
-  xvmul.d $xr15, $xr15, $xr14
-  xvmul.d $xr16, $xr16, $xr14
-  xvmul.d $xr17, $xr17, $xr14
+  xvmul.d $xr0, $xr0, $xr14
+  xvmul.d $xr8, $xr8, $xr14
+  xvmul.d $xr9, $xr9, $xr14
+  xvmul.d $xr10, $xr10, $xr14
   sub.d $r4, $r4, $r14
   bge $r4, $r18, xmultest_loop
   jr $r1
@@ -1065,6 +1100,8 @@ xfmatest:
   xor $r17, $r17, $r17
   xor $r18, $r18, $r18
   addi.d $r14, $r14, 20
+  xvld $xr14, $r5, 0
+  xvld $xr12, $r5, 0
 xfmatest_loop:
   xvfmadd.d $xr12, $xr12, $xr14, $xr14
   xvfmadd.d $xr13, $xr13, $xr14, $xr14
@@ -1089,8 +1126,6 @@ xfmatest_loop:
   sub.d $r4, $r4, $r14
   bge $r4, $r18, xfmatest_loop
   jr $r1
-
-
 
 xfmalattest:
   xor $r14, $r14, $r14
@@ -1120,7 +1155,6 @@ xfmalattest_loop:
   sub.d $r4, $r4, $r14
   bge $r4, $r18, xfmalattest_loop
   jr $r1
-
 
 fma_faddtest:
   xor $r14, $r14, $r14
@@ -1155,8 +1189,6 @@ fma_faddtest_loop:
   sub.d $r4, $r4, $r14
   bge $r4, $r18, fma_faddtest_loop
   jr $r1
-
-
 
 fma_fmultest:
   fld.d $f12, $r5, 0 
@@ -1381,4 +1413,568 @@ load_storetest_loop:
   ld.d $r20, $r5, 16
   sub.d $r4, $r4, $r14
   bge $r4, $r24, load_storetest_loop
+  jr $r1
+
+xvpermilattest:
+  move $r12, $r0
+  addi.d $r12, $r12, 2
+  move $r14, $r0
+  addi.d $r14, $r14, 20
+  xvld $xr1, $r5, 0
+xvpermilattest_loop:
+  xvpermi.d $xr1, $xr1, 0x2
+  xvpermi.d $xr1, $xr1, 0x2
+  xvpermi.d $xr1, $xr1, 0x2
+  xvpermi.d $xr1, $xr1, 0x2
+  xvpermi.d $xr1, $xr1, 0x2
+  xvpermi.d $xr1, $xr1, 0x2
+  xvpermi.d $xr1, $xr1, 0x2
+  xvpermi.d $xr1, $xr1, 0x2
+  xvpermi.d $xr1, $xr1, 0x2
+  xvpermi.d $xr1, $xr1, 0x2
+  xvpermi.d $xr1, $xr1, 0x2
+  xvpermi.d $xr1, $xr1, 0x2
+  xvpermi.d $xr1, $xr1, 0x2
+  xvpermi.d $xr1, $xr1, 0x2
+  xvpermi.d $xr1, $xr1, 0x2
+  xvpermi.d $xr1, $xr1, 0x2
+  xvpermi.d $xr1, $xr1, 0x2
+  xvpermi.d $xr1, $xr1, 0x2
+  xvpermi.d $xr1, $xr1, 0x2
+  xvpermi.d $xr1, $xr1, 0x2
+  sub.d $r4, $r4, $r14
+  bge $r4, $r0, xvpermilattest_loop
+  jr $r1
+
+ xvpermitest:
+  move $r12, $r0
+  addi.d $r12, $r12, 2
+  move $r14, $r0
+  addi.d $r14, $r14, 20
+  xvld $xr2, $r5, 0
+  xvld $xr3, $r5, 0
+  xvld $xr4, $r5, 0
+  xvld $xr5, $r5, 0
+  xvld $xr6, $r5, 0
+  xvld $xr7, $r5, 0
+  xvadd.d $xr7, $xr2, $xr3
+  xvadd.d $xr8, $xr2, $xr3
+  xvadd.d $xr9, $xr2, $xr3
+  xvadd.d $xr10, $xr2, $xr3
+  xvadd.d $xr11, $xr2, $xr3
+  xvadd.d $xr12, $xr2, $xr3
+xvpermitest_loop:
+  xvpermi.d $xr1, $xr2, 0x2
+  xvpermi.d $xr1, $xr3, 0x3
+  xvpermi.d $xr1, $xr4, 0x4
+  xvpermi.d $xr1, $xr5, 0x5
+  xvpermi.d $xr1, $xr6, 0x6
+  xvpermi.d $xr1, $xr7, 0x7
+  xvpermi.d $xr1, $xr8, 0x8
+  xvpermi.d $xr1, $xr9, 0x2
+  xvpermi.d $xr1, $xr10, 0x3
+  xvpermi.d $xr1, $xr2, 0x2
+  xvpermi.d $xr1, $xr3, 0x3
+  xvpermi.d $xr1, $xr4, 0x4
+  xvpermi.d $xr1, $xr5, 0x5
+  xvpermi.d $xr1, $xr6, 0x6
+  xvpermi.d $xr1, $xr7, 0x7
+  xvpermi.d $xr1, $xr8, 0x8
+  xvpermi.d $xr1, $xr9, 0x9
+  xvpermi.d $xr1, $xr10, 0xA
+  xvpermi.d $xr1, $xr11, 0xB
+  xvpermi.d $xr1, $xr12, 0xC
+  sub.d $r4, $r4, $r14
+  bge $r4, $r0, xvpermitest_loop
+  jr $r1 
+
+gr2frlattest:
+  move $r12, $r0
+  addi.d $r12, $r12, 1
+  move $r14, $r0
+  addi.d $r14, $r14, 5 
+gr2frlattest_loop:
+  movgr2fr.d $f1, $r12
+  movfr2gr.d $r12, $f1
+  movgr2fr.d $f1, $r12
+  movfr2gr.d $r12, $f1 
+  movgr2fr.d $f1, $r12
+  movfr2gr.d $r12, $f1  
+  movgr2fr.d $f1, $r12
+  movfr2gr.d $r12, $f1   
+  movgr2fr.d $f1, $r12
+  movfr2gr.d $r12, $f1    
+  sub.d $r4, $r4, $r14
+  bge $r4, $r0, gr2frlattest_loop 
+  jr $r1
+
+gr2xrlattest:
+  move $r12, $r0
+  addi.d $r12, $r12, 1
+  move $r14, $r0
+  addi.d $r14, $r14, 5
+gr2xrlattest_loop:
+  xvreplgr2vr.d $xr1, $r12
+  xvpickve2gr.w $r12,$xr1,0x0 
+   xvreplgr2vr.d $xr1, $r12
+  xvpickve2gr.w $r12,$xr1,0x0  
+   xvreplgr2vr.d $xr1, $r12
+  xvpickve2gr.w $r12,$xr1,0x0  
+   xvreplgr2vr.d $xr1, $r12
+  xvpickve2gr.w $r12,$xr1,0x0  
+   xvreplgr2vr.d $xr1, $r12
+  xvpickve2gr.w $r12,$xr1,0x0  
+  sub.d $r4, $r4, $r14
+  bge $r4, $r0, gr2xrlattest_loop
+  jr $r1
+
+fr2grtest:
+  move $r12, $r0
+  addi.d $r12, $r12, 1
+  movgr2fr.d $f1, $r12
+  move $r14, $r0
+  addi.d $r14, $r14, 10 
+fr2grtest_loop:
+  movfr2gr.d $r12, $f1
+  movfr2gr.d $r12, $f1 
+  movfr2gr.d $r12, $f1  
+  movfr2gr.d $r12, $f1   
+  movfr2gr.d $r12, $f1    
+  movfr2gr.d $r12, $f1    
+  movfr2gr.d $r12, $f1    
+  movfr2gr.d $r12, $f1    
+  movfr2gr.d $r12, $f1    
+  movfr2gr.d $r12, $f1    
+  sub.d $r4, $r4, $r14
+  bge $r4, $r0, fr2grtest_loop 
+  jr $r1  
+
+gr2frtest:
+  move $r12, $r0
+  addi.d $r12, $r12, 1
+  move $r14, $r0
+  addi.d $r14, $r14, 10 
+gr2frtest_loop:
+  movgr2fr.d $f1, $r12
+  movgr2fr.d $f1, $r12
+  movgr2fr.d $f1, $r12
+  movgr2fr.d $f1, $r12
+  movgr2fr.d $f1, $r12
+  movgr2fr.d $f1, $r12
+  movgr2fr.d $f1, $r12
+  movgr2fr.d $f1, $r12
+  movgr2fr.d $f1, $r12
+  movgr2fr.d $f1, $r12 
+  sub.d $r4, $r4, $r14
+  bge $r4, $r0, gr2frtest_loop 
+  jr $r1
+
+mixgr2frtest:
+  move $r12, $r0
+  addi.d $r12, $r12, 1
+  move $r14, $r0
+  addi.d $r14, $r14, 10 
+mixgr2frtest_loop:
+  movgr2fr.d $f1, $r12
+  movgr2fr.d $f1, $r12
+  movgr2fr.d $f1, $r12
+  movgr2fr.d $f1, $r12
+  movgr2fr.d $f1, $r12
+  movgr2fr.d $f1, $r12
+  movgr2fr.d $f1, $r12
+  movgr2fr.d $f1, $r12
+  movgr2fr.d $f1, $r12
+  movgr2fr.d $f1, $r12 
+  movfr2gr.d $r13, $f2
+  movfr2gr.d $r13, $f2 
+  movfr2gr.d $r13, $f2  
+  movfr2gr.d $r13, $f2   
+  movfr2gr.d $r13, $f2    
+  movfr2gr.d $r13, $f2    
+  movfr2gr.d $r13, $f2    
+  movfr2gr.d $r13, $f2    
+  movfr2gr.d $r13, $f2    
+  movfr2gr.d $r13, $f2     
+  sub.d $r4, $r4, $r14
+  bge $r4, $r0, mixgr2frtest_loop 
+  jr $r1 
+
+mixgr2frvecaddtest:
+  move $r12, $r0
+  addi.d $r12, $r12, 1
+  move $r14, $r0
+  addi.d $r14, $r14, 10 
+  xvld $xr3, $r5, 0
+  xvld $xr4, $r5, 0   
+mixgr2frvecaddtest_loop:
+  movgr2fr.d $f1, $r12
+  movgr2fr.d $f1, $r12
+  movgr2fr.d $f1, $r12
+  movgr2fr.d $f1, $r12
+  movgr2fr.d $f1, $r12
+  xvadd.d $xr2, $xr3, $xr4
+  xvadd.d $xr2, $xr3, $xr4
+  xvadd.d $xr2, $xr3, $xr4
+  xvadd.d $xr2, $xr3, $xr4
+  xvadd.d $xr2, $xr3, $xr4
+  sub.d $r4, $r4, $r14
+  bge $r4, $r0, mixgr2frvecaddtest_loop 
+  jr $r1
+
+mixgr2frfaddtest:
+  move $r12, $r0
+  addi.d $r12, $r12, 1
+  move $r14, $r0
+  addi.d $r14, $r14, 10 
+  xvld $xr3, $r5, 0
+  xvld $xr4, $r5, 0   
+mixgr2frfaddtest_loop:
+  movgr2fr.d $f1, $r12
+  movgr2fr.d $f1, $r12
+  movgr2fr.d $f1, $r12
+  movgr2fr.d $f1, $r12
+  movgr2fr.d $f1, $r12
+  xvfadd.s $xr2, $xr3, $xr4
+  xvfadd.s $xr2, $xr3, $xr4
+  xvfadd.s $xr2, $xr3, $xr4
+  xvfadd.s $xr2, $xr3, $xr4
+  xvfadd.s $xr2, $xr3, $xr4
+  sub.d $r4, $r4, $r14
+  bge $r4, $r0, mixgr2frfaddtest_loop 
+  jr $r1
+
+
+
+mixgr2frfmultest:
+  move $r12, $r0
+  addi.d $r12, $r12, 1
+  move $r14, $r0
+  addi.d $r14, $r14, 10 
+  xvld $xr3, $r5, 0
+  xvld $xr4, $r5, 0   
+mixgr2frfmultest_loop:
+  movgr2fr.d $f1, $r12
+  movgr2fr.d $f1, $r12
+  movgr2fr.d $f1, $r12
+  movgr2fr.d $f1, $r12
+  movgr2fr.d $f1, $r12
+  xvfmul.s $xr2, $xr3, $xr4
+  xvfmul.s $xr2, $xr3, $xr4
+  xvfmul.s $xr2, $xr3, $xr4
+  xvfmul.s $xr2, $xr3, $xr4
+  xvfmul.s $xr2, $xr3, $xr4
+  sub.d $r4, $r4, $r14
+  bge $r4, $r0, mixgr2frfmultest_loop 
+  jr $r1 
+
+mixstorefaddtest:
+  move $r12, $r0
+  addi.d $r12, $r12, 1
+  move $r14, $r0
+  addi.d $r14, $r14, 10 
+  xvld $xr3, $r5, 0
+  xvld $xr4, $r5, 0
+mixstorefaddtest_loop:
+  xvst $xr1, $r5, 0
+  xvfadd.s $xr2, $xr3, $xr4
+  xvst $xr1, $r5, 0
+  xvfadd.s $xr2, $xr3, $xr4
+  xvst $xr1, $r5, 0
+  xvfadd.s $xr2, $xr3, $xr4
+  xvst $xr1, $r5, 0
+  xvfadd.s $xr2, $xr3, $xr4
+  xvst $xr1, $r5, 0
+  xvfadd.s $xr2, $xr3, $xr4
+  sub.d $r4, $r4, $r14
+  bge $r4, $r0, mixstorefaddtest_loop
+  jr $r1
+
+mixstorefmultest:
+  move $r12, $r0
+  addi.d $r12, $r12, 1
+  move $r14, $r0
+  addi.d $r14, $r14, 10 
+  xvld $xr3, $r5, 0
+  xvld $xr4, $r5, 0
+mixstorefmultest_loop:
+  xvst $xr1, $r5, 0
+  xvfmul.s $xr2, $xr3, $xr4
+  xvst $xr1, $r5, 0
+  xvfmul.s $xr2, $xr3, $xr4
+  xvst $xr1, $r5, 0
+  xvfmul.s $xr2, $xr3, $xr4
+  xvst $xr1, $r5, 0
+  xvfmul.s $xr2, $xr3, $xr4
+  xvst $xr1, $r5, 0
+  xvfmul.s $xr2, $xr3, $xr4
+  sub.d $r4, $r4, $r14
+  bge $r4, $r0, mixstorefmultest_loop
+  jr $r1 
+
+mixstorevecaddtest:
+  move $r12, $r0
+  addi.d $r12, $r12, 1
+  move $r14, $r0
+  addi.d $r14, $r14, 10 
+  xvld $xr3, $r5, 0
+  xvld $xr4, $r5, 0
+mixstorevecaddtest_loop:
+  xvst $xr1, $r5, 0
+  xvadd.d $xr2, $xr3, $xr4
+  xvst $xr1, $r5, 0
+  xvadd.d $xr2, $xr3, $xr4
+  xvst $xr1, $r5, 0
+  xvadd.d $xr2, $xr3, $xr4
+  xvst $xr1, $r5, 0
+  xvadd.d $xr2, $xr3, $xr4
+  xvst $xr1, $r5, 0
+  xvadd.d $xr2, $xr3, $xr4
+  sub.d $r4, $r4, $r14
+  bge $r4, $r0, mixstorevecaddtest_loop
+  jr $r1
+
+xvxortest:
+  move $r12, $r0
+  addi.d $r12, $r12, 1
+  move $r14, $r0
+  addi.d $r14, $r14, 10 
+  xvld $xr3, $r5, 0
+  xvld $xr4, $r5, 0
+  xvadd.d $xr2, $xr3, $xr5
+xvxortest_loop:
+  xvxor.v $xr1, $xr2, $xr3
+  xvxor.v $xr1, $xr2, $xr3
+  xvxor.v $xr1, $xr2, $xr3
+  xvxor.v $xr1, $xr2, $xr3
+  xvxor.v $xr1, $xr2, $xr3
+  xvxor.v $xr1, $xr2, $xr3
+  xvxor.v $xr1, $xr2, $xr3
+  xvxor.v $xr1, $xr2, $xr3
+  xvxor.v $xr1, $xr2, $xr3
+  xvxor.v $xr1, $xr2, $xr3
+  sub.d $r4, $r4, $r14
+  bge $r4, $r0, xvxortest_loop
+  jr $r1 
+
+xvxorlattest:
+  move $r12, $r0
+  addi.d $r12, $r12, 1
+  move $r14, $r0
+  addi.d $r14, $r14, 10 
+  xvld $xr3, $r5, 0
+  xvld $xr4, $r5, 0
+  xvadd.d $xr2, $xr3, $xr5
+xvxorlattest_loop:
+  xvxor.v $xr2, $xr2, $xr2
+  xvxor.v $xr2, $xr2, $xr2
+  xvxor.v $xr2, $xr2, $xr2
+  xvxor.v $xr2, $xr2, $xr2
+  xvxor.v $xr2, $xr2, $xr2
+  xvxor.v $xr2, $xr2, $xr2
+  xvxor.v $xr2, $xr2, $xr2
+  xvxor.v $xr2, $xr2, $xr2
+  xvxor.v $xr2, $xr2, $xr2
+  xvxor.v $xr2, $xr2, $xr2
+  sub.d $r4, $r4, $r14
+  bge $r4, $r0, xvxorlattest_loop
+  jr $r1  
+
+xvfaddtest:
+  move $r12, $r0
+  addi.d $r12, $r12, 1
+  move $r14, $r0
+  addi.d $r14, $r14, 16 
+  xvld $xr3, $r5, 0
+  xvld $xr4, $r5, 0    
+xvfaddtest_loop:
+  xvfadd.s $xr8, $xr8, $xr3
+  xvfadd.s $xr9, $xr9, $xr3
+  xvfadd.s $xr10, $xr10, $xr3
+  xvfadd.s $xr11, $xr11, $xr3
+  xvfadd.s $xr12, $xr12, $xr3
+  xvfadd.s $xr13, $xr13, $xr3
+  xvfadd.s $xr14, $xr14, $xr3
+  xvfadd.s $xr15, $xr15, $xr3
+  xvfadd.s $xr16, $xr16, $xr3
+  xvfadd.s $xr17, $xr17, $xr3
+  xvfadd.s $xr18, $xr18, $xr3
+  xvfadd.s $xr19, $xr19, $xr3
+  xvfadd.s $xr20, $xr20, $xr3
+  xvfadd.s $xr21, $xr21, $xr3
+  xvfadd.s $xr22, $xr22, $xr3
+  xvfadd.s $xr23, $xr23, $xr3
+  sub.d $r4, $r4, $r14
+  bge $r4, $r0, xvfaddtest_loop
+  jr $r1  
+
+xvfaddlattest:
+  move $r12, $r0
+  addi.d $r12, $r12, 1
+  move $r14, $r0
+  addi.d $r14, $r14, 10 
+  xvld $xr8, $r5, 0    
+xvfaddlattest_loop:
+  xvfadd.s $xr8, $xr8, $xr8
+  xvfadd.s $xr8, $xr8, $xr8
+  xvfadd.s $xr8, $xr8, $xr8
+  xvfadd.s $xr8, $xr8, $xr8
+  xvfadd.s $xr8, $xr8, $xr8
+  xvfadd.s $xr8, $xr8, $xr8
+  xvfadd.s $xr8, $xr8, $xr8
+  xvfadd.s $xr8, $xr8, $xr8
+  xvfadd.s $xr8, $xr8, $xr8
+  xvfadd.s $xr8, $xr8, $xr8
+  sub.d $r4, $r4, $r14
+  bge $r4, $r0, xvfaddlattest_loop
+  jr $r1   
+
+xvfmultest:
+  move $r12, $r0
+  addi.d $r12, $r12, 1
+  move $r14, $r0
+  addi.d $r14, $r14, 16 
+  xvld $xr3, $r5, 0
+  xvld $xr4, $r5, 0    
+xvfmultest_loop:
+  xvfmul.s $xr8, $xr8, $xr3
+  xvfmul.s $xr9, $xr9, $xr3
+  xvfmul.s $xr10, $xr10, $xr3
+  xvfmul.s $xr11, $xr11, $xr3
+  xvfmul.s $xr12, $xr12, $xr3
+  xvfmul.s $xr13, $xr13, $xr3
+  xvfmul.s $xr14, $xr14, $xr3
+  xvfmul.s $xr15, $xr15, $xr3
+  xvfmul.s $xr16, $xr16, $xr3
+  xvfmul.s $xr17, $xr17, $xr3
+  xvfmul.s $xr18, $xr18, $xr3
+  xvfmul.s $xr19, $xr19, $xr3
+  xvfmul.s $xr20, $xr20, $xr3
+  xvfmul.s $xr21, $xr21, $xr3
+  xvfmul.s $xr22, $xr22, $xr3
+  xvfmul.s $xr23, $xr23, $xr3
+  sub.d $r4, $r4, $r14
+  bge $r4, $r0, xvfmultest_loop
+  jr $r1  
+
+xvfmullattest:
+  move $r12, $r0
+  addi.d $r12, $r12, 1
+  move $r14, $r0
+  addi.d $r14, $r14, 10 
+  xvld $xr8, $r5, 0    
+xvfmullattest_loop:
+  xvfmul.s $xr8, $xr8, $xr8
+  xvfmul.s $xr8, $xr8, $xr8
+  xvfmul.s $xr8, $xr8, $xr8
+  xvfmul.s $xr8, $xr8, $xr8
+  xvfmul.s $xr8, $xr8, $xr8
+  xvfmul.s $xr8, $xr8, $xr8
+  xvfmul.s $xr8, $xr8, $xr8
+  xvfmul.s $xr8, $xr8, $xr8
+  xvfmul.s $xr8, $xr8, $xr8
+  xvfmul.s $xr8, $xr8, $xr8
+  sub.d $r4, $r4, $r14
+  bge $r4, $r0, xvfmullattest_loop
+  jr $r1    
+
+vfaddtest:
+  move $r12, $r0
+  addi.d $r12, $r12, 1
+  move $r14, $r0
+  addi.d $r14, $r14, 16 
+  vld $vr3, $r5, 0
+  vld $vr4, $r5, 0    
+vfaddtest_loop:
+  vfadd.s $vr8, $vr8, $vr3
+  vfadd.s $vr9, $vr9, $vr3
+  vfadd.s $vr10, $vr10, $vr3
+  vfadd.s $vr11, $vr11, $vr3
+  vfadd.s $vr12, $vr12, $vr3
+  vfadd.s $vr13, $vr13, $vr3
+  vfadd.s $vr14, $vr14, $vr3
+  vfadd.s $vr15, $vr15, $vr3
+  vfadd.s $vr16, $vr16, $vr3
+  vfadd.s $vr17, $vr17, $vr3
+  vfadd.s $vr18, $vr18, $vr3
+  vfadd.s $vr19, $vr19, $vr3
+  vfadd.s $vr20, $vr20, $vr3
+  vfadd.s $vr21, $vr21, $vr3
+  vfadd.s $vr22, $vr22, $vr3
+  vfadd.s $vr23, $vr23, $vr3
+  sub.d $r4, $r4, $r14
+  bge $r4, $r0, xvfaddtest_loop
+  jr $r1  
+
+vfmultest:
+  move $r12, $r0
+  addi.d $r12, $r12, 1
+  move $r14, $r0
+  addi.d $r14, $r14, 16 
+  xvld $xr3, $r5, 0
+  xvld $xr4, $r5, 0    
+vfmultest_loop:
+  vfmul.s $vr8, $vr8, $vr3
+  vfmul.s $vr9, $vr9, $vr3
+  vfmul.s $vr10, $vr10, $vr3
+  vfmul.s $vr11, $vr11, $vr3
+  vfmul.s $vr12, $vr12, $vr3
+  vfmul.s $vr13, $vr13, $vr3
+  vfmul.s $vr14, $vr14, $vr3
+  vfmul.s $vr15, $vr15, $vr3
+  vfmul.s $vr16, $vr16, $vr3
+  vfmul.s $vr17, $vr17, $vr3
+  vfmul.s $vr18, $vr18, $vr3
+  vfmul.s $vr19, $vr19, $vr3
+  vfmul.s $vr20, $vr20, $vr3
+  vfmul.s $vr21, $vr21, $vr3
+  vfmul.s $vr22, $vr22, $vr3
+  vfmul.s $vr23, $vr23, $vr3
+  sub.d $r4, $r4, $r14
+  bge $r4, $r0, xvfmultest_loop
+  jr $r1
+
+xvslltest:
+  move $r12, $r0
+  addi.d $r12, $r12, 1
+  move $r14, $r0
+  addi.d $r14, $r14, 10 
+  xvld $xr3, $r5, 0
+  xvld $xr4, $r5, 0
+  xvadd.d $xr2, $xr3, $xr5
+xvslltest_loop:
+  xvsll.h $xr1, $xr2, $xr3
+  xvsll.h $xr1, $xr2, $xr3
+  xvsll.h $xr1, $xr2, $xr3
+  xvsll.h $xr1, $xr2, $xr3
+  xvsll.h $xr1, $xr2, $xr3
+  xvsll.h $xr1, $xr2, $xr3
+  xvsll.h $xr1, $xr2, $xr3
+  xvsll.h $xr1, $xr2, $xr3
+  xvsll.h $xr1, $xr2, $xr3
+  xvsll.h $xr1, $xr2, $xr3
+  sub.d $r4, $r4, $r14
+  bge $r4, $r0, xvslltest_loop
+  jr $r1  
+
+xvslllattest:
+  move $r12, $r0
+  addi.d $r12, $r12, 1
+  move $r14, $r0
+  addi.d $r14, $r14, 10 
+  xvld $xr3, $r5, 0
+  xvld $xr4, $r5, 0
+  xvadd.d $xr2, $xr3, $xr5
+xvslllattest_loop:
+  xvsll.h $xr2, $xr2, $xr2
+  xvsll.h $xr2, $xr2, $xr2
+  xvsll.h $xr2, $xr2, $xr2
+  xvsll.h $xr2, $xr2, $xr2
+  xvsll.h $xr2, $xr2, $xr2
+  xvsll.h $xr2, $xr2, $xr2
+  xvsll.h $xr2, $xr2, $xr2
+  xvsll.h $xr2, $xr2, $xr2
+  xvsll.h $xr2, $xr2, $xr2
+  xvsll.h $xr2, $xr2, $xr2
+  sub.d $r4, $r4, $r14
+  bge $r4, $r0, xvslllattest_loop
   jr $r1
