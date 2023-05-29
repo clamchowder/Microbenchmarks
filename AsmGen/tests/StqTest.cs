@@ -19,6 +19,7 @@ namespace AsmGen
             if (isa == IUarchTest.ISA.amd64) return true;
             if (isa == IUarchTest.ISA.aarch64) return true;
             if (isa == IUarchTest.ISA.mips64) return true;
+            if (isa == IUarchTest.ISA.riscv) return true;
             return false;
         }
 
@@ -50,6 +51,15 @@ namespace AsmGen
                 unrolledStores[2] = "  st.d $r17, $r6, 0";
                 unrolledStores[3] = "  st.d $r18, $r6, 0";
                 UarchTestHelpers.GenerateMipsAsmStructureTestFuncs(sb, this.Counts, this.Prefix, unrolledStores, unrolledStores, includePtrChasingLoads: false);
+            }
+            else if (isa == IUarchTest.ISA.riscv)
+            {
+                string[] unrolledStores = new string[4];
+                unrolledStores[0] = "  sd x28, (x12)";
+                unrolledStores[1] = "  sd x29, 8(x12)";
+                unrolledStores[2] = "  sd x30, 16(x12)";
+                unrolledStores[3] = "  sd x31, 24(x12)";
+                UarchTestHelpers.GenerateRiscvAsmStructureTestFuncs(sb, this.Counts, this.Prefix, unrolledStores, unrolledStores, false);
             }
         }
     }

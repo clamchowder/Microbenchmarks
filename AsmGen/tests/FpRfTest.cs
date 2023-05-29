@@ -19,6 +19,7 @@ namespace AsmGen
             if (isa == IUarchTest.ISA.amd64) return true;
             if (isa == IUarchTest.ISA.aarch64) return true;
             if (isa == IUarchTest.ISA.mips64) return true;
+            if (isa == IUarchTest.ISA.riscv) return true;
             return false;
         }
 
@@ -68,6 +69,21 @@ namespace AsmGen
                 unrolledAdds[2] = "  fadd.s $f11, $f11, $f8";
                 unrolledAdds[3] = "  fadd.s $f12, $f12, $f8";
                 UarchTestHelpers.GenerateMipsAsmStructureTestFuncs(sb, this.Counts, this.Prefix, unrolledAdds, unrolledAdds, includePtrChasingLoads: false, initInstrs);
+            }
+            else if (isa == IUarchTest.ISA.riscv)
+            {
+                string initInstrs = "  fld f0, (x12)\n" +
+                    "  fld f1, 8(x12)\n" +
+                    "  fld f2, 16(x12)\n" +
+                    "  fld f3, 24(x12)\n" +
+                    "  fld f4, 32(x12)\n";
+
+                string[] unrolledAdds = new string[4];
+                unrolledAdds[0] = "  fadd.s f0, f0, f4";
+                unrolledAdds[1] = "  fadd.s f1, f1, f4";
+                unrolledAdds[2] = "  fadd.s f2, f2, f4";
+                unrolledAdds[3] = "  fadd.s f3, f3, f4";
+                UarchTestHelpers.GenerateRiscvAsmStructureTestFuncs(sb, this.Counts, this.Prefix, unrolledAdds, unrolledAdds, includePtrChasingLoads: false, initInstrs);
             }
         }
     }

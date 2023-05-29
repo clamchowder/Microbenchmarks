@@ -19,6 +19,7 @@ namespace AsmGen
             if (isa == IUarchTest.ISA.amd64) return true;
             if (isa == IUarchTest.ISA.aarch64) return true;
             if (isa == IUarchTest.ISA.mips64) return true;
+            if (isa == IUarchTest.ISA.riscv) return true;
             return false;
         }
 
@@ -44,12 +45,21 @@ namespace AsmGen
             }
             else if (isa == IUarchTest.ISA.mips64)
             {
-                string[] unrolledAdds = new string[4];
-                unrolledAdds[0] = "  ld.d $r15, $r6, 0";
-                unrolledAdds[1] = "  ld.d $r16, $r6, 0";
-                unrolledAdds[2] = "  ld.d $r17, $r6, 0";
-                unrolledAdds[3] = "  ld.d $r18, $r6, 0";
-                UarchTestHelpers.GenerateMipsAsmStructureTestFuncs(sb, this.Counts, this.Prefix, unrolledAdds, unrolledAdds, includePtrChasingLoads: true);
+                string[] unrolledLoads = new string[4];
+                unrolledLoads[0] = "  ld.d $r15, $r6, 0";
+                unrolledLoads[1] = "  ld.d $r16, $r6, 0";
+                unrolledLoads[2] = "  ld.d $r17, $r6, 0";
+                unrolledLoads[3] = "  ld.d $r18, $r6, 0";
+                UarchTestHelpers.GenerateMipsAsmStructureTestFuncs(sb, this.Counts, this.Prefix, unrolledLoads, unrolledLoads, includePtrChasingLoads: true);
+            }
+            else if (isa == IUarchTest.ISA.riscv)
+            {
+                string[] unrolledLoads = new string[4];
+                unrolledLoads[0] = "  ld x28, (x11)";
+                unrolledLoads[1] = "  ld x29, 8(x11)";
+                unrolledLoads[2] = "  ld x30, 16(x11)";
+                unrolledLoads[3] = "  ld x31, 24(x11)";
+                UarchTestHelpers.GenerateRiscvAsmStructureTestFuncs(sb, this.Counts, this.Prefix, unrolledLoads, unrolledLoads, includePtrChasingLoads: true);
             }
         }
     }

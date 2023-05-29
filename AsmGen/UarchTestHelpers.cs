@@ -1089,5 +1089,89 @@ namespace AsmGen
                 sb.AppendLine(" jr $r1");
             }
         }
+
+        public static void GenerateRiscvAsmStructureTestFuncs(StringBuilder sb,
+            int[] counts,
+            string funcNamePrefix,
+            string[] fillerInstrs1,
+            string[] fillerInstrs2,
+            bool includePtrChasingLoads = false,
+            string initInstrs = null,
+            string postLoadInstrs1 = null,
+            string postLoadInstrs2 = null,
+            bool fence = true)
+        {
+            for (int i = 0; i < counts.Length; i++)
+            {
+                string funcName = funcNamePrefix + counts[i];
+
+                // args in x10 = iterations, x11 = list, x12 = list (sink)
+                // temporaries are x5-x7, x28-x31
+                // x18-27 are to be saved
+                // use x5 and x6 for ptr chasing loads
+                sb.AppendLine("\n" + funcName + ":");
+                sb.AppendLine("  addi sp, sp, -88");
+                sb.AppendLine("  sd x18, 0(sp)");
+                sb.AppendLine("  sd x19, 8(sp)");
+                sb.AppendLine("  sd x20, 16(sp)");
+                sb.AppendLine("  sd x21, 24(sp)");
+                sb.AppendLine("  sd x22, 32(sp)");
+                sb.AppendLine("  sd x23, 40(sp)");
+                sb.AppendLine("  sd x24, 48(sp)");
+                sb.AppendLine("  sd x25, 56(sp)");
+                sb.AppendLine("  sd x26, 64(sp)");
+                sb.AppendLine("  sd x27, 72(sp)");
+
+                sb.AppendLine("  addi x28, x28, 1");
+                sb.AppendLine("  addi x29, x29, 1");
+                sb.AppendLine("  addi x30, x30, 1");
+                sb.AppendLine("  addi x31, x31, 1");
+                sb.AppendLine("  addi x18, x18, 2");
+                sb.AppendLine("  addi x19, x19, 3");
+                sb.AppendLine("  addi x20, x20, 4");
+                sb.AppendLine("  addi x22, x21, 5");
+
+                sb.AppendLine("  ld x5, (x11)");
+                sb.AppendLine("  ld x6, 64(x11)");
+
+                if (initInstrs != null) sb.AppendLine(initInstrs);
+                sb.AppendLine("\n" + funcName + "start:");
+                sb.AppendLine("  ld x5, (x5)");
+                if (postLoadInstrs1 != null) sb.AppendLine(postLoadInstrs1);
+                int fillerInstrCount = includePtrChasingLoads ? counts[i] - 2 : counts[i];
+                for (int instrIdx = 0, addIdx = 0; instrIdx < fillerInstrCount; instrIdx++)
+                {
+                    sb.AppendLine(fillerInstrs1[addIdx]);
+                    addIdx = (addIdx + 1) % fillerInstrs1.Length;
+                }
+                sb.AppendLine("  ld x6, (x6)");
+                if (fence) sb.AppendLine("  fence");
+                else
+                {
+                    if (postLoadInstrs2 != null) sb.AppendLine(postLoadInstrs2);
+                    for (int instrIdx = 0, addIdx = 0; instrIdx < fillerInstrCount; instrIdx++)
+                    {
+                        sb.AppendLine(fillerInstrs2[addIdx]);
+                        addIdx = (addIdx + 1) % fillerInstrs2.Length;
+                    }
+                }
+
+                sb.AppendLine("  addi x10, x10, -1");
+                sb.AppendLine("  bge x10, x0, " + funcName + "start");
+
+                sb.AppendLine("  ld x18, 0(sp)");
+                sb.AppendLine("  ld x19, 8(sp)");
+                sb.AppendLine("  ld x20, 16(sp)");
+                sb.AppendLine("  ld x21, 24(sp)");
+                sb.AppendLine("  ld x22, 32(sp)");
+                sb.AppendLine("  ld x23, 40(sp)");
+                sb.AppendLine("  ld x24, 48(sp)");
+                sb.AppendLine("  ld x25, 56(sp)");
+                sb.AppendLine("  ld x26, 64(sp)");
+                sb.AppendLine("  ld x27, 72(sp)");
+                sb.AppendLine("  addi sp, sp, 88");
+                sb.AppendLine(" ret");
+            }
+        }
     }
 }

@@ -37,7 +37,7 @@ namespace AsmGen
             sb.AppendLine("  if (argc > 1 && strncmp(argv[1], \"" + Prefix + "\", " + Prefix.Length + ") == 0) {");
             sb.AppendLine("    printf(\"" + Description + ":\\n\");");
 
-            if (isa == IUarchTest.ISA.mips64)
+            if (isa == IUarchTest.ISA.mips64 || isa == IUarchTest.ISA.riscv)
             {
                 sb.AppendLine("preplatencyarr(A, list_size);");
             }
@@ -98,6 +98,23 @@ namespace AsmGen
             sb.AppendLine("  alsl.d $r16, $r15, $r0, 0x1"); // muliply 64-bit index by 2 to prevent out of bounds for 32-bit list size count
             sb.AppendLine("  bne $r16, $r5, preplatencyarr_loop"); // while idx != len
             sb.AppendLine("  jr $r1");
+        }
+
+        public static void GenerateRiscvPrepArrayFunction(StringBuilder sb)
+        {
+            sb.AppendLine(".global preplatencyarr");
+            sb.AppendLine("preplatencyarr:");
+            sb.AppendLine("  li x7, 0");
+            sb.AppendLine("  mv x5, x10");
+            sb.AppendLine("preplatencyarr_loop:");
+            sb.AppendLine("  ld x28, (x5)");
+            sb.AppendLine("  slli x28, x28, 2"); // index specified in 32-bit values
+            sb.AppendLine("  add x28, x28, x10");
+            sb.AppendLine("  sd x28, (x5)");
+            sb.AppendLine("  addi x5, x5, 8"); // next element
+            sb.AppendLine("  addi x7, x7, 2"); // list size is given in 32-bit elements
+            sb.AppendLine("  blt x7, x11, preplatencyarr_loop");
+            sb.AppendLine("  ret");
         }
     }
 }

@@ -14,6 +14,7 @@ namespace AsmGen
             if (isa == IUarchTest.ISA.amd64) return true;
             if (isa == IUarchTest.ISA.aarch64) return true;
             if (isa == IUarchTest.ISA.mips64) return true;
+            if (isa == IUarchTest.ISA.riscv) return true;
             return false;
         }
 
@@ -72,6 +73,10 @@ namespace AsmGen
             else if (isa == IUarchTest.ISA.mips64)
             {
                 GenerateMipsAsm(sb);
+            }
+            else if (isa == IUarchTest.ISA.riscv)
+            {
+                GenerateRiscvAsm(sb);
             }
         }
 
@@ -232,7 +237,6 @@ namespace AsmGen
             {
                 string funcName = GetBranchFuncName(Counts[i]);
                 string funcTargetName = GetBranchFuncName(Counts[i]) + "_itarget";
-                string funcEndTarget = GetBranchFuncName(Counts[i]) + 
 
                 sb.AppendLine(funcName + ":");
                 sb.AppendLine("  addi.d $r12, $r12, 1");
@@ -263,6 +267,59 @@ namespace AsmGen
                 }
 
                 sb.AppendLine("  jr $r1");
+            }
+        }
+
+        private string GetRiscvNopAlign()
+        {
+            // branch takes 16 bits (2 bytes)
+            int paddingNeeded = spacing - 2;
+
+            // each NOP is 2 bytes
+            StringBuilder nopSb = new StringBuilder();
+            for (int i = 0; i < paddingNeeded; i += 2)
+            {
+                nopSb.AppendLine("  nop");
+            }
+
+            return nopSb.ToString();
+        }
+
+        public void GenerateRiscvAsm(StringBuilder sb)
+        {
+            string paddingAlign = GetRiscvNopAlign();
+            for (int i = 0; i < Counts.Length; i++)
+            {
+                string funcName = GetBranchFuncName(Counts[i]);
+                string funcTargetName = GetBranchFuncName(Counts[i]) + "_itarget";
+
+                sb.AppendLine(funcName + ":");
+                sb.AppendLine("  la x5, " + funcTargetName);
+                sb.AppendLine(funcTargetName + ":");
+                for (int branchIdx = 1; branchIdx < Counts[i]; branchIdx++)
+                {
+                    string labelName = GetLabelName(funcName, branchIdx);
+                    sb.AppendLine("  j " + labelName);
+                    sb.AppendLine(paddingAlign);
+                    sb.AppendLine(labelName + ":");
+                }
+
+                sb.AppendLine("  addi x10, x10, -1"); // decrement iteration count
+
+                int distance = spacing * Counts[i];
+                if (distance < 1024)
+                {
+                    sb.AppendLine("  bne x10, x0, " + funcTargetName); // short branch if we're not too far away
+                }
+                else
+                {
+                    string workaroundTarget = funcName + "_riscv_indirect_workaround";
+                    sb.AppendLine("  beq x10, x0, " + workaroundTarget); // jump over indirect branch if iteration count is reached
+                    sb.AppendLine("  jalr x0, x5"); // jump back to target (start of loop)
+                    sb.AppendLine(workaroundTarget + ":");
+                }
+
+                sb.AppendLine("  ret");
             }
         }
     }

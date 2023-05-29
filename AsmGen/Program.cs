@@ -17,13 +17,13 @@ namespace AsmGen
         static void Main(string[] args)
         {
             List<IUarchTest> tests = new List<IUarchTest>();
-            tests.Add(new RobTest(4, 160, 1));
-            tests.Add(new IntRfTest(4, 160, 1));
+            tests.Add(new RobTest(128, 2048, 1));
+            tests.Add(new IntRfTest(128, 512, 1));
             tests.Add(new FpRfTest(4, 160, 1));
             tests.Add(new Fadd256RfTest(4, 160, 1));
             tests.Add(new MixFAdd256and32RfTest(4, 160, 1));
-            tests.Add(new LdqTest(4, 128, 1));
-            tests.Add(new StqTest(4, 128, 1));
+            tests.Add(new LdqTest(4, 512, 1));
+            tests.Add(new StqTest(4, 512, 1));
             tests.Add(new AddSchedTest(4, 64, 1));
             tests.Add(new LoadSchedTest(4, 64, 1));
             tests.Add(new FaddSchedTest(4, 64, 1));
@@ -33,6 +33,10 @@ namespace AsmGen
             tests.Add(new BtbTest(8, BtbTest.BranchType.Unconditional));
             tests.Add(new BtbTest(16, BtbTest.BranchType.Unconditional));
             tests.Add(new BtbTest(32, BtbTest.BranchType.Unconditional));
+            tests.Add(new BtbTest(4, BtbTest.BranchType.Conditional));
+            tests.Add(new BtbTest(8, BtbTest.BranchType.Conditional));
+            tests.Add(new BtbTest(16, BtbTest.BranchType.Conditional));
+            tests.Add(new BtbTest(32, BtbTest.BranchType.Conditional));
             tests.Add(new ReturnStackTest(1, 128, 1));
             tests.Add(new BranchBufferTest(1, 192, 1));
             tests.Add(new IndirectBranchTest());
@@ -41,10 +45,12 @@ namespace AsmGen
             tasks.Add(Task.Run(() => GenerateCFile(tests, IUarchTest.ISA.amd64)));
             tasks.Add(Task.Run(() => GenerateCFile(tests, IUarchTest.ISA.aarch64)));
             tasks.Add(Task.Run(() => GenerateCFile(tests, IUarchTest.ISA.mips64)));
+            tasks.Add(Task.Run(() => GenerateCFile(tests, IUarchTest.ISA.riscv)));
 
             tasks.Add(Task.Run(() => GenerateAsmFile(tests, IUarchTest.ISA.amd64)));
             tasks.Add(Task.Run(() => GenerateAsmFile(tests, IUarchTest.ISA.aarch64)));
             tasks.Add(Task.Run(() => GenerateAsmFile(tests, IUarchTest.ISA.mips64)));
+            tasks.Add(Task.Run(() => GenerateAsmFile(tests, IUarchTest.ISA.riscv)));
             Task.WaitAll(tasks.ToArray());
 
             GenerateMakefile();
@@ -62,7 +68,9 @@ namespace AsmGen
                 if (test.SupportsIsa(isa)) test.GenerateExternLines(sb);
             }
 
-            if (isa == IUarchTest.ISA.mips64)
+            // no indexed addressing mode on these architectures, so make sure we can do pointer
+            // chasing with a single instruction
+            if (isa == IUarchTest.ISA.mips64 || isa == IUarchTest.ISA.riscv)
             {
                 sb.AppendLine("extern void preplatencyarr(int *arr, uint32_t list_size);");
             }
@@ -86,6 +94,10 @@ namespace AsmGen
             if (isa == IUarchTest.ISA.mips64)
             {
                 UarchTest.GenerateMipsPrepArrayFunction(sb);
+            }
+            else if (isa == IUarchTest.ISA.riscv)
+            {
+                UarchTest.GenerateRiscvPrepArrayFunction(sb);
             }
 
             foreach (IUarchTest test in tests)

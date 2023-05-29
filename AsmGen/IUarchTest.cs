@@ -19,7 +19,8 @@ namespace AsmGen
         {
             amd64,   // 64-bit x86
             aarch64, // 64-bit arm
-            mips64   // 64-bit MIPS, for loongson
+            mips64,   // 64-bit MIPS, for loongson
+            riscv,   // 64-bit risc-v
         }
     }
 }
