@@ -19,6 +19,7 @@ namespace AsmGen
             if (isa == IUarchTest.ISA.amd64) return true;
             if (isa == IUarchTest.ISA.aarch64) return true;
             if (isa == IUarchTest.ISA.mips64) return true;
+            if (isa == IUarchTest.ISA.riscv) return true;
             return false;
         }
 
@@ -66,6 +67,19 @@ namespace AsmGen
                 string postLoadInstrs2 = "  andi $r19, $r13, 0xF\n  add.d $r19, $r19, $r6";
                 UarchTestHelpers.GenerateMipsAsmStructureTestFuncs(
                     sb, this.Counts, this.Prefix, dependentLoads, dependentLoads, includePtrChasingLoads: true, null, 
+                    postLoadInstrs1: postLoadInstrs1, postLoadInstrs2: postLoadInstrs2);
+            }
+            else if (isa == IUarchTest.ISA.riscv)
+            {
+                // x5 and x6 are pointer chasing loads
+                string postLoadInstrs1 = "  andi x7, x5, 0xF\n  add x7, x7, x12";
+                string postLoadInstrs2 = "  andi x7, x6, 0xF\n  add x7, x7, x12";
+                string[] dependentLoads = new string[4];
+                dependentLoads[0] = "  ld x28, (x7)";
+                dependentLoads[1] = "  ld x29, 8(x7)";
+                dependentLoads[2] = "  ld x30, 16(x7)";
+                dependentLoads[3] = "  ld x31, 24(x7)";
+                UarchTestHelpers.GenerateRiscvAsmStructureTestFuncs(sb, this.Counts, this.Prefix, dependentLoads, dependentLoads, includePtrChasingLoads: true,
                     postLoadInstrs1: postLoadInstrs1, postLoadInstrs2: postLoadInstrs2);
             }
         }

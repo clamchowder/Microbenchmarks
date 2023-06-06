@@ -10,6 +10,7 @@ namespace AsmGen
             if (isa == IUarchTest.ISA.amd64) return true;
             if (isa == IUarchTest.ISA.aarch64) return true;
             if (isa == IUarchTest.ISA.mips64) return true;
+            if (isa == IUarchTest.ISA.riscv) return true;
             return false;
         }
 
@@ -41,6 +42,10 @@ namespace AsmGen
             else if (isa == IUarchTest.ISA.mips64)
             {
                 GenerateMipsAsm(sb);
+            }
+            else if (isa == IUarchTest.ISA.riscv)
+            {
+                GenerateRiscvAsm(sb);
             }
         }
 
@@ -156,6 +161,41 @@ namespace AsmGen
                     }
 
                     sb.AppendLine("  jr $r1");
+                }
+            }
+        }
+
+        public void GenerateRiscvAsm(StringBuilder sb)
+        {
+            for (int countIdx = 0; countIdx < this.Counts.Length; countIdx++)
+            {
+                int callDepth = this.Counts[countIdx];
+                string topLevelFunctionLabel = this.Prefix + callDepth;
+                sb.AppendLine($"{topLevelFunctionLabel}:");
+                // top level function runs for specified number of iterations
+                // iteration count in x10
+                sb.AppendLine($"{topLevelFunctionLabel}_loop:");
+                sb.AppendLine($"  jal " + GetFunctionName(callDepth, 0));
+                sb.AppendLine("  addi x10, x10, -1");
+                sb.AppendLine($"  bge x10, x0, {topLevelFunctionLabel}_loop");
+                sb.AppendLine("  ret");
+
+                // generate the dummy functions
+                for (int callIdx = 0; callIdx < callDepth; callIdx++)
+                {
+                    string funcName = GetFunctionName(callDepth, callIdx);
+                    sb.AppendLine($".global {funcName}");
+                    sb.AppendLine($"{funcName}:");
+                    if (callIdx < callDepth - 1)
+                    {
+                        sb.AppendLine("  addi sp, sp, 8");
+                        sb.AppendLine("  sd ra, (sp)"); // save return address
+                        sb.AppendLine("  jal " + GetFunctionName(callDepth, callIdx + 1));
+                        sb.AppendLine("  ld ra, (sp)"); // load return address
+                        sb.AppendLine("  addi sp, sp, -8");
+                    }
+
+                    sb.AppendLine("  ret");
                 }
             }
         }
