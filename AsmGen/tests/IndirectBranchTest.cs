@@ -389,8 +389,6 @@ namespace AsmGen
             sb.AppendLine("}");
         }
 
-        // ideally we would extend UarchTest, but since C# doesn't support method overriding, copy/paste all the stuff from
-        // UarchTest here
         public string Prefix { get; set; }
         public string Description { get; set; }
         public int[] Counts;

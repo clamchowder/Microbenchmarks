@@ -17,8 +17,8 @@ namespace AsmGen
         static void Main(string[] args)
         {
             List<IUarchTest> tests = new List<IUarchTest>();
-            tests.Add(new RobTest(128, 2048, 1));
-            tests.Add(new IntRfTest(128, 512, 1));
+            tests.Add(new RobTest(4, 128, 1));
+            tests.Add(new IntRfTest(4, 128, 1));
             tests.Add(new FpRfTest(4, 160, 1));
             tests.Add(new Fadd256RfTest(4, 160, 1));
             tests.Add(new MixFAdd256and32RfTest(4, 160, 1));
