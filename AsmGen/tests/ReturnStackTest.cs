@@ -174,10 +174,14 @@ namespace AsmGen
                 sb.AppendLine($"{topLevelFunctionLabel}:");
                 // top level function runs for specified number of iterations
                 // iteration count in x10
+                sb.AppendLine("  addi sp, sp, -16");
+                sb.AppendLine("  sd ra, (sp)");
                 sb.AppendLine($"{topLevelFunctionLabel}_loop:");
                 sb.AppendLine($"  jal " + GetFunctionName(callDepth, 0));
                 sb.AppendLine("  addi x10, x10, -1");
                 sb.AppendLine($"  bge x10, x0, {topLevelFunctionLabel}_loop");
+                sb.AppendLine("  ld ra, (sp)");
+                sb.AppendLine("  addi sp, sp, 16");
                 sb.AppendLine("  ret");
 
                 // generate the dummy functions
@@ -188,11 +192,11 @@ namespace AsmGen
                     sb.AppendLine($"{funcName}:");
                     if (callIdx < callDepth - 1)
                     {
-                        sb.AppendLine("  addi sp, sp, 8");
+                        sb.AppendLine("  addi sp, sp, -16"); // keep stack pointer 16B aligned even though we only save a 8B reg
                         sb.AppendLine("  sd ra, (sp)"); // save return address
                         sb.AppendLine("  jal " + GetFunctionName(callDepth, callIdx + 1));
                         sb.AppendLine("  ld ra, (sp)"); // load return address
-                        sb.AppendLine("  addi sp, sp, -8");
+                        sb.AppendLine("  addi sp, sp, 16");
                     }
 
                     sb.AppendLine("  ret");
