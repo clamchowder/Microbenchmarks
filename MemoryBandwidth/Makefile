@@ -7,4 +7,4 @@ aarch64:
 win64:
 	x86_64-w64-mingw32-gcc-win32 -pthread -O3 MemoryBandwidth.c MemoryBandwidth_x86.s -o membw.exe -lm
 riscv:
-	gcc -pthread -O3 -march=rv64gcv0p7 MemoryBandwidth.c MemoryBandwidth_riscv.s -o test -lm
+	~/riscv/bin/riscv64-unknown-linux-gnu-gcc -pthread -O3 -march=rv64gcv0p7 MemoryBandwidth.c MemoryBandwidth_riscv.s -o membw_riscv -lm
