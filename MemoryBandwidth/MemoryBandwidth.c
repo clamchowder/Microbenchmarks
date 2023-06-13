@@ -24,6 +24,9 @@
 #include <numa.h>
 #endif
 
+#define HUGEPAGE_HACK 1
+#undef HUGEPAGE_HACK
+
 #pragma GCC diagnostic ignored "-Wattributes"
 
 int default_test_sizes[39] = { 2, 4, 8, 12, 16, 24, 32, 48, 64, 96, 128, 192, 256, 512, 600, 768, 1024, 1536, 2048,
@@ -89,6 +92,7 @@ void FillInstructionArray(uint64_t *nops, uint64_t sizeKb, int nopSize, int bran
 void TestBankConflicts(int type);
 uint64_t GetIterationCount(uint64_t testSize, uint64_t threads);
 void *ReadBandwidthTestThread(void *param);
+void *allocate_memory(size_t bytes, unsigned int threadOffset);
 uint64_t gbToTransfer = 512;
 int branchInterval = 0; 
 
@@ -496,14 +500,14 @@ void FillInstructionArray(uint64_t *nops, uint64_t sizeKb, int nopSize, int bran
 #endif
 
 #ifdef __riscv
-    // nop, addi, li
-    char nop4b[8] = { 0x13, 0x00, 0x00, 0x00, 0x85, 0x03, 0x81, 0x43 };
+    // nop, fmv.s fa0, fa5
+    char nop4b[8] = { 0x13, 0x00, 0x00, 0x00, 0x53, 0x85, 0xf7, 0x20 };
 
     // hack this to deal with graviton 1 / A72
     // nop + mov x0, 0
-    char nop8b[9] = { 0x1F, 0x20, 0x03, 0xD5, 0x00, 0x00, 0x80, 0xD2 }; 
+    char nop8b[8] = { 0x13, 0x00, 0x00, 0x00, 0x53, 0x85, 0xf7, 0x20  }; 
     // mov x0, 0 + ldr x0, [sp] 
-    char nop8b1[9] = { 0x00, 0x00, 0x80, 0xD2, 0xe0, 0x03, 0x40, 0xf9 };  
+    char nop8b1[8] = { 0x13, 0x00, 0x00, 0x00, 0xe0, 0x03, 0x40, 0xf9 };  
 #endif 
     
     uint64_t *nop8bptr;
@@ -547,12 +551,15 @@ void FillInstructionArray(uint64_t *nops, uint64_t sizeKb, int nopSize, int bran
     functionEnd[0] = 0x8082;
     #endif 
 
+#ifndef HUGEPAGE_HACK
     size_t funcLen = sizeKb * 1024;
     uint64_t nopfuncPage = (~0xFFF) & (uint64_t)(nops);
     size_t mprotectLen = (0xFFF & (uint64_t)(nops)) + funcLen;
+    
     if (mprotect((void *)nopfuncPage, mprotectLen, PROT_EXEC | PROT_READ | PROT_WRITE) < 0) {
         fprintf(stderr, "mprotect failed, errno %d\n", errno);
     }
+#endif
 }
 
 // If coreNode and memNode are set, use the specified numa config
@@ -579,7 +586,8 @@ float MeasureBw(uint64_t sizeKb, uint64_t iterations, uint64_t threads, int shar
     float* testArr = NULL;
     if (shared){
         //testArr = (float*)aligned_alloc(64, elements * sizeof(float));
-        if (0 != posix_memalign((void **)(&testArr), 4096, elements * sizeof(float))) {
+        testArr = allocate_memory(elements * sizeof(float), 0);
+        if (testArr == NULL) {
                 fprintf(stderr, "Could not allocate memory\n");
                 return 0;
         }
@@ -677,7 +685,8 @@ float MeasureBw(uint64_t sizeKb, uint64_t iterations, uint64_t threads, int shar
         }
 #endif
             //threadData[i].arr = (float*)aligned_alloc(64, elements * sizeof(float));
-        if (0 != posix_memalign((void **)(&(threadData[i].arr)), 4096, elements * sizeof(float)))
+        threadData[i].arr = allocate_memory(elements * sizeof(float), i);
+        if (threadData[i].arr == NULL)
             {
                 fprintf(stderr, "Could not allocate memory for thread %ld\n", i);
                 return 0;
@@ -713,7 +722,9 @@ float MeasureBw(uint64_t sizeKb, uint64_t iterations, uint64_t threads, int shar
     if (numa) numa_free_cpumask(nodeBitmask);
 #endif
     free(testThreads);
+    #ifndef HUGEPAGE_HACK
     free(testArr); // should be null in not-shared (private) mode
+    #endif
 
     if (!shared) {
         for (uint64_t i = 0; i < threads; i++) {
@@ -721,12 +732,50 @@ float MeasureBw(uint64_t sizeKb, uint64_t iterations, uint64_t threads, int shar
         if (numa) numa_free(threadData[i].arr, elements * sizeof(float));
         else
 #endif
+#ifndef HUGEPAGE_HACK
             free(threadData[i].arr);
+#endif
         }
     }
 
     free(threadData);
     return bw;
+}
+
+// one place to make memory allocation calls
+#define HUGEPAGE_HACK_SIZE (1048576*1024)
+void *hugepageBuffer = NULL;
+void *allocate_memory(size_t bytes, unsigned int threadOffset)
+{
+    void *dst = NULL;
+    #ifndef HUGEPAGE_HACK
+    if (0 != posix_memalign((void **)(&dst), 4096, bytes)) {
+        fprintf(stderr, "Could not allocate memory\n");
+        return NULL;
+    }
+
+    madvise(dst, bytes, MADV_HUGEPAGE);
+    #else
+    // todo: make this less of a hack
+    if (hugepageBuffer == NULL)
+    {
+        hugepageBuffer = mmap(NULL, HUGEPAGE_HACK_SIZE, PROT_READ | PROT_WRITE | PROT_EXEC, MAP_PRIVATE | MAP_ANONYMOUS | MAP_HUGETLB, -1, 0);
+        if (hugepageBuffer == NULL)
+        {
+            fprintf(stderr, "Could not mmap memory with hugetlb\n");
+            return NULL;
+        }
+
+        if (threadOffset * bytes + bytes > HUGEPAGE_HACK_SIZE)
+        {
+            fprintf(stderr, "Oh no\n");
+            return NULL;
+        }
+    }
+
+    // fprintf(stderr, "Array offset for thread %d is %llu KB\n", threadOffset, bytes * threadOffset / 1024);
+    return (void *)((char *)hugepageBuffer + (bytes * threadOffset));
+    #endif
 }
 
 #ifdef __x86_64
