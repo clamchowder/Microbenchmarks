@@ -41,10 +41,28 @@ latencytest_loop:
   mv x10, x5
   ret
 
-/* x0 = iteration count
-   x1 = ptr to arr. first 32-bit int = store offset, second = load offset */
+/* a0 = iteration count
+   a1 = ptr to arr. first 32-bit int = store offset, second = load offset */
 stlftest:
+  lw t0, (a1)
+  lw t1, 4(a1)
+  add t0, t0, a1
+  add t1, t1, a1
+  mv t2, a0
+  mv t3, x0
 stlftest_loop:
+  sd t2, (t0)
+  lw t2, (t1)
+  sd t2, (t0)
+  lw t2, (t1) 
+  sd t2, (t0)
+  lw t2, (t1) 
+  sd t2, (t0)
+  lw t2, (t1) 
+  sd t2, (t0)
+  lw t2, (t1) 
+  addi t3, t3, 5
+  blt t3, a0, stlftest_loop
   ret
 
 stlftest32:
