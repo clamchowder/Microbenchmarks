@@ -24,6 +24,9 @@
 #include <numa.h>
 #endif
 
+#define HUGEPAGE_HACK 1
+#undef HUGEPAGE_HACK
+
 #pragma GCC diagnostic ignored "-Wattributes"
 
 int default_test_sizes[39] = { 2, 4, 8, 12, 16, 24, 32, 48, 64, 96, 128, 192, 256, 512, 600, 768, 1024, 1536, 2048,
@@ -89,6 +92,7 @@ void FillInstructionArray(uint64_t *nops, uint64_t sizeKb, int nopSize, int bran
 void TestBankConflicts(int type);
 uint64_t GetIterationCount(uint64_t testSize, uint64_t threads);
 void *ReadBandwidthTestThread(void *param);
+void *allocate_memory(size_t bytes, unsigned int threadOffset);
 uint64_t gbToTransfer = 512;
 int branchInterval = 0; 
 
@@ -150,7 +154,7 @@ int main(int argc, char *argv[]) {
                 fprintf(stderr, "Will add a branch roughly every %d bytes\n", branchInterval * 8);
             } else if (strncmp(arg, "sizekb", 6) == 0) {
                 argIdx++;
-		singleSize = atoi(argv[argIdx]);
+        singleSize = atoi(argv[argIdx]);
                 fprintf(stderr, "Testing %d KB\n", singleSize);
             } else if (strncmp(arg, "data", 4) == 0) {
                 argIdx++;
@@ -164,20 +168,20 @@ int main(int argc, char *argv[]) {
             }
 #ifdef NUMA
             else if (strncmp(arg, "numa", 4) == 0) {
-	        argIdx++;
-	        fprintf(stderr, "Attempting to be NUMA aware\n");
-	        if (strncmp(argv[argIdx], "crossnode", 4) == 0) {
-	            fprintf(stderr, "Testing node to node bandwidth, 1 GB test size\n");
-	    	    numa = NUMA_CROSSNODE;
-	            singleSize = 1048576;
-	        } else if (strncmp(argv[argIdx], "seq", 3) == 0) {
-		    fprintf(stderr, "Filling NUMA nodes one by one\n");
-		    numa = NUMA_SEQ;
-		} else if (strncmp(argv[argIdx], "stripe", 6) == 0) {
-		    fprintf(stderr, "Striping threads across NUMA nodes\n");
-		    numa = NUMA_STRIPE;
-		}
-	    }
+            argIdx++;
+            fprintf(stderr, "Attempting to be NUMA aware\n");
+            if (strncmp(argv[argIdx], "crossnode", 4) == 0) {
+                fprintf(stderr, "Testing node to node bandwidth, 1 GB test size\n");
+                numa = NUMA_CROSSNODE;
+                singleSize = 1048576;
+            } else if (strncmp(argv[argIdx], "seq", 3) == 0) {
+            fprintf(stderr, "Filling NUMA nodes one by one\n");
+            numa = NUMA_SEQ;
+        } else if (strncmp(argv[argIdx], "stripe", 6) == 0) {
+            fprintf(stderr, "Striping threads across NUMA nodes\n");
+            numa = NUMA_STRIPE;
+        }
+        }
 #endif
             else if (strncmp(arg, "method", 6) == 0) {
                 methodSet = 1;
@@ -222,17 +226,17 @@ int main(int argc, char *argv[]) {
 
                 else if (strncmp(argv[argIdx], "instr8", 6) == 0) {
                     nopBytes = 8;
-		    bw_func = instr_read;
+            bw_func = instr_read;
                     fprintf(stderr, "Testing instruction fetch bandwidth with 8 byte instructions.\n");
                 } else if (strncmp(argv[argIdx], "instr4", 6) == 0) {
                     nopBytes = 4;
-		    bw_func = instr_read;
+            bw_func = instr_read;
                     fprintf(stderr, "Testing instruction fetch bandwidth with 4 byte instructions.\n");
                 } else if (strncmp(argv[argIdx], "instr2", 6) == 0) {
-		    nopBytes = 2;
-		    bw_func = instr_read;
-		    fprintf(stderr, "Testing instruction fetch bandwith with 2 byte instructions.\n");
-		}
+            nopBytes = 2;
+            bw_func = instr_read;
+            fprintf(stderr, "Testing instruction fetch bandwith with 2 byte instructions.\n");
+        }
                 #ifdef __x86_64
                 else if (strncmp(argv[argIdx], "avx512", 6) == 0) {
                     bw_func = avx512_read;
@@ -277,7 +281,7 @@ int main(int argc, char *argv[]) {
                     testBankConflict128 = 1;
                 }
                 #endif
-		
+        
             }
         } else {
             fprintf(stderr, "Expected - parameter\n");
@@ -348,48 +352,48 @@ int main(int argc, char *argv[]) {
 #ifdef NUMA
     else if (numa == NUMA_CROSSNODE) {
         if (numa_available() == -1) {
-	    fprintf(stderr, "NUMA is not available\n");
-	    return 0;
-	}
+        fprintf(stderr, "NUMA is not available\n");
+        return 0;
+    }
 
         struct bitmask *nodeBitmask = numa_allocate_cpumask();
-	int numaNodeCount = numa_max_node() + 1;
-	fprintf(stderr, "System has %d NUMA nodes\n", numaNodeCount);
+    int numaNodeCount = numa_max_node() + 1;
+    fprintf(stderr, "System has %d NUMA nodes\n", numaNodeCount);
         float *crossnodeBandwidths = (float *)malloc(sizeof(float) * numaNodeCount * numaNodeCount);
-	memset(crossnodeBandwidths, 0, sizeof(float) * numaNodeCount * numaNodeCount);
+    memset(crossnodeBandwidths, 0, sizeof(float) * numaNodeCount * numaNodeCount);
         for (int cpuNode = 0; cpuNode < numaNodeCount; cpuNode++) {
             numa_node_to_cpus(cpuNode, nodeBitmask);
-	    int nodeCpuCount = numa_bitmask_weight(nodeBitmask);
-	    if (nodeCpuCount == 0) {
-	        fprintf(stderr, "Node %d has no cores\n", cpuNode);
-	        continue;
-	    }
+        int nodeCpuCount = numa_bitmask_weight(nodeBitmask);
+        if (nodeCpuCount == 0) {
+            fprintf(stderr, "Node %d has no cores\n", cpuNode);
+            continue;
+        }
 
-	    fprintf(stderr, "Node %d has %d cores\n", cpuNode, nodeCpuCount);
+        fprintf(stderr, "Node %d has %d cores\n", cpuNode, nodeCpuCount);
             for (int memNode = 0; memNode < numaNodeCount; memNode++) {
-	        fprintf(stderr, "Testing CPU node %d to mem node %d\n", cpuNode, memNode);
+            fprintf(stderr, "Testing CPU node %d to mem node %d\n", cpuNode, memNode);
                 crossnodeBandwidths[cpuNode * numaNodeCount + memNode] = 
-	            MeasureBw(singleSize, GetIterationCount(singleSize, nodeCpuCount), nodeCpuCount, shared, nopBytes, cpuNode, memNode);
-	        fprintf(stderr, "CPU node %d <- mem node %d: %f\n", cpuNode, memNode, crossnodeBandwidths[cpuNode * numaNodeCount + memNode]);
+                MeasureBw(singleSize, GetIterationCount(singleSize, nodeCpuCount), nodeCpuCount, shared, nopBytes, cpuNode, memNode);
+            fprintf(stderr, "CPU node %d <- mem node %d: %f\n", cpuNode, memNode, crossnodeBandwidths[cpuNode * numaNodeCount + memNode]);
             }
         }
 
         for (int memNode = 0; memNode < numaNodeCount; memNode++) {
-	    printf(",%d", memNode);
-	}
+        printf(",%d", memNode);
+    }
 
-	printf("\n");
-	for (int cpuNode = 0; cpuNode < numaNodeCount; cpuNode++) {
-	    printf("%d", cpuNode);
-	    for (int memNode = 0; memNode < numaNodeCount; memNode++) {
-	        printf(",%f", crossnodeBandwidths[cpuNode * numaNodeCount + memNode]);
-	    }
+    printf("\n");
+    for (int cpuNode = 0; cpuNode < numaNodeCount; cpuNode++) {
+        printf("%d", cpuNode);
+        for (int memNode = 0; memNode < numaNodeCount; memNode++) {
+            printf(",%f", crossnodeBandwidths[cpuNode * numaNodeCount + memNode]);
+        }
 
-	    printf("\n");
-	}
+        printf("\n");
+    }
 
         numa_free_cpumask(nodeBitmask);
-	free(crossnodeBandwidths);
+    free(crossnodeBandwidths);
     }
 #endif
     else {
@@ -496,14 +500,14 @@ void FillInstructionArray(uint64_t *nops, uint64_t sizeKb, int nopSize, int bran
 #endif
 
 #ifdef __riscv
-    // nop, addi, li
-    char nop4b[8] = { 0x13, 0x00, 0x00, 0x00, 0x85, 0x03, 0x81, 0x43 };
+    // nop, fmv.s fa0, fa5
+    char nop4b[8] = { 0x13, 0x00, 0x00, 0x00, 0x53, 0x85, 0xf7, 0x20 };
 
     // hack this to deal with graviton 1 / A72
     // nop + mov x0, 0
-    char nop8b[9] = { 0x1F, 0x20, 0x03, 0xD5, 0x00, 0x00, 0x80, 0xD2 }; 
+    char nop8b[8] = { 0x13, 0x00, 0x00, 0x00, 0x53, 0x85, 0xf7, 0x20  }; 
     // mov x0, 0 + ldr x0, [sp] 
-    char nop8b1[9] = { 0x00, 0x00, 0x80, 0xD2, 0xe0, 0x03, 0x40, 0xf9 };  
+    char nop8b1[8] = { 0x13, 0x00, 0x00, 0x00, 0xe0, 0x03, 0x40, 0xf9 };  
 #endif 
     
     uint64_t *nop8bptr;
@@ -520,14 +524,14 @@ void FillInstructionArray(uint64_t *nops, uint64_t sizeKb, int nopSize, int bran
     for (uint64_t nopIdx = 0; nopIdx < elements; nopIdx++) {
         nops[nopIdx] = *nop8bptr;
 #ifdef __x86_64
-	uint64_t *nopBranchPtr = (uint64_t *)nop4b_with_branch;
-	if (branchInterval > 1 && nopIdx % branchInterval == 0) nops[nopIdx] = *nopBranchPtr;
+    uint64_t *nopBranchPtr = (uint64_t *)nop4b_with_branch;
+    if (branchInterval > 1 && nopIdx % branchInterval == 0) nops[nopIdx] = *nopBranchPtr;
 #endif
 #ifdef __aarch64__
-	if (nopSize == 8) {
+    if (nopSize == 8) {
           uint64_t *otherNops = (uint64_t *)nop8b1;
           if (nopIdx & 1) nops[nopIdx] = *otherNops;
-	}
+    }
 #endif
     }
 
@@ -547,12 +551,15 @@ void FillInstructionArray(uint64_t *nops, uint64_t sizeKb, int nopSize, int bran
     functionEnd[0] = 0x8082;
     #endif 
 
+#ifndef HUGEPAGE_HACK
     size_t funcLen = sizeKb * 1024;
     uint64_t nopfuncPage = (~0xFFF) & (uint64_t)(nops);
     size_t mprotectLen = (0xFFF & (uint64_t)(nops)) + funcLen;
+    
     if (mprotect((void *)nopfuncPage, mprotectLen, PROT_EXEC | PROT_READ | PROT_WRITE) < 0) {
         fprintf(stderr, "mprotect failed, errno %d\n", errno);
     }
+#endif
 }
 
 // If coreNode and memNode are set, use the specified numa config
@@ -579,16 +586,17 @@ float MeasureBw(uint64_t sizeKb, uint64_t iterations, uint64_t threads, int shar
     float* testArr = NULL;
     if (shared){
         //testArr = (float*)aligned_alloc(64, elements * sizeof(float));
-	if (0 != posix_memalign((void **)(&testArr), 4096, elements * sizeof(float))) {
-            fprintf(stderr, "Could not allocate memory\n");
-            return 0;
-	}
+        testArr = allocate_memory(elements * sizeof(float), 0);
+        if (testArr == NULL) {
+                fprintf(stderr, "Could not allocate memory\n");
+                return 0;
+        }
 
         if (nopBytes == 0) {
-          for (uint64_t i = 0; i < elements; i++) {
-              testArr[i] = i + 0.5f;
-          }
-	} else FillInstructionArray((uint64_t *)testArr, sizeKb, nopBytes, branchInterval);
+            for (uint64_t i = 0; i < elements; i++) {
+                testArr[i] = i + 0.5f;
+            }
+        } else FillInstructionArray((uint64_t *)testArr, sizeKb, nopBytes, branchInterval);
     }
     else
     {
@@ -604,19 +612,19 @@ float MeasureBw(uint64_t sizeKb, uint64_t iterations, uint64_t threads, int shar
     
     if (numa == NUMA_CROSSNODE) {
         nodeBitmask = numa_allocate_cpumask();
-	int nprocs = get_nprocs();
+    int nprocs = get_nprocs();
         numa_node_to_cpus(coreNode, nodeBitmask); 
-	CPU_ZERO(&cpuset);
+    CPU_ZERO(&cpuset);
 
-	// provided functions for manipultaing bitmask don't work
-	// for (int i = 0; i < nprocs; i++)
-	//   if (numa_bitmask_isbitset(nodeBitmask, i)) CPU_SET(i, &cpuset);
-	// bitmask has fields:
-	// - size = number of bits
-	// - maskp = pointer to bitmap
-	// cpu_set_t has field __bits. have to assume it's CPU_SETSIZE bits
-	// also assume bitmap size is divisible by 8 (byte size)
-	memcpy(cpuset.__bits, nodeBitmask->maskp, nodeBitmask->size / 8);
+    // provided functions for manipultaing bitmask don't work
+    // for (int i = 0; i < nprocs; i++)
+    //   if (numa_bitmask_isbitset(nodeBitmask, i)) CPU_SET(i, &cpuset);
+    // bitmask has fields:
+    // - size = number of bits
+    // - maskp = pointer to bitmap
+    // cpu_set_t has field __bits. have to assume it's CPU_SETSIZE bits
+    // also assume bitmap size is divisible by 8 (byte size)
+    memcpy(cpuset.__bits, nodeBitmask->maskp, nodeBitmask->size / 8);
     }
 #endif
 
@@ -629,21 +637,21 @@ float MeasureBw(uint64_t sizeKb, uint64_t iterations, uint64_t threads, int shar
         else
         {
 #ifdef NUMA
-	    int cpuCount = get_nprocs();
-	    if (numa == NUMA_CROSSNODE) {
-	        threadData[i].arr = numa_alloc_onnode(elements * sizeof(float), memNode);
-		threadData[i].cpuset = cpuset;
-	    } else if (numa) {
-	        // Figure out which nodes actually have CPUs and memory
-	        //int numaNodeCount = numa_max_node() + 1;
-		int numaNodeCount = 4;   // for knl. geez
-	        if (numa == NUMA_SEQ) {
-		    // unimplemented
-		    fprintf(stderr, "sequential numa node fill not implemented yet\n");
-		} else if (numa == NUMA_STRIPE) {
-		    memNode = i % numaNodeCount;
-		    coreNode = memNode;
-		}
+        int cpuCount = get_nprocs();
+        if (numa == NUMA_CROSSNODE) {
+            threadData[i].arr = numa_alloc_onnode(elements * sizeof(float), memNode);
+            threadData[i].cpuset = cpuset;
+        } else if (numa) {
+            // Figure out which nodes actually have CPUs and memory
+            //int numaNodeCount = numa_max_node() + 1;
+        int numaNodeCount = 4;   // for knl. geez
+            if (numa == NUMA_SEQ) {
+            // unimplemented
+            fprintf(stderr, "sequential numa node fill not implemented yet\n");
+        } else if (numa == NUMA_STRIPE) {
+            memNode = i % numaNodeCount;
+            coreNode = memNode;
+        }
 
                 for(int cpuIdx = 0; cpuIdx < get_nprocs(); cpuIdx++) {
                     CPU_ZERO(&(threadData[i].cpuset));
@@ -652,7 +660,7 @@ float MeasureBw(uint64_t sizeKb, uint64_t iterations, uint64_t threads, int shar
                     }
                 }
 
-		threadData[i].arr = numa_alloc_onnode(elements * sizeof(float), memNode);
+        threadData[i].arr = numa_alloc_onnode(elements * sizeof(float), memNode);
 
                 for(int cpuIdx = 0; cpuIdx < get_nprocs(); cpuIdx++) {
                     CPU_ZERO(&(threadData[i].cpuset));
@@ -661,23 +669,24 @@ float MeasureBw(uint64_t sizeKb, uint64_t iterations, uint64_t threads, int shar
                     }
                 }
 
-		// cpu node affinity has to be set for each thread
-		nodeBitmask = numa_allocate_cpumask();
+        // cpu node affinity has to be set for each thread
+        nodeBitmask = numa_allocate_cpumask();
                 numa_node_to_cpus(coreNode, nodeBitmask); 
-	        CPU_ZERO(&(threadData[i].cpuset));
-		//fprintf(stderr, "Node %d has CPUs:", coreNode);
+            CPU_ZERO(&(threadData[i].cpuset));
+        //fprintf(stderr, "Node %d has CPUs:", coreNode);
                 for (int cpuIdx = 0; cpuIdx < cpuCount; cpuIdx++) { 
-	            if (numa_bitmask_isbitset(nodeBitmask, cpuIdx))  {
-		        CPU_SET(cpuIdx, &(threadData[i].cpuset)); 
-			//fprintf(stderr, " %d", cpuIdx);
-		    }
-		}
+                if (numa_bitmask_isbitset(nodeBitmask, cpuIdx))  {
+                CPU_SET(cpuIdx, &(threadData[i].cpuset)); 
+            //fprintf(stderr, " %d", cpuIdx);
+            }
+        }
 
-		//fprintf(stderr, "\n\n");
-	    }
+        //fprintf(stderr, "\n\n");
+        }
 #endif
             //threadData[i].arr = (float*)aligned_alloc(64, elements * sizeof(float));
-	    if (0 != posix_memalign((void **)(&(threadData[i].arr)), 4096, elements * sizeof(float)))
+        threadData[i].arr = allocate_memory(elements * sizeof(float), i);
+        if (threadData[i].arr == NULL)
             {
                 fprintf(stderr, "Could not allocate memory for thread %ld\n", i);
                 return 0;
@@ -686,7 +695,7 @@ float MeasureBw(uint64_t sizeKb, uint64_t iterations, uint64_t threads, int shar
                 for (uint64_t arr_idx = 0; arr_idx < elements; arr_idx++) {
                     threadData[i].arr[arr_idx] = arr_idx + i + 0.5f;
                 }
-	    } else FillInstructionArray((uint64_t *)threadData[i].arr, elements * sizeof(float) / 1024, nopBytes, branchInterval);
+        } else FillInstructionArray((uint64_t *)threadData[i].arr, elements * sizeof(float) / 1024, nopBytes, branchInterval);
 
             threadData[i].iterations = iterations * threads;
         }
@@ -713,20 +722,60 @@ float MeasureBw(uint64_t sizeKb, uint64_t iterations, uint64_t threads, int shar
     if (numa) numa_free_cpumask(nodeBitmask);
 #endif
     free(testThreads);
+    #ifndef HUGEPAGE_HACK
     free(testArr); // should be null in not-shared (private) mode
+    #endif
 
     if (!shared) {
         for (uint64_t i = 0; i < threads; i++) {
 #ifdef NUMA
-	    if (numa) numa_free(threadData[i].arr, elements * sizeof(float));
-	    else
+        if (numa) numa_free(threadData[i].arr, elements * sizeof(float));
+        else
 #endif
+#ifndef HUGEPAGE_HACK
             free(threadData[i].arr);
+#endif
         }
     }
 
     free(threadData);
     return bw;
+}
+
+// one place to make memory allocation calls
+#define HUGEPAGE_HACK_SIZE (1048576*1024)
+void *hugepageBuffer = NULL;
+void *allocate_memory(size_t bytes, unsigned int threadOffset)
+{
+    void *dst = NULL;
+    #ifndef HUGEPAGE_HACK
+    if (0 != posix_memalign((void **)(&dst), 4096, bytes)) {
+        fprintf(stderr, "Could not allocate memory\n");
+        return NULL;
+    }
+
+    madvise(dst, bytes, MADV_HUGEPAGE);
+    #else
+    // todo: make this less of a hack
+    if (hugepageBuffer == NULL)
+    {
+        hugepageBuffer = mmap(NULL, HUGEPAGE_HACK_SIZE, PROT_READ | PROT_WRITE | PROT_EXEC, MAP_PRIVATE | MAP_ANONYMOUS | MAP_HUGETLB, -1, 0);
+        if (hugepageBuffer == NULL)
+        {
+            fprintf(stderr, "Could not mmap memory with hugetlb\n");
+            return NULL;
+        }
+
+        if (threadOffset * bytes + bytes > HUGEPAGE_HACK_SIZE)
+        {
+            fprintf(stderr, "Oh no\n");
+            return NULL;
+        }
+    }
+
+    // fprintf(stderr, "Array offset for thread %d is %llu KB\n", threadOffset, bytes * threadOffset / 1024);
+    return (void *)((char *)hugepageBuffer + (bytes * threadOffset));
+    #endif
 }
 
 #ifdef __x86_64
@@ -763,10 +812,10 @@ void *ReadBandwidthTestThread(void *param) {
 #ifdef NUMA
     if (numa) {
         int affinity_rc = sched_setaffinity(gettid(), sizeof(cpu_set_t), &(bwTestData->cpuset));
-	if (affinity_rc != 0) {
-	    fprintf(stderr, "wtf set affinity failed: %s\n",strerror(errno));
-	    
-	}
+    if (affinity_rc != 0) {
+        fprintf(stderr, "wtf set affinity failed: %s\n",strerror(errno));
+        
+    }
     }
 #endif
     float sum = bw_func(bwTestData->arr, bwTestData->arr_length, bwTestData->iterations, bwTestData->start);
