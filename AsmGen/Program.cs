@@ -29,6 +29,7 @@ namespace AsmGen
             tests.Add(new FaddSchedTest(4, 64, 1));
             tests.Add(new Fadd256SchedTest(4, 64, 1));
             tests.Add(new Fma256SchedTest(4, 64, 1));
+            tests.Add(new Fadd128RfTest(4, 128, 1));
             tests.Add(new BtbTest(4, BtbTest.BranchType.Unconditional));
             tests.Add(new BtbTest(8, BtbTest.BranchType.Unconditional));
             tests.Add(new BtbTest(16, BtbTest.BranchType.Unconditional));
@@ -41,6 +42,7 @@ namespace AsmGen
             tests.Add(new BranchBufferTest(1, 192, 1));
             tests.Add(new IndirectBranchTest());
             tests.Add(new BranchHistoryTest());
+            tests.Add(new NopLoopTest(256, 1));
 
             List<Task> tasks = new List<Task>();
             tasks.Add(Task.Run(() => GenerateCFile(tests, IUarchTest.ISA.amd64)));
@@ -76,7 +78,7 @@ namespace AsmGen
                 sb.AppendLine("extern void preplatencyarr(int *arr, uint32_t list_size);");
             }
 
-            AddCommonInitCode(sb, tests);
+            AddCommonInitCode(sb, tests, isa);
             foreach(IUarchTest test in tests)
             {
                 if (test.SupportsIsa(isa)) test.GenerateTestBlock(sb, isa);
@@ -121,10 +123,13 @@ namespace AsmGen
                 sb.AppendLine($"\tgcc clammicrobench_{isa.ToString()}.c clammicrobench_{isa.ToString()}.s -o cb");
             }
 
+            sb.AppendLine("win64:");
+            sb.AppendLine($"\tx86_64-w64-mingw32-gcc clammicrobench_{IUarchTest.ISA.amd64.ToString()}.c clammicrobench_{IUarchTest.ISA.amd64.ToString()}.s -o cb.exe");
+
             File.WriteAllText("Makefile", sb.ToString());
         }
 
-        static void AddCommonInitCode(StringBuilder sb, List<IUarchTest> tests)
+        static void AddCommonInitCode(StringBuilder sb, List<IUarchTest> tests, IUarchTest.ISA isa)
         {
             sb.AppendLine("int main(int argc, char *argv[]) {");
             sb.AppendLine($"  uint64_t time_diff_ms, iterations = {iterations}, structIterations = {structTestIterations}, tmp;");
@@ -136,7 +141,11 @@ namespace AsmGen
             sb.AppendLine($"  printf(\"Usage: [test name] [latency list size = {latencyListSize}] [struct iterations = {structTestIterations}]\\n\");");
             sb.AppendLine("  if (argc < 2) {");
             sb.AppendLine("    printf(\"List of tests:\\n\");");
-            foreach (IUarchTest test in tests) sb.AppendLine($"    printf(\"  {test.Prefix} - {test.Description}\\n\");");
+            foreach (IUarchTest test in tests)
+            {
+                if (test.SupportsIsa(isa)) sb.AppendLine($"    printf(\"  {test.Prefix} - {test.Description}\\n\");");
+            }
+
             sb.AppendLine("  }");
             sb.AppendLine("  if (argc > 3) { structIterations = atoi(argv[3]); iterations = 100 * structIterations; }");
             sb.AppendLine("  if (argc == 1 || argc > 1 && strncmp(argv[1], \"branchtest\", 9) != 0) {");
