@@ -337,7 +337,7 @@ __kernel void fp32_mad_rate_test(__global float4 *A, int count, __global float4 
         v1 = mad(acc, v1, v1);
         v2 = mad(acc, v2, v2);
         v3 = mad(acc, v3, v3);
-        v4 = mad(acc, v4, v3);
+        v4 = mad(acc, v4, v4);
         v5 = mad(acc, v5, v5);
         v6 = mad(acc, v6, v6);
         v7 = mad(acc, v7, v7);
