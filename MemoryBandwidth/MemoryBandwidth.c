@@ -754,7 +754,8 @@ void *allocate_memory(size_t bytes, unsigned int threadOffset)
         return NULL;
     }
 
-    madvise(dst, bytes, MADV_HUGEPAGE);
+    // madvise(dst, bytes, MADV_HUGEPAGE);
+    return dst;
     #else
     // todo: make this less of a hack
     if (hugepageBuffer == NULL)

@@ -74,6 +74,7 @@ void RunStlfTest(uint32_t iterations, int mode, int pageEnd, int loadDistance);
 float (*testFunc)(uint32_t, uint32_t, uint32_t *) = RunTest;
 
 uint32_t ITERATIONS = 100000000;
+uint32_t pageByPage = 0;
 
 int main(int argc, char* argv[]) {
     uint32_t maxTestSizeMb = 0;
@@ -91,7 +92,7 @@ int main(int argc, char* argv[]) {
                 argIdx++;
                 char *testType = argv[argIdx];
 
-		if (strncmp(testType, "c", 1) == 0) {
+        if (strncmp(testType, "c", 1) == 0) {
                     testFunc = RunTest;
                     fprintf(stderr, "Using simple C test\n");
                 } else if (strncmp(testType, "tlb", 3) == 0) {
@@ -117,21 +118,21 @@ int main(int argc, char* argv[]) {
                     stlfFunc = stlftest128;
                     fprintf(stderr, "Running store to load forwarding test, with 128-bit store, 64-bit load\n");
                 }
-		#ifndef BITS_32
+        #ifndef BITS_32
                 else if (strncmp(testType, "dword_stlf", 9) == 0) {
                     stlf = 2;
                     stlfFunc = stlftest32;
                     fprintf(stderr, "Running store to load forwarding test, with 32-bit stores\n");
                 }
-		#endif
-		#endif  // end UNKNOWN_ARCH
+        #endif
+        #endif  // end UNKNOWN_ARCH
                 else {
                     fprintf(stderr, "Unrecognized test type: %s\n", testType);
                     fprintf(stderr, "Valid test types: c, tlb, mlp");
-		    #ifndef UNKNOWN_ARCH
-		    fprintf(stderr, ", asm, stlf, matched_stlf, dword_stlf");
-		    #endif
-		    fprintf(stderr, "\n");
+            #ifndef UNKNOWN_ARCH
+            fprintf(stderr, ", asm, stlf, matched_stlf, dword_stlf");
+            #endif
+            fprintf(stderr, "\n");
                 }
             } else if (strncmp(arg, "maxsizemb", 9) == 0) {
                 argIdx++;
@@ -152,24 +153,30 @@ int main(int argc, char* argv[]) {
                     stlfLoadDistance = atoi(argv[argIdx]);
                     fprintf(stderr, "Loads will be offset by %d bytes\n", stlfLoadDistance);
             }
-#ifndef __MINGW32__
+            #ifndef __MINGW32__
             else if (strncmp(arg, "hugepages", 9) == 0) {
-	              hugePages = 1;
-	              fprintf(stderr, "If applicable, will use huge pages. Will allocate max memory at start, make sure system has enough memory.\n");
-	    } else if (strncmp(arg, "sizekb", 6) == 0) {
+                  hugePages = 1;
+                  fprintf(stderr, "If applicable, will use huge pages. Will allocate max memory at start, make sure system has enough memory.\n");
+            } 
+            #endif
+            else if (strncmp(arg, "pagebypage", 10) == 0) {
+                pageByPage = 1;
+                fprintf(stderr, "If applicable, will hit all elements in a page before moving to another page to reduce TLB penalties\n");
+            }
+            else if (strncmp(arg, "sizekb", 6) == 0) {
                 argIdx++;
                 singleSize = atoi(argv[argIdx]);
                 fprintf(stderr, "Testing %u KB only\n", singleSize);
             }
-#endif
+
 #ifdef NUMA
             else if (strncmp(arg, "numa", 4) == 0) {
-	        numa = 1;
-		singleSize = 1048576;
-		fprintf(stderr, "Testing node to node latency. If test size is not set, it will be 1 GB\n");
-	    }
+                numa = 1;
+                singleSize = 1048576;
+                fprintf(stderr, "Testing node to node latency. If test size is not set, it will be 1 GB\n");
+            }
 #endif
-	    else {
+        else {
                 fprintf(stderr, "Unrecognized option: %s\n", arg);
             }
         }
@@ -193,7 +200,7 @@ int main(int argc, char* argv[]) {
            fprintf(stderr, "Failed to mmap huge pages, errno %d = %s\nWill try to use madvise\n", errno, strerror(errno));
            if (0 != posix_memalign((void **)(&hugePagesArr), 2 * 1024 * 1024, maxMemRequired)) {
                fprintf(stderr, "Failed to allocate 2 MB aligned memory, will not use hugepages\n");
-	       hugePagesArr = NULL;
+           hugePagesArr = NULL;
                return 0;
            }
 
@@ -233,73 +240,73 @@ int main(int argc, char* argv[]) {
 #ifdef NUMA
     else if (numa) {
         if (numa_available() == -1) {
-	    fprintf(stderr, "NUMA is not available\n");
-	    return 0;
-	}
+        fprintf(stderr, "NUMA is not available\n");
+        return 0;
+    }
 
-	int numaNodeCount = numa_max_node() + 1;
-	if (numaNodeCount > 64) {
-	    fprintf(stderr, "Too many NUMA nodes. Go home.\n");
-	    return 0;
-	}
+    int numaNodeCount = numa_max_node() + 1;
+    if (numaNodeCount > 64) {
+        fprintf(stderr, "Too many NUMA nodes. Go home.\n");
+        return 0;
+    }
 
-	struct bitmask *nodeBitmask = numa_allocate_cpumask();
-	float *crossnodeLatencies = (float *)malloc(sizeof(float) * numaNodeCount * numaNodeCount);
-	memset(crossnodeLatencies, 0, sizeof(float) * numaNodeCount * numaNodeCount);
+    struct bitmask *nodeBitmask = numa_allocate_cpumask();
+    float *crossnodeLatencies = (float *)malloc(sizeof(float) * numaNodeCount * numaNodeCount);
+    memset(crossnodeLatencies, 0, sizeof(float) * numaNodeCount * numaNodeCount);
         for (int cpuNode = 0; cpuNode < numaNodeCount; cpuNode++) {
-	    numa_node_to_cpus(cpuNode, nodeBitmask);
-	    int nodeCpuCount = numa_bitmask_weight(nodeBitmask);
-	    if (nodeCpuCount == 0) {
-	        fprintf(stderr, "Node %d has no cores\n", cpuNode);
-		continue;
-	    }
+        numa_node_to_cpus(cpuNode, nodeBitmask);
+        int nodeCpuCount = numa_bitmask_weight(nodeBitmask);
+        if (nodeCpuCount == 0) {
+            fprintf(stderr, "Node %d has no cores\n", cpuNode);
+        continue;
+        }
 
             fprintf(stderr, "Node %d has %d cores\n", cpuNode, nodeCpuCount);
-	    cpu_set_t cpuset;
-	    memcpy(cpuset.__bits, nodeBitmask->maskp, nodeBitmask->size / 8);
+        cpu_set_t cpuset;
+        memcpy(cpuset.__bits, nodeBitmask->maskp, nodeBitmask->size / 8);
             // for (int i = 0; i < get_nprocs(); i++) 
             //  if (numa_bitmask_isbitset(nodeBitmask, i)) CPU_SET(i, &cpuset); 
 
-	    sched_setaffinity(gettid(), sizeof(cpu_set_t), &cpuset);
+        sched_setaffinity(gettid(), sizeof(cpu_set_t), &cpuset);
 
-	    for (int memNode = 0; memNode < numaNodeCount; memNode++) {
-	        uint64_t nodeMask = 1UL << memNode;
-		uint32_t *arr;
-	        if (hugePagesArr) {
-		    fprintf(stderr, "mbind-ing pre-allocated arr, size %lu bytes\n", hugePagesAllocatedBytes);
-		    long mbind_rc = mbind(hugePagesArr, hugePagesAllocatedBytes, MPOL_BIND, &nodeMask, 64, MPOL_MF_STRICT | MPOL_MF_MOVE);
-		    fprintf(stderr, "mbind returned %ld\n", mbind_rc);
-		    if (mbind_rc != 0) {
-		        fprintf(stderr, "errno: %d\n", errno);
-		    }
-		    arr = hugePagesArr;
-		} else {
+        for (int memNode = 0; memNode < numaNodeCount; memNode++) {
+            uint64_t nodeMask = 1UL << memNode;
+        uint32_t *arr;
+            if (hugePagesArr) {
+            fprintf(stderr, "mbind-ing pre-allocated arr, size %lu bytes\n", hugePagesAllocatedBytes);
+            long mbind_rc = mbind(hugePagesArr, hugePagesAllocatedBytes, MPOL_BIND, &nodeMask, 64, MPOL_MF_STRICT | MPOL_MF_MOVE);
+            fprintf(stderr, "mbind returned %ld\n", mbind_rc);
+            if (mbind_rc != 0) {
+                fprintf(stderr, "errno: %d\n", errno);
+            }
+            arr = hugePagesArr;
+        } else {
                     arr = numa_alloc_onnode(singleSize * 1024, memNode);
                     madvise(arr, singleSize * 1024, MADV_HUGEPAGE);
-		}
-	        
-		float latency = testFunc(singleSize, ITERATIONS, arr);
-		crossnodeLatencies[cpuNode * numaNodeCount + memNode] = latency;
-		fprintf(stderr, "CPU node %d -> mem node %d: %f ns\n", cpuNode, memNode, latency);
-		if (!hugePages) numa_free(arr, singleSize * 1024);
-	    }
-	}
+        }
+            
+        float latency = testFunc(singleSize, ITERATIONS, arr);
+        crossnodeLatencies[cpuNode * numaNodeCount + memNode] = latency;
+        fprintf(stderr, "CPU node %d -> mem node %d: %f ns\n", cpuNode, memNode, latency);
+        if (!hugePages) numa_free(arr, singleSize * 1024);
+        }
+    }
 
-	for (int memNode = 0; memNode < numaNodeCount; memNode++) {
-	    printf(",%d", memNode);
-	}
+    for (int memNode = 0; memNode < numaNodeCount; memNode++) {
+        printf(",%d", memNode);
+    }
 
-	printf("\n");
-	for (int cpuNode = 0; cpuNode < numaNodeCount; cpuNode++) {
-	    printf("%d", cpuNode);
-	    for (int memNode = 0; memNode < numaNodeCount; memNode++) {
-	        printf(",%f", crossnodeLatencies[cpuNode * numaNodeCount + memNode]);
-	    }
+    printf("\n");
+    for (int cpuNode = 0; cpuNode < numaNodeCount; cpuNode++) {
+        printf("%d", cpuNode);
+        for (int memNode = 0; memNode < numaNodeCount; memNode++) {
+            printf(",%f", crossnodeLatencies[cpuNode * numaNodeCount + memNode]);
+        }
 
-	    printf("\n");
-	}
+        printf("\n");
+    }
 
-	free(crossnodeLatencies);
+    free(crossnodeLatencies);
     }
 #endif
     else {
@@ -331,7 +338,82 @@ uint64_t scale_iterations(uint32_t size_kb, uint32_t iterations) {
     return 10 * iterations / pow(size_kb, 1.0 / 4.0);
 }
 
+// Fills an array so that traversal completes within one page before going to another
+// random page. Tries to avoid TLB penalties at the cost of not being completely random
+// list_size = size of pattern arr in 32-bit elements
+void FillPageByPage(uint32_t *pattern_arr, uint32_t list_size, uint32_t byte_increment) {
+    uint32_t pageCount = list_size * sizeof(uint32_t) / PAGE_SIZE;
+    uint32_t page_element_count = PAGE_SIZE / sizeof(uint32_t);
+    if (pageCount <= 2) {
+        FillPatternArr(pattern_arr, list_size, byte_increment);
+        return;
+    }
+
+    // If test size is not divisible by page size, handle the extra page separately
+    short extraPage = 0;
+    if (pageCount * PAGE_SIZE / sizeof(uint32_t) < list_size) extraPage = 1;
+
+    uint32_t *pagePatternArr = malloc(sizeof(uint32_t) * (pageCount + extraPage));
+    FillPatternArr(pagePatternArr, pageCount + extraPage, 4);
+    for (uint32_t page_idx = 0; page_idx < pageCount; page_idx++)
+    {
+        uint32_t *page_base = pattern_arr + (page_element_count * page_idx);
+        FillPatternArr(page_base, page_element_count, byte_increment);
+
+        uint32_t page_last_element_index;
+        for (uint32_t page_element_idx = 0; page_element_idx < (PAGE_SIZE / sizeof(uint32_t)); page_element_idx += (byte_increment / sizeof(uint32_t))) {
+            // element that points to 0 should be directed to the next page
+            if (page_base[page_element_idx] == 0) page_base[page_element_idx] = pagePatternArr[page_idx] * (PAGE_SIZE / sizeof(uint32_t));
+
+            // otherwise make sure the offset is set relative to the start of the uber-array
+            else page_base[page_element_idx] += page_element_count * page_idx;
+        }
+    }
+
+    free(pagePatternArr);
+    return;
+}
+
+// Fills an array so that traversal completes within one page before going to another
+// random page. Tries to avoid TLB penalties at the cost of not being completely random
+// list_size = size of pattern arr in 32-bit elements
+void FillPageByPage64(uint64_t *pattern_arr, uint32_t list_size, uint32_t byte_increment) {
+    uint32_t pageCount = list_size * sizeof(uint64_t) / PAGE_SIZE;
+    uint32_t page_element_count = PAGE_SIZE / sizeof(uint64_t);
+    if (pageCount <= 2) {
+        FillPatternArr64(pattern_arr, list_size, byte_increment);
+        return;
+    }
+
+    // If test size is not divisible by page size, handle the extra page separately
+    short extraPage = 0;
+    if (pageCount * PAGE_SIZE / sizeof(uint64_t) < list_size) extraPage = 1;
+
+    uint32_t *pagePatternArr = malloc(sizeof(uint32_t) * (pageCount + extraPage));
+    FillPatternArr(pagePatternArr, pageCount + extraPage, 4);
+    for (uint32_t page_idx = 0; page_idx < pageCount; page_idx++)
+    {
+        uint64_t *page_base = pattern_arr + (page_element_count * page_idx);
+        FillPatternArr(page_base, page_element_count, byte_increment);
+
+        uint32_t page_last_element_index;
+        for (uint32_t page_element_idx = 0; page_element_idx < (PAGE_SIZE / sizeof(uint64_t)); page_element_idx += (byte_increment / sizeof(uint64_t))) {
+            // element that points to 0 should be directed to the next page
+            if (page_base[page_element_idx] == 0) page_base[page_element_idx] = pagePatternArr[page_idx] * (PAGE_SIZE / sizeof(uint64_t));
+
+            // otherwise make sure the offset is set relative to the start of the uber-array
+            else page_base[page_element_idx] += page_element_count * page_idx;
+        }
+    }
+
+    free(pagePatternArr);
+    return;
+}
+
 // Fills an array using Sattolo's algo
+// pattern_arr = array to fill
+// list_size = size of pattern arr in 32-bit elements
+// byte_increment = one element per this many bytes
 void FillPatternArr(uint32_t *pattern_arr, uint32_t list_size, uint32_t byte_increment) {
     uint32_t increment = byte_increment / sizeof(uint32_t);
     uint32_t element_count = list_size / increment;
@@ -384,7 +466,8 @@ float RunTest(uint32_t size_kb, uint32_t iterations, uint32_t *preallocatedArr) 
         A = preallocatedArr;
     }
 
-    FillPatternArr(A, list_size, CACHELINE_SIZE);
+    if (!pageByPage) FillPatternArr(A, list_size, CACHELINE_SIZE);
+    else FillPageByPage(A, list_size, CACHELINE_SIZE);
 
     uint32_t scaled_iterations = scale_iterations(size_kb, iterations);
 
@@ -470,7 +553,7 @@ float RunAsmTest(uint64_t size_kb, uint32_t iterations, uint32_t *preallocatedAr
         if (!A) {
             fprintf(stderr, "Failed to allocate memory for %lu KB test\n", size_kb);
             return 0;
-	      }
+          }
     } else {
         A = (POINTER_INT *)preallocatedArr;
     }
@@ -478,9 +561,11 @@ float RunAsmTest(uint64_t size_kb, uint32_t iterations, uint32_t *preallocatedAr
     memset(A, 0, POINTER_SIZE * list_size);
 
 #ifdef __i686
-    FillPatternArr(A, list_size, CACHELINE_SIZE);
+    if (!pageByPage) FillPatternArr(A, list_size, CACHELINE_SIZE);
+    else FillPageByPage(A, list_size, CACHELINE_SIZE);
 #else
-    FillPatternArr64(A, list_size, CACHELINE_SIZE);
+    if (!pageByPage) FillPatternArr64(A, list_size, CACHELINE_SIZE);
+    else FillPageByPage64(A, list_size, CACHELINE_SIZE);
 #endif
 
     preplatencyarr(A, list_size);

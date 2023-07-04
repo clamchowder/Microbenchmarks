@@ -1,7 +1,11 @@
 amd64:
-	x86_64-linux-gnu-gcc -O3 MemoryLatency.c MemoryLatency_x86.s -o MemoryLatency -lm -lnuma
+	x86_64-linux-gnu-gcc -O3 MemoryLatency.c MemoryLatency_x86.s -o MemoryLatency -lm
+amd64_numa:
+	x86_64-linux-gnu-gcc -O3 -DNUMA MemoryLatency.c MemoryLatency_x86.s -o MemoryLatency -lm -lnuma
 amd64_debug:
-	gcc -g MemoryLatency.c MemoryLatency_x86.s -o MemoryLatency -lm -lnuma
+	gcc -g MemoryLatency.c MemoryLatency_x86.s -o MemoryLatency -lm 
+amd64_numa_debug:
+	gcc -g -DNUMA MemoryLatency.c MemoryLatency_x86.s -o MemoryLatency -lm -lnuma
 aarch64:
 	aarch64-linux-gnu-gcc -O3 MemoryLatency.c MemoryLatency_arm.s -o MemoryLatency -lm
 win64:
