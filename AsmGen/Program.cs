@@ -42,7 +42,8 @@ namespace AsmGen
             tests.Add(new BranchBufferTest(1, 192, 1));
             tests.Add(new IndirectBranchTest());
             tests.Add(new BranchHistoryTest());
-            tests.Add(new NopLoopTest(256, 1));
+            tests.Add(new NopLoopTest(512, 1));
+            tests.Add(new AddLoopTest(68, 256, 1));
 
             List<Task> tasks = new List<Task>();
             tasks.Add(Task.Run(() => GenerateCFile(tests, IUarchTest.ISA.amd64)));
