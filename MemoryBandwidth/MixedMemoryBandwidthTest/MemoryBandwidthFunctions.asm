@@ -19,7 +19,6 @@ global repmovsb_copy
 global repstosb_write
 
 ; rcx = float ptr to arr, rdx = fp32 elements in arr, r8 = iterations, r9 = start index
-; return something in xmm0
 avx_asm_read:
   push rsi
   push rdi

@@ -17,13 +17,24 @@ double Measure2TBw(uint32_t sizeKb, uint32_t iterations, int shared, enum Instru
 
 int main(int argc, char *argv[])
 {
+    int shared = 0;
+
+    for (int argIdx = 1; argIdx < argc; argIdx++) {
+        if (*(argv[argIdx]) == '-') {
+            char* arg = argv[argIdx] + 1;
+            if (_strnicmp(arg, "shared", 6) == 0) {
+                shared = 1;
+                fprintf(stderr, "Using one array shared across all threads\n");
+            }
+        }
+    }
     auto_set_bw_func();
     double* test_results = (double *)malloc(2 * sizeof(double) * (sizeof(default_test_sizes) / sizeof(int)));
     memset(test_results, 0, 2 * sizeof(double) * (sizeof(default_test_sizes) / sizeof(int)));
     for (int test_size_idx = 0; test_size_idx < sizeof(default_test_sizes) / sizeof(int); test_size_idx++)
     {
         fprintf(stderr, "Testing %d KB\n", default_test_sizes[test_size_idx]);
-        Measure2TBw(default_test_sizes[test_size_idx], GetIterationCount(default_test_sizes[test_size_idx], 2), 0, EightByte, &test_results[test_size_idx * 2], &test_results[test_size_idx * 2 + 1]);
+        Measure2TBw(default_test_sizes[test_size_idx], GetIterationCount(default_test_sizes[test_size_idx], 2), shared, EightByte, &test_results[test_size_idx * 2], &test_results[test_size_idx * 2 + 1]);
     }
 
     printf("Test Size (KB), Instruction Bandwidth (GB/s), Data Bandwidth (GB/s)\n");
@@ -38,7 +49,9 @@ int main(int argc, char *argv[])
 
 DWORD WINAPI ReadBandwidthTestThread(LPVOID param) {
     BandwidthTestThreadData* bwTestData = (BandwidthTestThreadData*)param;
+    uint64_t start_tsc = __rdtsc();
     bwTestData->bw_func(bwTestData->arr, bwTestData->arr_length, bwTestData->iterations);
+    bwTestData->tsc_duration = __rdtsc() - start_tsc;
     return 0;
 }
 
@@ -46,7 +59,7 @@ DWORD WINAPI ReadBandwidthTestThread(LPVOID param) {
 // One thread measures instruction bandwidth, the other measures data bw
 // Auto-adjusts iteration counts to prevent long-tailed behavior where one thread finishes first
 double Measure2TBw(uint32_t sizeKb, uint32_t iterations, int shared, enum InstructionTestType instr, double *final_instr_bw, double *final_data_bw) {
-    struct timeb start, end1, end2;
+    struct timeb start, end;
     float bw = 0;
     uint32_t elements = sizeKb * 1024 / sizeof(float);
     uint32_t private_elements = ceil((double)sizeKb / 2) * 256;
@@ -104,25 +117,21 @@ double Measure2TBw(uint32_t sizeKb, uint32_t iterations, int shared, enum Instru
         ftime(&start);
         ResumeThread(instrThread);
         ResumeThread(dataThread);
-
-        // expect the data thread to get through first
         WaitForSingleObject(dataThread, INFINITE);
-        ftime(&end1);
         WaitForSingleObject(instrThread, INFINITE);
-        ftime(&end2);
+        ftime(&end);
 
-        int64_t data_time_diff_ms = 1000 * (end1.time - start.time) + (end1.millitm - start.millitm);
+        int64_t time_diff_ms = 1000 * (end.time - start.time) + (end.millitm - start.millitm);
         double instrGbTransferred = (uint64_t)instrThreadData.iterations * sizeof(float) * elements / (double)1e9;
-        double dataBw = 1000 * instrGbTransferred / (double)data_time_diff_ms;
-
-        int64_t instr_time_diff_ms = 1000 * (end2.time - start.time) + (end2.millitm - start.millitm);
         double dataGbTransferred = (uint64_t)dataThreadData.iterations * sizeof(float) * elements / (double)1e9;
-        double instrBw = 1000 * dataGbTransferred / (double)instr_time_diff_ms;
+        double dataBw = 1000 * instrGbTransferred / (double)time_diff_ms;
+        double instrBw = 1000 * dataGbTransferred / (double)time_diff_ms;
         bw = dataBw + instrBw;
 
-        float instr_over_data_ratio = (float)instr_time_diff_ms / (float)data_time_diff_ms;
-        fprintf(stderr, "Instr %f GB/s in %llu ms, data %f GB/s in %llu ms, time ratio %f\n", instrBw, instr_time_diff_ms, dataBw, data_time_diff_ms, instr_over_data_ratio);
-        if (instr_over_data_ratio - 1.0f < .1f)
+        double instr_over_data_ratio = (double)instrThreadData.tsc_duration / (double)dataThreadData.tsc_duration;
+        fprintf(stderr, "Instr %f GB/s in %f G ticks, data %f GB/s in %f G ticks, time ratio %f\n", 
+            instrBw, instrThreadData.tsc_duration / 1e9, dataBw, dataThreadData.tsc_duration / 1e9, instr_over_data_ratio);
+        if (fabs(instr_over_data_ratio - 1.0f) < .1f)
         {
             *final_instr_bw = instrBw;
             *final_data_bw = dataBw;
@@ -130,7 +139,7 @@ double Measure2TBw(uint32_t sizeKb, uint32_t iterations, int shared, enum Instru
         }
         else
         {
-            // increase iteration count on data thread until they finish close enough
+            // adjust iteration count on data thread until they finish close enough
             dataThreadData.iterations *= instr_over_data_ratio;
         }
     }

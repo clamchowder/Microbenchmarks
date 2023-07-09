@@ -21,6 +21,7 @@ enum InstructionTestType { None, FourByte, EightByte, K8_FourByte, Branch16 };
 struct BandwidthTestThreadData {
     uint32_t iterations;
     uint32_t arr_length;
+    uint64_t tsc_duration;
     float* arr;
     float (*bw_func)(void*, uint64_t, uint64_t);
 };
