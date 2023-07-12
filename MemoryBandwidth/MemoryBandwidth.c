@@ -242,6 +242,11 @@ int main(int argc, char *argv[]) {
             fprintf(stderr, "Testing instruction fetch bandwith with 2 byte instructions.\n");
         }
                 #ifdef __x86_64
+                else if (strncmp(argv[argIdx], "instrk8_4", 8) == 0) {
+                    nopBytes = 3;
+                    bw_func = instr_read;
+                    fprintf(stderr, "Testing instruction bandwidth using 4B NOP encoding recommended in the Athlon optimization manual\n");
+                }
                 else if (strncmp(argv[argIdx], "avx512", 6) == 0) {
                     bw_func = avx512_read;
                     fprintf(stderr, "Using ASM code, AVX512\n");
@@ -519,6 +524,7 @@ void FillInstructionArray(uint64_t *nops, uint64_t sizeKb, int nopSize, int bran
     else if (nopSize == 4) nop8bptr = (uint64_t *)(nop4b);
     #ifdef __x86_64
     else if (nopSize == 2) nop8bptr = (uint64_t *)(nop2b_xor);
+    else if (nopSize == 3) nop8bptr = (uint64_t *)(k8_nop4b);
     #endif
     else {
         fprintf(stderr, "%d byte instruction length isn't supported :(\n", nopSize);
@@ -762,12 +768,12 @@ void *allocate_memory(size_t bytes, unsigned int threadOffset)
 {
     void *dst = NULL;
     #ifndef HUGEPAGE_HACK
-    if (0 != posix_memalign((void **)(&dst), 4096, bytes)) {
-        fprintf(stderr, "Could not allocate memory\n");
+    int posix_memalign_rc = 0;
+    if (posix_memalign_rc != posix_memalign((void **)(&dst), 64, bytes)) {
+        fprintf(stderr, "Could not allocate memory: %d\n", posix_memalign_rc);
         return NULL;
     }
 
-    // madvise(dst, bytes, MADV_HUGEPAGE);
     return dst;
     #else
     // todo: make this less of a hack
