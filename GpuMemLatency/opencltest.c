@@ -50,10 +50,9 @@ int main(int argc, char* argv[]) {
     float result;
     int platform_index = -1, device_index = -1;
     short amdLatencyWorkaround = false;
-
     enum TestType testType = GlobalMemLatency;
-
     char thread_count_set = 0, local_size_set = 0, chase_iterations_set = 0, skip_set = 0;
+    int sizeKb = 0;
 
     for (int argIdx = 1; argIdx < argc; argIdx++) {
         if (*(argv[argIdx]) == '-') {
@@ -99,6 +98,11 @@ int main(int argc, char* argv[]) {
             else if (_strnicmp(arg, "amdlatencyworkaround", 20) == 0) {
                 amdLatencyWorkaround = true;
                 fprintf(stderr, "Using workaround to hit AMD vector cache (not scalar cache)\n");
+            }
+            else if (_strnicmp(arg, "sizekb", 6) == 0) {
+                argIdx++;
+                sizeKb = atoi(argv[argIdx]);
+                fprintf(stderr, "Only testing %d KB\n", sizeKb);
             }
             else if (_strnicmp(arg, "test", 4) == 0) {
                 argIdx++;
@@ -190,11 +194,6 @@ int main(int argc, char* argv[]) {
 
     fprintf(stderr, "Using %d threads with local size %d\n", thread_count, local_size);
 #pragma region opencl_overhead
-    // Load the kernel source code into the array source_str
-    FILE* fp;
-    char* source_str;
-    size_t source_size;
-
     // Create an OpenCL context
     cl_context context = get_context_from_user(platform_index, device_index);
     if (context == NULL) exit(1);
@@ -205,21 +204,6 @@ int main(int argc, char* argv[]) {
     // Create a command queue
     cl_command_queue command_queue = clCreateCommandQueue(context, selected_device_id, 0, &ret);
     fprintf(stderr, "clCreateCommandQueue returned %d\n", ret);
-
-    // Build program and create all the kernels here, then pass them to individual tests
-    ret = clBuildProgram(program, 1, &selected_device_id, NULL, NULL, NULL);
-    fprintf(stderr, "clBuildProgram returned %d\n", ret);
-
-    if (ret == -11)
-    {
-        size_t log_size;
-        fprintf(stderr, "OpenCL kernel build error\n");
-        clGetProgramBuildInfo(program, selected_device_id, CL_PROGRAM_BUILD_LOG, 0, NULL, &log_size);
-        char* log = (char*)malloc(log_size);
-        clGetProgramBuildInfo(program, selected_device_id, CL_PROGRAM_BUILD_LOG, log_size, log, NULL);
-        fprintf(stderr, "%s\n", log);
-        free(log);
-    }
 
     cl_kernel latency_kernel = clCreateKernel(program, "unrolled_latency_test", &ret);
     cl_kernel latency_kernel_amdworkaround = clCreateKernel(program, "unrolled_latency_test_amdvectorworkaround", &ret);
@@ -334,25 +318,41 @@ int main(int argc, char* argv[]) {
         fprintf(stderr, "Using %u threads, %u local size, %u base iterations\n", thread_count, local_size, chase_iterations);
         printf("\nMemory bandwidth (up to %lu K):\n", max_global_test_size / 1024);
 
-        for (int size_idx = 0; size_idx < sizeof(default_bw_test_sizes) / sizeof(unsigned long long); size_idx++) {
-            uint64_t testSizeKb = default_bw_test_sizes[size_idx] / 1024;
-            if ((max_global_test_size / 1024) < testSizeKb) {
-                printf("%lu K would exceed device's max buffer size of %lu K, stopping here.\n", testSizeKb, max_global_test_size / 1024);
-                break;
-            }
+        if (!sizeKb) {
+            for (int size_idx = 0; size_idx < sizeof(default_bw_test_sizes) / sizeof(unsigned long long); size_idx++) {
+                uint64_t testSizeKb = default_bw_test_sizes[size_idx] / 1024;
+                if ((max_global_test_size / 1024) < testSizeKb) {
+                    printf("%lu K would exceed device's max buffer size of %lu K, stopping here.\n", testSizeKb, max_global_test_size / 1024);
+                    break;
+                }
 
+                result = bw_test(context,
+                    command_queue,
+                    bw_kernel, 256 * testSizeKb,
+                    thread_count,
+                    local_size,
+                    skip,
+                    scale_bw_iterations(chase_iterations, testSizeKb));
+
+                printf("%lu,%f\n", testSizeKb, result);
+                if (result == 0) {
+                    printf("Something went wrong, not testing anything bigger.\n");
+                    break;
+                }
+            }
+        }
+        else {
             result = bw_test(context,
                 command_queue,
-                bw_kernel, 256 * testSizeKb,
+                bw_kernel, 256 * sizeKb,
                 thread_count,
                 local_size,
                 skip,
-                scale_bw_iterations(chase_iterations, testSizeKb));
+                scale_bw_iterations(chase_iterations, sizeKb));
 
-            printf("%lu,%f\n", testSizeKb, result);
+            printf("%lu,%f\n", sizeKb, result);
             if (result == 0) {
                 printf("Something went wrong, not testing anything bigger.\n");
-                break;
             }
         }
     }
@@ -398,41 +398,66 @@ int main(int argc, char* argv[]) {
         float* scalingResults = (float*)malloc(sizeof(float) * cuCount * testSizeCount);
         for (uint32_t workgroupCount = 1; workgroupCount <= cuCount; workgroupCount++)
         {
-            for (int size_idx = 0; size_idx < testSizeCount; size_idx++)
-            {
-                uint64_t testSizeKb = default_bw_test_sizes[size_idx] / 1024;
-                fprintf(stderr, "Testing size %lu KB, %u workgroups\n", testSizeKb, workgroupCount);
-                if ((max_global_test_size / 1024) < testSizeKb) {
-                    printf("%lu K would exceed device's max buffer size of %lu K\n", testSizeKb, max_global_test_size / 1024);
-                    scalingResults[(workgroupCount - 1) * testSizeCount + size_idx] = 0;
-                    continue;
-                }
+            if (!sizeKb) {
+                for (int size_idx = 0; size_idx < testSizeCount; size_idx++)
+                {
+                    uint64_t testSizeKb = default_bw_test_sizes[size_idx] / 1024;
+                    fprintf(stderr, "Testing size %lu KB, %u workgroups\n", testSizeKb, workgroupCount);
+                    if ((max_global_test_size / 1024) < testSizeKb) {
+                        printf("%lu K would exceed device's max buffer size of %lu K\n", testSizeKb, max_global_test_size / 1024);
+                        scalingResults[(workgroupCount - 1) * testSizeCount + size_idx] = 0;
+                        continue;
+                    }
 
+                    result = bw_test(context,
+                        command_queue,
+                        bw_kernel, 256 * testSizeKb,
+                        local_size * workgroupCount,
+                        local_size,
+                        skip,
+                        scale_bw_iterations(chase_iterations, testSizeKb));
+
+                    scalingResults[(workgroupCount - 1) * testSizeCount + size_idx] = result;
+                    fprintf(stderr, "%u workgroups, %lu KB = %f GB/s\n", workgroupCount, testSizeKb, result);
+                }
+            }
+            else {
+                fprintf(stderr, "Testing size %d KB, %u workgroups\n", sizeKb, workgroupCount);
                 result = bw_test(context,
                     command_queue,
-                    bw_kernel, 256 * testSizeKb,
+                    bw_kernel, 256 * sizeKb,
                     local_size * workgroupCount,
                     local_size,
                     skip,
-                    scale_bw_iterations(chase_iterations, testSizeKb));
-
-                scalingResults[(workgroupCount - 1) * testSizeCount + size_idx] = result;
-                fprintf(stderr, "%u workgroups, %lu KB = %f GB/s\n", workgroupCount, testSizeKb, result);
+                    scale_bw_iterations(chase_iterations, sizeKb));
+                scalingResults[workgroupCount - 1] = result;
+                fprintf(stderr, "%u workgroups, %lu KB = %f GB/s\n", workgroupCount, sizeKb, result);
             }
         }
 
-        for (uint32_t workgroupCount = 1; workgroupCount <= cuCount; workgroupCount++)
-        {
-            printf(",%u", workgroupCount);
-        }
-        printf("\n");
-
-        for (int size_idx = 0; size_idx < testSizeCount; size_idx++)
-        {
-            printf("%lu", default_bw_test_sizes[size_idx] / 1024);
+        if (!sizeKb) {
             for (uint32_t workgroupCount = 1; workgroupCount <= cuCount; workgroupCount++)
             {
-                printf(",%f", scalingResults[(workgroupCount - 1) * testSizeCount + size_idx]);
+                printf(",%u", workgroupCount);
+            }
+            printf("\n");
+
+            for (int size_idx = 0; size_idx < testSizeCount; size_idx++)
+            {
+                printf("%llu", default_bw_test_sizes[size_idx] / 1024);
+                for (uint32_t workgroupCount = 1; workgroupCount <= cuCount; workgroupCount++)
+                {
+                    printf(",%f", scalingResults[(workgroupCount - 1) * testSizeCount + size_idx]);
+                }
+
+                printf("\n");
+            }
+        }
+        else {
+            printf("For %d KB:\n", sizeKb);
+            for (int workgroupIdx = 0; workgroupIdx < cuCount; workgroupIdx++)
+            {
+                printf("%d,%f\n", workgroupIdx + 1, scalingResults[workgroupIdx]);
             }
 
             printf("\n");
