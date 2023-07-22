@@ -721,7 +721,6 @@ float MeasureBw(uint64_t sizeKb, uint64_t iterations, uint64_t threads, int shar
         threadData[i].arr_length = elements;
         threadData[i].bw = 0;
         threadData[i].start = 0;
-	fprintf(stderr, "Thread %d going through %d elements\n", i, elements);
         //if (elements > 8192 * 1024) threadData[i].start = 4096 * i; // must be multiple of 128 because of unrolling
         //int pthreadRc = pthread_create(testThreads + i, NULL, ReadBandwidthTestThread, (void *)(threadData + i));
     }
