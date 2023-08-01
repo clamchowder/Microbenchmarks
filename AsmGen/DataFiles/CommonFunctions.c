@@ -1,6 +1,22 @@
 ﻿// this is a partial C file that's appended into generated code
 // stuff here is generic enough to work for both windows/vs and gcc
 
+#ifndef __MINGW32__
+// optional affinity setting for effed up qualcomm/android bs
+#include <sched.h>
+#include <unistd.h>
+#include <sys/types.h>
+#include <sys/syscall.h>
+
+void setAffinity(int core) {
+    cpu_set_t cpuset;
+    CPU_ZERO(&cpuset);
+    CPU_SET(core, &cpuset);
+    printf("Set affinity to core %d\n", core);
+    sched_setaffinity(gettid(), sizeof(cpu_set_t), &cpuset);
+}
+#endif
+
 void printCsvHeader(uint32_t* xCounts, uint32_t xLen) {
     printf("x");
     for (uint32_t testSizeIdx = 0; testSizeIdx < xLen; testSizeIdx++) {
