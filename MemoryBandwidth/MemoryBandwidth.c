@@ -44,7 +44,6 @@ typedef struct BandwidthTestThreadData {
 
 float MeasureBw(uint64_t sizeKb, uint64_t iterations, uint64_t threads, int shared, int nopBytes, int coreNode, int memNode);
 
-
 #ifdef __x86_64
 #include <cpuid.h>
 float scalar_read(float* arr, uint64_t arr_length, uint64_t iterations, uint64_t start) __attribute((ms_abi));
@@ -59,20 +58,25 @@ extern float repmovsb_copy(float *arr, uint64_t arr_length, uint64_t iterations,
 extern float repmovsd_copy(float *arr, uint64_t arr_length, uint64_t iterations, uint64_t start) __attribute__((ms_abi));
 extern float repstosb_write(float *arr, uint64_t arr_length, uint64_t iterations, uint64_t start) __attribute__((ms_abi));
 extern float repstosd_write(float *arr, uint64_t arr_length, uint64_t iterations, uint64_t start) __attribute__((ms_abi));
-extern uint32_t readbankconflict(uint32_t *arr, uint64_t arr_length, uint64_t spacing, uint64_t iterations) __attribute__((ms_abi));
-extern uint32_t readbankconflict128(uint32_t *arr, uint64_t arr_length, uint64_t spacing, uint64_t iterations) __attribute__((ms_abi));
 float (*bw_func)(float*, uint64_t, uint64_t, uint64_t start) __attribute__((ms_abi));
 #else
 float scalar_read(float* arr, uint64_t arr_length, uint64_t iterations, uint64_t start);
 float (*bw_func)(float*, uint64_t, uint64_t, uint64_t start);
-extern uint32_t readbankconflict(uint32_t *arr, uint64_t arr_length, uint64_t spacing, uint64_t iterations);
 #endif
 
+#ifdef __x86_64
 extern float asm_read(float* arr, uint64_t arr_length, uint64_t iterations, uint64_t start) __attribute__((ms_abi));
 extern float asm_write(float* arr, uint64_t arr_length, uint64_t iterations, uint64_t start) __attribute__((ms_abi));
 extern float asm_copy(float *arr, uint64_t arr_length, uint64_t iterations, uint64_t start) __attribute__((ms_abi));
 extern float asm_cflip(float *arr, uint64_t arr_length, uint64_t iterations, uint64_t start) __attribute__((ms_abi));
 extern float asm_add(float *arr, uint64_t arr_length, uint64_t iterations, uint64_t start) __attribute__((ms_abi));
+#else
+extern float asm_read(float* arr, uint64_t arr_length, uint64_t iterations, uint64_t start);
+extern float asm_write(float* arr, uint64_t arr_length, uint64_t iterations, uint64_t start);
+extern float asm_copy(float *arr, uint64_t arr_length, uint64_t iterations, uint64_t start);
+extern float asm_cflip(float *arr, uint64_t arr_length, uint64_t iterations, uint64_t start);
+extern float asm_add(float *arr, uint64_t arr_length, uint64_t iterations, uint64_t start);
+#endif
 
 #ifdef __aarch64__
 extern void flush_icache(void *arr, uint64_t length);
@@ -89,7 +93,6 @@ float instr_read(float *arr, uint64_t arr_length, uint64_t iterations, uint64_t 
 }
 
 void FillInstructionArray(uint64_t *nops, uint64_t sizeKb, int nopSize, int branchInterval); 
-void TestBankConflicts(int type);
 uint64_t GetIterationCount(uint64_t testSize, uint64_t threads);
 void *ReadBandwidthTestThread(void *param);
 void *allocate_memory(size_t bytes, unsigned int threadOffset);
@@ -274,12 +277,6 @@ int main(int argc, char *argv[]) {
                     bw_func = repstosd_write;
                     fprintf(stderr, "Using REP STOSD to write\n");
                 }  
-                else if (strncmp(argv[argIdx], "readbankconflict", 16) == 0) {
-                    testBankConflict = 1;
-                }
-                else if (strncmp(argv[argIdx], "read128bankconflict", 19) == 0) {
-                    testBankConflict128 = 1;
-                }
                 #endif
         
             }
@@ -309,11 +306,7 @@ int main(int argc, char *argv[]) {
     }
 #endif
 
-    if (testBankConflict) {
-        TestBankConflicts(0);
-    } else if (testBankConflict128) {
-        TestBankConflicts(1);
-    } else if (autothreads > 0) {
+    if (autothreads > 0) {
         float *threadResults = (float *)malloc(sizeof(float) * autothreads * testSizeCount);
         printf("Auto threads mode, up to %d threads\n", autothreads);
         for (int threadIdx = 1; threadIdx <= autothreads; threadIdx++) {
@@ -430,49 +423,6 @@ uint64_t GetIterationCount(uint64_t testSize, uint64_t threads)
 
     if (iterations < 8) return 8; // set a minimum to reduce noise
     else return iterations;
-}
-
-// 0 = scalar, 1 = 128-bit
-void TestBankConflicts(int type) {
-    struct timeval startTv, endTv;
-    time_t time_diff_ms;
-    uint32_t *arr;
-    uint32_t maxSpacing = 256;
-    uint64_t totalLoads = 6e9;
-
-    float *resultArr = malloc((maxSpacing + 1) * sizeof(float));
-    int testSize = 4096;
-    if (0 != posix_memalign((void **)(&arr), testSize, testSize)) {
-        fprintf(stderr, "Could not allocate memory for size %d\n", testSize);
-        return;
-    }
-
-    for (int spacing = 0; spacing <= maxSpacing; spacing++) {
-        *arr = spacing;
-
-        gettimeofday(&startTv, NULL);
-        int rc;
-        if (type == 0) rc = readbankconflict(arr, testSize, spacing, totalLoads);
-        else if (type == 1) rc = readbankconflict128(arr, testSize, spacing, totalLoads);
-        gettimeofday(&endTv, NULL);
-        time_diff_ms = 1e6 * (endTv.tv_sec - startTv.tv_sec) + (endTv.tv_usec - startTv.tv_usec);
-        // want loads per ns
-        float loadsPerNs = (float)totalLoads / (time_diff_ms * 1e3);
-        fprintf(stderr, "%d KB, %d spacing: %f loads per ns\n", testSize, spacing, loadsPerNs);
-        resultArr[spacing] = loadsPerNs;
-        if (rc != 0) fprintf(stderr, "asm code returned error\n");
-    }
-
-    free(arr);
-    arr = NULL;
-
-    for (int spacing = 0; spacing <= maxSpacing; spacing++) printf(",%d", spacing);
-    printf("\n");
-    for (int spacing = 0; spacing <= maxSpacing; spacing++) {
-          printf("%d,%f\n", spacing, resultArr[spacing]);
-    }
-
-    free(resultArr);
 }
 
 void FillInstructionArray(uint64_t *nops, uint64_t sizeKb, int nopSize, int branchInterval) {
