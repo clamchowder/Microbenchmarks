@@ -31,6 +31,10 @@ int default_test_sizes[] = { 2, 4, 8, 12, 16, 24, 32, 48, 64, 96, 128, 192, 256,
 #ifdef __x86_64
 extern void preplatencyarr(uint64_t *arr, uint64_t len) __attribute__((ms_abi));
 extern uint32_t latencytest(uint64_t iterations, uint64_t *arr) __attribute((ms_abi));
+
+#define LONGPATTERN 1
+extern uint32_t longpatternlatencytest(uint64_t iterations, uint64_t *arr) __attribute((ms_abi));
+
 extern void stlftest(uint64_t iterations, char *arr) __attribute((ms_abi));
 extern void matchedstlftest(uint64_t iterations, char *arr) __attribute((ms_abi));
 extern void stlftest32(uint64_t iterations, char *arr) __attribute((ms_abi));
@@ -75,6 +79,7 @@ float (*testFunc)(uint32_t, uint32_t, uint32_t *) = RunTest;
 
 uint32_t ITERATIONS = 100000000;
 uint32_t pageByPage = 0;
+uint32_t longpattern = 0;
 
 int main(int argc, char* argv[]) {
     uint32_t maxTestSizeMb = 0;
@@ -117,15 +122,22 @@ int main(int argc, char* argv[]) {
                     stlf = 1;
                     stlfFunc = stlftest128;
                     fprintf(stderr, "Running store to load forwarding test, with 128-bit store, 64-bit load\n");
+                } 
+                #ifdef LONGPATTERN
+                else if (strncmp(testType, "longpattern", 11) == 0) {
+                    testFunc = RunAsmTest;
+                    longpattern = 1;
+                    fprintf(stderr, "Using ASM (simple address) test with longer pattern\n");
                 }
-        #ifndef BITS_32
+                #endif
+                #ifndef BITS_32
                 else if (strncmp(testType, "dword_stlf", 9) == 0) {
                     stlf = 2;
                     stlfFunc = stlftest32;
                     fprintf(stderr, "Running store to load forwarding test, with 32-bit stores\n");
                 }
-        #endif
-        #endif  // end UNKNOWN_ARCH
+                #endif
+                #endif  // end UNKNOWN_ARCH
                 else {
                     fprintf(stderr, "Unrecognized test type: %s\n", testType);
                     fprintf(stderr, "Valid test types: c, tlb, mlp");
@@ -431,20 +443,26 @@ void FillPatternArr(uint32_t *pattern_arr, uint32_t list_size, uint32_t byte_inc
     }
 }
 
+// Same thing but with 64-bit elements
+// pattern_arr = array to fill
+// list_size = number of 64-bit elements in array
+// byte_increment = cacheline size, in bytes
 void FillPatternArr64(uint64_t *pattern_arr, uint64_t list_size, uint64_t byte_increment) {
-    uint32_t increment = byte_increment / sizeof(uint64_t);
+    uint32_t increment = byte_increment / sizeof(uint64_t); // number of 64-bit integers in a cacheline
     uint32_t element_count = list_size / increment;
-    for (int i = 0; i < element_count; i++) {
-        pattern_arr[i * increment] = i * increment;
-    }
+    for (int increment_offset = 0; increment_offset < increment; increment_offset++) {
+        for (int i = 0; i < element_count; i++) {
+            pattern_arr[i * increment + increment_offset] = i * increment + increment_offset;
+        }
 
-    int iter = element_count;
-    while (iter > 1) {
-        iter -= 1;
-        int j = iter - 1 == 0 ? 0 : rand() % (iter - 1);
-        uint64_t tmp = pattern_arr[iter * increment];
-        pattern_arr[iter * increment] = pattern_arr[j * increment];
-        pattern_arr[j * increment] = tmp;
+        int iter = element_count;
+        while (iter > 1) {
+            iter -= 1;
+            int j = iter - 1 == 0 ? 0 : rand() % (iter - 1);
+            uint64_t tmp = pattern_arr[iter * increment + increment_offset];
+            pattern_arr[iter * increment + increment_offset] = pattern_arr[j * increment + increment_offset];
+            pattern_arr[j * increment + increment_offset] = tmp;
+        }
     }
 }
 
@@ -574,13 +592,17 @@ float RunAsmTest(uint64_t size_kb, uint32_t iterations, uint32_t *preallocatedAr
 
     // Run test
     gettimeofday(&startTv, &startTz);
-    sum = latencytest(scaled_iterations, A);
+    #ifdef LONGPATTERN
+    if (longpattern) sum = longpatternlatencytest(scaled_iterations, A);
+    else 
+    #endif
+        sum = latencytest(scaled_iterations, A);
     gettimeofday(&endTv, &endTz);
     uint64_t time_diff_ms = 1000 * (endTv.tv_sec - startTv.tv_sec) + ((endTv.tv_usec - startTv.tv_usec) / 1000);
     float latency = 1e6 * (float)time_diff_ms / (float)scaled_iterations;
     if (preallocatedArr == NULL) free(A);
 
-    if (sum == 0) printf("sum == 0 (?)\n");
+    // if (sum == 0) printf("sum == 0 (?)\n");
     return latency;
 }
 #endif
