@@ -2,13 +2,13 @@
 
 namespace AsmGen
 {
-    public class AddSchedTest : UarchTest
+    public class MulSchedTest : UarchTest
     {
-        public AddSchedTest(int low, int high, int step)
+        public MulSchedTest(int low, int high, int step)
         {
             this.Counts = UarchTestHelpers.GenerateCountArray(low, high, step);
-            this.Prefix = "addsched";
-            this.Description = "Scheduler, Integer Adds";
+            this.Prefix = "mulsched";
+            this.Description = "Scheduler, Integer Multiplies";
             this.FunctionDefinitionParameters = "uint64_t iterations, int *arr";
             this.GetFunctionCallParameters = "structIterations, A";
             this.DivideTimeByCount = false;
@@ -18,8 +18,8 @@ namespace AsmGen
         {
             if (isa == IUarchTest.ISA.amd64) return true;
             if (isa == IUarchTest.ISA.aarch64) return true;
-            if (isa == IUarchTest.ISA.mips64) return true;
-            if (isa == IUarchTest.ISA.riscv) return true;
+            // if (isa == IUarchTest.ISA.mips64) return true;
+            // if (isa == IUarchTest.ISA.riscv) return true;
             return false;
         }
 
@@ -27,21 +27,21 @@ namespace AsmGen
         {
             if (isa == IUarchTest.ISA.amd64)
             {
-                string[] unrolledAdds = new string[4];
-                unrolledAdds[0] = "  add %rsi, %r15";
-                unrolledAdds[1] = "  add %rsi, %r14";
-                unrolledAdds[2] = "  add %rsi, %r13";
-                unrolledAdds[3] = "  add %rsi, %r12";
-                UarchTestHelpers.GenerateX86AsmStructureTestFuncs(sb, this.Counts, this.Prefix, unrolledAdds, unrolledAdds, includePtrChasingLoads: false);
+                string[] unrolledMuls = new string[4];
+                unrolledMuls[0] = "  imul %rsi, %r15";
+                unrolledMuls[1] = "  imul %rsi, %r14";
+                unrolledMuls[2] = "  imul %rsi, %r13";
+                unrolledMuls[3] = "  imul %rsi, %r12";
+                UarchTestHelpers.GenerateX86AsmStructureTestFuncs(sb, this.Counts, this.Prefix, unrolledMuls, unrolledMuls, includePtrChasingLoads: false);
             }
             else if (isa == IUarchTest.ISA.aarch64)
             {
-                string[] unrolledAdds = new string[4];
-                unrolledAdds[0] = "  add x15, x15, x25";
-                unrolledAdds[1] = "  add x14, x14, x25";
-                unrolledAdds[2] = "  add x13, x13, x25";
-                unrolledAdds[3] = "  add x12, x12, x25";
-                UarchTestHelpers.GenerateArmAsmStructureTestFuncs(sb, this.Counts, this.Prefix, unrolledAdds, unrolledAdds, includePtrChasingLoads: false);
+                string[] unrolledMuls = new string[4];
+                unrolledMuls[0] = "  mul x15, x15, x25";
+                unrolledMuls[1] = "  mul x14, x14, x25";
+                unrolledMuls[2] = "  mul x13, x13, x25";
+                unrolledMuls[3] = "  mul x12, x12, x25";
+                UarchTestHelpers.GenerateArmAsmStructureTestFuncs(sb, this.Counts, this.Prefix, unrolledMuls, unrolledMuls, includePtrChasingLoads: false);
             }
             else if (isa == IUarchTest.ISA.mips64)
             {
@@ -56,21 +56,21 @@ namespace AsmGen
                 unrolledAdds1[1] = "  add.d $r16, $r16, $r13";
                 unrolledAdds1[2] = "  add.d $r17, $r17, $r13";
                 unrolledAdds1[3] = "  add.d $r18, $r18, $r13";
-                UarchTestHelpers.GenerateMipsAsmStructureTestFuncs(sb, this.Counts, this.Prefix, unrolledAdds, unrolledAdds1, includePtrChasingLoads: false);
+                UarchTestHelpers.GenerateMipsAsmStructureTestFuncs(sb, this.Counts, this.Prefix, unrolledAdds, unrolledAdds1, includePtrChasingLoads: true);
             }
             else if (isa == IUarchTest.ISA.riscv)
             {
                 string[] unrolledAdds = new string[4];
-                unrolledAdds[0] = "  add x30, x30, x5";
-                unrolledAdds[1] = "  add x29, x29, x5";
-                unrolledAdds[2] = "  add x28, x28, x5";
-                unrolledAdds[3] = "  add x31, x31, x5";
+                unrolledAdds[0] = "  mul x30, x30, x5";
+                unrolledAdds[1] = "  mul x29, x29, x5";
+                unrolledAdds[2] = "  mul x28, x28, x5";
+                unrolledAdds[3] = "  mul x31, x31, x5";
 
                 string[] unrolledAdds1 = new string[4];
-                unrolledAdds1[0] = "  add x30, x30, x6";
-                unrolledAdds1[1] = "  add x31, x31, x6";
-                unrolledAdds1[2] = "  add x28, x28, x6";
-                unrolledAdds1[3] = "  add x29, x29, x6";
+                unrolledAdds1[0] = "  mul x30, x30, x6";
+                unrolledAdds1[1] = "  mul x31, x31, x6";
+                unrolledAdds1[2] = "  mul x28, x28, x6";
+                unrolledAdds1[3] = "  mul x29, x29, x6";
                 UarchTestHelpers.GenerateRiscvAsmStructureTestFuncs(sb, this.Counts, this.Prefix, unrolledAdds, unrolledAdds1, false);
             }
         }
