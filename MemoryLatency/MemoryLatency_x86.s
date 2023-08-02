@@ -70,6 +70,7 @@ longpatternlatencytest_loop:
   jnz longpatternlatencytest_loop_inc
   add $8, %rax
   and $63, %rax
+  and %r13, %r15
   add %rax, %r15
 longpatternlatencytest_loop_inc:
   dec %rcx

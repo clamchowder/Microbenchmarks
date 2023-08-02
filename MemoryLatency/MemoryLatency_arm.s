@@ -1,6 +1,7 @@
 .text
 
 .global latencytest
+.global longpatternlatencytest
 .global preplatencyarr
 .global stlftest
 .global stlftest32
@@ -43,6 +44,45 @@ latencytest_loop:
   ldp x14, x15, [sp, #0x10]
   add sp, sp, #0x20
   ret
+
+/* x0 = iteration count
+   x1 = ptr to arr
+   do pointer chasing with longer pattern, given different patterns
+   within each cacheline */
+longpatternlatencytest:
+  sub sp, sp, #0x50
+  stp x14, x15, [sp, #0x10]
+  stp x12, x13, [sp, #0x20]
+  stp x10, x11, [sp, #0x30]
+  stp x8, x9, [sp, #0x40]
+  mov x14, 0
+  ldr x15, [x1]
+  mov x12, 63    /* mask for offset into cacheline */
+  mvn x13, x12   /* mask for cacheline address comparison */
+  and x10, x13, x1  /* x10 = cacheline address of first element */
+longpatternlatencytest_loop:
+  mov x9, x15
+  ldr x15, [x15]
+
+  /* if we're back at the first cacheline */
+  and x11, x13, x15
+  cmp x11, x10
+  b.ne longpatternlatencytest_loop_inc
+  add x14, x14, 8
+  and x14, x14, x12
+  and x15, x15, x13
+  add x15, x15, x14  /* move to the next element within that cacheline */
+longpatternlatencytest_loop_inc:
+  sub x0, x0, 1
+  cbnz x0, longpatternlatencytest_loop
+  mov x0, x14
+  ldp x8, x9, [sp, #0x40]
+  ldp x10, x11, [sp, #0x30]
+  ldp x12, x13, [sp, #0x20]
+  ldp x14, x15, [sp, #0x10]
+  add sp, sp, #0x50
+  ret
+
 
 /* x0 = iteration count
    x1 = ptr to arr. first 32-bit int = store offset, second = load offset */

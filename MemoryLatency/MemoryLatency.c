@@ -50,6 +50,10 @@ void (*stlfFunc)(uint32_t, char *) __attribute__((fastcall)) = stlftest;
 #elif __aarch64__
 extern void preplatencyarr(uint64_t *arr, uint64_t len);
 extern uint32_t latencytest(uint64_t iterations, uint64_t *arr);
+
+#define LONGPATTERN 1
+extern uint32_t longpatternlatencytest(uint64_t iterations, uint64_t *arr);
+
 extern void matchedstlftest(uint64_t iterations, char *arr);
 extern void stlftest(uint64_t iterations, char *arr);
 extern void stlftest32(uint64_t iterations, char *arr);
@@ -70,10 +74,12 @@ void (*stlfFunc)(uint64_t, char *) = NULL;
 #endif
 
 float RunTest(uint32_t size_kb, uint32_t iterations, uint32_t *preallocatedArr);
-float RunAsmTest(uint64_t size_kb, uint32_t iterations, uint32_t *preallocatedArr);
+float RunAsmTest(uint32_t size_kb, uint32_t iterations, uint32_t *preallocatedArr);
 float RunTlbTest(uint32_t size_kb, uint32_t iterations, uint32_t *preallocatedArr);
 float RunMlpTest(uint32_t size_kb, uint32_t iterations, uint32_t parallelism);
 void RunStlfTest(uint32_t iterations, int mode, int pageEnd, int loadDistance);
+void FillPatternArr64(uint64_t *pattern_arr, uint64_t list_size, uint64_t byte_increment);
+void FillPatternArr(uint32_t *pattern_arr, uint32_t list_size, uint32_t byte_increment);
 
 float (*testFunc)(uint32_t, uint32_t, uint32_t *) = RunTest;
 
@@ -406,7 +412,7 @@ void FillPageByPage64(uint64_t *pattern_arr, uint32_t list_size, uint32_t byte_i
     for (uint32_t page_idx = 0; page_idx < pageCount; page_idx++)
     {
         uint64_t *page_base = pattern_arr + (page_element_count * page_idx);
-        FillPatternArr(page_base, page_element_count, byte_increment);
+        FillPatternArr((uint32_t *)page_base, page_element_count, byte_increment);
 
         uint32_t page_last_element_index;
         for (uint32_t page_element_idx = 0; page_element_idx < (PAGE_SIZE / sizeof(uint64_t)); page_element_idx += (byte_increment / sizeof(uint64_t))) {
@@ -473,15 +479,13 @@ float RunTest(uint32_t size_kb, uint32_t iterations, uint32_t *preallocatedArr) 
     uint32_t sum = 0, current;
 
     // Fill list to create random access pattern
-    int *A;
+    uint32_t *A;
     if (preallocatedArr == NULL) {
-        A = (int*)malloc(sizeof(int) * list_size);
-        if (!A) {
+        if (0 != posix_memalign((void **)(&A), 64, sizeof(uint32_t) * list_size)) {
             fprintf(stderr, "Failed to allocate memory for %u KB test\n", size_kb);
-            return 0;
         }
     } else {
-        A = preallocatedArr;
+        A = (uint32_t *)preallocatedArr;
     }
 
     if (!pageByPage) FillPatternArr(A, list_size, CACHELINE_SIZE);
@@ -516,32 +520,32 @@ float RunMlpTest(uint32_t size_kb, uint32_t iterations, uint32_t parallelism) {
     if (parallelism < 1) return 0;
 
     // Fill list to create random access pattern, and hold temporary data
-    int* A = (int*)malloc(sizeof(int) * list_size);
-    int *offsets = (int*)malloc(sizeof(int) * parallelism);
+    uint32_t *A = (uint32_t *)malloc(sizeof(uint32_t) * list_size);
+    uint32_t *offsets = (uint32_t *)malloc(sizeof(uint32_t) * parallelism);
     if (!A || !offsets) {
         fprintf(stderr, "Failed to allocate memory for %u KB test\n", size_kb);
         return 0;
     }
 
     FillPatternArr(A, list_size, CACHELINE_SIZE);
-    for (int i = 0; i < parallelism; i++) offsets[i] = i * (CACHELINE_SIZE / sizeof(int));
+    for (int i = 0; i < parallelism; i++) offsets[i] = i * (CACHELINE_SIZE / sizeof(uint32_t));
     uint32_t scaled_iterations = scale_iterations(size_kb, iterations) / parallelism;
 
     // Run test
     gettimeofday(&startTv, &startTz);
-    for (int i = 0; i < scaled_iterations; i++) {
-        for (int j = 0; j < parallelism; j++)
+    for (uint32_t i = 0; i < scaled_iterations; i++) {
+        for (uint32_t j = 0; j < parallelism; j++)
         {
             offsets[j] = A[offsets[j]];
         }
     }
     gettimeofday(&endTv, &endTz);
     uint64_t time_diff_ms = 1000 * (endTv.tv_sec - startTv.tv_sec) + ((endTv.tv_usec - startTv.tv_usec) / 1000);
-    double mbTransferred = (scaled_iterations * parallelism * sizeof(int))  / (double)1e6;
+    double mbTransferred = (scaled_iterations * parallelism * sizeof(uint32_t))  / (double)1e6;
     float bw = 1000 * mbTransferred / (double)time_diff_ms;
 
     sum = 0;
-    for (int i = 0; i < parallelism; i++) sum += offsets[i];
+    for (uint32_t i = 0; i < parallelism; i++) sum += offsets[i];
     if (sum == 0) printf("sum == 0 (?)\n");
 
     free(A);
@@ -558,7 +562,7 @@ float RunMlpTest(uint32_t size_kb, uint32_t iterations, uint32_t parallelism) {
 #endif
 
 #ifndef UNKNOWN_ARCH
-float RunAsmTest(uint64_t size_kb, uint32_t iterations, uint32_t *preallocatedArr) {
+float RunAsmTest(uint32_t size_kb, uint32_t iterations, uint32_t *preallocatedArr) {
     struct timeval startTv, endTv;
     struct timezone startTz, endTz;
     uint64_t list_size = size_kb * 1024 / POINTER_SIZE; // using 32-bit pointers
@@ -567,11 +571,9 @@ float RunAsmTest(uint64_t size_kb, uint32_t iterations, uint32_t *preallocatedAr
     // Fill list to create random access pattern
     POINTER_INT *A;
     if (preallocatedArr == NULL) {
-        A = (POINTER_INT *)malloc(POINTER_SIZE * list_size);
-        if (!A) {
-            fprintf(stderr, "Failed to allocate memory for %lu KB test\n", size_kb);
-            return 0;
-          }
+        if (0 != posix_memalign((void **)(&A), 64, POINTER_SIZE * list_size)) {
+            fprintf(stderr, "Failed to allocate memory for %u KB test\n", size_kb);
+        }
     } else {
         A = (POINTER_INT *)preallocatedArr;
     }
