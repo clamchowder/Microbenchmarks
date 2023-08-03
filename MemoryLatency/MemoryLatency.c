@@ -204,7 +204,7 @@ int main(int argc, char* argv[]) {
         fprintf(stderr, "Usage: [-test <c/asm/tlb/mlp>] [-maxsizemb <max test size in MB>] [-iter <base iterations, default 100000000]\n");
     }
 
-#ifndef __MINGW32__
+#ifdef __linux__
     if (hugePages) {
        size_t hugePageSize = 1 << 21;
        size_t testSizeKb = singleSize ? singleSize : default_test_sizes[testSizeCount - 1];
