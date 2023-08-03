@@ -29,7 +29,7 @@
 
 #pragma GCC diagnostic ignored "-Wattributes"
 
-int default_test_sizes[39] = { 2, 4, 8, 12, 16, 24, 32, 48, 64, 96, 128, 192, 256, 512, 600, 768, 1024, 1536, 2048,
+int default_test_sizes[] = { 2, 4, 8, 12, 16, 24, 32, 48, 64, 96, 128, 192, 256, 512, 600, 768, 1024, 1536, 2048,
                                3072, 4096, 5120, 6144, 8192, 10240, 12288, 16384, 24567, 32768, 65536, 98304,
                                131072, 262144, 393216, 524288, 1048576, 1572864, 2097152, 3145728 };
 
@@ -453,9 +453,9 @@ void FillInstructionArray(uint64_t *nops, uint64_t sizeKb, int nopSize, int bran
 
     // hack this to deal with graviton 1 / A72
     // nop + mov x0, 0
-    char nop8b[9] = { 0x1F, 0x20, 0x03, 0xD5, 0x00, 0x00, 0x80, 0xD2 }; 
+    char nop8b[8] = { 0x00, 0x00, 0x80, 0xD2, 0x00, 0x00, 0x80, 0xD2 }; 
     // mov x0, 0 + ldr x0, [sp] 
-    char nop8b1[9] = { 0x00, 0x00, 0x80, 0xD2, 0xe0, 0x03, 0x40, 0xf9 }; 
+    char nop8b1[8] = { 0x00, 0x00, 0x80, 0xD2, 0x00, 0x00, 0x80, 0xD2 }; 
 #endif
 
 #ifdef __riscv
