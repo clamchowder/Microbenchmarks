@@ -16,6 +16,8 @@
 .global _stlftest128
 .global _matchedstlftest
 
+.balign 4
+
 /* x0 = ptr to arr
    x1 = arr len
    convert values in array from array indexes to pointers */

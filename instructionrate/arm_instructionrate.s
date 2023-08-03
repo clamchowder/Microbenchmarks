@@ -115,6 +115,8 @@
 .global _movzerotest
 .global _subzerotest
 
+.balign 4
+
 /* x0 = arg = iteration count. all iteration counts must be divisible by 10 */
 _clktest:
 clktest:
