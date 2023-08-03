@@ -17,6 +17,7 @@
 #include <numaif.h>
 #include <sys/sysinfo.h>
 #endif
+
 #include <errno.h>
 #include <sched.h>
 
@@ -595,10 +596,11 @@ float RunAsmTest(uint32_t size_kb, uint32_t iterations, uint32_t *preallocatedAr
     // Run test
     gettimeofday(&startTv, &startTz);
     #ifdef LONGPATTERN
-    if (longpattern) sum = longpatternlatencytest(scaled_iterations, A);
-    else 
-    #endif
+    if (longpattern)
+        sum = longpatternlatencytest(scaled_iterations, A);
+    else
         sum = latencytest(scaled_iterations, A);
+    #endif
     gettimeofday(&endTv, &endTz);
     uint64_t time_diff_ms = 1000 * (endTv.tv_sec - startTv.tv_sec) + ((endTv.tv_usec - startTv.tv_usec) / 1000);
     float latency = 1e6 * (float)time_diff_ms / (float)scaled_iterations;
