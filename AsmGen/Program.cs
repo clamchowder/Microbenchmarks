@@ -31,10 +31,12 @@ namespace AsmGen
             tests.Add(new TakenJumpSchedTest(4, 64, 1));
             tests.Add(new LoadSchedTest(4, 64, 1));
             tests.Add(new StoreSchedTest(4, 64, 1));
+            tests.Add(new StoreDataSchedTest(4, 64, 1));
             tests.Add(new MixAddJumpSchedTest(4, 128, 1));
             tests.Add(new FaddSchedTest(4, 64, 1));
             tests.Add(new Fadd256SchedTest(4, 64, 1));
             tests.Add(new Fma256SchedTest(4, 64, 1));
+            tests.Add(new CvtSchedTest(4, 64, 1));
             tests.Add(new Fadd128RfTest(4, 128, 1));
             tests.Add(new BtbTest(4, BtbTest.BranchType.Unconditional));
             tests.Add(new BtbTest(8, BtbTest.BranchType.Unconditional));
