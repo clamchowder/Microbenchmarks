@@ -2,6 +2,9 @@
 
 .global clktest
 .global addtest
+.global eortest
+.global maddaddtest
+.global cmptest
 .global addmultest
 .global addmul21test
 .global mixaddjmp21test
@@ -192,7 +195,157 @@ addtest_loop:
   ldp x12, x13, [sp, #0x20]
   ldp x14, x15, [sp, #0x10]
   add sp, sp, #0x50
+  ret 
+
+maddaddtest:
+  sub sp, sp, #0x50
+  stp x14, x15, [sp, #0x10]
+  stp x12, x13, [sp, #0x20]
+  stp x10, x11, [sp, #0x30]
+  stp x8, x9, [sp, #0x40]
+  mov x15, 1
+  mov x14, 20
+  eor x13, x13, x13
+  eor x12, x12, x12
+  eor x11, x11, x11
+  mov x10, 2
+  eor x9, x9, x9
+  mov x8, 3
+maddaddtest_loop:
+  add x13, x13, x15
+  add x12, x12, x15
+  add x11, x11, x15
+  madd x10, x8, x0, x15
+  add x13, x13, x15
+  add x12, x12, x15
+  add x11, x11, x15
+  madd x10, x8, x0, x15 
+  add x13, x13, x15
+  add x12, x12, x15
+  add x11, x11, x15
+  madd x10, x8, x0, x15  
+  add x13, x13, x15
+  add x12, x12, x15
+  add x11, x11, x15
+  madd x10, x8, x0, x15  
+  add x13, x13, x15
+  add x12, x12, x15
+  add x11, x11, x15
+  madd x10, x8, x0, x15  
+  sub x0, x0, x14
+  cbnz x0, maddaddtest_loop
+  ldp x8, x9, [sp, #0x40]
+  ldp x10, x11, [sp, #0x30]
+  ldp x12, x13, [sp, #0x20]
+  ldp x14, x15, [sp, #0x10]
+  add sp, sp, #0x50
+  ret 
+
+eortest:
+  sub sp, sp, #0x50
+  stp x14, x15, [sp, #0x10]
+  stp x12, x13, [sp, #0x20]
+  stp x10, x11, [sp, #0x30]
+  stp x8, x9, [sp, #0x40]
+  mov x15, 1
+  mov x14, 30
+  eor x13, x13, x13
+  eor x12, x12, x12
+  eor x11, x11, x11
+  eor x10, x10, x10
+  eor x9, x9, x9
+eortest_loop:
+  eor x13, x13, x15
+  eor x12, x12, x15
+  eor x11, x11, x15
+  eor x10, x10, x15
+  eor x9, x9, x15
+  eor x13, x13, x15
+  eor x12, x12, x15
+  eor x11, x11, x15
+  eor x10, x10, x15
+  eor x9, x9, x15
+  eor x13, x13, x15
+  eor x12, x12, x15
+  eor x11, x11, x15
+  eor x10, x10, x15
+  eor x9, x9, x15
+  eor x13, x13, x15
+  eor x12, x12, x15
+  eor x11, x11, x15
+  eor x10, x10, x15
+  eor x9, x9, x15
+  eor x13, x13, x15
+  eor x12, x12, x15
+  eor x11, x11, x15
+  eor x10, x10, x15
+  eor x9, x9, x15
+  eor x13, x13, x15
+  eor x12, x12, x15
+  eor x11, x11, x15
+  eor x10, x10, x15
+  eor x9, x9, x15
+  sub x0, x0, x14
+  cbnz x0, eortest_loop
+  ldp x8, x9, [sp, #0x40]
+  ldp x10, x11, [sp, #0x30]
+  ldp x12, x13, [sp, #0x20]
+  ldp x14, x15, [sp, #0x10]
+  add sp, sp, #0x50
   ret
+
+cmptest:
+  sub sp, sp, #0x50
+  stp x14, x15, [sp, #0x10]
+  stp x12, x13, [sp, #0x20]
+  stp x10, x11, [sp, #0x30]
+  stp x8, x9, [sp, #0x40]
+  mov x15, 1
+  mov x14, 30
+  eor x13, x13, x13
+  eor x12, x12, x12
+  eor x11, x11, x11
+  eor x10, x10, x10
+  eor x9, x9, x9
+cmptest_loop:
+  cmp x13, x13
+  cmp x12, x12
+  cmp x11, x11
+  cmp x10, x10
+  cmp x9, x9 
+  cmp x13, x13
+  cmp x12, x12
+  cmp x11, x11
+  cmp x10, x10
+  cmp x9, x9 
+  cmp x13, x13
+  cmp x12, x12
+  cmp x11, x11
+  cmp x10, x10
+  cmp x9, x9 
+  cmp x13, x13
+  cmp x12, x12
+  cmp x11, x11
+  cmp x10, x10
+  cmp x9, x9 
+  cmp x13, x13
+  cmp x12, x12
+  cmp x11, x11
+  cmp x10, x10
+  cmp x9, x9 
+  cmp x13, x13
+  cmp x12, x12
+  cmp x11, x11
+  cmp x10, x10
+  cmp x9, x9 
+  sub x0, x0, x14
+  cbnz x0, cmptest_loop
+  ldp x8, x9, [sp, #0x40]
+  ldp x10, x11, [sp, #0x30]
+  ldp x12, x13, [sp, #0x20]
+  ldp x14, x15, [sp, #0x10]
+  add sp, sp, #0x50
+  ret 
 
 addmultest:
   sub sp, sp, #0x50
