@@ -27,6 +27,7 @@ namespace AsmGen
             tests.Add(new StqTest(4, 512, 1));
             tests.Add(new AddSchedTest(32, 128, 1));
             tests.Add(new MulSchedTest(4, 64, 1));
+            tests.Add(new MaddSchedTest(4, 64, 1));
             tests.Add(new JumpSchedTest(4, 64, 1));
             tests.Add(new TakenJumpSchedTest(4, 64, 1));
             tests.Add(new LoadSchedTest(4, 64, 1));
