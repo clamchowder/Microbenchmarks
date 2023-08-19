@@ -18,8 +18,10 @@ namespace AsmGen
         {
             List<IUarchTest> tests = new List<IUarchTest>();
             tests.Add(new RobTest(64, 768, 1));
+            tests.Add(new ZeroRobTest(128, 384, 1));
             tests.Add(new IntRfTest(32, 256, 1));
             tests.Add(new FpRfTest(32, 256, 1));
+            tests.Add(new MixIntVec128RfTest(100, 256, 1));
             tests.Add(new Fadd256RfTest(4, 160, 1));
             tests.Add(new MixFAdd256and32RfTest(4, 160, 1));
             tests.Add(new FlagRfTest(4, 100, 1));
@@ -34,7 +36,8 @@ namespace AsmGen
             tests.Add(new StoreSchedTest(4, 64, 1));
             tests.Add(new StoreDataSchedTest(4, 64, 1));
             tests.Add(new MixAddJumpSchedTest(4, 128, 1));
-            tests.Add(new FaddSchedTest(4, 64, 1));
+            tests.Add(new FaddSchedTest(20, 120, 1));
+            tests.Add(new Fadd128SchedTest(32, 80, 1));
             tests.Add(new Fadd256SchedTest(4, 64, 1));
             tests.Add(new Fma256SchedTest(4, 64, 1));
             tests.Add(new CvtSchedTest(4, 64, 1));
@@ -140,16 +143,18 @@ namespace AsmGen
             File.WriteAllText("Makefile", sb.ToString());
         }
 
+        // Adds largely ISA independent initialization code that gives tests a basic foundation,
+        // like a pointer chasing array
         static void AddCommonInitCode(StringBuilder sb, List<IUarchTest> tests, IUarchTest.ISA isa)
         {
             sb.AppendLine("int main(int argc, char *argv[]) {");
             sb.AppendLine($"  uint64_t time_diff_ms, iterations = {iterations}, structIterations = {structTestIterations}, tmp;");
-            sb.AppendLine("  double latency; int *A = NULL, *B = NULL; float *fpArr = NULL;");
+            sb.AppendLine("  double latency; int *A = NULL, *B = NULL; float *fpArr = NULL; char *test_name = NULL; int core_affinity = -1;");
             sb.AppendLine("  uint64_t tmpsink;");
             sb.AppendLine("  uint32_t list_size = " + latencyListSize + ";");
 
             // print a help message based on tests available
-            sb.AppendLine($"  printf(\"Usage: [test name] [latency list size = {latencyListSize}] [struct iterations = {structTestIterations}]\\n\");");
+            sb.AppendLine($"  printf(\"Usage: -test [test name] -listsize [latency list size = {latencyListSize}] -iterations [struct iterations = {structTestIterations}]\\n\");");
             sb.AppendLine("  if (argc < 2) {");
             sb.AppendLine("    printf(\"List of tests:\\n\");");
             foreach (IUarchTest test in tests)
@@ -157,11 +162,29 @@ namespace AsmGen
                 if (test.SupportsIsa(isa)) sb.AppendLine($"    printf(\"  {test.Prefix} - {test.Description}\\n\");");
             }
 
-            sb.AppendLine("  }");
-            sb.AppendLine("  if (argc > 3) { structIterations = atoi(argv[3]); iterations = 100 * structIterations; }");
-            sb.AppendLine("  if (argc == 1 || argc > 1 && strncmp(argv[1], \"branchtest\", 9) != 0) {");
+            // args provided. parse them and run test
+            sb.AppendLine("  } else {");
+
+            // args handling
+            sb.AppendLine("    for (int argIdx = 1; argIdx < argc; argIdx++) {");
+            sb.AppendLine("      if (*(argv[argIdx]) == '-') { char *arg = argv[argIdx] + 1;");
+            sb.AppendLine("        if (strncmp(arg, \"test\", 4) == 0) { argIdx++; test_name = argv[argIdx]; }");
+            sb.AppendLine("        if (strncmp(arg, \"iterations\", 10) == 0) { argIdx++; iterations = 100 * atoi(argv[argIdx]); }");
+            sb.AppendLine("        if (strncmp(arg, \"listsize\", 8) == 0) { argIdx++; list_size = atoi(argv[argIdx]); }");
+            sb.AppendLine("        if (strncmp(arg, \"affinity\", 8) == 0) { argIdx++; core_affinity = atoi(argv[argIdx]); }");
+            sb.AppendLine("      }"); // end -arg handling if
+            sb.AppendLine("    }"); // end args handling for loop
+
+            // Optional affinity setting for certain troublesome platforms
+            // don't need a version that uses Windows affinity APIs because Windows platforms never have this issue
+            sb.AppendLine("#ifndef __MINGW32__");
+            sb.AppendLine("  if (core_affinity != -1) setAffinity(core_affinity);");
+            sb.AppendLine("#endif");
+
+            // Generate array for pointer chasing unless we're doing a BTB test
+            sb.AppendLine("  if (argc == 1 || argc > 1 && strncmp(test_name, \"btb\", 3) != 0) {");
             GenerateLatencyTestArray(sb);
-            sb.AppendLine("  }");
+            sb.AppendLine("  }"); // end of ptr chasing array generation
             sb.AppendLine("  struct timeval startTv, endTv;");
             sb.AppendLine("  struct timezone startTz, endTz;");
         }
@@ -170,14 +193,13 @@ namespace AsmGen
         static void AddCommonEndCode(StringBuilder sb)
         {
             sb.AppendLine("  free(A); free(B); free(fpArr);");
+            sb.AppendLine("  }"); // end else
             sb.AppendLine("  return 0; }");
         }
 
         static void GenerateLatencyTestArray(StringBuilder sb)
         {
             // Fill list to create random access pattern
-            sb.AppendLine("  if (argc > 2) list_size = atoi(argv[2]);");
-
             sb.AppendLine("  A = (int*)malloc(sizeof(int) * list_size);");
             sb.AppendLine("  srand(time(NULL));");
             sb.AppendLine("  FillPatternArr(A, list_size, 64);\n");

@@ -49,7 +49,7 @@ namespace AsmGen
 
         public static void GenerateTestBlock(StringBuilder sb, UarchTest test)
         {
-            sb.AppendLine("  if (argc > 1 && strncmp(argv[1], \"" + test.Prefix + "\", " + test.Prefix.Length + ") == 0) {");
+            sb.AppendLine("  if (argc > 1 && strncmp(test_name, \"" + test.Prefix + "\", " + test.Prefix.Length + ") == 0) {");
             sb.AppendLine("    printf(\"" + test.Description + ":\\n\");");
 
             int[] counts = test.Counts;

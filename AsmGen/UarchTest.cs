@@ -34,7 +34,7 @@ namespace AsmGen
 
         public void GenerateTestBlock(StringBuilder sb, IUarchTest.ISA isa)
         {
-            sb.AppendLine("  if (argc > 1 && strncmp(argv[1], \"" + Prefix + "\", " + Prefix.Length + ") == 0) {");
+            sb.AppendLine("  if (argc > 1 && strncmp(test_name, \"" + Prefix + "\", " + Prefix.Length + ") == 0) {");
             sb.AppendLine("    printf(\"" + Description + ":\\n\");");
 
             if (isa == IUarchTest.ISA.mips64 || isa == IUarchTest.ISA.riscv)
