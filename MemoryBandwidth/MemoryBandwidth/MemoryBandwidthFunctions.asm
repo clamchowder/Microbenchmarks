@@ -14,6 +14,7 @@ global avx_asm_copy
 global avx_asm_cflip
 global avx_asm_add
 global avx512_asm_read
+global clzero_asm_write
 
 global repmovsb_copy
 global repstosb_write
@@ -401,6 +402,59 @@ asm_avx512_test_iteration_count:
   jnz avx512_asm_read_pass_loop ; skip iteration decrement if we're not back to start
   dec r8
   jnz avx512_asm_read_pass_loop
+  pop r14
+  pop r15
+  pop rbx
+  pop rdi
+  pop rsi
+  ret
+
+clzero_asm_write:
+  push rsi
+  push rdi
+  push rbx
+  push r15
+  push r14
+  mov r15, 256 ; load in blocks of 256 bytes
+  sub rdx, 128 ; last iteration: rsi == rdx. rsi > rdx = break
+  xor r9, r9   ; not doing start anymore, too lazy to clean up code
+  ; mov rsi, r9  ; assume we're passed in an aligned start location O.o
+  xor rsi, rsi
+  xor rbx, rbx
+  lea rdi, [rcx + rsi * 4]
+  mov r14, rdi
+clzero_asm_write_pass_loop:
+  mov rax, rdi
+  clzero
+  add rax, 64
+  clzero
+  add rax, 64
+  clzero
+  add rax, 64
+  clzero
+  add rsi, 64
+  add rdi, r15
+  mov rax, rdi
+  clzero
+  add rax, 64
+  clzero
+  add rax, 64
+  clzero
+  add rax, 64
+  clzero
+  add rsi, 64
+  add rdi, r15
+  cmp rdx, rsi
+  jge clzero_asm_write_iteration_count
+  mov rsi, rbx
+  lea rdi, [rcx + rsi * 4]  ; back to start
+clzero_asm_write_iteration_count:
+  cmp r9, rsi
+  jnz clzero_asm_write_pass_loop ; skip iteration decrement if we're not back to start
+  dec r8
+  sfence
+  jnz clzero_asm_write_pass_loop
+  mov rax, 1
   pop r14
   pop r15
   pop rbx
