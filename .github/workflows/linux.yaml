@@ -19,4 +19,4 @@ jobs:
         env:
           UPLOAD_KEY: ${{ secrets.UPLOAD_KEY }}
           UPLOAD_URL: ${{ secrets.UPLOAD_URL }}
-        run:  curl -X PUT -T clammarks.txz -H "Authorization: Bearer $UPLOAD_KEY" "$UPLOAD_URL"
+        run:  curl -X PUT -T clammarks.txz -H "$UPLOAD_KEY" "$UPLOAD_URL"
