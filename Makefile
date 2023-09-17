@@ -15,7 +15,7 @@ clean:
 package:
 	rm -rf "clammarks-$(REV)" "clammarks.txz"
 	mkdir "clammarks-$(REV)"
-	cp "GpuMemLatency/*.cl" "clammarks-$(REV)"
+	find GpuMemLatency -type f -name "*.cl" -exec cp {} "clammarks-78152d4" \;
 	find . -type f -executable -exec cp {} "clammarks-$(REV)" \;
 	rm -f "clammarks-$(REV)/*.sample"
 	rm -f "clammarks-$(REV)/description"
