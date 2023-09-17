@@ -13,10 +13,10 @@ clean:
 	find . -type f -name "*.o" -exec rm -f {} \; && find . -type f -executable -exec rm -f {} \;
 
 package:
-	rm -rf "clammarks-$(REV)" "clammarks-$(REV).txz"
+	rm -rf "clammarks-$(REV)" "clammarks.txz"
 	mkdir "clammarks-$(REV)"
 	find . -type f -executable -exec cp {} "clammarks-$(REV)" \;
-	tar caf "clammarks-$(REV).txz" "clammarks-$(REV)"
+	tar caf "clammarks.txz" "clammarks-$(REV)"
 
 $(folders): .FORCE
 		$(MAKE) -C $@ 
