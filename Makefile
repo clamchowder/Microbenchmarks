@@ -17,7 +17,7 @@ package:
 	mkdir "clammarks-$(REV)"
 	find GpuMemLatency -type f -name "*.cl" -exec cp {} "clammarks-78152d4" \;
 	find . -type f -executable -exec cp {} "clammarks-$(REV)" \;
-	rm -f "clammarks-$(REV)/*.sample"
+	find "clammarks-$(REV)" -type f -name "*.sample" -exec rm -f {} \;
 	rm -f "clammarks-$(REV)/description"
 	rm -f "clammarks-$(REV)/exclude"
 	tar caf "clammarks.txz" "clammarks-$(REV)"
