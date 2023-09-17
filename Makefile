@@ -13,9 +13,10 @@ clean:
 	find . -type f -name "*.o" -exec rm -f {} \; && find . -type f -executable -exec rm -f {} \;
 
 package:
+	export REV=$(REV)
 	rm -rf "clammarks-$(REV)" "clammarks.txz"
 	mkdir "clammarks-$(REV)"
-	find GpuMemLatency -type f -name "*.cl" -exec cp {} "clammarks-78152d4" \;
+	find GpuMemLatency -type f -name "*.cl" -exec cp {} "clammarks-$(REV)" \;
 	find . -type f -executable -exec cp {} "clammarks-$(REV)" \;
 	find "clammarks-$(REV)" -type f -name "*.sample" -exec rm -f {} \;
 	rm -f "clammarks-$(REV)/description"
