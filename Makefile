@@ -15,7 +15,10 @@ clean:
 package:
 	rm -rf "clammarks-$(REV)" "clammarks.txz"
 	mkdir "clammarks-$(REV)"
-	cp GpuMemLatency/*.cl "clammarks-$(REV)"
+	cp "GpuMemLatency/kernel.cl" "clammarks-$(REV)"
+	cp "GpuMemLatency/instruction_rate_kernel.cl" "clammarks-$(REV)"
+	cp "GpuMemLatency/instruction_rate_fp16_kernel.cl" "clammarks-$(REV)"
+	cp "GpuMemLatency/instruction_rate_fp64_kernel.cl" "clammarks-$(REV)"
 	find . -type f -executable -exec cp {} "clammarks-$(REV)" \;
 	tar caf "clammarks.txz" "clammarks-$(REV)"
 
