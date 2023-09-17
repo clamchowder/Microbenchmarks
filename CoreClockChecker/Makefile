@@ -10,7 +10,7 @@ amd64:
 	x86_64-linux-gnu-gcc $(CFLAGS) BoostClockChecker.c BoostClockChecker_x86.s -o BoostClockChecker_amd64 $(LDFLAGS)
 
 aarch64:
-	aarch64-linux-gnu-gcc $(CFLAGS) BoostClockChecker.c BoostClockChecker_arm.s -o BoostClockChecker_amd64 $(LDFLAGS)
+	aarch64-linux-gnu-gcc $(CFLAGS) BoostClockChecker.c BoostClockChecker_arm.s -o BoostClockChecker_aarch64 $(LDFLAGS)
 
 all: amd64 aarch64
 
