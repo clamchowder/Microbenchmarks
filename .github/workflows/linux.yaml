@@ -5,9 +5,16 @@ jobs:
     # Only Ubuntu for now.
     runs-on: ubuntu-latest
     steps:
-      - run: sudo apt-get update
-      - run: sudo apt-get install -y build-essential ocl-icd-opencl-dev opencl-headers libnuma-dev
+      - name: Install Build Tools
+        run: sudo apt update && sudo apt --quiet=2 --assume-yes full-upgrade && sudo apt install --quiet=2 --assume-yes build-essential crossbuild-essential-arm64 gcc-riscv64-linux-gnu mingw-w64 ocl-icd-opencl-dev opencl-headers libnuma-dev
       - name: Check out repository code
         uses: actions/checkout@v3
-      - name: Try to build all benchmarks with a Makefile
-        run: make -j4 all
+      - name: Build all benchmarks
+        run: make all
+      - name: Package benchmarks
+        run: make package
+      - name: Upload pre-compiled package
+        env:
+          UPLOAD_KEY: ${{ secrets.UPLOAD_KEY }}
+          UPLOAD_URL: ${{ secrets.UPLOAD_URL }}
+        run:  curl -X PUT -T clammarks.txz -H "$UPLOAD_KEY" "$UPLOAD_URL"
