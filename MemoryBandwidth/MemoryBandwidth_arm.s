@@ -18,6 +18,8 @@
 .global _flush_icache
 .global _readbankconflict
 
+.balign 4
+
 /* x0 = ptr to array (was rcx)
  * x1 = arr length (was rdx)
  * x2 = iterations (was r8)
