@@ -6,13 +6,15 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Install Build Tools
-        run: sudo apt update && sudo apt --quiet=2 --assume-yes full-upgrade && sudo apt install --quiet=2 --assume-yes build-essential crossbuild-essential-arm64 gcc-riscv64-linux-gnu mingw-w64 ocl-icd-opencl-dev opencl-headers libnuma-dev
+        run: sudo apt update && sudo apt --quiet=2 --assume-yes full-upgrade && sudo apt install --quiet=2 --assume-yes build-essential crossbuild-essential-arm64 gcc-riscv64-linux-gnu mingw-w64 ocl-icd-opencl-dev opencl-headers libnuma-dev b3sum
       - name: Check out repository code
         uses: actions/checkout@v3
       - name: Build all benchmarks
         run: make all
       - name: Package benchmarks
         run: make package
+      - name: b3sum
+        run: b3sum clammarks.txz
       - name: Upload pre-compiled package
         env:
           UPLOAD_KEY: ${{ secrets.UPLOAD_KEY }}
