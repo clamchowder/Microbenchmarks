@@ -18,9 +18,10 @@
 #include <sched.h>
 #include <math.h>
 #include <sys/mman.h>
-#include <sys/sysinfo.h>
 #include <errno.h>
+
 #ifdef NUMA
+#include <sys/sysinfo.h>
 #include <numa.h>
 #endif
 
@@ -39,7 +40,9 @@ typedef struct BandwidthTestThreadData {
     uint64_t start;
     float* arr;
     float bw; // written to by the thread
+    #ifdef NUMA
     cpu_set_t cpuset; // if numa set, will set affinity
+    #endif
 } BandwidthTestThreadData;
 
 float MeasureBw(uint64_t sizeKb, uint64_t iterations, uint64_t threads, int shared, int nopBytes, int coreNode, int memNode);

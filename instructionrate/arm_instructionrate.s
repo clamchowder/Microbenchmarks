@@ -20,6 +20,26 @@
 .global rortest
 .global mixmulrortest
 
+.global _clktest
+.global _addtest
+.global _eortest
+.global _maddaddtest
+.global _cmptest
+.global _addmultest
+.global _addmul21test
+.global _mixaddjmp21test
+.global _mul32test
+.global _mul64test
+.global _latmul64test
+.global _noptest
+.global _fusejmptest
+.global _jmptest
+.global _mixmuljmptest
+.global _mixmuljmptest21
+.global _mixaddjmptest
+.global _rortest
+.global _mixmulrortest
+
 .global vecadd128test
 .global latvecadd128test
 .global vecmul128test
@@ -46,6 +66,32 @@
 .global scalarfmatest
 .global latscalarfmatest
 
+.global _vecadd128test
+.global _latvecadd128test
+.global _vecmul128test
+.global _latvecmul128test
+.global _mixvecaddmul128test
+.global _faddtest
+.global _latfaddtest
+.global _latfmultest
+.global _latvecfadd128test
+.global _latvecfmul128test
+.global _vecfadd128test
+.global _vecfmul128test
+.global _mixvecfaddfmul128test
+.global _mixaddvecadd128test
+.global _mix3to1addvecadd128test
+.global _mix1to1addvecadd128test
+.global _mixmulvecmultest
+.global _mixvecmulfmultest
+.global _mixvecaddfaddtest
+.global _mixjmpvecaddtest
+.global _mixjmpvecmultest
+.global _vecfma128test
+.global _latvecfma128test
+.global _scalarfmatest
+.global _latscalarfmatest
+
 .global mixvecfaddfma128test
 .global mixvecfmulfma128test
 .global loadtest
@@ -54,6 +100,14 @@
 .global vecloadtest
 .global vecstoretest
 
+.global _mixvecfaddfma128test
+.global _mixvecfmulfma128test
+.global _loadtest
+.global _mixloadstoretest
+.global _mix21loadstoretest
+.global _vecloadtest
+.global _vecstoretest
+
 //renamer tests
 .global indepmovtest
 .global depmovtest
@@ -61,7 +115,16 @@
 .global movzerotest
 .global subzerotest
 
+.global _indepmovtest
+.global _depmovtest
+.global _xorzerotest
+.global _movzerotest
+.global _subzerotest
+
+.balign 4
+
 /* x0 = arg = iteration count. all iteration counts must be divisible by 10 */
+_clktest:
 clktest:
   sub sp, sp, #0x30
   stp x14, x15, [sp, #0x10]
@@ -97,6 +160,7 @@ clktest_loop:
   add sp, sp, #0x30
   ret
 
+_noptest:
 noptest:
   sub sp, sp, #0x30
   stp x14, x15, [sp, #0x10]
@@ -144,6 +208,7 @@ noptest_loop:
   add sp, sp, #0x30
   ret
 
+_addtest:
 addtest:
   sub sp, sp, #0x50
   stp x14, x15, [sp, #0x10]
@@ -197,6 +262,7 @@ addtest_loop:
   add sp, sp, #0x50
   ret 
 
+_maddaddtest:
 maddaddtest:
   sub sp, sp, #0x50
   stp x14, x15, [sp, #0x10]
@@ -241,6 +307,7 @@ maddaddtest_loop:
   add sp, sp, #0x50
   ret 
 
+_eortest:
 eortest:
   sub sp, sp, #0x50
   stp x14, x15, [sp, #0x10]
@@ -294,6 +361,7 @@ eortest_loop:
   add sp, sp, #0x50
   ret
 
+_cmptest:
 cmptest:
   sub sp, sp, #0x50
   stp x14, x15, [sp, #0x10]
@@ -347,6 +415,7 @@ cmptest_loop:
   add sp, sp, #0x50
   ret 
 
+_addmultest:
 addmultest:
   sub sp, sp, #0x50
   stp x14, x15, [sp, #0x10]
@@ -391,6 +460,7 @@ addmultest_loop:
   add sp, sp, #0x50
   ret
 
+_addmul21test:
 addmul21test:
   sub sp, sp, #0x50
   stp x14, x15, [sp, #0x10]
@@ -440,7 +510,7 @@ addmul21test_loop:
   add sp, sp, #0x50
   ret 
 
-
+_mul32test:
 mul32test:
   sub sp, sp, #0x50
   stp x14, x15, [sp, #0x10]
@@ -485,6 +555,7 @@ mul32test_loop:
   add sp, sp, #0x50
   ret
 
+_mul64test:
 mul64test:
   sub sp, sp, #0x50
   stp x14, x15, [sp, #0x10]
@@ -529,6 +600,7 @@ mul64test_loop:
   add sp, sp, #0x50
   ret
 
+_latmul64test:
 latmul64test:
   sub sp, sp, #0x50
   stp x14, x15, [sp, #0x10]
@@ -569,6 +641,7 @@ latmul64test_loop:
   ret
 
 /* needs an additional parameter passed in x1 - ptr to array of 4 floats */
+_vecadd128test:
 vecadd128test:
   sub sp, sp, #0x20
   stp x14, x15, [sp, #0x10]
@@ -606,6 +679,7 @@ vecadd128test_loop:
   add sp, sp, #0x20
   ret
 
+_latvecadd128test:
 latvecadd128test:
   sub sp, sp, #0x20
   stp x14, x15, [sp, #0x10]
@@ -638,6 +712,7 @@ latvecadd128test_loop:
   add sp, sp, #0x20
   ret
 
+_faddtest:
 faddtest:
   sub sp, sp, #0x20
   stp x14, x15, [sp, #0x10]
@@ -675,6 +750,7 @@ faddtest_loop:
   add sp, sp, #0x20
   ret
 
+_latfaddtest:
 latfaddtest:
   sub sp, sp, #0x20
   stp x14, x15, [sp, #0x10]
@@ -707,6 +783,7 @@ latfaddtest_loop:
   add sp, sp, #0x20
   ret
 
+_latfmultest:
 latfmultest:
   sub sp, sp, #0x20
   stp x14, x15, [sp, #0x10]
@@ -739,6 +816,7 @@ latfmultest_loop:
   add sp, sp, #0x20
   ret
 
+_latvecmul128test:
 latvecmul128test:
   sub sp, sp, #0x20
   stp x14, x15, [sp, #0x10]
@@ -771,6 +849,7 @@ latvecmul128test_loop:
   add sp, sp, #0x20
   ret
 
+_vecmul128test:
 vecmul128test:
   sub sp, sp, #0x20
   stp x14, x15, [sp, #0x10]
@@ -808,6 +887,7 @@ vecmul128test_loop:
   add sp, sp, #0x20
   ret
 
+_scalarfmatest:
 scalarfmatest:
   sub sp, sp, #0x20
   stp x14, x15, [sp, #0x10]
@@ -849,6 +929,7 @@ scalarfmatest_loop:
   add sp, sp, #0x20
   ret
 
+_latscalarfmatest:
 latscalarfmatest:
   sub sp, sp, #0x20
   stp x14, x15, [sp, #0x10]
@@ -881,6 +962,7 @@ latscalarfmatest_loop:
   add sp, sp, #0x20
   ret
 
+_vecfma128test:
 vecfma128test:
   sub sp, sp, #0x20
   stp x14, x15, [sp, #0x10]
@@ -922,6 +1004,7 @@ vecfma128test_loop:
   add sp, sp, #0x20
   ret
 
+_mixvecfmulfma128test:
 mixvecfmulfma128test:
   sub sp, sp, #0x20
   stp x14, x15, [sp, #0x10]
@@ -963,6 +1046,7 @@ mixvecfmulfma128test_loop:
   add sp, sp, #0x20
   ret
 
+_mixvecfaddfma128test:
 mixvecfaddfma128test:
   sub sp, sp, #0x20
   stp x14, x15, [sp, #0x10]
@@ -1004,6 +1088,7 @@ mixvecfaddfma128test_loop:
   add sp, sp, #0x20
   ret
 
+_latvecfma128test:
 latvecfma128test:
   sub sp, sp, #0x20
   stp x14, x15, [sp, #0x10]
@@ -1036,6 +1121,7 @@ latvecfma128test_loop:
   add sp, sp, #0x20
   ret
 
+_vecfadd128test:
 vecfadd128test:
   sub sp, sp, #0x20
   stp x14, x15, [sp, #0x10]
@@ -1073,6 +1159,7 @@ vecfadd128test_loop:
   add sp, sp, #0x20
   ret
 
+_latvecfadd128test:
 latvecfadd128test:
   sub sp, sp, #0x20
   stp x14, x15, [sp, #0x10]
@@ -1105,6 +1192,7 @@ latvecfadd128test_loop:
   add sp, sp, #0x20
   ret
 
+_vecfmul128test:
 vecfmul128test:
   sub sp, sp, #0x20
   stp x14, x15, [sp, #0x10]
@@ -1142,6 +1230,7 @@ vecfmul128test_loop:
   add sp, sp, #0x20
   ret
 
+_latvecfmul128test:
 latvecfmul128test:
   sub sp, sp, #0x20
   stp x14, x15, [sp, #0x10]
@@ -1174,6 +1263,7 @@ latvecfmul128test_loop:
   add sp, sp, #0x20
   ret
 
+_mixvecfaddfmul128test:
 mixvecfaddfmul128test:
   sub sp, sp, #0x20
   stp x14, x15, [sp, #0x10]
@@ -1213,6 +1303,7 @@ mixvecfaddfmul128test_loop:
   add sp, sp, #0x20
   ret
 
+_mixvecaddmul128test:
 mixvecaddmul128test:
   sub sp, sp, #0x20
   stp x14, x15, [sp, #0x10]
@@ -1252,6 +1343,7 @@ mixvecaddmul128test_loop:
   add sp, sp, #0x20
   ret
 
+_mixaddvecadd128test:
 mixaddvecadd128test:
   sub sp, sp, #0x50
   stp x14, x15, [sp, #0x10]
@@ -1314,6 +1406,7 @@ mixaddvecadd128test_loop:
   add sp, sp, #0x50
   ret
 
+_mix3to1addvecadd128test:
 mix3to1addvecadd128test:
   sub sp, sp, #0x50
   stp x14, x15, [sp, #0x10]
@@ -1386,6 +1479,7 @@ mix3to1addvecadd128test_loop:
   add sp, sp, #0x50
   ret
 
+_mix1to1addvecadd128test:
 mix1to1addvecadd128test:
   sub sp, sp, #0x50
   stp x14, x15, [sp, #0x10]
@@ -1463,6 +1557,7 @@ mix1to1addvecadd128test_loop:
   add sp, sp, #0x50
   ret
 
+_mixmulvecmultest:
 mixmulvecmultest:
   sub sp, sp, #0x50
   stp x14, x15, [sp, #0x10]
@@ -1517,6 +1612,7 @@ mixmulvecmultest_loop:
   add sp, sp, #0x50
   ret
 
+_mixvecmulfmultest:
 mixvecmulfmultest:
   sub sp, sp, #0x20
   stp x14, x15, [sp, #0x10]
@@ -1554,6 +1650,7 @@ mixvecmulfmultest_loop:
   add sp, sp, #0x20
   ret
 
+_mixvecaddfaddtest:
 mixvecaddfaddtest:
   sub sp, sp, #0x20
   stp x14, x15, [sp, #0x10]
@@ -1591,6 +1688,7 @@ mixvecaddfaddtest_loop:
   add sp, sp, #0x20
   ret
 
+_mixjmpvecaddtest:
 mixjmpvecaddtest:
   sub sp, sp, #0x20
   stp x14, x15, [sp, #0x10]
@@ -1638,6 +1736,7 @@ mixjmpvecaddtest_jellydonut:
   add sp, sp, #0x20
   ret
 
+_mixjmpvecmultest:
 mixjmpvecmultest:
   sub sp, sp, #0x20
   stp x14, x15, [sp, #0x10]
@@ -1675,6 +1774,7 @@ mixjmpvecmultest_jellydonut:
   add sp, sp, #0x20
   ret
 
+_vecloadtest:
 vecloadtest:
   sub sp, sp, #0x20
   stp x14, x15, [sp, #0x10]
@@ -1706,6 +1806,7 @@ vecloadtest_loop:
   add sp, sp, #0x20
   ret
 
+_vecstoretest:
 vecstoretest:
   sub sp, sp, #0x20
   stp x14, x15, [sp, #0x10]
@@ -1742,6 +1843,7 @@ vecstoretest_loop:
   add sp, sp, #0x20
   ret
 
+_loadtest:
 loadtest:
   sub sp, sp, #0x50
   stp x14, x15, [sp, #0x10]
@@ -1779,6 +1881,7 @@ loadtest_loop:
   add sp, sp, #0x50
   ret
 
+_mixloadstoretest:
 mixloadstoretest:
   sub sp, sp, #0x50
   stp x14, x15, [sp, #0x10]
@@ -1816,6 +1919,7 @@ mixloadstoretest_loop:
   add sp, sp, #0x50
   ret
 
+_mix21loadstoretest:
 mix21loadstoretest:
   sub sp, sp, #0x50
   stp x14, x15, [sp, #0x10]
@@ -1863,6 +1967,7 @@ mix21loadstoretest_loop:
   add sp, sp, #0x50
   ret
 
+_jmptest:
 jmptest:
   sub sp, sp, #0x20
   stp x14, x15, [sp, #0x10]
@@ -1895,6 +2000,7 @@ jmptest_jellydonut:
   add sp, sp, #0x20
   ret
 
+_fusejmptest:
 fusejmptest:
   sub sp, sp, #0x20
   stp x14, x15, [sp, #0x10]
@@ -1925,6 +2031,7 @@ fusejmptest_jellydonut:
   add sp, sp, #0x20
   ret
 
+_mixmuljmptest:
 mixmuljmptest:
   sub sp, sp, #0x50
   stp x14, x15, [sp, #0x10]
@@ -1970,6 +2077,7 @@ mixmuljmptest_jellydonut:
   add sp, sp, #0x50
   ret
 
+_mixmuljmptest21:
 mixmuljmptest21:
   sub sp, sp, #0x50
   stp x14, x15, [sp, #0x10]
@@ -2025,6 +2133,7 @@ mixmuljmptest21_jellydonut:
   add sp, sp, #0x50
   ret
 
+_mixaddjmptest:
 mixaddjmptest:
   sub sp, sp, #0x50
   stp x14, x15, [sp, #0x10]
@@ -2070,6 +2179,7 @@ mixaddjmptest_jellydonut:
   add sp, sp, #0x50
   ret
 
+_mixaddjmp21test:
 mixaddjmp21test:
   sub sp, sp, #0x50
   stp x14, x15, [sp, #0x10]
@@ -2116,7 +2226,7 @@ mixaddjmp21test_jellydonut:
   add sp, sp, #0x50 
   ret
 
-
+_mixmulrortest:
 mixmulrortest:
   sub sp, sp, #0x80
   stp x14, x15, [sp, #0x10]
@@ -2173,7 +2283,7 @@ mixmulrortest_loop:
   add sp, sp, #0x80
   ret
 
-
+_rortest:
 rortest:
   sub sp, sp, #0x50
   stp x14, x15, [sp, #0x10]
@@ -2219,6 +2329,7 @@ rortest_jellydonut:
   add sp, sp, #0x50
   ret
 
+_depmovtest:
 depmovtest:
   sub sp, sp, #0x40
   stp x14, x15, [sp, #0x10]
@@ -2256,6 +2367,7 @@ depmovtest_loop:
   add sp, sp, #0x40
   ret
 
+_indepmovtest:
 indepmovtest:
   sub sp, sp, #0x50
   stp x14, x15, [sp, #0x10]
@@ -2295,6 +2407,7 @@ indepmovtest_loop:
   add sp, sp, #0x50
   ret
 
+_xorzerotest:
 xorzerotest:
   sub sp, sp, #0x50
   stp x14, x15, [sp, #0x10]
@@ -2333,6 +2446,7 @@ xorzerotest_loop:
   add sp, sp, #0x50
   ret
 
+_movzerotest:
 movzerotest:
   sub sp, sp, #0x50
   stp x14, x15, [sp, #0x10]
@@ -2371,6 +2485,7 @@ movzerotest_loop:
   add sp, sp, #0x50
   ret
 
+_subzerotest:
 subzerotest:
   sub sp, sp, #0x50
   stp x14, x15, [sp, #0x10]
