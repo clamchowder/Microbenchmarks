@@ -1,6 +1,12 @@
 #include <stdio.h>
 #include <stdint.h>
-#include <sys\timeb.h>
+
+#ifndef __MINGW32__
+    #include <sys\timeb.h>
+#else
+    #include <sys/timeb.h>
+#endif
+
 #include <intrin.h>
 #include <windows.h>
 

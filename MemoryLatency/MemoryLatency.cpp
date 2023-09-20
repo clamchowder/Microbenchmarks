@@ -1,7 +1,11 @@
 #include <stdio.h>
 #include <stdint.h>
 #include <stdlib.h>
-#include <sys\timeb.h>
+#ifdef __MINGW32__
+    #include <sys/timeb.h>
+#else
+    #include <sys\timeb.h>
+#endif
 #include <math.h>
 #include <windows.h>
 #include <tchar.h>

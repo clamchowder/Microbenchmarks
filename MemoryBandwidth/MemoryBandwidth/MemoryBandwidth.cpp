@@ -5,7 +5,11 @@
 #include <stdlib.h>
 #include <stdint.h>
 #include <string.h>
-#include <sys\timeb.h>
+#ifdef __MINGW32__
+    #include <sys/timeb.h>
+#else
+    #include <sys\timeb.h>
+#endif
 #include <math.h>
 #include <intrin.h>
 #include <immintrin.h>
