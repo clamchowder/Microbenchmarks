@@ -8,7 +8,7 @@ jobs:
       - name: Install prerequisites
         run: sudo apt update && sudo apt -qq --assume-yes full-upgrade && sudo apt install -qq -y build-essential crossbuild-essential-arm64 gcc-riscv64-linux-gnu ocl-icd-opencl-dev opencl-headers libnuma-dev b3sum unzip
       - name: Wild tomfoolery attempt
-        run: brew install mingw-w64
+        run: eval "$(/home/linuxbrew/.linuxbrew/bin/brew shellenv)" && brew install mingw-w64
       - name: Check out repository code
         uses: actions/checkout@v3
       - name: Build all benchmarks
