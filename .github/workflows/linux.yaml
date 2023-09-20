@@ -1,19 +1,21 @@
-name: Build benchmarks on Ubuntu
-on: [push, pull_request]
+name: Build Benchmarks on Ubuntu
+on: [push]
 jobs:
   BuildBenchmarks:
     # Only Ubuntu for now.
     runs-on: ubuntu-latest
     steps:
-      - name: Install Build Tools
-        run: sudo apt update && sudo apt --quiet=2 --assume-yes full-upgrade && sudo apt install --quiet=2 --assume-yes ocl-icd-opencl-dev opencl-headers libnuma-dev unzip gnulib crossbuild-essential-arm64 gcc-riscv64-linux-gnu mingw-w64 ocl-icd-opencl-dev opencl-headers libnuma-dev unzip
+      - name: Install prerequisites 
+        run: sudo apt update && sudo apt -qq --assume-yes full-upgrade && sudo apt install -qq -y build-essential crossbuild-essential-arm64 gcc-riscv64-linux-gnu mingw-w64 ocl-icd-opencl-dev opencl-headers libnuma-dev b3sum unzip
       - name: Check out repository code
         uses: actions/checkout@v3
       - name: Build all benchmarks
         run: make ci
       - name: Package benchmarks
         run: make package
-      - name: Upload pre-compiled package
+      - name: b3sum
+        run: b3sum clammarks.txz
+      - name: Upload package
         env:
           UPLOAD_KEY: ${{ secrets.UPLOAD_KEY }}
           UPLOAD_URL: ${{ secrets.UPLOAD_URL }}
