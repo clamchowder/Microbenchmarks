@@ -1,22 +1,24 @@
+include ../Common/arch_detect.mk
+
 CFLAGS = -O3 -fopenmp
 
-machine: $(TARGET)
+all: $(TARGET)
 
 amd64:
-	x86_64-linux-gnu-gcc $(CFLAGS) meshsim.c -o Meshsim_amd64
+	$(CC) $(CFLAGS) meshsim.c -o Meshsim_amd64 $(LDFLAGS)
 
 aarch64:
-	aarch64-linux-gnu-gcc $(CFLAGS) meshsim.c -o Meshsim_aarch64
+	$(CC) $(CFLAGS) meshsim.c -o Meshsim_aarch64 $(LDFLAGS)
 
 riscv64:
-	riscv64-linux-gnu-gcc $(CFLAGS) meshsim.c -o Meshsim_riscv64
+	$(CC) $(CFLAGS) meshsim.c -o Meshsim_riscv64 $(LDFLAGS)
 
 w64:
-	x86_64-w64-mingw32-gcc $(CFLAGS) meshsim.c -o Meshsim_win64.exe
+	$(CC) $(CFLAGS) meshsim.c -o Meshsim_w64.exe $(LDFLAGS)
 
-all: amd64 aarch64 riscv64 w64
+ci: amd64 aarch64 riscv64 w64
 
 clean:
 	rm -f *.o && find . -type f -executable -delete
 
-.PHONY: machine
+.PHONY: all ci clean

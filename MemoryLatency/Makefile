@@ -1,25 +1,30 @@
-include ../common/arch_detect.mk
+include ../Common/arch_detect.mk
 
 CFLAGS = -O3
 LDFLAGS = -lm
 
-machine: $(TARGET)
+all: $(TARGET)
 
 amd64:
-	x86_64-linux-gnu-gcc $(CFLAGS) MemoryLatency.c MemoryLatency_x86.s -o MemoryLatency_amd64 $(LDFLAGS)
+	$(CC) $(CFLAGS) MemoryLatency.c MemoryLatency_x86.s -o MemoryLatency_amd64 $(LDFLAGS)
 
-amd64_numa:
-	x86_64-linux-gnu-gcc $(CFLAGS) -DNUMA MemoryLatency.c MemoryLatency_x86.s -o MemoryLatency_numa_amd64 $(LDFLAGS) -lnuma
+amd64-numa:
+	$(CC) $(CFLAGS) -DNUMA MemoryLatency.c MemoryLatency_x86.s -o MemoryLatency_numa_amd64 $(LDFLAGS) -lnuma
 
 aarch64:
-	aarch64-linux-gnu-gcc $(CFLAGS) MemoryLatency.c MemoryLatency_arm.s -o MemoryLatency_aarch64 $(LDFLAGS)
+	$(CC) $(CFLAGS) MemoryLatency.c MemoryLatency_arm.s -o MemoryLatency_aarch64 $(LDFLAGS)
+
+aarch64-numa:
+	$(CC) $(CFLAGS) -DNUMA MemoryLatency.c MemoryLatency_arm.s -o MemoryLatency_aarch64 $(LDFLAGS) -lnuma
 
 w64:
-	x86_64-w64-mingw32-g++ $(CFLAGS) MemoryLatency.cpp MemoryLatency_x86.s -o MemoryLatency_win64.exe $(LDFLAGS)
+	$(CC) $(CFLAGS) MemoryLatency.cpp MemoryLatency_x86.s -o MemoryLatency_w64.exe $(LDFLAGS)
 
-all: amd64 aarch64 w64
+# w64 can build with mingw 11, which isn't available on jammy
+
+ci: amd64 amd64-numa aarch64
 
 clean:
 	rm -f *.o && find . -type f -executable -delete
 
-.PHONY: machine
+.PHONY: all ci clean

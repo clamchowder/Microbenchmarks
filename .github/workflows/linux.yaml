@@ -6,11 +6,11 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Install Build Tools
-        run: sudo apt update && sudo apt --quiet=2 --assume-yes full-upgrade && sudo apt install --quiet=2 --assume-yes build-essential crossbuild-essential-arm64 gcc-riscv64-linux-gnu mingw-w64 ocl-icd-opencl-dev opencl-headers libnuma-dev
+        run: sudo apt update && sudo apt --quiet=2 --assume-yes full-upgrade && sudo apt install --quiet=2 --assume-yes ocl-icd-opencl-dev opencl-headers libnuma-dev unzip gnulib crossbuild-essential-arm64 gcc-riscv64-linux-gnu mingw-w64 ocl-icd-opencl-dev opencl-headers libnuma-dev unzip
       - name: Check out repository code
         uses: actions/checkout@v3
       - name: Build all benchmarks
-        run: make all
+        run: make ci
       - name: Package benchmarks
         run: make package
       - name: Upload pre-compiled package

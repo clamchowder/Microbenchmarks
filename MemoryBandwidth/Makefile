@@ -1,28 +1,31 @@
-include ../common/arch_detect.mk
+include ../Common/arch_detect.mk
 
 CFLAGS = -pthread -O3
 LDFLAGS= -lm
 
-machine: $(TARGET)
+all: $(TARGET)
 
 amd64:
-	x86_64-linux-gnu-gcc $(CFLAGS) MemoryBandwidth.c MemoryBandwidth_x86.s -o MemoryBandwidth_amd64 $(LDFLAGS)
+	$(CC) $(CFLAGS) MemoryBandwidth.c MemoryBandwidth_x86.s -o MemoryBandwidth_amd64 $(LDFLAGS)
 
-amd64_numa:
-	x86_64-linux-gnu-gcc $(CFLAGS) -DNUMA MemoryBandwidth.c MemoryBandwidth_x86.s -o MemoryBandwidth_numa_amd64 $(LDFLAGS) -lnuma
+amd64-numa:
+	$(CC) $(CFLAGS) -DNUMA MemoryBandwidth.c MemoryBandwidth_x86.s -o MemoryBandwidth_numa_amd64 $(LDFLAGS) -lnuma
 
 aarch64:
-	aarch64-linux-gnu-gcc $(CFLAGS) MemoryBandwidth.c MemoryBandwidth_arm.s -o MemoryBandwidth_aarch64 $(LDFLAGS)
+	$(CC) $(CFLAGS) MemoryBandwidth.c MemoryBandwidth_arm.s -o MemoryBandwidth_aarch64 $(LDFLAGS)
+
+aarch64-numa:
+	$(CC) $(CFLAGS) -DNUMA MemoryBandwidth.c MemoryBandwidth_arm.s -o MemoryBandwidth_numa_aarch64 $(LDFLAGS) -lnuma
 
 riscv64:
-	riscv64-linux-gnu-gcc $(CFLAGS) -march=rv64gcv0p7 MemoryBandwidth.c MemoryBandwidth_riscv.s -o MemoryBandwidth_riscv64 $(LDFLAGS)
+	$(CC) $(CFLAGS) -march=rv64gcv0p7 MemoryBandwidth.c MemoryBandwidth_riscv.s -o MemoryBandwidth_riscv64 $(LDFLAGS)
 
 w64:
-	x86_64-w64-mingw32-gcc $(CFLAGS) -Iinclude MemoryBandwidth.c MemoryBandwidth_x86.s -o MemoryBandwidth_win64.exe $(LDFLAGS)
+	$(CC) $(CFLAGS) MemoryBandwidth.c MemoryBandwidth_x86.s -o MemoryBandwidth_w64.exe $(LDFLAGS)
 
-all: amd64 aarch64
+ci: amd64 amd64-numa aarch64
 
 clean:
 	rm -f *.o && find . -type f -executable -delete
 
-.PHONY: machine
+.PHONY: all ci clean
