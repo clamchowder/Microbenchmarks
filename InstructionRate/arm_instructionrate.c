@@ -3,9 +3,12 @@
 #include <sys/time.h>
 #include <time.h>
 #include <stdint.h>
+#include <stdlib.h>
 #include <sys/types.h>
 #include <unistd.h>
 #include <sched.h>
+#include <pthread.h>
+#include <string.h>
 
 extern uint64_t noptest(uint64_t iterations);
 extern uint64_t clktest(uint64_t iterations);
@@ -111,6 +114,8 @@ uint64_t mixvecfaddfma128wrapper(uint64_t iterations);
 uint64_t mixvecfmulfma128wrapper(uint64_t iterations);
 uint64_t latvecfma128wrapper(uint64_t iteration);
 
+int threads = 0;
+
 int main(int argc, char *argv[]) {
   struct timeval startTv, endTv;
   struct timezone startTz, endTz;
@@ -120,11 +125,32 @@ int main(int argc, char *argv[]) {
   float latency, opsPerNs, clockSpeedGhz;
   
   if (argc > 1) {
-    int targetCpu = atoi(argv[1]);
-    cpu_set_t cpuset;
-    CPU_ZERO(&cpuset);
-    CPU_SET(targetCpu, &cpuset);
-    sched_setaffinity(gettid(), sizeof(cpu_set_t), &cpuset);
+    for (int argIdx = 1; argIdx < argc; argIdx++) {
+      if (*(argv[argIdx]) == '-') {
+        char *arg = argv[argIdx] + 1;
+	if (strncmp(arg, "affinity", 8) == 0) {
+	  argIdx++;
+	  int targetCpu = atoi(argv[argIdx]);
+          cpu_set_t cpuset;
+          CPU_ZERO(&cpuset);
+          CPU_SET(targetCpu, &cpuset);
+          sched_setaffinity(gettid(), sizeof(cpu_set_t), &cpuset); 
+	  fprintf(stderr, "Set affinity to %d\n", targetCpu);
+	}
+	else if (strncmp(arg, "threads", 7) == 0) {
+	  argIdx++;
+	  threads = atoi(argv[argIdx]);
+	  fprintf(stderr, "Multithreading mode, %d threads\n", threads);
+	}
+	else if (strncmp(arg, "iter", 4) == 0) {
+	  argIdx++;
+	  int iterMul = atoi(argv[argIdx]);
+	  iterations *= iterMul;
+	  iterationsHigh *= iterMul;
+	  fprintf(stderr, "Scaled iterations by %d\n", iterMul);
+	}
+      }
+    }
   }
 
   // figure out clock speed
@@ -197,6 +223,16 @@ int main(int argc, char *argv[]) {
   return 0;
 }
 
+struct TestThreadData {
+  uint64_t iterations;
+  uint64_t (*testfunc)(uint64_t);
+};
+
+void *TestThread(void *param) {
+  struct TestThreadData *testData = (struct TestThreadData *)param;
+  testData->testfunc(testData->iterations);
+}
+
 float measureFunction(uint64_t iterations, float clockSpeedGhz, uint64_t (*testfunc)(uint64_t)) {
   struct timeval startTv, endTv;
   struct timezone startTz, endTz;
@@ -204,7 +240,23 @@ float measureFunction(uint64_t iterations, float clockSpeedGhz, uint64_t (*testf
   float latency, opsPerNs;
 
   gettimeofday(&startTv, &startTz);
-  testfunc(iterations);
+  if (threads == 0) testfunc(iterations);
+  else {
+    pthread_t *testThreads = (pthread_t *)malloc(threads * sizeof(pthread_t));
+    struct TestThreadData *testData = (struct TestThreadData *)malloc(threads * sizeof(struct TestThreadData));
+    for (int threadIdx = 0; threadIdx < threads; threadIdx++) {
+      testData[threadIdx].iterations = iterations;
+      testData[threadIdx].testfunc = testfunc;
+      pthread_create(testThreads + threadIdx, NULL, TestThread, testData + threadIdx);
+    }
+
+    for (int threadIdx = 0; threadIdx < threads; threadIdx++) {
+      pthread_join(testThreads[threadIdx], NULL);
+    }
+
+    free(testThreads);
+    free(testData);
+  }
   gettimeofday(&endTv, &endTz);
   time_diff_ms = 1000 * (endTv.tv_sec - startTv.tv_sec) + ((endTv.tv_usec - startTv.tv_usec) / 1000);
   latency = 1e6 * (float)time_diff_ms / (float)iterations;
