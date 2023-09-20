@@ -5,6 +5,7 @@ COMPONENTS = CoherencyLatency MemoryLatency MemoryBandwidth InstructionRate Mesh
 all: $(COMPONENTS) 
 
 ci:
+	eval "$(shell /home/linuxbrew/.linuxbrew/bin/brew shellenv)"
 	for COMPONENT in $(COMPONENTS); do $(MAKE) -C $$COMPONENT ci; done
 
 package:

@@ -23,7 +23,7 @@ riscv64:
 w64:
 	$(CC) $(CFLAGS) MemoryBandwidth.c MemoryBandwidth_x86.s -o MemoryBandwidth_w64.exe $(LDFLAGS)
 
-ci: amd64 amd64-numa aarch64
+ci: amd64 amd64-numa aarch64 w64
 
 clean:
 	rm -f *.o && find . -type f -executable -delete

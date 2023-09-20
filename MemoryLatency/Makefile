@@ -22,7 +22,7 @@ w64:
 
 # w64 can build with mingw 11, which isn't available on jammy
 
-ci: amd64 amd64-numa aarch64
+ci: amd64 amd64-numa aarch64 w64
 
 clean:
 	rm -f *.o && find . -type f -executable -delete
