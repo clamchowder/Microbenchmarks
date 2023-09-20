@@ -12,7 +12,7 @@ jobs:
       - name: Check out repository code
         uses: actions/checkout@v3
       - name: Build all benchmarks
-        run: make ci
+        run: eval "$(/home/linuxbrew/.linuxbrew/bin/brew shellenv)" && make ci
       - name: Package benchmarks
         run: make package
       - name: b3sum
