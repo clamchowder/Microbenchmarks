@@ -65,6 +65,10 @@
 .global latvecfma128test
 .global scalarfmatest
 .global latscalarfmatest
+.global aesetest
+.global mixaesevecadd128test
+.global pmulltest
+.global mixpmulladd128test
 
 .global _vecadd128test
 .global _latvecadd128test
@@ -120,6 +124,10 @@
 .global _xorzerotest
 .global _movzerotest
 .global _subzerotest
+.global _aesetest
+.global _mixaesevecadd128test
+.global _pmulltest
+.global _mixpmulladd128test
 
 .balign 4
 
@@ -2523,3 +2531,147 @@ subzerotest_loop:
   ldp x14, x15, [sp, #0x10]
   add sp, sp, #0x50
   ret
+
+_aesetest:
+aesetest:
+  sub sp, sp, #0x50
+  ldr q16, [x1]
+  ldr q17, [x1]
+  ldr q18, [x1]
+  ldr q19, [x1]
+  ldr q20, [x1]
+  ldr q21, [x1] 
+  mov x14, 20
+aesetest_loop:
+  aese v0.16b, v16.16b
+  aese v1.16b, v17.16b
+  aese v2.16b, v18.16b
+  aese v3.16b, v19.16b
+  aese v4.16b, v20.16b
+  aese v0.16b, v16.16b
+  aese v1.16b, v17.16b
+  aese v2.16b, v18.16b
+  aese v3.16b, v19.16b
+  aese v4.16b, v20.16b 
+  aese v0.16b, v16.16b
+  aese v1.16b, v17.16b
+  aese v2.16b, v18.16b
+  aese v3.16b, v19.16b
+  aese v4.16b, v20.16b  
+  aese v0.16b, v16.16b
+  aese v1.16b, v17.16b
+  aese v2.16b, v18.16b
+  aese v3.16b, v19.16b
+  aese v4.16b, v20.16b 
+  sub x0, x0, x14
+  cbnz x0, aesetest_loop
+  add sp, sp, #0x50
+  ret
+
+_mixaesevecadd128test:
+mixaesevecadd128test:
+  sub sp, sp, #0x50
+  ldr q16, [x1]
+  ldr q17, [x1]
+  ldr q18, [x1]
+  ldr q19, [x1]
+  ldr q20, [x1]
+  ldr q21, [x1] 
+  mov x14, 20
+mixaesevecadd128test_loop:
+  aese v0.16b, v16.16b
+  add v5.4s, v9.4s, v16.4s
+  aese v1.16b, v17.16b
+  add v6.4s, v10.4s, v16.4s
+  aese v2.16b, v18.16b
+  add v7.4s, v11.4s, v16.4s
+  aese v3.16b, v19.16b
+  add v31.4s, v12.4s, v16.4s
+  aese v4.16b, v20.16b
+  add v30.4s, v13.4s, v16.4s
+  aese v0.16b, v16.16b
+  add v5.4s, v9.4s, v16.4s
+  aese v1.16b, v17.16b
+  add v6.4s, v10.4s, v16.4s
+  aese v2.16b, v18.16b
+  add v7.4s, v11.4s, v16.4s
+  aese v3.16b, v19.16b
+  add v31.4s, v12.4s, v16.4s
+  aese v4.16b, v20.16b
+  add v30.4s, v13.4s, v16.4s 
+  sub x0, x0, x14
+  cbnz x0, mixaesevecadd128test_loop
+  add sp, sp, #0x50
+  ret 
+
+_pmulltest:
+pmulltest:
+  sub sp, sp, #0x50
+  ldr q16, [x1]
+  ldr q17, [x1]
+  ldr q18, [x1]
+  ldr q19, [x1]
+  ldr q20, [x1]
+  ldr q21, [x1] 
+  mov x14, 20
+pmulltest_loop:
+  pmull v0.1q, v16.1d, v17.1d
+  pmull v1.1q, v16.1d, v17.1d
+  pmull v2.1q, v16.1d, v17.1d
+  pmull v3.1q, v16.1d, v17.1d
+  pmull v4.1q, v16.1d, v17.1d
+  pmull v0.1q, v16.1d, v17.1d
+  pmull v1.1q, v16.1d, v17.1d
+  pmull v2.1q, v16.1d, v17.1d
+  pmull v3.1q, v16.1d, v17.1d
+  pmull v4.1q, v16.1d, v17.1d 
+  pmull v0.1q, v16.1d, v17.1d
+  pmull v1.1q, v16.1d, v17.1d
+  pmull v2.1q, v16.1d, v17.1d
+  pmull v3.1q, v16.1d, v17.1d
+  pmull v4.1q, v16.1d, v17.1d 
+  pmull v0.1q, v16.1d, v17.1d
+  pmull v1.1q, v16.1d, v17.1d
+  pmull v2.1q, v16.1d, v17.1d
+  pmull v3.1q, v16.1d, v17.1d
+  pmull v4.1q, v16.1d, v17.1d 
+  sub x0, x0, x14
+  cbnz x0, pmulltest_loop
+  add sp, sp, #0x50
+  ret 
+
+_mixpmulladd128test:
+mixpmulladd128test:
+  sub sp, sp, #0x50
+  ldr q16, [x1]
+  ldr q17, [x1]
+  ldr q18, [x1]
+  ldr q19, [x1]
+  ldr q20, [x1]
+  ldr q21, [x1] 
+  mov x14, 20
+mixpmulladd128test_loop:
+  pmull v0.1q, v16.1d, v17.1d
+  add v5.4s, v9.4s, v16.4s
+  pmull v1.1q, v16.1d, v17.1d
+  add v6.4s, v9.4s, v16.4s
+  pmull v2.1q, v16.1d, v17.1d
+  add v7.4s, v9.4s, v16.4s
+  pmull v3.1q, v16.1d, v17.1d
+  add v31.4s, v9.4s, v16.4s
+  pmull v4.1q, v16.1d, v17.1d
+  add v30.4s, v9.4s, v16.4s
+  pmull v0.1q, v16.1d, v17.1d
+  add v5.4s, v9.4s, v16.4s
+  pmull v1.1q, v16.1d, v17.1d
+  add v6.4s, v9.4s, v16.4s
+  pmull v2.1q, v16.1d, v17.1d
+  add v7.4s, v9.4s, v16.4s
+  pmull v3.1q, v16.1d, v17.1d
+  add v31.4s, v9.4s, v16.4s
+  pmull v4.1q, v16.1d, v17.1d
+  add v30.4s, v9.4s, v16.4s 
+  sub x0, x0, x14
+  cbnz x0, mixpmulladd128test_loop
+  add sp, sp, #0x50
+  ret 
