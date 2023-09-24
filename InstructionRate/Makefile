@@ -10,6 +10,9 @@ amd64:
 aarch64:
 	$(CC) $(CFLAGS) -march=native arm_instructionrate.s arm_instructionrate.c -o InstructionRate_aarch64 $(LDFLAGS)
 
+termux:
+	clang -march=armv8+aes arm_instructionrate.s arm_instructionrate.c -o InstructionRate_aarch64 $(LDFLAGS)
+
 amd64_fusion:
 	$(CC) $(CFLAGS) x86_fusion.s x86_fusion.c -o InstructionRateFusion_amd64 $(LDFLAGS)
 

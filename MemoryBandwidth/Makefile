@@ -14,6 +14,9 @@ amd64-numa:
 aarch64:
 	$(CC) $(CFLAGS) MemoryBandwidth.c MemoryBandwidth_arm.s -o MemoryBandwidth_aarch64 $(LDFLAGS)
 
+termux:
+	gcc -O3 -pthread MemoryBandwidth.c MemoryBandwidth_arm.s -o MemoryBandwidth_aarch64 -lm
+
 aarch64-numa:
 	$(CC) $(CFLAGS) -DNUMA MemoryBandwidth.c MemoryBandwidth_arm.s -o MemoryBandwidth_numa_aarch64 $(LDFLAGS) -lnuma
 

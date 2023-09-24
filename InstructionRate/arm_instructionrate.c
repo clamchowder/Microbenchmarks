@@ -124,7 +124,8 @@ uint64_t mixaesevecadd128wrapper(uint64_t iterations);
 uint64_t pmullwrapper(uint64_t iterations);
 uint64_t mixpmulladd128wrapper(uint64_t iterations);
 
-int threads = 0;
+int threads = 0, hardaffinity = 0;
+cpu_set_t cpuset;
 
 int main(int argc, char *argv[]) {
   struct timeval startTv, endTv;
@@ -141,12 +142,19 @@ int main(int argc, char *argv[]) {
 	if (strncmp(arg, "affinity", 8) == 0) {
 	  argIdx++;
 	  int targetCpu = atoi(argv[argIdx]);
-          cpu_set_t cpuset;
           CPU_ZERO(&cpuset);
           CPU_SET(targetCpu, &cpuset);
           sched_setaffinity(gettid(), sizeof(cpu_set_t), &cpuset); 
 	  fprintf(stderr, "Set affinity to %d\n", targetCpu);
 	}
+        else if (strncmp(arg, "hardaffinity", 12) == 0) {
+          CPU_ZERO(&cpuset);
+          CPU_SET(0, &cpuset);
+          CPU_SET(1, &cpuset);
+          sched_setaffinity(gettid(), sizeof(cpu_set_t), &cpuset); 
+	  fprintf(stderr, "Set affinity 2,3\n"); 
+          hardaffinity = 1;
+        }
 	else if (strncmp(arg, "threads", 7) == 0) {
 	  argIdx++;
 	  threads = atoi(argv[argIdx]);
@@ -253,7 +261,12 @@ struct TestThreadData {
 
 void *TestThread(void *param) {
   struct TestThreadData *testData = (struct TestThreadData *)param;
+  if (hardaffinity) {
+    sched_setaffinity(gettid(), sizeof(cpu_set_t), &cpuset); 
+  }
+
   testData->testfunc(testData->iterations);
+  return NULL;
 }
 
 float measureFunction(uint64_t iterations, float clockSpeedGhz, uint64_t (*testfunc)(uint64_t)) {
@@ -261,7 +274,7 @@ float measureFunction(uint64_t iterations, float clockSpeedGhz, uint64_t (*testf
   struct timezone startTz, endTz;
   uint64_t time_diff_ms;
   float latency, opsPerNs;
-
+  
   gettimeofday(&startTv, &startTz);
   if (threads == 0) testfunc(iterations);
   else {
