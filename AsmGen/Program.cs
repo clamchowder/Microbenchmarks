@@ -17,17 +17,17 @@ namespace AsmGen
         static void Main(string[] args)
         {
             List<IUarchTest> tests = new List<IUarchTest>();
-            tests.Add(new RobTest(64, 768, 1));
+            tests.Add(new RobTest(2, 64, 1));
             tests.Add(new ZeroRobTest(128, 384, 1));
-            tests.Add(new IntRfTest(32, 256, 1));
-            tests.Add(new FpRfTest(32, 256, 1));
+            tests.Add(new IntRfTest(2, 64, 1));
+            tests.Add(new FpRfTest(2, 64, 1));
             tests.Add(new MixIntVec128RfTest(100, 256, 1));
             tests.Add(new Fadd256RfTest(4, 160, 1));
             tests.Add(new MixFAdd256and32RfTest(4, 160, 1));
-            tests.Add(new FlagRfTest(4, 100, 1));
-            tests.Add(new LdqTest(4, 512, 1));
+            tests.Add(new FlagRfTest(2, 64, 1));
+            tests.Add(new LdqTest(2, 64, 1));
             tests.Add(new StqTest(4, 512, 1));
-            tests.Add(new AddSchedTest(32, 128, 1));
+            tests.Add(new AddSchedTest(2, 64, 1));
             tests.Add(new MulSchedTest(4, 64, 1));
             tests.Add(new MaddSchedTest(4, 64, 1));
             tests.Add(new JumpSchedTest(4, 64, 1));
@@ -35,7 +35,7 @@ namespace AsmGen
             tests.Add(new LoadSchedTest(4, 64, 1));
             tests.Add(new StoreSchedTest(4, 64, 1));
             tests.Add(new StoreDataSchedTest(4, 64, 1));
-            tests.Add(new MixAddJumpSchedTest(4, 128, 1));
+            tests.Add(new MixAddJumpSchedTest(2, 64, 1));
             tests.Add(new FaddSchedTest(20, 120, 1));
             tests.Add(new Fadd128SchedTest(32, 80, 1));
             tests.Add(new Fadd256SchedTest(4, 64, 1));
@@ -51,8 +51,8 @@ namespace AsmGen
             tests.Add(new BtbTest(16, BtbTest.BranchType.Conditional));
             tests.Add(new BtbTest(32, BtbTest.BranchType.Conditional));
             tests.Add(new ReturnStackTest(1, 128, 1));
-            tests.Add(new BranchBufferTest(1, 192, 1));
-            tests.Add(new IndirectBranchTest());
+            tests.Add(new BranchBufferTest(1, 64, 1));
+            tests.Add(new IndirectBranchTest(false));
             tests.Add(new BranchHistoryTest());
             tests.Add(new NopLoopTest(512, 1));
             tests.Add(new AddLoopTest(68, 256, 1));

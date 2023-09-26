@@ -8,7 +8,9 @@ namespace AsmGen
         private int[] branchCounts;
         private int[] targetCounts;
         private int globalHistoryAssistBits;
-        public IndirectBranchTest()
+        private bool assists;
+
+        public IndirectBranchTest(bool assist)
         {
             Prefix = "indirectbranch";
             Description = "Indirect branch prediction";
@@ -17,6 +19,7 @@ namespace AsmGen
             branchCounts = new int[] { 1, 2, 4, 8, 16, 32, 64, 128, 256, 512 };
             targetCounts = new int[] { 2, 4, 8, 12, 16, 24, 32, 48, 64, 96, 128 };
             globalHistoryAssistBits = 4;
+            this.assists = assist;
         }
 
         public bool SupportsIsa(IUarchTest.ISA isa)
@@ -118,16 +121,19 @@ namespace AsmGen
 
                         // global history assist branches
                         // rax = index into jump table. make that correlate with global history
-                        sb.AppendLine("  mov x18, 1");
-                        sb.AppendLine("  eor w12, w12, w12");
-                        for (int eaxBits = 0; eaxBits < globalHistoryAssistBits; eaxBits++)
+                        if (this.assists)
                         {
-                            string targetName = functionLabel + "branch" + branchIdx + "ghist" + eaxBits;
-                            sb.AppendLine("  and w12, w13, w18");
-                            sb.AppendLine($"  cbnz w12, {targetName}");
-                            sb.AppendLine("  nop");
-                            sb.AppendLine($"{targetName}:");
-                            sb.AppendLine("  lsl w18, w18, 1");
+                            sb.AppendLine("  mov x18, 1");
+                            sb.AppendLine("  eor w12, w12, w12");
+                            for (int eaxBits = 0; eaxBits < globalHistoryAssistBits; eaxBits++)
+                            {
+                                string targetName = functionLabel + "branch" + branchIdx + "ghist" + eaxBits;
+                                sb.AppendLine("  and w12, w13, w18");
+                                sb.AppendLine($"  cbnz w12, {targetName}");
+                                sb.AppendLine("  nop");
+                                sb.AppendLine($"{targetName}:");
+                                sb.AppendLine("  lsl w18, w18, 1");
+                            }
                         }
 
                         // branch on value of x17
@@ -222,17 +228,20 @@ namespace AsmGen
                         sb.AppendLine("  mov (%r10,%rbx,4), %eax"); // get the target for the current iteration into eax
                         sb.AppendLine("  mov (%r15,%rax,8), %r14");  // load address of jump target from jump table
 
-                        sb.AppendLine("  mov %rsi, %r13");
-                        sb.AppendLine("  mov $1, %rsi");
-                        for (int eaxBits = 0; eaxBits < 7; eaxBits++)
+                        if (assists)
                         {
-                            string targetName = functionLabel + "branch" + branchIdx + "ghist" + eaxBits;
-                            sb.AppendLine("  test %eax, %esi");
-                            sb.AppendLine($"  jnz {targetName}");
-                            sb.AppendLine("  nop");
-                            sb.AppendLine($"{targetName}:");
+                            sb.AppendLine("  mov %rsi, %r13");
+                            sb.AppendLine("  mov $1, %rsi");
+                            for (int eaxBits = 0; eaxBits < 7; eaxBits++)
+                            {
+                                string targetName = functionLabel + "branch" + branchIdx + "ghist" + eaxBits;
+                                sb.AppendLine("  test %eax, %esi");
+                                sb.AppendLine($"  jnz {targetName}");
+                                sb.AppendLine("  nop");
+                                sb.AppendLine($"{targetName}:");
 
-                            sb.AppendLine("  shl $1, %esi");
+                                sb.AppendLine("  shl $1, %esi");
+                            }
                         }
 
                         sb.AppendLine("  mov %r13, %rsi");
