@@ -2,7 +2,7 @@
 
 namespace AsmGen
 {
-    public class NopLoopTest : UarchTest
+    public class AddLoopTest : UarchTest
     {
         /// <summary>
         ///
@@ -10,11 +10,11 @@ namespace AsmGen
         /// <param name="low">must be greater than 2</param>
         /// <param name="high"></param>
         /// <param name="step"></param>
-        public NopLoopTest(int high, int step)
+        public AddLoopTest(int low, int high, int step)
         {
-            this.Counts = UarchTestHelpers.GenerateCountArray(3, high, step);
-            this.Prefix = "noploop";
-            this.Description = $"NOP throughput for various loop sizes";
+            this.Counts = UarchTestHelpers.GenerateCountArray(low, high, step);
+            this.Prefix = "addloop";
+            this.Description = $"ADD throughput for various loop sizes. Avoids NOP fusing";
             this.FunctionDefinitionParameters = "uint64_t iterations";
             this.GetFunctionCallParameters = "structIterations";
             this.DivideTimeByCount = true;
@@ -36,13 +36,19 @@ namespace AsmGen
 
         public void GenerateX86GccAsm(StringBuilder sb)
         {
+            string[] unrolledAdds = new string[4];
+            unrolledAdds[0] = "  add %r11, %r15";
+            unrolledAdds[1] = "  add %r11, %r14";
+            unrolledAdds[2] = "  add %r11, %r13";
+            unrolledAdds[3] = "  add %r11, %r12";
+
             for (int i = 0; i < Counts.Length; i++)
             {
                 string funcName = this.Prefix + this.Counts[i];
                 sb.AppendLine(funcName + ":");
 
                 // count dec, jnz as instructions in the loop
-                for (int nopIdx = 0; nopIdx < this.Counts[i] - 2; nopIdx++) sb.AppendLine("  nop");
+                for (int nopIdx = 0; nopIdx < this.Counts[i] - 2; nopIdx++) sb.AppendLine(unrolledAdds[nopIdx & 3]);
                 sb.AppendLine("  dec %rdi");
                 sb.AppendLine("  jnz " + funcName);
                 sb.AppendLine("  ret");
@@ -51,13 +57,18 @@ namespace AsmGen
 
         public void GenerateArmAsm(StringBuilder sb)
         {
+            string[] unrolledAdds = new string[4];
+            unrolledAdds[0] = "  add x15, x15, x11";
+            unrolledAdds[1] = "  add x14, x14, x11";
+            unrolledAdds[2] = "  add x13, x13, x11";
+            unrolledAdds[3] = "  add x12, x12, x11";
+
             for (int i = 0; i < Counts.Length; i++)
             {
                 string funcName = this.Prefix + this.Counts[i];
                 sb.AppendLine(funcName + ":");
 
-                // count dec, jnz as instructions in the loop
-                for (int nopIdx = 0; nopIdx < this.Counts[i] - 2; nopIdx++) sb.AppendLine("  nop");
+                for (int nopIdx = 0; nopIdx < this.Counts[i] - 2; nopIdx++) sb.AppendLine(unrolledAdds[nopIdx & 3]);
                 sb.AppendLine("  sub x0, x0, 1");
                 sb.AppendLine("  cbnz x0, " + funcName);
                 sb.AppendLine("  ret");

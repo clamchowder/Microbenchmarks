@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.IO;
 using System.Text;
+using System.Threading.Tasks;
 
 namespace AsmGen
 {
@@ -16,248 +17,197 @@ namespace AsmGen
         static void Main(string[] args)
         {
             List<IUarchTest> tests = new List<IUarchTest>();
-            tests.Add(new Zen3RobTest(4, 350, 1));
-            tests.Add(new RobTest(4, 384, 1));
-            tests.Add(new RobTest(4, 2048, 1));
-            tests.Add(new Zen4RobTest(4, 350, 1));
-            tests.Add(new MovElimRobTest(64, 384, 1));
-            tests.Add(new ZeroElimIntRf(64, 384, 1));
-            tests.Add(new Stq512Test(10, 100, 1));
-            tests.Add(new VecMovElimRobTest(64, 340, 1));
-            tests.Add(new ZeroElimVecRfTest(64, 340, 1));
-            tests.Add(new IntRfTest(4, 384, 1));
-            tests.Add(new FpRfTest(4, 384, 1));
-            tests.Add(new VecRfTest(4, 384, 1));
-            tests.Add(new Vec256RfTest(4, 384, 1));
-            tests.Add(new Vec512RfTest(32, 384, 1));
-            tests.Add(new AddSchedTest(4, 160, 1));
-            tests.Add(new MulSchedTest(4, 128, 1));
-            tests.Add(new Mul16SchedTest(4, 128, 1));
-            tests.Add(new Mul32SchedTest(4, 48, 1));
-            tests.Add(new FaddSchedTest(1, 256, 1));
-            tests.Add(new FmulSchedTest(1, 256, 1));
-            tests.Add(new Fadd256SchedTest(1, 128, 1));
-            tests.Add(new MixFaddFmulSchedTest(2, 128, 1));
-            tests.Add(new JumpSchedTest(4, 32, 1));
-            tests.Add(new FlagRfTest(4, 128, 1));
-            tests.Add(new MixIntFpRfTest(4, 512, 1));
-            tests.Add(new MixIntFp12RfTest(4, 256, 1));
-            tests.Add(new MixIntFp13RfTest(4, 256, 1));
-            tests.Add(new LoadSchedTest(4, 128, 1));
-            tests.Add(new StoreSchedTest(4, 128, 1));
-            tests.Add(new StoreDataSchedTest(2, 128, 1));
-            tests.Add(new LdqTest(4, 256, 1));
-            tests.Add(new StqTest(4, 160, 1));
-            tests.Add(new LdqStqTest(4, 128, 1));
-            tests.Add(new ReturnStackTest(1, 128, 1));
-            tests.Add(new MshrsTest(1, 12, 1));
-            tests.Add(new CvtSchedTest(1, 128, 1));
-            tests.Add(new RorSchedTest(1, 48, 1));
-            tests.Add(new MixMulSchedTest(1, 48, 1));
-            tests.Add(new TakenBranchBufferTest(1, 128, 1));
-            tests.Add(new BranchBufferTest(1, 128, 1));
-            tests.Add(new YmmStateIntRfTest(1, 64, 1));
-            tests.Add(new Add256RfTest(1, 256, 1));
-            tests.Add(new Add256SchedTest(1, 256, 1));
-            tests.Add(new Add512SchedTest(20, 256, 1));
-            tests.Add(new Add128SchedTest(1, 256, 1));
+            tests.Add(new RobTest(2, 64, 1));
+            tests.Add(new ZeroRobTest(128, 384, 1));
+            tests.Add(new IntRfTest(2, 64, 1));
+            tests.Add(new FpRfTest(2, 64, 1));
+            tests.Add(new MixIntVec128RfTest(100, 256, 1));
+            tests.Add(new Fadd256RfTest(4, 160, 1));
+            tests.Add(new MixFAdd256and32RfTest(4, 160, 1));
+            tests.Add(new FlagRfTest(2, 64, 1));
+            tests.Add(new LdqTest(2, 64, 1));
+            tests.Add(new StqTest(4, 512, 1));
+            tests.Add(new AddSchedTest(2, 64, 1));
+            tests.Add(new MulSchedTest(4, 64, 1));
+            tests.Add(new MaddSchedTest(4, 64, 1));
+            tests.Add(new JumpSchedTest(4, 64, 1));
+            tests.Add(new TakenJumpSchedTest(4, 64, 1));
+            tests.Add(new LoadSchedTest(4, 64, 1));
+            tests.Add(new StoreSchedTest(4, 64, 1));
+            tests.Add(new StoreDataSchedTest(4, 64, 1));
+            tests.Add(new MixAddJumpSchedTest(2, 64, 1));
+            tests.Add(new FaddSchedTest(20, 120, 1));
+            tests.Add(new Fadd128SchedTest(32, 80, 1));
+            tests.Add(new Fadd256SchedTest(4, 64, 1));
+            tests.Add(new Fma256SchedTest(4, 64, 1));
+            tests.Add(new CvtSchedTest(4, 64, 1));
+            tests.Add(new Fadd128RfTest(4, 128, 1));
             tests.Add(new BtbTest(4, BtbTest.BranchType.Unconditional));
             tests.Add(new BtbTest(8, BtbTest.BranchType.Unconditional));
             tests.Add(new BtbTest(16, BtbTest.BranchType.Unconditional));
             tests.Add(new BtbTest(32, BtbTest.BranchType.Unconditional));
-            tests.Add(new BtbTest(64, BtbTest.BranchType.Unconditional));
-            tests.Add(new MixJmpMulSchedTest(2, 128, 1));
-            tests.Add(new MixMulRorSchedTest(2, 128, 1));
+            tests.Add(new BtbTest(4, BtbTest.BranchType.Conditional));
+            tests.Add(new BtbTest(8, BtbTest.BranchType.Conditional));
+            tests.Add(new BtbTest(16, BtbTest.BranchType.Conditional));
+            tests.Add(new BtbTest(32, BtbTest.BranchType.Conditional));
+            tests.Add(new ReturnStackTest(1, 128, 1));
+            tests.Add(new BranchBufferTest(1, 64, 1));
+            tests.Add(new IndirectBranchTest(false));
             tests.Add(new BranchHistoryTest());
-            tests.Add(new IndirectBranchTest());
-            tests.Add(new MxcsrTest(1, 32, 1));
-            tests.Add(new MaskRfTest(1, 256, 1));
-            tests.Add(new NotIntRfTest(1, 450, 1));
-            tests.Add(new MovImmIntRfTest(1, 450, 1));
-            tests.Add(new FaddNsqTest(4, 135, 1));
-            tests.Add(new Add128NsqTest(4, 120, 1));
-            tests.Add(new LoadNsqTest(4, 50, 1));
-            tests.Add(new MixLoadStoreSchedTest(4, 120, 1));
-            tests.Add(new MixStoreSchedTest(4, 120, 1));
-            tests.Add(new VecStoreDataSchedTest(4, 80, 1));
-            tests.Add(new VecStoreDataNsqTest(4, 80, 1));
-            tests.Add(new StoreNsqTest(4, 38, 1));
-            tests.Add(new TakenJumpSchedTest(4, 60, 1));
-            tests.Add(new StoreHoistSchedTest(4, 90, 1));
-            tests.Add(new FpStoreDataNsqTest(4, 80, 1));
-            tests.Add(new FpStoreDataAddNsqTest(4, 80, 1));
-            tests.Add(new JumpNsqTest(4, 60, 1));
-            tests.Add(new BtsSchedTest(4, 80, 1));
-            tests.Add(new MixRorBtsSchedTest(4, 80, 1));
-            tests.Add(new LeaSchedTest(4, 80, 1));
-            tests.Add(new MixMulBtsSchedTest(4, 80, 1));
-            tests.Add(new MixLeaMulSchedTest(4, 80, 1));
-            tests.Add(new PdepSchedTest(4, 80, 1));
-            tests.Add(new PdepLeaSchedTest(4, 80, 1));
-            tests.Add(new MixPdepMulSchedTest(4, 80, 1));
-            tests.Add(new JumpAddSchedTest(4, 32, 1));
-            tests.Add(new LdmTest(4, 120, 1));
             tests.Add(new NopLoopTest(512, 1));
-            tests.Add(new LoadDivSchedTest(4, 64, 1));
-            tests.Add(new LoadDivNsqTest(4, 64, 1));
-            tests.Add(new MixLoadStoreDivSchedTest(4, 64, 1));
-            tests.Add(new MmxRfTest(4, 128, 1));
-            tests.Add(new MixMmxSseRf(4, 128, 1));
-            tests.Add(new MxcsrFeTest(4, 128, 1));
+            tests.Add(new AddLoopTest(68, 256, 1));
 
-            StringBuilder cSourceFile = new StringBuilder();
-            StringBuilder vsCSourceFile = new StringBuilder();
-            StringBuilder armAsmFile = new StringBuilder();
-            StringBuilder x86AsmFile = new StringBuilder();
-            StringBuilder x86NasmFile = new StringBuilder();
+            List<Task> tasks = new List<Task>();
+            tasks.Add(Task.Run(() => GenerateCFile(tests, IUarchTest.ISA.amd64)));
+            tasks.Add(Task.Run(() => GenerateCFile(tests, IUarchTest.ISA.aarch64)));
+            tasks.Add(Task.Run(() => GenerateCFile(tests, IUarchTest.ISA.mips64)));
+            tasks.Add(Task.Run(() => GenerateCFile(tests, IUarchTest.ISA.riscv)));
 
+            tasks.Add(Task.Run(() => GenerateAsmFile(tests, IUarchTest.ISA.amd64)));
+            tasks.Add(Task.Run(() => GenerateAsmFile(tests, IUarchTest.ISA.aarch64)));
+            tasks.Add(Task.Run(() => GenerateAsmFile(tests, IUarchTest.ISA.mips64)));
+            tasks.Add(Task.Run(() => GenerateAsmFile(tests, IUarchTest.ISA.riscv)));
+            Task.WaitAll(tasks.ToArray());
+
+            GenerateMakefile();
+        }
+
+        static void GenerateCFile(List<IUarchTest> tests, IUarchTest.ISA isa)
+        {
+            StringBuilder sb = new StringBuilder();
+            sb.AppendLine("#define _GNU_SOURCE");
+            sb.AppendLine("#include <stdio.h>\n#include<stdint.h>\n#include<sys/time.h>\n#include <stdlib.h>\n#include <string.h>\n#include <time.h>\n");
+            sb.AppendLine("#pragma GCC diagnostic ignored \"-Wattributes\"");
             string commonFunctions = File.ReadAllText($"{DataFilesDir}\\CommonFunctions.c");
-
-            // Generate C file for linux
-            cSourceFile.AppendLine("#include <stdio.h>\n#include<stdint.h>\n#include<sys/time.h>\n#include <stdlib.h>\n#include <string.h>\n#include <time.h>\n");
-            cSourceFile.AppendLine("#pragma GCC diagnostic ignored \"-Wattributes\"");
-            cSourceFile.AppendLine(commonFunctions);
-
-            foreach (IUarchTest test in tests) test.GenerateExternLines(cSourceFile);
-
-            AddCommonInitCode(cSourceFile, tests);
-            cSourceFile.AppendLine("  struct timeval startTv, endTv;");
-            cSourceFile.AppendLine("  struct timezone startTz, endTz;");
-
-            foreach (IUarchTest test in tests) test.GenerateTestBlock(cSourceFile);
-            cSourceFile.AppendLine("  free(A); free(B); free(fpArr);");
-            cSourceFile.AppendLine("  return 0; }");
-            File.WriteAllText("clammicrobench.c", cSourceFile.ToString());
-
-            // Generate C file for VS
-            vsCSourceFile.AppendLine("#include <stdio.h>\n#include<stdint.h>\n#include<sys\\timeb.h>\n#include <stdlib.h>\n");
-            vsCSourceFile.AppendLine("#include <string.h>\n#include <time.h>\n");
-            vsCSourceFile.AppendLine(commonFunctions);
-
-            foreach (IUarchTest test in tests) test.GenerateVsExternLines(vsCSourceFile);
-
-            AddCommonInitCode(vsCSourceFile, tests);
-            vsCSourceFile.AppendLine("  struct timeb start, end;");
-
-            foreach (IUarchTest test in tests) test.GenerateVsTestBlock(vsCSourceFile);
-
-            // after structure size tests we don't care about this array
-            vsCSourceFile.AppendLine("  free(A); free(B); free(fpArr);");
-
-            // BTB size test
-            vsCSourceFile.AppendLine("  return 0; }");
-            File.WriteAllText("clammicrobench.cpp", vsCSourceFile.ToString());
-
-            armAsmFile.AppendLine(".arch armv8-a\n.text\n");
-            foreach (IUarchTest test in tests) test.GenerateAsmGlobalLines(armAsmFile);
-            foreach (IUarchTest test in tests) test.GenerateArmAsm(armAsmFile);
-            File.WriteAllText("clammicrobench_arm.s", armAsmFile.ToString());
-
-            x86AsmFile.AppendLine(".text\n");
-
-            foreach (IUarchTest test in tests) test.GenerateAsmGlobalLines(x86AsmFile);
-            foreach (IUarchTest test in tests) test.GenerateX86GccAsm(x86AsmFile);
-
-            File.WriteAllText("clammicrobench_x86.s", x86AsmFile.ToString());
-
-            x86NasmFile.AppendLine("section .text");
-            x86NasmFile.AppendLine("bits 64\n");
-
-            // stupidly parallelize build, since it's taking too long
-            List<string> vsFileNames = new List<string>();
-            List<string> additionalFileNames = new List<string>();
-            string nasmInitStr = x86NasmFile.ToString();
+            sb.AppendLine(commonFunctions);
             foreach (IUarchTest test in tests)
             {
-                if (test is IUarchTestParallelBuild)
-                {
-                    IUarchTestParallelBuild parallelBuildTest = test as IUarchTestParallelBuild;
-                    List<string> generatedFiles = parallelBuildTest.GenerateNasmFiles();
-                    additionalFileNames.AddRange(generatedFiles);
-                }
-                else
-                {
-                    StringBuilder nasmFile = new StringBuilder();
-                    nasmFile.AppendLine(nasmInitStr);
-                    test.GenerateNasmGlobalLines(nasmFile);
-                    test.GenerateX86NasmAsm(nasmFile);
-                    File.WriteAllText(GetNasmFileName(test.Prefix), nasmFile.ToString());
-                    vsFileNames.Add(GetNasmFileName(test.Prefix));
-                }
+                if (test.SupportsIsa(isa)) test.GenerateExternLines(sb);
             }
 
-            vsFileNames.AddRange(additionalFileNames);
-            UarchTestHelpers.GenerateVsProjectFile(tests, additionalFileNames);
-            vsFileNames.Add("clammicrobench.vcxproj");
-            vsFileNames.Add("clammicrobench.cpp");
-            if (args.Length > 0 && args[0].Equals("autocopy", StringComparison.OrdinalIgnoreCase))
+            // no indexed addressing mode on these architectures, so make sure we can do pointer
+            // chasing with a single instruction
+            if (isa == IUarchTest.ISA.mips64 || isa == IUarchTest.ISA.riscv)
             {
-                Console.WriteLine("Automatically copying files, based on default VS paths");
-                string clammicrobenchPath = @"..\..\..\..\clammicrobench";
-                string[] clammicrobenchFiles = vsFileNames.ToArray();
-                CopyFiles(clammicrobenchPath, clammicrobenchFiles);
+                sb.AppendLine("extern void preplatencyarr(int *arr, uint32_t list_size);");
             }
+
+            AddCommonInitCode(sb, tests, isa);
+            foreach(IUarchTest test in tests)
+            {
+                if (test.SupportsIsa(isa)) test.GenerateTestBlock(sb, isa);
+            }
+
+            AddCommonEndCode(sb);
+
+            File.WriteAllText("clammicrobench_" + isa.ToString() + ".c", sb.ToString());
         }
 
-        static void CopyFiles(string targetDir, string[] fileNames)
+        static void GenerateAsmFile(List<IUarchTest> tests, IUarchTest.ISA isa)
         {
-            foreach (string fname in fileNames)
-            {
-                string targetPath = Path.Join(targetDir, fname);
-                if (File.Exists(targetPath))
-                {
-                    File.Delete(targetPath);
-                }
+            StringBuilder sb = new StringBuilder();
+            sb.AppendLine(".text");
 
-                File.Move(fname, targetPath);
-                Console.WriteLine("Moved " + fname);
+            if (isa == IUarchTest.ISA.mips64)
+            {
+                UarchTest.GenerateMipsPrepArrayFunction(sb);
             }
+            else if (isa == IUarchTest.ISA.riscv)
+            {
+                UarchTest.GenerateRiscvPrepArrayFunction(sb);
+            }
+
+            foreach (IUarchTest test in tests)
+            {
+                if (test.SupportsIsa(isa))
+                {
+                    test.GenerateAsmGlobalLines(sb);
+                    test.GenerateAsm(sb, isa);
+                }
+            }
+            File.WriteAllText("clammicrobench_" + isa.ToString() + ".s", sb.ToString());
         }
 
-        public static string GetNasmFileName(string testName, bool obj = false) { return $"clammicrobench_nasm_{testName}" + (obj ? ".obj" : ".asm"); }
+        static void GenerateMakefile()
+        {
+            StringBuilder sb = new StringBuilder();
+            foreach (IUarchTest.ISA isa in Enum.GetValues(typeof(IUarchTest.ISA)))
+            {
+                sb.AppendLine(isa.ToString() + ":");
+                sb.AppendLine($"\tgcc clammicrobench_{isa.ToString()}.c clammicrobench_{isa.ToString()}.s -o cb");
+            }
 
-        static void AddCommonInitCode(StringBuilder sb, List<IUarchTest> tests)
+            sb.AppendLine("win64:");
+            sb.AppendLine($"\tx86_64-w64-mingw32-gcc clammicrobench_{IUarchTest.ISA.amd64.ToString()}.c clammicrobench_{IUarchTest.ISA.amd64.ToString()}.s -o cb.exe");
+
+            File.WriteAllText("Makefile", sb.ToString());
+        }
+
+        // Adds largely ISA independent initialization code that gives tests a basic foundation,
+        // like a pointer chasing array
+        static void AddCommonInitCode(StringBuilder sb, List<IUarchTest> tests, IUarchTest.ISA isa)
         {
             sb.AppendLine("int main(int argc, char *argv[]) {");
             sb.AppendLine($"  uint64_t time_diff_ms, iterations = {iterations}, structIterations = {structTestIterations}, tmp;");
-            sb.AppendLine("  double latency; int *A = NULL, *B = NULL; float *fpArr = NULL;");
+            sb.AppendLine("  double latency; int *A = NULL, *B = NULL; float *fpArr = NULL; char *test_name = NULL; int core_affinity = -1;");
             sb.AppendLine("  uint64_t tmpsink;");
             sb.AppendLine("  uint32_t list_size = " + latencyListSize + ";");
 
             // print a help message based on tests available
-            sb.AppendLine($"  printf(\"Usage: [test name] [latency list size = {latencyListSize}] [struct iterations = {structTestIterations}]\\n\");");
+            sb.AppendLine($"  printf(\"Usage: -test [test name] -listsize [latency list size = {latencyListSize}] -iterations [struct iterations = {structTestIterations}]\\n\");");
             sb.AppendLine("  if (argc < 2) {");
             sb.AppendLine("    printf(\"List of tests:\\n\");");
-            foreach (IUarchTest test in tests) sb.AppendLine($"    printf(\"  {test.Prefix} - {test.Description}\\n\");");
-            sb.AppendLine("  }");
-            sb.AppendLine("  if (argc > 3) { structIterations = atoi(argv[3]); iterations = 100 * structIterations; }");
-            sb.AppendLine("  if (argc == 1 || argc > 1 && strncmp(argv[1], \"branchtest\", 9) != 0) {");
+            foreach (IUarchTest test in tests)
+            {
+                if (test.SupportsIsa(isa)) sb.AppendLine($"    printf(\"  {test.Prefix} - {test.Description}\\n\");");
+            }
+
+            // args provided. parse them and run test
+            sb.AppendLine("  } else {");
+
+            // args handling
+            sb.AppendLine("    for (int argIdx = 1; argIdx < argc; argIdx++) {");
+            sb.AppendLine("      if (*(argv[argIdx]) == '-') { char *arg = argv[argIdx] + 1;");
+            sb.AppendLine("        if (strncmp(arg, \"test\", 4) == 0) { argIdx++; test_name = argv[argIdx]; }");
+            sb.AppendLine("        if (strncmp(arg, \"iterations\", 10) == 0) { argIdx++; iterations = 100 * atoi(argv[argIdx]); }");
+            sb.AppendLine("        if (strncmp(arg, \"listsize\", 8) == 0) { argIdx++; list_size = atoi(argv[argIdx]); }");
+            sb.AppendLine("        if (strncmp(arg, \"affinity\", 8) == 0) { argIdx++; core_affinity = atoi(argv[argIdx]); }");
+            sb.AppendLine("      }"); // end -arg handling if
+            sb.AppendLine("    }"); // end args handling for loop
+
+            // Optional affinity setting for certain troublesome platforms
+            // don't need a version that uses Windows affinity APIs because Windows platforms never have this issue
+            sb.AppendLine("#ifndef __MINGW32__");
+            sb.AppendLine("  if (core_affinity != -1) setAffinity(core_affinity);");
+            sb.AppendLine("#endif");
+
+            // Generate array for pointer chasing unless we're doing a BTB test
+            sb.AppendLine("  if (argc == 1 || argc > 1 && strncmp(test_name, \"btb\", 3) != 0) {");
             GenerateLatencyTestArray(sb);
-            sb.AppendLine("  }");
+            sb.AppendLine("  }"); // end of ptr chasing array generation
+            sb.AppendLine("  struct timeval startTv, endTv;");
+            sb.AppendLine("  struct timezone startTz, endTz;");
+        }
+
+
+        static void AddCommonEndCode(StringBuilder sb)
+        {
+            sb.AppendLine("  free(A); free(B); free(fpArr);");
+            sb.AppendLine("  }"); // end else
+            sb.AppendLine("  return 0; }");
         }
 
         static void GenerateLatencyTestArray(StringBuilder sb)
         {
             // Fill list to create random access pattern
-            sb.AppendLine("  if (argc > 2) list_size = atoi(argv[2]);");
-
             sb.AppendLine("  A = (int*)malloc(sizeof(int) * list_size);");
             sb.AppendLine("  srand(time(NULL));");
-            sb.AppendLine("  for (int i = 0; i < list_size; i++) { A[i] = i; }\n");
-            sb.AppendLine("  int iter = list_size;");
-            sb.AppendLine("  while (iter > 1)");
-            sb.AppendLine("  {");
-            sb.AppendLine("      iter -= 1;");
-            sb.AppendLine("      int j = iter - 1 == 0 ? 0 : rand() % (iter - 1);");
-            sb.AppendLine("      uint32_t tmp = A[iter];");
-            sb.AppendLine("      A[iter] = A[j];");
-            sb.AppendLine("      A[j] = tmp;");
-            sb.AppendLine("  }");
+            sb.AppendLine("  FillPatternArr(A, list_size, 64);\n");
 
             sb.AppendLine("#ifdef _WIN32");
             sb.AppendLine("  B = (int*)_aligned_malloc(sizeof(int) * list_size, 64);\n");
             sb.AppendLine("#else");
-            sb.AppendLine("  B = (int*)aligned_alloc(64, sizeof(int) * list_size);\n");
+            sb.AppendLine("  posix_memalign((void **)&B, 64, sizeof(int) * list_size);\n");
             sb.AppendLine("#endif");
             sb.AppendLine("  for (int i = 0; i < list_size; i++) { B[i] = i; }\n");
             sb.AppendLine("  fpArr = (float*)malloc(sizeof(float) * list_size);\n");

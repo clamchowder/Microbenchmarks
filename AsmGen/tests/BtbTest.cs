@@ -9,6 +9,15 @@ namespace AsmGen
         private BranchType branchType;
         private bool varyspacing;
 
+        public override bool SupportsIsa(IUarchTest.ISA isa)
+        {
+            if (isa == IUarchTest.ISA.amd64) return true;
+            if (isa == IUarchTest.ISA.aarch64) return true;
+            if (isa == IUarchTest.ISA.mips64) return true;
+            if (isa == IUarchTest.ISA.riscv) return true;
+            return false;
+        }
+
         public enum BranchType
         {
             /// <summary>
@@ -51,7 +60,27 @@ namespace AsmGen
         private string GetBranchFuncName(int branchCount) { return Prefix + branchCount; }
         public string GetLabelName(string funcName, int part) { return funcName + "part" + part; }
 
-        public override void GenerateX86GccAsm(StringBuilder sb)
+        public override void GenerateAsm(StringBuilder sb, IUarchTest.ISA isa)
+        {
+            if (isa == IUarchTest.ISA.amd64)
+            {
+                GenerateX86GccAsm(sb);
+            }
+            else if (isa == IUarchTest.ISA.aarch64)
+            {
+                GenerateArmAsm(sb);
+            }
+            else if (isa == IUarchTest.ISA.mips64)
+            {
+                GenerateMipsAsm(sb);
+            }
+            else if (isa == IUarchTest.ISA.riscv)
+            {
+                GenerateRiscvAsm(sb);
+            }
+        }
+
+        public void GenerateX86GccAsm(StringBuilder sb)
         {
             string paddingAlign = "  .align " + spacing;
             int spacingNops = 0;
@@ -113,61 +142,8 @@ namespace AsmGen
             }
         }
 
-        public override void GenerateX86NasmAsm(StringBuilder sb)
+        private string Get4BNopAlign()
         {
-            sb.AppendLine("%define nop2 db 0x66, 0x90\n");
-            sb.AppendLine("%define nop4 db 0x0F, 0x1F, 0x40, 0x00\n");
-            sb.AppendLine("%define nop12 db 0x66, 0x66, 0x66, 0x66, 0x0F, 0x1F, 0x84, 0x00, 0x00, 0x00, 0x00, 0x00\n\n");
-
-            string paddingAlign = "align " + spacing;
-            for (int i = 0; i < Counts.Length; i++)
-            {
-                string funcName = GetBranchFuncName(Counts[i]);
-                //sb.AppendLine("; Start of function for branch count " + branchCounts[i] + " padding " + paddings[p]);
-                sb.AppendLine(funcName + ":\n");
-                for (int branchIdx = 1; branchIdx < Counts[i]; branchIdx++)
-                {
-                    string labelName = GetLabelName(funcName, branchIdx);
-
-                    if(branchType == BranchType.Conditional)
-                    {
-                        sb.AppendLine("  test rax, rax");
-                        sb.AppendLine("  jz " + labelName); // should always be set
-                    }
-                    else if (branchType == BranchType.Unconditional)
-                    {
-                        sb.AppendLine("  jmp " + labelName);
-                    }
-                    else if (branchType == BranchType.ZenMix)
-                    {
-                        if ((branchIdx & 0x1) == 0)
-                        {
-                            sb.AppendLine("  jmp " + labelName);
-                        }
-                        else
-                        {
-                            sb.AppendLine("  test rax, rax");
-                            sb.AppendLine("  jz " + labelName);
-                        }
-                    }
-
-                    sb.AppendLine(paddingAlign);
-                    sb.AppendLine(labelName + ":");
-                }
-
-                sb.AppendLine(paddingAlign);
-                sb.AppendLine("  dec rcx");
-                sb.AppendLine("  jne " + funcName);
-                sb.AppendLine("  ret\n\n");
-
-                // don't let it get too close to the next branch
-                sb.AppendLine(paddingAlign);
-            }
-        }
-
-        public override void GenerateArmAsm(StringBuilder sb)
-        {
-            // things are 4 bytes on aarch64
             string paddingAlign = "";
             if (spacing == 8)
             {
@@ -191,6 +167,14 @@ namespace AsmGen
                 Console.WriteLine($"Unsupported padding value {spacing}");
                 throw new NotImplementedException("Unsupported padding value");
             }
+
+            return paddingAlign;
+        }
+
+        public void GenerateArmAsm(StringBuilder sb)
+        {
+            // things are 4 bytes on aarch64
+            string paddingAlign = Get4BNopAlign();
 
             for (int i = 0; i < Counts.Length; i++)
             {
@@ -230,7 +214,7 @@ namespace AsmGen
                     // jump over indirect branch to return, on zero
                     // this branch should be not taken for all except the last iteration, and should have minimal
                     // impact on results because a predicted NT branch is sort of 'free' on most architectures
-                    sb.AppendLine("  cbz x0, " + workaroundTarget);  
+                    sb.AppendLine("  cbz x0, " + workaroundTarget);
                     sb.AppendLine("  br x2");
                     sb.AppendLine(workaroundTarget + ":");
                 }
@@ -243,6 +227,99 @@ namespace AsmGen
 
                 // don't let it get too close to the next branch
                 sb.AppendLine(paddingAlign);
+            }
+        }
+
+        public void GenerateMipsAsm(StringBuilder sb)
+        {
+            string paddingAlign = Get4BNopAlign();
+            for (int i = 0; i < Counts.Length; i++)
+            {
+                string funcName = GetBranchFuncName(Counts[i]);
+                string funcTargetName = GetBranchFuncName(Counts[i]) + "_itarget";
+
+                sb.AppendLine(funcName + ":");
+                sb.AppendLine("  addi.d $r12, $r12, 1");
+                sb.AppendLine("  xor $r13, $r13, $r13");
+                sb.AppendLine("  la $r14, " + funcTargetName);
+                sb.AppendLine(funcTargetName + ":");
+                for (int branchIdx = 1; branchIdx < Counts[i]; branchIdx++)
+                {
+                    string labelName = GetLabelName(funcName, branchIdx);
+                    sb.AppendLine("  beqz $r13, " + labelName);
+                    sb.AppendLine(paddingAlign);
+                    sb.AppendLine(labelName + ":");
+                }
+
+                sb.AppendLine("  sub.d $r4, $r4, $r12"); // decrement iteration count
+
+                int distance = spacing * Counts[i];
+                if (distance < 1024)
+                {
+                    sb.AppendLine("  bnez $r4, " + funcTargetName); // short branch if we're not too far away
+                }
+                else
+                {
+                    string workaroundTarget = funcName + "_mips_indirect_workaround";
+                    sb.AppendLine("  beqz $r4, " + workaroundTarget); // jump over indirect branch if iteration count is reached
+                    sb.AppendLine("  jr $r14"); // jump back to target (start of loop)
+                    sb.AppendLine(workaroundTarget + ":");
+                }
+
+                sb.AppendLine("  jr $r1");
+            }
+        }
+
+        private string GetRiscvNopAlign()
+        {
+            // branch takes 16 bits (2 bytes)
+            int paddingNeeded = spacing - 2;
+
+            // each NOP is 2 bytes
+            StringBuilder nopSb = new StringBuilder();
+            for (int i = 0; i < paddingNeeded; i += 2)
+            {
+                nopSb.AppendLine("  nop");
+            }
+
+            return nopSb.ToString();
+        }
+
+        public void GenerateRiscvAsm(StringBuilder sb)
+        {
+            string paddingAlign = GetRiscvNopAlign();
+            for (int i = 0; i < Counts.Length; i++)
+            {
+                string funcName = GetBranchFuncName(Counts[i]);
+                string funcTargetName = GetBranchFuncName(Counts[i]) + "_itarget";
+
+                sb.AppendLine(funcName + ":");
+                sb.AppendLine("  la x5, " + funcTargetName);
+                sb.AppendLine(funcTargetName + ":");
+                for (int branchIdx = 1; branchIdx < Counts[i]; branchIdx++)
+                {
+                    string labelName = GetLabelName(funcName, branchIdx);
+                    sb.AppendLine("  j " + labelName);
+                    sb.AppendLine(paddingAlign);
+                    sb.AppendLine(labelName + ":");
+                }
+
+                sb.AppendLine("  addi x10, x10, -1"); // decrement iteration count
+
+                int distance = spacing * Counts[i];
+                if (distance < 1024)
+                {
+                    sb.AppendLine("  bne x10, x0, " + funcTargetName); // short branch if we're not too far away
+                }
+                else
+                {
+                    string workaroundTarget = funcName + "_riscv_indirect_workaround";
+                    sb.AppendLine("  beq x10, x0, " + workaroundTarget); // jump over indirect branch if iteration count is reached
+                    sb.AppendLine("  jalr x0, x5"); // jump back to target (start of loop)
+                    sb.AppendLine(workaroundTarget + ":");
+                }
+
+                sb.AppendLine("  ret");
             }
         }
     }

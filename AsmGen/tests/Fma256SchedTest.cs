@@ -2,12 +2,12 @@
 
 namespace AsmGen
 {
-    public class Fadd256SchedTest : UarchTest
+    public class Fma256SchedTest : UarchTest
     {
-        public Fadd256SchedTest(int low, int high, int step)
+        public Fma256SchedTest(int low, int high, int step)
         {
             this.Counts = UarchTestHelpers.GenerateCountArray(low, high, step);
-            this.Prefix = "fadd256sched";
+            this.Prefix = "fma256sched";
             this.Description = "256-bit FP add scheduler";
             this.FunctionDefinitionParameters = "uint64_t iterations, int *arr, float *floatArr";
             this.GetFunctionCallParameters = "structIterations, A, fpArr";
@@ -16,7 +16,7 @@ namespace AsmGen
 
         public override bool SupportsIsa(IUarchTest.ISA isa)
         {
-            if (isa == IUarchTest.ISA.amd64) return true;
+            if (isa == IUarchTest.ISA.amd64) return false;
             if (isa == IUarchTest.ISA.aarch64) return false;
             if (isa == IUarchTest.ISA.mips64) return true;
             return false;
@@ -52,10 +52,10 @@ namespace AsmGen
                 string postLoadInstrs2 = "  and $r15, $r13, $r16\n  xvldx $xr1, $r6, $r15";
 
                 string[] unrolledAdds = new string[4];
-                unrolledAdds[0] = "  xvfadd.s $xr2, $xr2, $xr1";
-                unrolledAdds[1] = "  xvfadd.s $xr3, $xr3, $xr1";
-                unrolledAdds[2] = "  xvfadd.s $xr4, $xr4, $xr1";
-                unrolledAdds[3] = "  xvfadd.s $xr5, $xr5, $xr1";
+                unrolledAdds[0] = "  xvfmadd.s $xr2, $xr2, $xr2, $xr1";
+                unrolledAdds[1] = "  xvfmadd.s $xr3, $xr3, $xr3, $xr1";
+                unrolledAdds[2] = "  xvfmadd.s $xr4, $xr4, $xr4, $xr1";
+                unrolledAdds[3] = "  xvfmadd.s $xr5, $xr5, $xr5, $xr1";
                 UarchTestHelpers.GenerateMipsAsmStructureTestFuncs(
                     sb, this.Counts, this.Prefix, unrolledAdds, unrolledAdds, includePtrChasingLoads: false, initInstrs: initInstrs,
                     postLoadInstrs1: postLoadInstrs1, postLoadInstrs2: postLoadInstrs2);
