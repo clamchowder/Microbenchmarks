@@ -8,16 +8,19 @@ namespace AsmGen
         public string Prefix { get; }
         public string Description { get; }
         public bool DivideTimeByCount { get; }
-        public void GenerateX86GccAsm(StringBuilder sb);
-        public void GenerateX86NasmAsm(StringBuilder sb);
-        public void GenerateArmAsm(StringBuilder sb);
-        public void GenerateVsTestBlock(StringBuilder sb);
-        public void GenerateTestBlock(StringBuilder sb);
+        public bool SupportsIsa(ISA isa);
 
+        public void GenerateAsm(StringBuilder sb, ISA isa);
+        public void GenerateTestBlock(StringBuilder sb, ISA isa);
         public void GenerateAsmGlobalLines(StringBuilder sb);
-        public void GenerateNasmGlobalLines(StringBuilder sb);
-
-        public void GenerateVsExternLines(StringBuilder sb);
         public void GenerateExternLines(StringBuilder sb);
+
+        public enum ISA
+        {
+            amd64,   // 64-bit x86
+            aarch64, // 64-bit arm
+            mips64,   // 64-bit MIPS, for loongson
+            riscv,   // 64-bit risc-v
+        }
     }
 }

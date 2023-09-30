@@ -214,6 +214,8 @@ float instruction_rate_test(cl_context context,
         float4_element_count, a_mem_obj, result_obj, A, result, opsPerIteration);
     fprintf(stderr, "INT8 G Multiplies/sec: %f\n", int8_mul_rate);
 
+    short checkExtensionSupport(const char *extension_name);
+    
     if (checkExtensionSupport("cl_khr_fp64")) {
         fp64_instruction_rate_test(context, command_queue, thread_count, local_size, chase_iterations, float4_element_count,
             a_mem_obj, result_obj, A, result);

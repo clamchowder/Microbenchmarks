@@ -8,58 +8,71 @@ namespace AsmGen
         {
             this.Counts = UarchTestHelpers.GenerateCountArray(low, high, step);
             this.Prefix = "mulsched";
-            this.Description = "Integer (64-bit mul) Scheduler Capacity Test";
+            this.Description = "Scheduler, Integer Multiplies";
             this.FunctionDefinitionParameters = "uint64_t iterations, int *arr";
             this.GetFunctionCallParameters = "structIterations, A";
             this.DivideTimeByCount = false;
         }
 
-        public override void GenerateX86GccAsm(StringBuilder sb)
+        public override bool SupportsIsa(IUarchTest.ISA isa)
         {
-            string[] unrolledMuls = new string[4];
-            unrolledMuls[0] = "  imul %rdi, %r15";
-            unrolledMuls[1] = "  imul %rdi, %r14";
-            unrolledMuls[2] = "  imul %rdi, %r13";
-            unrolledMuls[3] = "  imul %rdi, %r12";
-
-            string[] unrolledMuls1 = new string[4];
-            unrolledMuls1[0] = "  imul %rsi, %r15";
-            unrolledMuls1[1] = "  imul %rsi, %r14";
-            unrolledMuls1[2] = "  imul %rsi, %r13";
-            unrolledMuls1[3] = "  imul %rsi, %r12";
-            UarchTestHelpers.GenerateX86AsmStructureTestFuncs(sb, this.Counts, this.Prefix, unrolledMuls, unrolledMuls1, false);
+            if (isa == IUarchTest.ISA.amd64) return true;
+            if (isa == IUarchTest.ISA.aarch64) return true;
+            // if (isa == IUarchTest.ISA.mips64) return true;
+            // if (isa == IUarchTest.ISA.riscv) return true;
+            return false;
         }
 
-        public override void GenerateX86NasmAsm(StringBuilder sb)
+        public override void GenerateAsm(StringBuilder sb, IUarchTest.ISA isa)
         {
-            string[] unrolledMuls = new string[4];
-            unrolledMuls[0] = "  imul r15, rdi";
-            unrolledMuls[1] = "  imul r14, rdi";
-            unrolledMuls[2] = "  imul r13, rdi";
-            unrolledMuls[3] = "  imul r12, rdi";
+            if (isa == IUarchTest.ISA.amd64)
+            {
+                string[] unrolledMuls = new string[4];
+                unrolledMuls[0] = "  imul %rsi, %r15";
+                unrolledMuls[1] = "  imul %rsi, %r14";
+                unrolledMuls[2] = "  imul %rsi, %r13";
+                unrolledMuls[3] = "  imul %rsi, %r12";
+                UarchTestHelpers.GenerateX86AsmStructureTestFuncs(sb, this.Counts, this.Prefix, unrolledMuls, unrolledMuls, includePtrChasingLoads: false);
+            }
+            else if (isa == IUarchTest.ISA.aarch64)
+            {
+                string[] unrolledMuls = new string[4];
+                unrolledMuls[0] = "  mul x15, x15, x25";
+                unrolledMuls[1] = "  mul x14, x14, x25";
+                unrolledMuls[2] = "  mul x13, x13, x25";
+                unrolledMuls[3] = "  mul x12, x12, x25";
+                UarchTestHelpers.GenerateArmAsmStructureTestFuncs(sb, this.Counts, this.Prefix, unrolledMuls, unrolledMuls, includePtrChasingLoads: false);
+            }
+            else if (isa == IUarchTest.ISA.mips64)
+            {
+                string[] unrolledAdds = new string[4];
+                unrolledAdds[0] = "  add.d $r15, $r15, $r12";
+                unrolledAdds[1] = "  add.d $r16, $r16, $r12";
+                unrolledAdds[2] = "  add.d $r17, $r17, $r12";
+                unrolledAdds[3] = "  add.d $r18, $r18, $r12";
 
-            string[] unrolledMuls1 = new string[4];
-            unrolledMuls1[0] = "  imul r15, rsi";
-            unrolledMuls1[1] = "  imul r14, rsi";
-            unrolledMuls1[2] = "  imul r13, rsi";
-            unrolledMuls1[3] = "  imul r12, rsi";
-            UarchTestHelpers.GenerateX86NasmStructureTestFuncs(sb, this.Counts, this.Prefix, unrolledMuls, unrolledMuls, false);
-        }
+                string[] unrolledAdds1 = new string[4];
+                unrolledAdds1[0] = "  add.d $r15, $r15, $r13";
+                unrolledAdds1[1] = "  add.d $r16, $r16, $r13";
+                unrolledAdds1[2] = "  add.d $r17, $r17, $r13";
+                unrolledAdds1[3] = "  add.d $r18, $r18, $r13";
+                UarchTestHelpers.GenerateMipsAsmStructureTestFuncs(sb, this.Counts, this.Prefix, unrolledAdds, unrolledAdds1, includePtrChasingLoads: true);
+            }
+            else if (isa == IUarchTest.ISA.riscv)
+            {
+                string[] unrolledAdds = new string[4];
+                unrolledAdds[0] = "  mul x30, x30, x5";
+                unrolledAdds[1] = "  mul x29, x29, x5";
+                unrolledAdds[2] = "  mul x28, x28, x5";
+                unrolledAdds[3] = "  mul x31, x31, x5";
 
-        public override void GenerateArmAsm(StringBuilder sb)
-        {
-            string[] unrolledAdds = new string[4];
-            unrolledAdds[0] = "  mul x10, x10, x25";
-            unrolledAdds[1] = "  mul x14, x14, x25";
-            unrolledAdds[2] = "  mul x13, x13, x25";
-            unrolledAdds[3] = "  mul x12, x12, x25";
-
-            string[] unrolledAdds1 = new string[4];
-            unrolledAdds1[0] = "  mul x10, x10, x26";
-            unrolledAdds1[1] = "  mul x14, x14, x26";
-            unrolledAdds1[2] = "  mul x13, x13, x26";
-            unrolledAdds1[3] = "  mul x12, x12, x26";
-            UarchTestHelpers.GenerateArmAsmStructureTestFuncs(sb, this.Counts, this.Prefix, unrolledAdds, unrolledAdds1, false);
+                string[] unrolledAdds1 = new string[4];
+                unrolledAdds1[0] = "  mul x30, x30, x6";
+                unrolledAdds1[1] = "  mul x31, x31, x6";
+                unrolledAdds1[2] = "  mul x28, x28, x6";
+                unrolledAdds1[3] = "  mul x29, x29, x6";
+                UarchTestHelpers.GenerateRiscvAsmStructureTestFuncs(sb, this.Counts, this.Prefix, unrolledAdds, unrolledAdds1, false);
+            }
         }
     }
 }

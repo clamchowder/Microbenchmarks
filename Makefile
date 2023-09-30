@@ -1,10 +1,24 @@
-# Folders to recursive make into, not everything has a Makefile
-folders := MemoryLatency MemoryBandwidth instructionrate meshsim CoreClockChecker GpuMemLatency
+include Common/arch_detect.mk
 
-all: $(folders)
+COMPONENTS = CoherencyLatency MemoryLatency MemoryBandwidth InstructionRate Meshsim CoreClockChecker GpuMemLatency
 
-$(folders): .FORCE
-		$(MAKE) -C $@
+all: $(COMPONENTS) 
 
+ci:
+	for COMPONENT in $(COMPONENTS); do $(MAKE) -C $$COMPONENT ci; done
+
+package:
+	@sh Common/ci_package.sh
+
+clean-package:
+	find . -maxdepth 1 -type d -name "clammarks-*" -exec rm -rf {} \; && rm -f "clammarks.txz"
+
+clean: 
+	for COMPONENT in $(COMPONENTS); do $(MAKE) -C $$COMPONENT clean; done
+
+$(COMPONENTS): .FORCE
+	$(MAKE) -C $@ 
 
 .FORCE:
+
+.PHONY: all ci package clean-package clean

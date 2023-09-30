@@ -18,9 +18,10 @@
 #include <sched.h>
 #include <math.h>
 #include <sys/mman.h>
-#include <sys/sysinfo.h>
 #include <errno.h>
+
 #ifdef NUMA
+#include <sys/sysinfo.h>
 #include <numa.h>
 #endif
 
@@ -39,7 +40,9 @@ typedef struct BandwidthTestThreadData {
     uint64_t start;
     float* arr;
     float bw; // written to by the thread
+    #ifdef NUMA
     cpu_set_t cpuset; // if numa set, will set affinity
+    #endif
 } BandwidthTestThreadData;
 
 float MeasureBw(uint64_t sizeKb, uint64_t iterations, uint64_t threads, int shared, int nopBytes, int coreNode, int memNode);
@@ -99,6 +102,9 @@ void *allocate_memory(size_t bytes, unsigned int threadOffset);
 uint64_t gbToTransfer = 512;
 int branchInterval = 0; 
 
+cpu_set_t global_cpuset;
+int hardaffinity = 0;
+
 #ifdef NUMA
 #define NUMA_STRIPE 1
 #define NUMA_SEQ 2
@@ -145,7 +151,15 @@ int main(int argc, char *argv[]) {
             } else if (strncmp(arg, "shared", 6) == 0) {
                 shared = 1;
                 fprintf(stderr, "Using shared array\n");
-            } else if (strncmp(arg, "sleep", 5) == 0) {
+            } else if (strncmp(arg, "hardaffinity", 12) == 0) {
+                hardaffinity = 1;
+                CPU_ZERO(&global_cpuset);
+                CPU_SET(0, &global_cpuset);
+                CPU_SET(1, &global_cpuset);
+                sched_setaffinity(gettid(), sizeof(cpu_set_t), &global_cpuset);
+                fprintf(stderr, "hardaffinity 0,1\n");
+            }
+            else if (strncmp(arg, "sleep", 5) == 0) {
                 argIdx++;
                 sleepTime = atoi(argv[argIdx]);
                 fprintf(stderr, "Sleeping for %d second between tests\n", sleepTime);
@@ -424,10 +438,9 @@ int main(int argc, char *argv[]) {
 /// <returns>Iterations per thread</returns>
 uint64_t GetIterationCount(uint64_t testSize, uint64_t threads)
 {
-    if (testSize > 64) gbToTransfer = 64;
-    if (testSize > 512) gbToTransfer = 64;
-    if (testSize > 8192) gbToTransfer = 64;
-    uint64_t iterations = gbToTransfer * 1024 * 1024 / testSize;
+    int scaledGbToTransfer = gbToTransfer;
+    if (testSize > 64) scaledGbToTransfer = gbToTransfer / 8;
+    uint64_t iterations = scaledGbToTransfer * 1024 * 1024 / testSize;
     if (iterations % 2 != 0) iterations += 1;  // must be even
 
     if (iterations < 8) return 8; // set a minimum to reduce noise
@@ -778,6 +791,7 @@ float scalar_read(float* arr, uint64_t arr_length, uint64_t iterations, uint64_t
 
 void *ReadBandwidthTestThread(void *param) {
     BandwidthTestThreadData* bwTestData = (BandwidthTestThreadData*)param;
+    if (hardaffinity) sched_setaffinity(gettid(), sizeof(cpu_set_t), &global_cpuset);
 #ifdef NUMA
     if (numa) {
         int affinity_rc = sched_setaffinity(gettid(), sizeof(cpu_set_t), &(bwTestData->cpuset));

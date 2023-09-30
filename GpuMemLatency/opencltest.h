@@ -7,7 +7,7 @@
 #include <stdint.h>
 #include <string.h>
 #include <math.h>
-#include "../common/timing.h"
+#include <timing.h>
 
 #define false 0
 #define true 1

@@ -16,7 +16,31 @@ namespace AsmGen
             this.mixNops = mixNops;
         }
 
-        public override void GenerateX86GccAsm(StringBuilder sb)
+        public override bool SupportsIsa(IUarchTest.ISA isa)
+        {
+            if (isa == IUarchTest.ISA.amd64) return true;
+            if (isa == IUarchTest.ISA.aarch64) return true;
+            if (isa == IUarchTest.ISA.mips64) return true;
+            return false;
+        }
+
+        public override void GenerateAsm(StringBuilder sb, IUarchTest.ISA isa)
+        {
+            if (isa == IUarchTest.ISA.amd64)
+            {
+                GenerateX86GccAsm(sb);
+            }
+            else if (isa == IUarchTest.ISA.aarch64)
+            {
+                GenerateArmAsm(sb);
+            }
+            else if (isa == IUarchTest.ISA.mips64)
+            {
+                GenerateMipsAsm(sb);
+            }
+        }
+
+        public void GenerateX86GccAsm(StringBuilder sb)
         {
             for (int i = 0; i < Counts.Length; i++)
             {
@@ -51,7 +75,7 @@ namespace AsmGen
                 sb.AppendLine("  mov (%rdx,%rsi,4), %esi");
                 sb.AppendLine("\n" + funcName + "start:");
                 sb.AppendLine("  mov (%rdx,%rdi,4), %edi");
-                for (int fillerIdx = 0 ; fillerIdx < Counts[i]; fillerIdx++)
+                for (int fillerIdx = 0; fillerIdx < Counts[i]; fillerIdx++)
                 {
                     string jumpLabel = $"{funcName}_edi_target{fillerIdx}";
                     sb.AppendLine($"  cmp %r14, %r11");
@@ -88,59 +112,7 @@ namespace AsmGen
             }
         }
 
-        public override void GenerateX86NasmAsm(StringBuilder sb)
-        {
-            for (int i = 0; i < Counts.Length; i++)
-            {
-                string funcName = Prefix + Counts[i];
-                sb.AppendLine("\n" + funcName + ":");
-                sb.AppendLine("  push rsi");
-                sb.AppendLine("  push rdi");
-                sb.AppendLine("  push r15");
-                sb.AppendLine("  push r14");
-                sb.AppendLine("  push r13");
-                sb.AppendLine("  push r12");
-                sb.AppendLine("  push r11");
-                sb.AppendLine("  xor r15, r15");
-                sb.AppendLine("  mov r14, 1");
-                sb.AppendLine("  mov r13, 2");
-                sb.AppendLine("  mov r12, 3");
-                sb.AppendLine("  mov r11, 4");
-                sb.AppendLine("  xor rdi, rdi");
-                sb.AppendLine("  mov esi, 64");
-                sb.AppendLine("\n" + funcName + "start:");
-                sb.AppendLine("  mov edi, [rdx + rdi * 4]");
-                for (int fillerIdx = 0; fillerIdx < Counts[i]; fillerIdx++)
-                {
-                    string jumpLabel = $"{funcName}_edi_target{fillerIdx}";
-                    sb.AppendLine($"  cmp r14, r11");
-                    sb.AppendLine($"  je {jumpLabel}");
-                    sb.AppendLine($"{jumpLabel}:");
-                }
-
-                sb.AppendLine("  mov esi, [rdx + rsi * 4]");
-                for (int fillerIdx = 0; fillerIdx < Counts[i]; fillerIdx++)
-                {
-                    string jumpLabel = $"{funcName}_esi_target{fillerIdx}";
-                    sb.AppendLine($"  cmp r14, r11");
-                    sb.AppendLine($"  je {jumpLabel}");
-                    sb.AppendLine($"{jumpLabel}:");
-                }
-
-                sb.AppendLine("  dec rcx");
-                sb.AppendLine("  jne " + funcName + "start");
-                sb.AppendLine("  pop r11");
-                sb.AppendLine("  pop r12");
-                sb.AppendLine("  pop r13");
-                sb.AppendLine("  pop r14");
-                sb.AppendLine("  pop r15");
-                sb.AppendLine("  pop rdi");
-                sb.AppendLine("  pop rsi");
-                sb.AppendLine("  ret\n\n");
-            }
-        }
-
-        public override void GenerateArmAsm(StringBuilder sb)
+        public void GenerateArmAsm(StringBuilder sb)
         {
             for (int i = 0; i < Counts.Length; i++)
             {
@@ -190,6 +162,48 @@ namespace AsmGen
                 sb.AppendLine("  add sp, sp, #0x50");
                 sb.AppendLine("  ret\n\n");
             }
+        }
+
+        public void GenerateMipsAsm(StringBuilder sb)
+        {
+            StringBuilder ntJumpTargets = new StringBuilder();
+            for (int i = 0; i < Counts.Length; i++)
+            {
+                string initInstrs = "  move $r15, $r0\n  addi.d $r15, $r15, 15";
+                string funcName = this.Prefix + Counts[i];
+
+                // args in r4 = iterations, r5 = list, r6 = list (sink)
+                // use r12 and r13 for ptr chasing loads, r14 as decrement for iteration count
+                sb.AppendLine("\n" + funcName + ":");
+                sb.AppendLine("  ld.d $r12, $r5, 0");
+                sb.AppendLine("  ld.d $r13, $r5, 64");
+                sb.AppendLine("  xor $r14, $r14, $r14");
+                sb.AppendLine("  addi.d $r14, $r14, 1");
+                sb.AppendLine(initInstrs);
+                sb.AppendLine("\n" + funcName + "start:");
+                sb.AppendLine("  ld.d $r12, $r12, 0");
+                int fillerInstrCount = Counts[i];
+                for (int instrIdx = 0; instrIdx < fillerInstrCount; instrIdx++)
+                {
+                    string jumpLabel = "dontenduphere_r12_" + this.Prefix + "_" + Counts[i] + "_" + instrIdx;
+                    sb.AppendLine($"  beqz $r15, {jumpLabel}");
+                    ntJumpTargets.AppendLine(jumpLabel + ":");
+                    ntJumpTargets.AppendLine("  jr $r1");
+                }
+                sb.AppendLine("  ld.d $r13, $r13, 0");
+                for (int instrIdx = 0; instrIdx < fillerInstrCount; instrIdx++)
+                {
+                    string jumpLabel = "dontenduphere_r13_" + this.Prefix + "_" + Counts[i] + "_" + instrIdx;
+                    sb.AppendLine($"  beqz $r15, {jumpLabel}");
+                    ntJumpTargets.AppendLine(jumpLabel + ":");
+                    ntJumpTargets.AppendLine("  jr $r1");
+                }
+                sb.AppendLine("  sub.d $r4, $r4, $r14");
+                sb.AppendLine("  bnez $r4, " + funcName + "start");
+                sb.AppendLine(" jr $r1");
+            }
+
+            sb.AppendLine(ntJumpTargets.ToString());
         }
     }
 }

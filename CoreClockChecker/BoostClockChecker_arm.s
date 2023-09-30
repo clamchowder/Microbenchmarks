@@ -1,7 +1,12 @@
 .text
 .global clktsctest
 
+.global _clktsctest
+
+.balign 4
+
 /* x0 = iterations, return elapsed TSC in x0 */
+_clktsctest:
 clktsctest:
   sub sp, sp, #0x40
   stp x10, x11, [sp, #0x10]

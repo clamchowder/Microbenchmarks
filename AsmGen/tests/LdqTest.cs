@@ -8,40 +8,59 @@ namespace AsmGen
         {
             this.Counts = UarchTestHelpers.GenerateCountArray(low, high, step);
             this.Prefix = "ldq";
-            this.Description = "Load Queue Test (loads pending retire)";
-            this.FunctionDefinitionParameters = "uint64_t iterations, int *arr, int *arr1";
-            this.GetFunctionCallParameters = "structIterations, A, B";
+            this.Description = "Load Queue";
+            this.FunctionDefinitionParameters = "uint64_t iterations, int *arr, float *floatArr";
+            this.GetFunctionCallParameters = "structIterations, A, fpArr";
             this.DivideTimeByCount = false;
         }
 
-        public override void GenerateX86GccAsm(StringBuilder sb)
+        public override bool SupportsIsa(IUarchTest.ISA isa)
         {
-            string[] unrolledLoads = new string[4];
-            unrolledLoads[0] = "  mov (%r8), %r15";
-            unrolledLoads[1] = "  mov (%r8), %r14";
-            unrolledLoads[2] = "  mov (%r8), %r13";
-            unrolledLoads[3] = "  mov (%r8), %r12";
-            UarchTestHelpers.GenerateX86AsmStructureTestFuncs(sb, this.Counts, this.Prefix, unrolledLoads, unrolledLoads, true);
+            if (isa == IUarchTest.ISA.amd64) return true;
+            if (isa == IUarchTest.ISA.aarch64) return true;
+            if (isa == IUarchTest.ISA.mips64) return true;
+            if (isa == IUarchTest.ISA.riscv) return true;
+            return false;
         }
 
-        public override void GenerateX86NasmAsm(StringBuilder sb)
+        public override void GenerateAsm(StringBuilder sb, IUarchTest.ISA isa)
         {
-            string[] unrolledLoads = new string[4];
-            unrolledLoads[0] = "  mov r15, [r8]";
-            unrolledLoads[1] = "  mov r14, [r8]";
-            unrolledLoads[2] = "  mov r13, [r8]";
-            unrolledLoads[3] = "  mov r12, [r8]";
-            UarchTestHelpers.GenerateX86NasmStructureTestFuncs(sb, this.Counts, this.Prefix, unrolledLoads, unrolledLoads, true);
-        }
-
-        public override void GenerateArmAsm(StringBuilder sb)
-        {
-            string[] unrolledLoads = new string[4];
-            unrolledLoads[0] = "  ldr x15, [x2]";
-            unrolledLoads[1] = "  ldr x14, [x2]";
-            unrolledLoads[2] = "  ldr x13, [x2]";
-            unrolledLoads[3] = "  ldr x12, [x2]";
-            UarchTestHelpers.GenerateArmAsmStructureTestFuncs(sb, this.Counts, this.Prefix, unrolledLoads, unrolledLoads, true);
+            if (isa == IUarchTest.ISA.amd64)
+            {
+                string[] unrolledLoads = new string[4];
+                unrolledLoads[0] = "  mov (%r8), %r15";
+                unrolledLoads[1] = "  mov (%r8), %r14";
+                unrolledLoads[2] = "  mov (%r8), %r13";
+                unrolledLoads[3] = "  mov (%r8), %r12";
+                UarchTestHelpers.GenerateX86AsmStructureTestFuncs(sb, this.Counts, this.Prefix, unrolledLoads, unrolledLoads, includePtrChasingLoads: true);
+            }
+            else if (isa == IUarchTest.ISA.aarch64)
+            {
+                string[] unrolledLoads = new string[4];
+                unrolledLoads[0] = "  ldr x15, [x2]";
+                unrolledLoads[1] = "  ldr x14, [x2]";
+                unrolledLoads[2] = "  ldr x13, [x2]";
+                unrolledLoads[3] = "  ldr x12, [x2]";
+                UarchTestHelpers.GenerateArmAsmStructureTestFuncs(sb, this.Counts, this.Prefix, unrolledLoads, unrolledLoads, includePtrChasingLoads: true);
+            }
+            else if (isa == IUarchTest.ISA.mips64)
+            {
+                string[] unrolledLoads = new string[4];
+                unrolledLoads[0] = "  ld.d $r15, $r6, 0";
+                unrolledLoads[1] = "  ld.d $r16, $r6, 0";
+                unrolledLoads[2] = "  ld.d $r17, $r6, 0";
+                unrolledLoads[3] = "  ld.d $r18, $r6, 0";
+                UarchTestHelpers.GenerateMipsAsmStructureTestFuncs(sb, this.Counts, this.Prefix, unrolledLoads, unrolledLoads, includePtrChasingLoads: true);
+            }
+            else if (isa == IUarchTest.ISA.riscv)
+            {
+                string[] unrolledLoads = new string[4];
+                unrolledLoads[0] = "  ld x28, (x11)";
+                unrolledLoads[1] = "  ld x29, 8(x11)";
+                unrolledLoads[2] = "  ld x30, 16(x11)";
+                unrolledLoads[3] = "  ld x31, 24(x11)";
+                UarchTestHelpers.GenerateRiscvAsmStructureTestFuncs(sb, this.Counts, this.Prefix, unrolledLoads, unrolledLoads, includePtrChasingLoads: true);
+            }
         }
     }
 }

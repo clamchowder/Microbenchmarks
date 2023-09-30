@@ -1,27 +1,16 @@
-﻿using System;
-using System.Collections.Generic;
+﻿using System.Text;
 using System.IO;
-using System.Text;
 
 namespace AsmGen
 {
-    public class IndirectBranchTest : IUarchTestParallelBuild
+    public class IndirectBranchTest : IUarchTest
     {
-        public string Prefix { get; private set; }
-
-        public string Description { get; private set; }
-
-        public string FunctionDefinitionParameters { get; private set; }
-
-        public string GetFunctionCallParameters { get; private set; }
-
-        public bool DivideTimeByCount { get; private set; }
-
         private int[] branchCounts;
         private int[] targetCounts;
         private int globalHistoryAssistBits;
+        private bool assists;
 
-        public IndirectBranchTest()
+        public IndirectBranchTest(bool assist)
         {
             Prefix = "indirectbranch";
             Description = "Indirect branch prediction";
@@ -30,8 +19,31 @@ namespace AsmGen
             branchCounts = new int[] { 1, 2, 4, 8, 16, 32, 64, 128, 256, 512 };
             targetCounts = new int[] { 2, 4, 8, 12, 16, 24, 32, 48, 64, 96, 128 };
             globalHistoryAssistBits = 4;
-            //branchCounts = new int[] { 1, 2 };
-            //targetCounts = new int[] { 2, 3 };
+            this.assists = assist;
+        }
+
+        public bool SupportsIsa(IUarchTest.ISA isa)
+        {
+            if (isa == IUarchTest.ISA.amd64) return true;
+            if (isa == IUarchTest.ISA.aarch64) return true;
+            if (isa == IUarchTest.ISA.mips64) return true;
+            return false;
+        }
+
+        public void GenerateAsm(StringBuilder sb, IUarchTest.ISA isa)
+        {
+            if (isa == IUarchTest.ISA.amd64)
+            {
+                GenerateX86GccAsm(sb);
+            }
+            else if (isa == IUarchTest.ISA.aarch64)
+            {
+                GenerateArmAsm(sb);
+            }
+            else if (isa == IUarchTest.ISA.mips64)
+            {
+                GenerateMipsAsm(sb);
+            }
         }
 
         private string GetFunctionName(int branchCount, int targetCount)
@@ -46,7 +58,8 @@ namespace AsmGen
 
         public void GenerateArmAsm(StringBuilder sb)
         {
-            for (int targetCountIdx = 0; targetCountIdx < targetCounts.Length; targetCountIdx++) {
+            for (int targetCountIdx = 0; targetCountIdx < targetCounts.Length; targetCountIdx++)
+            {
                 int currentTargetCount = targetCounts[targetCountIdx];
                 for (int branchCountIdx = 0; branchCountIdx < branchCounts.Length; branchCountIdx++)
                 {
@@ -108,16 +121,19 @@ namespace AsmGen
 
                         // global history assist branches
                         // rax = index into jump table. make that correlate with global history
-                        sb.AppendLine("  mov x18, 1");
-                        sb.AppendLine("  eor w12, w12, w12");
-                        for (int eaxBits = 0; eaxBits < globalHistoryAssistBits; eaxBits++)
+                        if (this.assists)
                         {
-                            string targetName = functionLabel + "branch" + branchIdx + "ghist" + eaxBits;
-                            sb.AppendLine("  and w12, w13, w18");
-                            sb.AppendLine($"  cbnz w12, {targetName}");
-                            sb.AppendLine("  nop");
-                            sb.AppendLine($"{targetName}:");
-                            sb.AppendLine("  lsl w18, w18, 1");
+                            sb.AppendLine("  mov x18, 1");
+                            sb.AppendLine("  eor w12, w12, w12");
+                            for (int eaxBits = 0; eaxBits < globalHistoryAssistBits; eaxBits++)
+                            {
+                                string targetName = functionLabel + "branch" + branchIdx + "ghist" + eaxBits;
+                                sb.AppendLine("  and w12, w13, w18");
+                                sb.AppendLine($"  cbnz w12, {targetName}");
+                                sb.AppendLine("  nop");
+                                sb.AppendLine($"{targetName}:");
+                                sb.AppendLine("  lsl w18, w18, 1");
+                            }
                         }
 
                         // branch on value of x17
@@ -212,16 +228,20 @@ namespace AsmGen
                         sb.AppendLine("  mov (%r10,%rbx,4), %eax"); // get the target for the current iteration into eax
                         sb.AppendLine("  mov (%r15,%rax,8), %r14");  // load address of jump target from jump table
 
-                        sb.AppendLine("  mov %rsi, %r13");
-                        sb.AppendLine("  mov $1, %rsi");
-                        for (int eaxBits = 0; eaxBits < 7; eaxBits++)
+                        if (assists)
                         {
-                            string targetName = functionLabel + "branch" + branchIdx + "ghist" + eaxBits;
-                            sb.AppendLine("  test %eax, %esi");
-                            sb.AppendLine($"  jnz {targetName}");
-                            sb.AppendLine("  nop");
-                            sb.AppendLine($"{targetName}:");
-                            sb.AppendLine("  shl $1, %esi");
+                            sb.AppendLine("  mov %rsi, %r13");
+                            sb.AppendLine("  mov $1, %rsi");
+                            for (int eaxBits = 0; eaxBits < 7; eaxBits++)
+                            {
+                                string targetName = functionLabel + "branch" + branchIdx + "ghist" + eaxBits;
+                                sb.AppendLine("  test %eax, %esi");
+                                sb.AppendLine($"  jnz {targetName}");
+                                sb.AppendLine("  nop");
+                                sb.AppendLine($"{targetName}:");
+
+                                sb.AppendLine("  shl $1, %esi");
+                            }
                         }
 
                         sb.AppendLine("  mov %r13, %rsi");
@@ -258,89 +278,68 @@ namespace AsmGen
             }
         }
 
-        public List<string> GenerateNasmFiles()
+        public void GenerateMipsAsm(StringBuilder sb)
         {
-            List<string> filenames = new List<string>();
             for (int targetCountIdx = 0; targetCountIdx < targetCounts.Length; targetCountIdx++)
             {
-                StringBuilder sb = new StringBuilder();
                 int currentTargetCount = targetCounts[targetCountIdx];
-                string fname = Prefix + "_" + currentTargetCount + "targets.asm";
-                filenames.Add(fname);
-
-                sb.AppendLine("section .text\nbits 64");
                 for (int branchCountIdx = 0; branchCountIdx < branchCounts.Length; branchCountIdx++)
                 {
-                    /* rcx = iteration count
-                     * rdx = array of target selection arrays, one for each branch
-                     * r8 = length of pattern array
-                     * r9 = array of jump tables, one for each branch
+                    /* r4 = iteration count
+                     * r5 = array of target selection arrays, one for each branch
+                     * r6 = length of pattern array
+                     * r7 = array of jump tables, one for each branch
                      */
                     int currentBranchCount = branchCounts[branchCountIdx];
                     string functionLabel = GetFunctionName(currentBranchCount, currentTargetCount);
-                    sb.AppendLine("global " + functionLabel);
                     sb.AppendLine("\n" + functionLabel + ":");
-                    sb.AppendLine("  push rbx");
-                    sb.AppendLine("  push rsi");
-                    sb.AppendLine("  push r10");
-                    sb.AppendLine("  push r12");
-                    sb.AppendLine("  push r13");
-                    sb.AppendLine("  push r15");
-                    sb.AppendLine("  push r14");
-                    sb.AppendLine("  xor rbx, rbx");
-                    sb.AppendLine("  xor r12, r12");
-                    sb.AppendLine("  xor r13, r13");
 
-                    // initialize jump table
+                    // initialize jump tables. r12-r20 are temporary regs. 
+                    sb.AppendLine("  move $r13, $r7"); // use r13 to access array of pointers to jump tables
                     for (int branchIdx = 0; branchIdx < currentBranchCount; branchIdx++)
                     {
-                        // rcx -> r9 = array of ptrs to jump tables
-                        // r9 -> r13 = index into array of jump tables
-                        // r15 = ptr to jump table
+                        sb.AppendLine("  ld.d $r15, $r13, 0");          // load address of branch's jump table into r15
 
-                        // load jump table base address into r15
-                        sb.AppendLine("  mov r15, [r9 + r13 * 8]");
+                        // initialize the jump table. r15 = base addr. rely on C# for bounds :)
                         for (int targetIdx = 0; targetIdx < currentTargetCount; targetIdx++)
                         {
-                            // assuming 64-bit pointers and 4K page size
-                            // use rbx = index into
+                            // write label addresses into array
                             string targetLabelName = GetTargetLabelName(currentBranchCount, currentTargetCount, branchIdx, targetIdx);
-                            sb.AppendLine($"  lea rax, [rel {targetLabelName}]");
-                            sb.AppendLine($"  mov [r15 + rbx * 8], rax");
-                            sb.AppendLine("  inc rbx");
+                            sb.AppendLine("  la $r16, " + targetLabelName); // load branch target address into r16
+                            sb.AppendLine("  st.d $r16, $r15, 0");          // store branch target address
+                            sb.AppendLine("  addi.d $r15, $r15, 8");        // increment array pointer
                         }
 
-                        sb.AppendLine("  xor rbx, rbx");
-                        sb.AppendLine("  inc r13");
+                        sb.AppendLine("  addi.d $r13, $r13, 8");    // increment array pointer for array of pointers to jump tables
                     }
 
-                    sb.AppendLine("  xor r13, r13");
-                    sb.AppendLine("  xor r12, r12");
-
+                    // loop through branches for (iterations) times
                     string loopLabel = functionLabel + "_loop";
+                    sb.AppendLine("  move $r14, $r0");    // r14 = branch target index
+                    sb.AppendLine("  move $r17, $r0");
+                    sb.AppendLine("  addi.d $r17, $r17, 1"); // use r17 just to store 1
                     sb.AppendLine("\n" + loopLabel + ":");
-                    sb.AppendLine("  xor r11, r11"); // set index into arr of arrs to 0
+                    sb.AppendLine("  move $r12, $r5");      // r12 to hold pointer to target selection array
+                    sb.AppendLine("  move $r13, $r7");      // r13 to hold pointer to jump target array
                     for (int branchIdx = 0; branchIdx < currentBranchCount; branchIdx++)
                     {
-                        sb.AppendLine("  mov r15, [r9 + r11 * 8]");  // load jump table base pointer into r15
-                        sb.AppendLine("  mov r10, [rdx + r11 * 8]"); // load target select array base pointer into r10
-                        sb.AppendLine("  inc r11");
-                        sb.AppendLine("  mov eax, [r10 + rbx * 4]"); // load the target for the current iteration into eax
-                        sb.AppendLine("  mov r14, [r15 + rax * 8]"); // load address of jump target from jump table
+                        sb.AppendLine("  ld.d $r16, $r12, 0"); // r16 = base address of target select array
+                        sb.AppendLine("  ld.d $r18, $r13, 0"); // r18 = base address of jump target array
 
-                        // rax = index into jump table. make that correlate with global history
-                        sb.AppendLine("  mov rsi, 1");
-                        for (int eaxBits = 0; eaxBits < 4; eaxBits++)
-                        {
-                            string targetName = functionLabel + "branch" + branchIdx + "ghist" + eaxBits;
-                            sb.AppendLine("  test eax, esi");
-                            sb.AppendLine($"  jnz {targetName}");
-                            sb.AppendLine("  nop");
-                            sb.AppendLine($"{targetName}:");
-                            sb.AppendLine("  shl rsi, 1");
-                        }
+                        // target select array[target index]
+                        sb.AppendLine("  alsl.d $r15, $r14, $r0, 0x2");
+                        sb.AppendLine("  add.d $r15, $r15, $r16");
+                        sb.AppendLine("  ld.w $r19, $r15, 0");          // load 32-bit target index
 
-                        sb.AppendLine("  jmp r14");                  // and jump to it
+                        sb.AppendLine("  alsl.d $r15, $r19, $r0, 0x3"); // now index into jump table
+                        sb.AppendLine("  add.d $r15, $r18, $r15");
+                        sb.AppendLine("  ld.d $r20, $r15, 0");
+
+                        // increment pointers for next branch
+                        sb.AppendLine("  addi.d $r12, $r12, 8");
+                        sb.AppendLine("  addi.d $r13, $r13, 8");
+                        sb.AppendLine("  jr $r20");
+
                         // generate targets
                         for (int targetIdx = 0; targetIdx < currentTargetCount; targetIdx++)
                         {
@@ -349,65 +348,15 @@ namespace AsmGen
                         }
                     }
 
-                    // loop around in pattern history test array if necessary
-                    // avoiding an extra branch to not pollute BPU history
-                    sb.AppendLine("  inc rbx");
-                    sb.AppendLine("  cmp rbx, r8");
-                    sb.AppendLine("  cmove rbx, r13");
-
-                    // end of main loop over iteration count
-                    sb.AppendLine("  dec rcx");
-                    sb.AppendLine("  jnz " + loopLabel);
-
-                    // function epilogue
-                    sb.AppendLine("  mov rax, r12");
-                    sb.AppendLine("  pop r14");
-                    sb.AppendLine("  pop r15");
-                    sb.AppendLine("  pop r13");
-                    sb.AppendLine("  pop r12");
-                    sb.AppendLine("  pop r10");
-                    sb.AppendLine("  pop rsi");
-                    sb.AppendLine("  pop rbx");
-                    sb.AppendLine("  ret");
+                    // loop back. and try to reset branch index without a branch
+                    sb.AppendLine("  addi.d $r14, $r14, 1"); // if r14 == r6 (pattern array length), set r14 back to 0 somehow
+                    sb.AppendLine("  sub.d $r12, $r14, $r6"); // 12 = temporary result of comparison
+                    sb.AppendLine("  maskeqz $r14, $r14, $r12"); // if r12 = 0, set r14 to 0. otherwise use current value
+                    sb.AppendLine("  sub.d $r4, $r4, $r17");
+                    sb.AppendLine("  bnez $r4, " + loopLabel);
+                    sb.AppendLine("  jr $r1");
                 }
-
-                File.WriteAllText(fname, sb.ToString());
             }
-
-            return filenames;
-        }
-
-        public void GenerateX86NasmAsm(StringBuilder sb)
-        {
-            throw new NotImplementedException();
-        }
-
-        public void GenerateTestBlock(StringBuilder sb)
-        {
-            sb.AppendLine("  if (argc > 1 && strncmp(argv[1], \"" + Prefix + "\", " + Prefix.Length + ") == 0) {");
-            sb.AppendLine("    printf(\"" + Description + ":\\n\");");
-            GenerateCommonTestBlock(sb);
-            sb.AppendLine("  }\n");
-        }
-
-        public void GenerateVsTestBlock(StringBuilder sb)
-        {
-            sb.AppendLine("  if (argc > 1 && _strnicmp(argv[1], \"" + Prefix + "\", " + Prefix.Length + ") == 0) {");
-            sb.AppendLine("  printf(\"" + Description + ":\\n\");");
-            GenerateCommonTestBlock(sb);
-            sb.AppendLine("  }\n");
-        }
-
-        public void GenerateAsmGlobalLines(StringBuilder sb)
-        {
-            for (int branchCountIdx = 0; branchCountIdx < branchCounts.Length; branchCountIdx++)
-                for (int targetCountIdx = 0; targetCountIdx < targetCounts.Length; targetCountIdx++)
-                    sb.AppendLine(".global " + GetFunctionName(branchCounts[branchCountIdx], targetCounts[targetCountIdx]));
-        }
-
-        public void GenerateNasmGlobalLines(StringBuilder sb)
-        {
-            throw new NotImplementedException();
         }
 
         // kinda hack this to put in initialization code we need
@@ -420,17 +369,6 @@ namespace AsmGen
             GenerateInitializationCode(sb);
             string gccFunction = File.ReadAllText($"{Program.DataFilesDir}\\GccIndirectBranchFunction.c");
             sb.AppendLine(gccFunction);
-        }
-
-        public void GenerateVsExternLines(StringBuilder sb)
-        {
-            for (int branchCountIdx = 0; branchCountIdx < branchCounts.Length; branchCountIdx++)
-                for (int targetCountIdx = 0; targetCountIdx < targetCounts.Length; targetCountIdx++)
-                    sb.AppendLine("extern \"C\" uint64_t " + GetFunctionName(branchCounts[branchCountIdx], targetCounts[targetCountIdx]) + $"({FunctionDefinitionParameters});");
-
-            GenerateInitializationCode(sb);
-            string vsFunction = File.ReadAllText($"{Program.DataFilesDir}\\VsIndirectBranchFunction.c");
-            sb.AppendLine(vsFunction);
         }
 
         public void GenerateInitializationCode(StringBuilder sb)
@@ -460,10 +398,26 @@ namespace AsmGen
             sb.AppendLine("}");
         }
 
-        public void GenerateCommonTestBlock(StringBuilder sb)
+        public string Prefix { get; set; }
+        public string Description { get; set; }
+        public int[] Counts;
+        public string FunctionDefinitionParameters { get; set; }
+        public string GetFunctionCallParameters { get; set; }
+        public bool DivideTimeByCount { get; set; }
+        public void GenerateAsmGlobalLines(StringBuilder sb)
         {
-            string branchhistMain = File.ReadAllText($"{Program.DataFilesDir}\\IndirectBranchTestBlock.c");
-            sb.AppendLine(branchhistMain);
+            for (int branchCountIdx = 0; branchCountIdx < branchCounts.Length; branchCountIdx++)
+                for (int targetCountIdx = 0; targetCountIdx < targetCounts.Length; targetCountIdx++)
+                    sb.AppendLine(".global " + GetFunctionName(branchCounts[branchCountIdx], targetCounts[targetCountIdx]));
+        }
+
+        public void GenerateTestBlock(StringBuilder sb, IUarchTest.ISA isa)
+        {
+            sb.AppendLine("  if (argc > 1 && strncmp(test_name, \"" + Prefix + "\", " + Prefix.Length + ") == 0) {");
+            sb.AppendLine("    printf(\"" + Description + ":\\n\");");
+            string ibMain = File.ReadAllText($"{Program.DataFilesDir}\\IndirectBranchTestBlock.c");
+            sb.AppendLine(ibMain);
+            sb.AppendLine("  }\n");
         }
     }
 }
