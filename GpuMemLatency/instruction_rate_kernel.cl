@@ -295,10 +295,10 @@ __kernel void fp32_fma_rate_test(__global float4 *A, int count, __global float4 
     float4 v1 = local_a[masked_tid + 1];
     float4 v2 = local_a[masked_tid + 2];
     float4 v3 = local_a[masked_tid + 3];
-    float4 v4 = v0 + v1;
-    float4 v5 = v0 + v2;
-    float4 v6 = v0 + v3;
-    float4 v7 = v1 + v2;
+    float4 v4 = local_a[masked_tid + 4];
+    float4 v5 = local_a[masked_tid + 5];
+    float4 v6 = local_a[masked_tid + 6];
+    float4 v7 = local_a[masked_tid + 7];
     float4 acc = local_a[0];
 
     for (int i = 0; i < count; i++) {
