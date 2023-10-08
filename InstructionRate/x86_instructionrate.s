@@ -84,6 +84,7 @@
 .global store128
 .global store256
 .global store512
+.global loadscalar
 .global spacedstorescalar
 .global mixaddmul128int
 .global mixmul16mul64
@@ -3983,6 +3984,53 @@ mixmul16mul64_21_loop:
   pop %rcx
   pop %rbx
   ret
+
+loadscalar:
+  push %rbx
+  push %rcx
+  push %r8
+  push %r9
+  push %r10
+  push %r11
+  push %r12
+  push %r13
+  push %r14
+  push %r15
+  mov $20, %r9
+loadscalar_loop:
+  mov (%rsi), %r15
+  mov 8(%rsi), %r14
+  mov 16(%rsi), %r13
+  mov 24(%rsi), %r12
+  mov 32(%rsi), %r11
+  mov 40(%rsi), %r10
+  mov 48(%rsi), %r15
+  mov 56(%rsi), %r14
+  mov 64(%rsi), %r13
+  mov 72(%rsi), %r12 
+  mov 80(%rsi), %r11
+  mov 88(%rsi), %r10
+  mov 96(%rsi), %r15
+  mov 104(%rsi), %r14
+  mov 112(%rsi), %r13  
+  mov 120(%rsi), %r12
+  mov 128(%rsi), %r11
+  mov 136(%rsi), %r10
+  mov 144(%rsi), %r15
+  mov 152(%rsi), %r14   
+  sub %r9, %rdi
+  jnz loadscalar_loop
+  pop %r15
+  pop %r14
+  pop %r13
+  pop %r12
+  pop %r11
+  pop %r10
+  pop %r9
+  pop %r8
+  pop %rcx
+  pop %rbx
+  ret 
 
 spacedstorescalar:
   push %rbx

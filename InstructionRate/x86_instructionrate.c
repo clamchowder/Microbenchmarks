@@ -84,6 +84,7 @@ extern uint64_t mul16(uint64_t iterations) __attribute((sysv_abi));
 extern uint64_t mul64(uint64_t iterations) __attribute((sysv_abi));
 extern uint64_t load128(uint64_t iterations, int *arr) __attribute((sysv_abi));
 extern uint64_t spacedload128(uint64_t iterations, int *arr) __attribute((sysv_abi));
+extern uint64_t loadscalar(uint64_t iterations, int *arr) __attribute((sysv_abi));
 extern uint64_t load256(uint64_t iterations, float *arr) __attribute((sysv_abi));
 extern uint64_t load512(uint64_t iterations, float *arr) __attribute((sysv_abi));
 extern uint64_t store128(uint64_t iterations, int *arr, int *sink) __attribute((sysv_abi));
@@ -125,6 +126,7 @@ int *intTestArr;
 int intSinkArr[8] __attribute__ ((aligned (64))) = { 2, 3, 4, 5, 6, 7, 8, 9 };
 
 uint64_t load128wrapper(uint64_t iterations) __attribute((sysv_abi));
+uint64_t loadscalarwrapper(uint64_t iterations) __attribute((sysv_abi));
 uint64_t spacedload128wrapper(uint64_t iterations) __attribute((sysv_abi));
 uint64_t spacedstorescalarwrapper(uint64_t iterations) __attribute((sysv_abi));
 uint64_t load256wrapper(uint64_t iterations) __attribute((sysv_abi));
@@ -420,6 +422,8 @@ int main(int argc, char *argv[]) {
     printf("2:1 mixed 16-bit/64-bit imul per clk: %.2f\n", measureFunction(iterations, clockSpeedGhz, mixmul16mul64_21));
 
   // load/store
+  if (argc == 1 || argc > 1 && strncmp(argv[1], "loadscalar", 10) == 0)
+    printf("64-bit scalar loads per clk: %.2f\n", measureFunction(iterations, clockSpeedGhz, loadscalarwrapper));
   if (argc == 1 || argc > 1 && strncmp(argv[1], "load128", 7) == 0)
     printf("128-bit loads per clk: %.2f\n", measureFunction(iterations, clockSpeedGhz, load128wrapper));
   if (argc == 1 || argc > 1 && strncmp(argv[1], "spacedload128", 13) == 0)
@@ -469,6 +473,10 @@ __attribute((sysv_abi)) uint64_t spacedstorescalarwrapper(uint64_t iterations) {
 
 __attribute((sysv_abi)) uint64_t load256wrapper(uint64_t iterations) {
   return load256(iterations, fpTestArr);
+}
+
+__attribute((sysv_abi)) uint64_t loadscalarwrapper(uint64_t iterations) {
+  return loadscalar(iterations, intTestArr);
 }
 
 __attribute((sysv_abi)) uint64_t load512wrapper(uint64_t iterations) {
