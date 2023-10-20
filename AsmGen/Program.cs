@@ -35,8 +35,14 @@ namespace AsmGen
             tests.Add(new LoadSchedTest(4, 64, 1));
             tests.Add(new StoreSchedTest(4, 64, 1));
             tests.Add(new StoreDataSchedTest(4, 64, 1));
+            tests.Add(new MixLoadStoreSched(4, 96, 1));
             tests.Add(new MixAddJumpSchedTest(4, 128, 1));
             tests.Add(new FaddSchedTest(20, 120, 1));
+            tests.Add(new FcmpSchedTest(8, 120, 1));
+            tests.Add(new JsCvtSched(8, 120, 1));
+            tests.Add(new MixAddvJsCvtSched(8, 120, 1));
+            tests.Add(new AddvSched(8, 120, 1));
+            tests.Add(new FmovSched(8, 120, 1));
             tests.Add(new Fadd128SchedTest(32, 80, 1));
             tests.Add(new Fadd256SchedTest(4, 64, 1));
             tests.Add(new Fma256SchedTest(4, 64, 1));
@@ -46,6 +52,7 @@ namespace AsmGen
             tests.Add(new BtbTest(8, BtbTest.BranchType.Unconditional));
             tests.Add(new BtbTest(16, BtbTest.BranchType.Unconditional));
             tests.Add(new BtbTest(32, BtbTest.BranchType.Unconditional));
+            tests.Add(new BtbTest(64, BtbTest.BranchType.Unconditional));
             tests.Add(new BtbTest(4, BtbTest.BranchType.Conditional));
             tests.Add(new BtbTest(8, BtbTest.BranchType.Conditional));
             tests.Add(new BtbTest(16, BtbTest.BranchType.Conditional));
@@ -56,6 +63,18 @@ namespace AsmGen
             tests.Add(new BranchHistoryTest());
             tests.Add(new NopLoopTest(512, 1));
             tests.Add(new AddLoopTest(68, 256, 1));
+            /*
+            tests.Add(new JsCvtNsq(8, 38, 1, 40)); // a710
+            tests.Add(new FaddNsq(8, 48, 1, 55)); // a710
+            tests.Add(new MixAddvJsCvtNsq(8, 55, 1)); // a710
+            tests.Add(new AddvNsq(8, 38, 1, 40)); // a710
+            */
+            tests.Add(new JsCvtNsq(8, 48, 1, 60));// x2
+            tests.Add(new FaddNsq(8, 48, 1, 55)); // x2
+            tests.Add(new MixAddvJsCvtNsq(8, 80, 1));
+            tests.Add(new AddvNsq(8, 48, 1, 60));
+            tests.Add(new StoreNsq(8, 30, 1)); // x2
+            tests.Add(new LoadNsq(8, 30, 1)); // x2
 
             List<Task> tasks = new List<Task>();
             tasks.Add(Task.Run(() => GenerateCFile(tests, IUarchTest.ISA.amd64)));
@@ -135,6 +154,12 @@ namespace AsmGen
             {
                 sb.AppendLine(isa.ToString() + ":");
                 sb.AppendLine($"\tgcc clammicrobench_{isa.ToString()}.c clammicrobench_{isa.ToString()}.s -o cb");
+                if (isa == IUarchTest.ISA.aarch64)
+                {
+                    // hack for stupid compilers that need a ton of flags to do basic things
+                    sb.AppendLine("android:");
+                    sb.AppendLine("clang -march=armv8.3-a -mfpu=neon-fp-armv8 clammicrobench_aarch64.c clammicrobench_aarch64.s -o cb");
+                }
             }
 
             sb.AppendLine("win64:");
