@@ -5,7 +5,11 @@
 #include <stdlib.h>
 #include <stdint.h>
 #include <string.h>
-#include <sys\timeb.h>
+#ifdef __MINGW32__
+    #include <sys/timeb.h>
+#else
+    #include <sys\timeb.h>
+#endif
 #include <math.h>
 #include <intrin.h>
 #include <immintrin.h>
@@ -26,7 +30,7 @@ int default_test_sizes[35] = { 2, 4, 8, 12, 16, 24, 32, 48, 64, 96, 128, 192, 25
                                131072, 262144, 393216, 524288 };
 #endif
 
-enum NopType { None, FourByte, EightByte, K8_FourByte, Branch16 };
+enum NopType { None, FourByte, EightByte, K8_FourByte, Branch16, LEA };
 
 struct BandwidthTestThreadData {
     uint32_t iterations;
@@ -57,6 +61,9 @@ extern "C" float avx_asm_copy(void* arr, uint64_t arr_length, uint64_t iteration
 extern "C" float avx_asm_cflip(void* arr, uint64_t arr_length, uint64_t iterations);
 extern "C" float avx_asm_add(void* arr, uint64_t arr_length, uint64_t iterations);
 extern "C" float avx512_asm_read(void* arr, uint64_t arr_length, uint64_t iterations);
+extern "C" float repmovsb_copy(void* arr, uint64_t arr_length, uint64_t iterations);
+extern "C" float repstosb_write(void* arr, uint64_t arr_length, uint64_t iterations);
+extern "C" float clzero_asm_write(void* arr, uint64_t arr_length, uint64_t iterations);
 float (*bw_func)(void*, uint64_t, uint64_t) = sse_asm_read;
 
 #else
@@ -159,6 +166,18 @@ int main(int argc, char *argv[]) {
                     bw_func = sse_asm_add;
                     fprintf(stderr, "Using SSE assembly, adding constant to array\n");
                 }
+                else if (_strnicmp(argv[argIdx], "copy_repmovsb", 11) == 0) {
+                    bw_func = repmovsb_copy;
+                    fprintf(stderr, "Using assembly, rep movsb to copy one half of the array to the other\n");
+                }
+                else if (_strnicmp(argv[argIdx], "write_repstosb", 11) == 0) {
+                    bw_func = repstosb_write;
+                    fprintf(stderr, "Using assembly, rep stosb to set array contents to 1\n");
+                }
+                else if (_strnicmp(argv[argIdx], "clzero", 11) == 0) {
+                    bw_func = clzero_asm_write;
+                    fprintf(stderr, "Using assembly, clzero to set array contents to 0\n");
+                }
 #else
                 if (_strnicmp(argv[argIdx], "scalar", 6) == 0) {
                     bw_func = scalar_asm_read32;
@@ -184,6 +203,10 @@ int main(int argc, char *argv[]) {
                 else if (_strnicmp(argv[argIdx], "instrk8_4", 6) == 0) {
                     instr = K8_FourByte;
                     fprintf(stderr, "Using 4B NOPs, with encoding recommended in the Athlon optimization manual\n");
+                }
+                else if (_strnicmp(argv[argIdx], "instr_lea", 6) == 0) {
+                    instr = LEA;
+                    fprintf(stderr, "Using LEA\n");
                 }
                 else if (_strnicmp(argv[argIdx], "branch16", 6) == 0) {
                     instr = Branch16;
@@ -509,6 +532,8 @@ void FillInstructionArray(uint64_t* arr, uint64_t sizeKb, enum NopType nopSize)
     // athlon64 (K8) optimization manual pattern
     char k8_nop4b[8] = { 0x66, 0x66, 0x66, 0x90, 0x66, 0x66, 0x66, 0x90 };
 
+    char lea[8] = { 0x48, 0x8D, 0x04, 0x4B, 0x66, 0x0F, 0xEF, 0xC0 };
+
     uint64_t elements = (sizeKb * 1024 / 8) - 1; // leave room for ret
     unsigned char* functionEnd = (unsigned char*)(arr + elements);
 
@@ -517,6 +542,7 @@ void FillInstructionArray(uint64_t* arr, uint64_t sizeKb, enum NopType nopSize)
         if (nopSize == EightByte) nopPtr = (uint64_t*)(nop8b);
         else if (nopSize == FourByte) nopPtr = (uint64_t*)(nop4b);
         else if (nopSize == K8_FourByte) nopPtr = (uint64_t*)(k8_nop4b);
+        else if (nopSize == LEA) nopPtr = (uint64_t*)(lea);
         else {
             fprintf(stderr, "%d (enum value) NOP size isn't supported :(\n", nopSize);
             return;

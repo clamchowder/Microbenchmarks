@@ -1,3 +1,4 @@
+#pragma OPENCL EXTENSION cl_khr_fp16 : enable
 #define rate_local_mem_test_size 256
 __kernel void fp16_add_rate_test(__global half8 *A, int count, __global half8 *ret) {
     int tid = get_local_id(0);

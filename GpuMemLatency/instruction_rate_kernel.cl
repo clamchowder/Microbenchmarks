@@ -130,6 +130,36 @@ __kernel void fp32_rcp_rate_test(__global float4 *A, int count, __global float4 
     ret[get_global_id(0)] = v0 + v1 + v2 + v3 + v4 + v5 + v6 + v7;
 }
 
+__kernel void fp32_rsqrt_rate_test(__global float4 *A, int count, __global float4 *ret) {
+    int tid = get_local_id(0);
+    int max_offset = get_local_size(0);
+    __global float4 *local_a = A;
+
+    int masked_tid = tid & (rate_local_mem_test_size - 1);
+    float4 v0 = local_a[masked_tid];
+    float4 v1 = local_a[masked_tid + 1];
+    float4 v2 = local_a[masked_tid + 2];
+    float4 v3 = local_a[masked_tid + 3];
+    float4 v4 = v0 + v1;
+    float4 v5 = v0 + v2;
+    float4 v6 = v0 + v3;
+    float4 v7 = v1 + v2;
+    float4 acc = local_a[0];
+
+    for (int i = 0; i < count; i++) {
+        v0 = native_rsqrt(v0);
+        v1 = native_rsqrt(v1);
+        v2 = native_rsqrt(v2);
+        v3 = native_rsqrt(v3);
+        v4 = native_rsqrt(v4);
+        v5 = native_rsqrt(v5);
+        v6 = native_rsqrt(v6);
+        v7 = native_rsqrt(v7);
+    }
+
+    ret[get_global_id(0)] = v0 + v1 + v2 + v3 + v4 + v5 + v6 + v7;
+}
+
 __kernel void int64_add_rate_test(__global ulong2 *A, int count, __global ulong2 *ret) {
     int tid = get_local_id(0);
     int max_offset = get_local_size(0);
@@ -224,6 +254,37 @@ __kernel void mix_fp32_int32_add_rate_test(__global float4 *A, int count, __glob
     ret[get_global_id(0)] = v0 + v1 + v2 + v3 + convert_float4(v4 + v5 + v6 + v7);
 }
 
+__kernel void mix_fp32_int32_addmul_rate_test(__global float4 *A, int count, __global float4 *ret) {
+    int tid = get_local_id(0);
+    int max_offset = get_local_size(0);
+    __global float4 *fp32_a = A;
+
+    int masked_tid = tid & (rate_local_mem_test_size - 1);
+    float4 v0 = fp32_a[masked_tid];
+    float4 v1 = fp32_a[masked_tid + 1];
+    float4 v2 = fp32_a[masked_tid + 2];
+    float4 v3 = fp32_a[masked_tid + 3];
+    int4 v4 = convert_int4_sat(v0 + v1);
+    int4 v5 = convert_int4_sat(v0 + v2);
+    int4 v6 = convert_int4_sat(v0 + v3);
+    int4 v7 = convert_int4_sat(v1 + v2);
+    float4 fp_acc = fp32_a[0];
+    int4 int_acc = convert_int4_sat(fp32_a[0]);
+
+    for (int i = 0; i < count; i++) {
+        v0 += fp_acc;
+        v1 += fp_acc;
+        v2 += fp_acc;
+        v3 += fp_acc;
+        v4 *= int_acc;
+        v5 *= int_acc;
+        v6 *= int_acc;
+        v7 *= int_acc;
+    }
+
+    ret[get_global_id(0)] = v0 + v1 + v2 + v3 + convert_float4(v4 + v5 + v6 + v7);
+}
+
 __kernel void fp32_fma_rate_test(__global float4 *A, int count, __global float4 *ret) {
     int tid = get_local_id(0);
     int max_offset = get_local_size(0);
@@ -234,10 +295,10 @@ __kernel void fp32_fma_rate_test(__global float4 *A, int count, __global float4 
     float4 v1 = local_a[masked_tid + 1];
     float4 v2 = local_a[masked_tid + 2];
     float4 v3 = local_a[masked_tid + 3];
-    float4 v4 = v0 + v1;
-    float4 v5 = v0 + v2;
-    float4 v6 = v0 + v3;
-    float4 v7 = v1 + v2;
+    float4 v4 = local_a[masked_tid + 4];
+    float4 v5 = local_a[masked_tid + 5];
+    float4 v6 = local_a[masked_tid + 6];
+    float4 v7 = local_a[masked_tid + 7];
     float4 acc = local_a[0];
 
     for (int i = 0; i < count; i++) {
@@ -276,7 +337,7 @@ __kernel void fp32_mad_rate_test(__global float4 *A, int count, __global float4 
         v1 = mad(acc, v1, v1);
         v2 = mad(acc, v2, v2);
         v3 = mad(acc, v3, v3);
-        v4 = mad(acc, v4, v3);
+        v4 = mad(acc, v4, v4);
         v5 = mad(acc, v5, v5);
         v6 = mad(acc, v6, v6);
         v7 = mad(acc, v7, v7);
@@ -574,21 +635,21 @@ __kernel void int32_add_latency_test(__global uint *A, int count, __global uint 
     ret[get_global_id(0)] = v0 + v1 + v2 + v3 + v4 + v5 + v6 + v7;
 }
 
-__kernel void int32_mul_latency_test(__global uint4 *A, int count, __global uint4 *ret) {
+__kernel void int32_mul_latency_test(__global uint *A, int count, __global uint *ret) {
     int tid = get_local_id(0);
     int max_offset = get_local_size(0);
-    __global uint4 *local_a = A;
+    __global uint *local_a = A;
 
     int masked_tid = tid & (rate_local_mem_test_size - 1);
-    uint4 v0 = local_a[masked_tid];
-    uint4 v1 = local_a[masked_tid + 1];
-    uint4 v2 = local_a[masked_tid + 2];
-    uint4 v3 = local_a[masked_tid + 3];
-    uint4 v4 = v0 + v1;
-    uint4 v5 = v0 + v2;
-    uint4 v6 = v0 + v3;
-    uint4 v7 = v1 + v2;
-    uint4 acc = local_a[0];
+    uint v0 = local_a[masked_tid];
+    uint v1 = local_a[masked_tid + 1];
+    uint v2 = local_a[masked_tid + 2];
+    uint v3 = local_a[masked_tid + 3];
+    uint v4 = v0 + v1;
+    uint v5 = v0 + v2;
+    uint v6 = v0 + v3;
+    uint v7 = v1 + v2;
+    uint acc = local_a[0];
 
     for (int i = 0; i < count; i++) {
         v0 = v7 * v0;

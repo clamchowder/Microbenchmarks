@@ -17,7 +17,7 @@ namespace AsmGen
         public override bool SupportsIsa(IUarchTest.ISA isa)
         {
             if (isa == IUarchTest.ISA.amd64) return true;
-            if (isa == IUarchTest.ISA.aarch64) return true;
+            if (isa == IUarchTest.ISA.aarch64) return false;
             return false;
         }
 

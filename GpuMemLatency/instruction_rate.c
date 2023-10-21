@@ -68,7 +68,9 @@ float instruction_rate_test(cl_context context,
     cl_kernel fp32_fma_rate_kernel = clCreateKernel(program, "fp32_fma_rate_test", &ret);
     cl_kernel fp32_mad_rate_kernel = clCreateKernel(program, "fp32_mad_rate_test", &ret);
     cl_kernel fp32_rcp_rate_kernel = clCreateKernel(program, "fp32_rcp_rate_test", &ret);
+    cl_kernel fp32_rsqrt_rate_kernel = clCreateKernel(program, "fp32_rsqrt_rate_test", &ret);
     cl_kernel mix_fp32_int32_add_rate_kernel = clCreateKernel(program, "mix_fp32_int32_add_rate_test", &ret);
+    cl_kernel mix_fp32_int32_addmul_rate_kernel = clCreateKernel(program, "mix_fp32_int32_addmul_rate_test", &ret);
     cl_kernel int64_add_rate_kernel = clCreateKernel(program, "int64_add_rate_test", &ret);
     cl_kernel int64_mul_rate_kernel = clCreateKernel(program, "int64_mul_rate_test", &ret);
     cl_kernel int16_add_rate_kernel = clCreateKernel(program, "int16_add_rate_test", &ret);
@@ -145,12 +147,21 @@ float instruction_rate_test(cl_context context,
         float4_element_count, a_mem_obj, result_obj, A, result, opsPerIteration);
     fprintf(stderr, "FP32 G native_recip/sec: %f\n", fp32_rcp_rate);
 
+    float fp32_rsqrt_rate = run_rate_test(context, command_queue, fp32_rsqrt_rate_kernel, thread_count, local_size, chase_iterations,
+        float4_element_count, a_mem_obj, result_obj, A, result, opsPerIteration);
+    fprintf(stderr, "FP32 G native_rsqrt/sec: %f\n", fp32_rsqrt_rate);
+
     // Mixed INT32 and FP32 - 4 FP32, 4 INT32, and the loop increment
     // takes FP inputs and converts some to int
     opsPerIteration = 4.0f * 8.0f + 1.0f;
     float mix_fp32_int32_rate = run_rate_test(context, command_queue, mix_fp32_int32_add_rate_kernel, thread_count, local_size, chase_iterations,
         float4_element_count, a_mem_obj, result_obj, A, result, opsPerIteration);
     fprintf(stderr, "Mixed INT32 and FP32 G Adds/sec: %f\n", mix_fp32_int32_rate);
+
+    // Test the same with integer multiplies
+    mix_fp32_int32_rate = run_rate_test(context, command_queue, mix_fp32_int32_addmul_rate_kernel, thread_count, local_size, chase_iterations,
+        float4_element_count, a_mem_obj, result_obj, A, result, opsPerIteration);
+    fprintf(stderr, "Mixed INT32 Multiplies and FP32 G Adds/sec: %f\n", mix_fp32_int32_rate);
 
     // INT64 add test
     cl_ulong* int64_A = (cl_ulong*)A;
@@ -203,6 +214,8 @@ float instruction_rate_test(cl_context context,
         float4_element_count, a_mem_obj, result_obj, A, result, opsPerIteration);
     fprintf(stderr, "INT8 G Multiplies/sec: %f\n", int8_mul_rate);
 
+    short checkExtensionSupport(const char *extension_name);
+    
     if (checkExtensionSupport("cl_khr_fp64")) {
         fp64_instruction_rate_test(context, command_queue, thread_count, local_size, chase_iterations, float4_element_count,
             a_mem_obj, result_obj, A, result);
@@ -396,6 +409,7 @@ float fp64_instruction_rate_test(cl_context context,
     cl_program program = build_program(context, "instruction_rate_fp64_kernel.cl");
     cl_kernel fp64_add_rate_kernel = clCreateKernel(program, "fp64_add_rate_test", &ret);
     cl_kernel fp64_fma_rate_kernel = clCreateKernel(program, "fp64_fma_rate_test", &ret);
+    cl_kernel fp64_mad_rate_kernel = clCreateKernel(program, "fp64_mad_rate_test", &ret);
     totalOps = 2.0f * 8.0f;
     gOpsPerSec = run_rate_test(context, command_queue, fp64_add_rate_kernel, thread_count, local_size, low_chase_iterations,
         float4_element_count, a_mem_obj, result_obj, A, result, totalOps);
@@ -403,6 +417,9 @@ float fp64_instruction_rate_test(cl_context context,
     gOpsPerSec = run_rate_test(context, command_queue, fp64_fma_rate_kernel, thread_count, local_size, low_chase_iterations,
         float4_element_count, a_mem_obj, result_obj, A, result, totalOps);
     fprintf(stderr, "FP64 G FMAs/sec: %f : %f FP64 GFLOPs\n", gOpsPerSec, gOpsPerSec * 2);
+    gOpsPerSec = run_rate_test(context, command_queue, fp64_mad_rate_kernel, thread_count, local_size, low_chase_iterations,
+        float4_element_count, a_mem_obj, result_obj, A, result, totalOps);
+    fprintf(stderr, "FP64 G mad()/sec: %f : %f FP64 GFLOPs\n", gOpsPerSec, gOpsPerSec * 2);
 
     return gOpsPerSec;
 }

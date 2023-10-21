@@ -15,16 +15,18 @@
     </Filter>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="MemoryBandwidth.cpp">
+    <ClCompile Include="MixedMemoryBandwidthTest.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
-    <CustomBuild Include="MemoryBandwidthFunctions.asm">
-      <Filter>Source Files</Filter>
-    </CustomBuild>
     <CustomBuild Include="MemoryBandwidthFunctions32.asm">
       <Filter>Source Files</Filter>
     </CustomBuild>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="MemoryBandwidth.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
 </Project>

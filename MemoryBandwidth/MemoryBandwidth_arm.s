@@ -8,6 +8,7 @@
 .global asm_add
 .global flush_icache
 .global readbankconflict
+.global readbankconflict128
 
 .global _asm_read
 .global _asm_write
@@ -16,6 +17,8 @@
 .global _asm_add
 .global _flush_icache
 .global _readbankconflict
+
+.balign 4
 
 /* x0 = ptr to array (was rcx)
  * x1 = arr length (was rdx)
@@ -488,6 +491,7 @@ asm_add_pass_loop:
    x2 = load spacing, in bytes
    x3 = iter count (number of loads to execute) */
 readbankconflict:
+readbankconflict128:
 _readbankconflict:
    sub sp, sp, #0x40
    stp x14, x15, [sp, #0x10]

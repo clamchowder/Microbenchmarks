@@ -7,7 +7,7 @@
 #include <stdint.h>
 #include <string.h>
 #include <math.h>
-#include "../common/timing.h"
+#include "../Common/timing.h"
 
 #define false 0
 #define true 1
@@ -33,6 +33,11 @@ cl_program build_program(cl_context context, const char* fname);
 void FillPatternArr(uint32_t* pattern_arr, uint32_t list_size, uint32_t byte_increment);
 cl_uint getCuCount();
 size_t getMaxWorkgroupSize();
+cl_ulong get_max_constant_buffer_size();
+cl_ulong get_max_buffer_size();
+cl_ulong get_max_tex_buffer_size();
+cl_ulong get_max_2d_tex_width();
+cl_ulong get_max_2d_tex_height();
 
 float int_atomic_latency_test(cl_context context,
     cl_command_queue command_queue,
@@ -46,6 +51,11 @@ float latency_test(cl_context context,
     uint32_t chase_iterations,
     short sattolo,
     short amdLatencyWorkaround);
+float tex_latency_test(cl_context context,
+    cl_command_queue command_queue,
+    cl_kernel kernel,
+    uint32_t list_size,
+    uint32_t chase_iterations);
 float bw_test(cl_context context,
     cl_command_queue command_queue,
     cl_kernel kernel,
@@ -53,6 +63,15 @@ float bw_test(cl_context context,
     uint32_t thread_count,
     uint32_t local_size,
     uint32_t skip,
+    uint32_t chase_iterations);
+float tex_bw_test(cl_context context,
+    cl_command_queue command_queue,
+    cl_kernel kernel,
+    uint64_t width,
+    uint64_t height,
+    uint32_t thread_count,
+    uint32_t local_size,
+    uint32_t randomize,
     uint32_t chase_iterations);
 float local_bw_test(cl_context context,
     cl_command_queue command_queue,

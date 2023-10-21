@@ -10,6 +10,76 @@ __kernel void simple_latency_test(__global const int* A, int count, __global int
     ret[0] = result;
 }
 
+// not used, I tried
+__constant sampler_t direct_sampler = CLK_NORMALIZED_COORDS_FALSE | // coordinates are from 0 to max dimension size
+                                        CLK_ADDRESS_NONE | // if it goes out of bounds feel free to explode and die
+                                        CLK_FILTER_NEAREST;
+__kernel void tex_latency_test(__read_only image1d_buffer_t A, int count, __global int* ret, int list_size) {
+    __local uint4 local_a[128];
+    int localId = get_local_id(0);
+    // uint4 current = read_imageui(A, direct_sampler, 0); // using sampler screws things up
+    uint4 current = read_imageui(A, 0);
+    // printf("start x: %u\n", current.x);
+    for (int i = 0; i < count; i += 10) {
+        // printf("current: %u %u %u %u, address: %d\n", current.x, current.y, current.z, current.w, (int)current.x / 4);
+        //current = read_imageui(A, direct_sampler, i);
+        current = read_imageui(A, current.x);
+        current = read_imageui(A, current.x);
+        current = read_imageui(A, current.x);
+        current = read_imageui(A, current.x);
+        current = read_imageui(A, current.x);
+        current = read_imageui(A, current.x);
+        current = read_imageui(A, current.x);
+        current = read_imageui(A, current.x);
+        current = read_imageui(A, current.x);
+        current = read_imageui(A, current.x);
+        //printf("%d: current read: %u %u %u %u\n", i, current.x, current.y, current.z, current.w);
+        local_a[localId] = current;
+    }
+
+    ret[0] = local_a[localId].x;
+}
+
+__constant sampler_t funny_sampler = CLK_NORMALIZED_COORDS_TRUE | // coordinates are from 0 to 1 (float)
+                                        CLK_ADDRESS_REPEAT | // going out of bounds = replicate
+                                        CLK_FILTER_LINEAR;   
+__kernel void tex_bw_test(__read_only image2d_t A, int count, __global int* ret) {
+    int localId = get_local_id(0);
+    float2 increment;
+    increment.x = 0.00001; // guessing
+    increment.y = 0.000001;
+
+    float2 current0, current1, current2, current3;
+    current0.x = increment.x * localId;
+    current0.y = increment.y * localId;
+    current1.x = 0.1 + (localId / 10000);
+    current1.y = 0.1 + (localId / 10000);
+    current2.x = 0.01 + (localId / 10000);
+    current2.y = 0.01 + (localId / 10000);
+    current3.x = 0.002 + (localId / 5000);
+    current3.y = 0.001 + (localId / 5000);
+
+    float4 tmp0 = read_imagef(A, funny_sampler, current0);
+    float4 tmp1 = read_imagef(A, funny_sampler, current1);
+    float4 tmp2 = read_imagef(A, funny_sampler, current2);
+    float4 tmp3 = read_imagef(A, funny_sampler, current3);
+    for (int i = 0; i < count; i += 4)
+    {
+        tmp0 += read_imagef(A, funny_sampler, current0);
+        tmp1 += read_imagef(A, funny_sampler, current1);
+        tmp2 += read_imagef(A, funny_sampler, current2);
+        tmp3 += read_imagef(A, funny_sampler, current3);
+        current0 += increment;
+        current1 += increment;
+        current2 += increment;
+        current3 += increment;
+    }
+
+    current0 = current0 + current1 + current2 + current3;
+    *ret = current0.x + current1.x + current2.x + current3.x;
+    *ret += current0.y + current1.y + current2.y + current3.y;
+}
+
 // Cacheline size in bytes, must correspond to what's defined for the latency test
 #define CACHELINE_SIZE 64
 
@@ -220,19 +290,18 @@ __kernel void sum_bw_test(__global float* A, uint count, uint float4size, __glob
     ret[threadId] = dot(result1, result2) + dot(result3, result4) + dot(result4, result5);
 }
 
-#define local_mem_bw_test_size 4096
+#define local_mem_bw_test_size 2048
 // test bandwidth with local memory. A must be at least local_mem_bw_test_size in floats
-__kernel void local_bw_test(__global uint* A, uint count, __global uint* ret) {
-    __local uint local_a[local_mem_bw_test_size];
+__kernel void local_bw_test(__global float* A, uint count, __global float* ret) {
+    __local float local_a[local_mem_bw_test_size];
     int threadId = get_global_id(0);
     int localId = get_local_id(0);
     int localSize = get_local_size(0);
     int groupId = get_group_id(0);
-    uint acc1 = 1;
-    uint acc2 = 2;
-    uint acc3 = 3;
-    uint acc4 = 4;
-    int max_idx = local_mem_bw_test_size - localSize * 4;
+    float acc1 = 1.1;
+    float acc2 = 2.2;
+    float acc3 = 3.3;
+    float acc4 = 4.4;
 
     // workgroup-wide copy from global mem into local mem
     for (int i = get_local_id(0);i < local_mem_bw_test_size; i += get_local_size(0))
@@ -240,15 +309,20 @@ __kernel void local_bw_test(__global uint* A, uint count, __global uint* ret) {
     barrier(CLK_LOCAL_MEM_FENCE);
 
     // assumes local memory size is at least 1024 float4s
-    int idx = localId;
-    for (int i = 0; i < count; i += 6) { // 4x read-modify-write
-        local_a[idx] += local_a[idx + localSize];
-        local_a[idx + localSize * 2] += local_a[idx + localSize * 3];
-        idx += localSize * 4;
-        if (idx > max_idx) idx = localId;
+    int idx0 = localId;
+    int idx1 = localId + localSize;
+    int idx2 = localId + localSize * 2;
+    for (int i = 0; i < count; i += 12) { 
+        acc1 += local_a[idx0] * local_a[idx1] + local_a[idx2];
+        acc2 += local_a[idx0 + 1] * local_a[idx1 + 1] + local_a[idx2 + 1];
+        acc3 += local_a[idx0 + 2] * local_a[idx1 + 2] + local_a[idx2 + 2];
+        acc4 += local_a[idx0 + 3] * local_a[idx1 + 3] + local_a[idx2 + 3];
+        idx0 = (idx0 + localSize) & 0x3FF;
+        idx1 = (idx1 + localSize) & 0x3FF;
+        idx2 = (idx2 + localSize) & 0x3FF;
     }
 
-    ret[threadId] = local_a[localId];
+    ret[threadId] = acc1 + acc2 + acc3 + acc4;
 }
 
 // A = inputs, fixed size

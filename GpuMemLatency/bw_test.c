@@ -132,6 +132,119 @@ cleanup:
     return bandwidth;
 }
 
+float tex_bw_test(cl_context context,
+    cl_command_queue command_queue,
+    cl_kernel kernel,
+    uint64_t width,
+    uint64_t height,
+    uint32_t thread_count,
+    uint32_t local_size,
+    uint32_t randomize,
+    uint32_t chase_iterations)
+{
+    size_t global_item_size = thread_count;
+    size_t local_item_size = local_size;
+    float texels = 0;
+    cl_int ret;
+    int64_t time_diff_ms;
+    uint64_t tex_array_size = 3 * width * height; // texture size in bytes
+    cl_mem tex_mem_obj = NULL, a_mem_obj = NULL, result_obj = NULL;
+
+    float* A = (float*)malloc(sizeof(float) * tex_array_size);
+    float* result = (float*)malloc(sizeof(float) * thread_count);
+
+    if (!A || !result)
+    {
+        fprintf(stderr, "Failed to allocate memory for %lu x %lu texture\n", width, height);
+    }
+
+    // fill array
+    for (uint64_t i = 0; i < tex_array_size; i++)
+    {
+        A[i] = randomize ? rand() * 0.2f : (float)(i * 0.5);
+    }
+
+    // create texture from it
+    //a_mem_obj = clCreateBuffer(context, CL_MEM_READ_ONLY, tex_array_size * sizeof(float), A, &ret);
+    //ret = clEnqueueWriteBuffer(command_queue, a_mem_obj, CL_TRUE, 0, tex_array_size * sizeof(float), A, 0, NULL, NULL);
+    cl_image_desc imageDesc;
+    memset(&imageDesc, 0, sizeof(cl_image_desc));
+    imageDesc.image_type = CL_MEM_OBJECT_IMAGE2D;
+    imageDesc.image_width = width;
+    imageDesc.image_height = height;
+    //imageDesc.mem_object = a_mem_obj;
+    //imageDesc.buffer = A;
+    cl_image_format imageFormat;
+    imageFormat.image_channel_order = CL_R;
+    imageFormat.image_channel_data_type = CL_FLOAT;
+    tex_mem_obj = clCreateImage(context, CL_MEM_READ_ONLY, &imageFormat, &imageDesc, A, &ret);
+    if (ret != CL_SUCCESS)
+    {
+        fprintf(stderr, "Failed to create 2d texture: %d\n", ret);
+        goto tex_bw_cleanup;
+    }
+
+    size_t origin[] = { 0, 0, 0 };
+    size_t region[] = { width, height, 1 };
+    ret = clEnqueueWriteImage(command_queue, tex_mem_obj, CL_TRUE, origin, region, 0, 0, A, 0, NULL, NULL);
+    if (ret != CL_SUCCESS)
+    {
+        fprintf(stderr, "Failed to copy 2d texture: %d\n", ret);
+        goto tex_bw_cleanup;
+    }
+
+    fprintf(stderr, "Created image\n");
+
+    // copy array to device
+    result_obj = clCreateBuffer(context, CL_MEM_READ_WRITE, sizeof(float) * thread_count, NULL, &ret);
+    ret = clEnqueueWriteBuffer(command_queue, result_obj, CL_TRUE, 0, sizeof(float) * thread_count, result, 0, NULL, NULL);
+
+    // Set kernel arguments for __kernel void sum_bw_test(__global float* A, int count, int float4size, __global float* ret, int skip, __global int *startPositions)
+    clSetKernelArg(kernel, 0, sizeof(cl_mem), (void*)&tex_mem_obj);
+    clSetKernelArg(kernel, 1, sizeof(cl_int), (void*)&chase_iterations);
+    clSetKernelArg(kernel, 2, sizeof(cl_mem), (void*)&result_obj);
+    clFinish(command_queue); // writes should be blocking, but are they?
+
+    start_timing();
+    ret = clEnqueueNDRangeKernel(command_queue, kernel, 1, NULL, &global_item_size, &local_item_size, 0, NULL, NULL);
+    if (ret != CL_SUCCESS)
+    {
+        fprintf(stderr, "Failed to submit kernel to command queue. clEnqueueNDRangeKernel returned %d\n", ret);
+        texels = 0;
+        goto tex_bw_cleanup;
+    }
+
+    ret = clFinish(command_queue); // returns success even when TDR happens?
+    if (ret != CL_SUCCESS)
+    {
+        printf("Failed to finish command queue. clFinish returned %d\n", ret);
+        texels = 0;
+        goto tex_bw_cleanup;
+    }
+
+    time_diff_ms = end_timing();
+    fprintf(stderr, "elapsed time: %lld ms\n", time_diff_ms);
+
+    // each thread does iterations texel reads
+    texels = 1000 * (float)(chase_iterations * thread_count / 1e9) / (float)time_diff_ms;
+
+    //fprintf(stderr, "%llu ms, %llu GB\n", time_diff_ms, total_data_gb);
+
+    ret = clEnqueueReadBuffer(command_queue, result_obj, CL_TRUE, 0, sizeof(uint32_t) * thread_count, result, 0, NULL, NULL);
+    if (ret != 0) fprintf(stderr, "enqueue read buffer for result failed. ret = %d\n", ret);
+    clFinish(command_queue);
+
+tex_bw_cleanup:
+    clFlush(command_queue);
+    clFinish(command_queue);
+    clReleaseMemObject(tex_mem_obj);
+    clReleaseMemObject(a_mem_obj);
+    clReleaseMemObject(result_obj);
+    free(A);
+    free(result);
+    return texels;
+}
+
 // must be kept in sync with kernel.cl
 // list size in 32-bit elements
 #define local_mem_bw_test_size 4096
@@ -149,8 +262,8 @@ float local_bw_test(cl_context context,
     cl_int ret;
     int64_t time_diff_ms;
 
-    uint32_t* A = (uint32_t*)malloc(sizeof(uint32_t) * local_mem_bw_test_size);
-    uint32_t* result = (uint32_t*)malloc(sizeof(uint32_t) * thread_count);
+    float* A = (uint32_t*)malloc(sizeof(uint32_t) * local_mem_bw_test_size);
+    float* result = (uint32_t*)malloc(sizeof(uint32_t) * thread_count);
 
     if (!A || !result)
     {
@@ -159,7 +272,7 @@ float local_bw_test(cl_context context,
 
     for (uint32_t i = 0; i < 4096; i++)
     {
-        A[i] = i;
+        A[i] = i + .02;
     }
 
     // copy array to device
