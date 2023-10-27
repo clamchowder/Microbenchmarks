@@ -25,7 +25,6 @@ namespace AsmGen
         {
             if (isa == IUarchTest.ISA.amd64)
             {
-                // todo, fix this
                 string[] unrolledAdds = new string[4];
                 unrolledAdds[0] = "  addps %xmm0, %xmm1";
                 unrolledAdds[1] = "  addps %xmm0, %xmm2";

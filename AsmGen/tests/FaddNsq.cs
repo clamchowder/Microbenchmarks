@@ -19,12 +19,28 @@ namespace AsmGen
         public override bool SupportsIsa(IUarchTest.ISA isa)
         {
             if (isa == IUarchTest.ISA.aarch64) return true;
+            if (isa == IUarchTest.ISA.amd64) return true;
             return false;
         }
 
         public override void GenerateAsm(StringBuilder sb, IUarchTest.ISA isa)
         {
-            if (isa == IUarchTest.ISA.aarch64)
+            if (isa == IUarchTest.ISA.amd64)
+            {
+                string postLoadInstrs = "  cvtsi2ss %edi, %xmm1";
+                string initInstrs = "  cvtsi2ss %r12, %xmm2";
+                string[] depInstrs = new string[4];
+                depInstrs[0] = "  addss %xmm1, %xmm0";
+                depInstrs[1] = "  addss %xmm1, %xmm3";
+                depInstrs[2] = "  addss %xmm1, %xmm4";
+                depInstrs[3] = "  addss %xmm1, %xmm5";
+
+                string[] indepInstrs = new string[2];
+                indepInstrs[0] = "  addss %xmm2, %xmm6";
+                indepInstrs[1] = "  addss %xmm2, %xmm7";
+                UarchTestHelpers.GenerateX86AsmNsqTestFuncs(sb, this.totalOps, this.Counts, this.Prefix, depInstrs, indepInstrs, false, initInstrs, postLoadInstrs);
+            }
+            else if (isa == IUarchTest.ISA.aarch64)
             {
                 string postLoadInstrs1 = "  ldr s16, [x2, w25, uxtw #2]";
                 string initInstrs = "  ldr s15, [x2]";

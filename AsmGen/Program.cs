@@ -42,9 +42,9 @@ namespace AsmGen
             tests.Add(new MixAddvJsCvtSched(8, 120, 1));
             tests.Add(new AddvSched(8, 120, 1));
             tests.Add(new FmovSched(8, 120, 1));
-            tests.Add(new Fadd128SchedTest(32, 80, 1));
-            tests.Add(new Fadd256SchedTest(4, 64, 1));
-            tests.Add(new Fma256SchedTest(4, 64, 1));
+            tests.Add(new Fadd128SchedTest(32, 200, 1));
+            tests.Add(new Fadd256SchedTest(32, 200, 1));
+            tests.Add(new Fma256SchedTest(32, 200, 1));
             tests.Add(new CvtSchedTest(4, 64, 1));
             tests.Add(new Fadd128RfTest(4, 128, 1));
             tests.Add(new BtbTest(4, BtbTest.BranchType.Unconditional));
@@ -69,7 +69,7 @@ namespace AsmGen
             tests.Add(new AddvNsq(8, 38, 1, 40)); // a710
             */
             tests.Add(new JsCvtNsq(8, 48, 1, 60));// x2
-            tests.Add(new FaddNsq(8, 48, 1, 55)); // x2
+            tests.Add(new FaddNsq(32, 80, 1, 140)); // x2
             tests.Add(new MixAddvJsCvtNsq(8, 80, 1));
             tests.Add(new AddvNsq(8, 48, 1, 60));
             tests.Add(new StoreNsq(8, 30, 1)); // x2
@@ -157,7 +157,7 @@ namespace AsmGen
                 {
                     // hack for stupid compilers that need a ton of flags to do basic things
                     sb.AppendLine("android:");
-                    sb.AppendLine("clang -march=armv8.3-a -mfpu=neon-fp-armv8 clammicrobench_aarch64.c clammicrobench_aarch64.s -o cb");
+                    sb.AppendLine("\tclang -march=armv8.3-a -mfpu=neon-fp-armv8 clammicrobench_aarch64.c clammicrobench_aarch64.s -o cb");
                 }
             }
 
