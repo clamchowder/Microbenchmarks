@@ -36,8 +36,8 @@ namespace AsmGen
             tests.Add(new StoreSchedTest(4, 64, 1));
             tests.Add(new StoreDataSchedTest(4, 64, 1));
             tests.Add(new MixAddJumpSchedTest(2, 64, 1));
-            tests.Add(new FaddSchedTest(20, 120, 1));
-            tests.Add(new FcmpSchedTest(8, 120, 1));
+            tests.Add(new FaddSchedTest(4, 64, 1));
+            tests.Add(new FcmpSchedTest(4, 120, 1));
             tests.Add(new JsCvtSched(8, 120, 1));
             tests.Add(new MixAddvJsCvtSched(8, 120, 1));
             tests.Add(new AddvSched(8, 120, 1));

@@ -45,7 +45,7 @@ namespace AsmGen
         /// <param name="conditional">If true, use conditional branches (still always taken)</param>
         public BtbTest(int spacing, BranchType branchType, bool varyspacing = false)
         {
-            this.Counts = new int[] { 1, 2, 4, 8, 16, 32, 64, 128, 256, 512, 768, 1024, 1536, 2048,
+            this.Counts = new int[] { 1, 2, 4, 8, 16, 32, 48, 56, 64, 128, 256, 512, 768, 1024, 1536, 2048,
                 3072, 4096, 4608, 5120, 6144, 7168, 8192, 10240, 12288, 14336, 16384, 32768 };
             this.Prefix = "btb" + spacing + (varyspacing ? "v" : "") + branchType;
             this.Description = $"Branch Target Buffer, " + branchType + $" branch every {spacing} bytes " + (varyspacing ? " (varied spacing)" : "");
