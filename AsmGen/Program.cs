@@ -42,9 +42,9 @@ namespace AsmGen
             tests.Add(new MixAddvJsCvtSched(8, 120, 1));
             tests.Add(new AddvSched(8, 120, 1));
             tests.Add(new FmovSched(8, 120, 1));
-            tests.Add(new Fadd128SchedTest(32, 200, 1));
-            tests.Add(new Fadd256SchedTest(32, 200, 1));
-            tests.Add(new Fma256SchedTest(32, 200, 1));
+            tests.Add(new Fadd128SchedTest(4, 200, 1));
+            tests.Add(new Fadd256SchedTest(4, 200, 1));
+            tests.Add(new Fma256SchedTest(4, 200, 1));
             tests.Add(new CvtSchedTest(4, 64, 1));
             tests.Add(new Fadd128RfTest(4, 128, 1));
             tests.Add(new BtbTest(4, BtbTest.BranchType.Unconditional));
@@ -62,6 +62,7 @@ namespace AsmGen
             tests.Add(new BranchHistoryTest());
             tests.Add(new NopLoopTest(512, 1));
             tests.Add(new AddLoopTest(68, 256, 1));
+            tests.Add(new AeseSchedTest(4, 64, 1));
             /*
             tests.Add(new JsCvtNsq(8, 38, 1, 40)); // a710
             tests.Add(new FaddNsq(8, 48, 1, 55)); // a710
@@ -152,13 +153,14 @@ namespace AsmGen
             foreach (IUarchTest.ISA isa in Enum.GetValues(typeof(IUarchTest.ISA)))
             {
                 sb.AppendLine(isa.ToString() + ":");
-                sb.AppendLine($"\tgcc clammicrobench_{isa.ToString()}.c clammicrobench_{isa.ToString()}.s -o cb");
                 if (isa == IUarchTest.ISA.aarch64)
                 {
+                    sb.AppendLine($"\tgcc -march=armv8.5-a+aes clammicrobench_{isa.ToString()}.c clammicrobench_{isa.ToString()}.s -o cb");
                     // hack for stupid compilers that need a ton of flags to do basic things
                     sb.AppendLine("android:");
                     sb.AppendLine("\tclang -march=armv8.3-a -mfpu=neon-fp-armv8 clammicrobench_aarch64.c clammicrobench_aarch64.s -o cb");
                 }
+                else sb.AppendLine($"\tgcc clammicrobench_{isa.ToString()}.c clammicrobench_{isa.ToString()}.s -o cb");
             }
 
             sb.AppendLine("win64:");
