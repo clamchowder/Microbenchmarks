@@ -53,6 +53,7 @@ int main(int argc, char* argv[]) {
     enum TestType testType = GlobalMemLatency;
     char thread_count_set = 0, local_size_set = 0, chase_iterations_set = 0, skip_set = 0;
     int sizeKb = 0;
+    int forceCuCount = 0;
 
     for (int argIdx = 1; argIdx < argc; argIdx++) {
         if (*(argv[argIdx]) == '-') {
@@ -150,6 +151,13 @@ int main(int argc, char* argv[]) {
                     testType = MemBandwidthWorkgroupScaling;
                     fprintf(stderr, "Testing BW scaling with workgroups\n");
                     if (!chase_iterations_set) chase_iterations = 20000000;
+
+                    if (argIdx + 1 < argc && argv[argIdx + 1][0] != '-')
+                    {
+                        argIdx++;
+                        forceCuCount = atoi(argv[argIdx]);
+                        fprintf(stderr, "Using up to %d workgroups\n", forceCuCount);
+                    }
                 }
                 else if (_strnicmp(argv[argIdx], "c2c", 3) == 0)
                 {
@@ -391,7 +399,7 @@ int main(int argc, char* argv[]) {
     else if (testType == MemBandwidthWorkgroupScaling)
     {
         uint32_t testSizeCount = sizeof(default_bw_test_sizes) / sizeof(unsigned long long);
-        cl_uint cuCount = getCuCount();
+        cl_uint cuCount = forceCuCount ? forceCuCount : getCuCount();
 
         fprintf(stderr, "Device has %u compute units\n", cuCount);
 
