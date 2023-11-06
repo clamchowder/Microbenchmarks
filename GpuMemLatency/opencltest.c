@@ -46,7 +46,7 @@ int main(int argc, char* argv[]) {
     uint32_t list_size = 3840 * 2160 * 4;
     uint32_t chase_iterations = 1e6 * 7;
     // skip = 0 means auto
-    uint32_t thread_count = 1, local_size = 1, skip = 0;
+    uint32_t thread_count = 1, local_size = 1, skip = 0, wave = 0;
     float result;
     int platform_index = -1, device_index = -1;
     short amdLatencyWorkaround = false;
@@ -80,6 +80,11 @@ int main(int argc, char* argv[]) {
                 local_size = atoi(argv[argIdx]);
                 local_size_set = 1;
                 fprintf(stderr, "Using local size = %u\n", local_size);
+            }
+            else if (_strnicmp(arg, "wave", 4) == 0) {
+                argIdx++;
+                wave = atoi(argv[argIdx]);
+                fprintf(stderr, "Estimated wave size = %u\n", wave);
             }
             else if (_strnicmp(arg, "platform", 8) == 0) {
                 argIdx++;
@@ -257,7 +262,7 @@ int main(int argc, char* argv[]) {
                 break;
             }
             result = latency_test(context, command_queue, 
-                globalMemLatencyKernel, 256 * default_test_sizes[size_idx], (default_test_sizes[size_idx], chase_iterations), true, amdLatencyWorkaround, thread_count, local_size);
+                globalMemLatencyKernel, 256 * default_test_sizes[size_idx], (default_test_sizes[size_idx], chase_iterations), true, amdLatencyWorkaround, thread_count, local_size, wave);
             printf("%d,%f\n", default_test_sizes[size_idx], result);
             if (result == 0) {
                 printf("Something went wrong, not testing anything bigger.\n");
@@ -275,7 +280,7 @@ int main(int argc, char* argv[]) {
                 printf("%d K would exceed device's max constant buffer size of %lu K, stopping here.\n", default_test_sizes[size_idx], max_constant_test_size / 1024);
                 break;
             }
-            result = latency_test(context, command_queue, constant_kernel, 256 * default_test_sizes[size_idx], scale_iterations(default_test_sizes[size_idx], chase_iterations), true, false, thread_count, local_size);
+            result = latency_test(context, command_queue, constant_kernel, 256 * default_test_sizes[size_idx], scale_iterations(default_test_sizes[size_idx], chase_iterations), true, false, thread_count, local_size, wave);
             printf("%d,%f\n", default_test_sizes[size_idx], result);
             if (result == 0) {
                 printf("Something went wrong, not testing anything bigger.\n");
@@ -292,7 +297,8 @@ int main(int argc, char* argv[]) {
                 break;
             }
 
-            result = tex_latency_test(context, command_queue, tex_latency_kernel, 256 * default_test_sizes[size_idx], scale_iterations(default_test_sizes[size_idx], chase_iterations), thread_count, local_size);
+            result = tex_latency_test(context, command_queue, tex_latency_kernel, 256 * default_test_sizes[size_idx], scale_iterations(default_test_sizes[size_idx], chase_iterations), 
+                thread_count, local_size, wave);
             printf("%d,%f\n", default_test_sizes[size_idx], result);
             if (result == 0) {
                 printf("Something went wrong, not testing anything bigger.\n");
@@ -319,7 +325,7 @@ int main(int argc, char* argv[]) {
     else if (testType == LocalMemLatency)
     {
         cl_kernel local_kernel = clCreateKernel(program, "local_unrolled_latency_test", &ret);
-        result = latency_test(context, command_queue, local_kernel, 1024, chase_iterations, true, false, thread_count, local_size);
+        result = latency_test(context, command_queue, local_kernel, 1024, chase_iterations, true, false, thread_count, local_size, wave);
         printf("Local mem latency: %f\n", result);
     }
     else if (testType == GlobalMemBandwidth)

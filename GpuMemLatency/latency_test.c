@@ -9,7 +9,8 @@ float latency_test(cl_context context,
     short sattolo,
     short amdworkaround,
     int threads,
-    int local_size)
+    int local_size,
+    int wave_size)
 {
     size_t global_item_size = 1, local_item_size = 1;
     cl_int ret;
@@ -39,19 +40,31 @@ float latency_test(cl_context context,
     }
     else
     {
-        // partition pattern arr
-        int sub_list_size = list_size / threads;
-        for (int threadId = 0; threadId < threads; threadId++)
+        if (wave_size <= 1) wave_size = 1;
+
+        // partition pattern arr, creating a section for each wave
+        int wave_count = threads / wave_size;
+        int sub_list_size = list_size / wave_count;
+        for (int waveId = 0; waveId < wave_count; waveId++)
         {
-            int threadId_start = sub_list_size * threadId;
-            thread_start[threadId] = threadId_start;
-            FillPatternArr(A + threadId_start, sub_list_size, CACHELINE_SIZE);
+            int waveId_start = sub_list_size * waveId;
+            thread_start[wave_size * waveId] = waveId_start;
+            FillPatternArr(A + waveId_start, sub_list_size, CACHELINE_SIZE);
+            // fprintf(stderr, "starting thread %d at %d\n", threadId, threadId_start);
 
             // offset indices
             for (int subIdx = 0; subIdx < sub_list_size; subIdx++)
             {
-                A[threadId_start + subIdx] += threadId_start;
+                A[waveId_start + subIdx] += waveId_start;
             }
+        }
+
+        // make sure all threads in a wave access the same item
+        for (int i = 1; i < threads; i++)
+        {
+            int waveId = i / wave_size;
+            thread_start[i] = thread_start[waveId * wave_size];
+            //fprintf(stderr, "wave %d thread %d starting at %d\n", waveId, i, thread_start[i]);
         }
     }
 
@@ -116,7 +129,8 @@ float tex_latency_test(cl_context context,
     uint32_t list_size,
     uint32_t chase_iterations,
     int threads,
-    int local_size)
+    int local_size,
+    int wave_size)
 {
     size_t global_item_size = 1, local_item_size = 1;
     cl_int ret = 0;
@@ -139,20 +153,31 @@ float tex_latency_test(cl_context context,
     }
     else
     {
-        // partition pattern arr
-        int sub_list_size = list_size / threads;
-        for (int threadId = 0; threadId < threads; threadId++)
+        if (wave_size <= 1) wave_size = 1;
+
+        // partition pattern arr, creating a section for each wave
+        int wave_count = threads / wave_size;
+        int sub_list_size = list_size / wave_count;
+        for (int waveId = 0; waveId < wave_count; waveId++)
         {
-            int threadId_start = sub_list_size * threadId;
-            thread_start[threadId] = threadId_start;
-            FillPatternArr(A + threadId_start, sub_list_size, CACHELINE_SIZE);
+            int waveId_start = sub_list_size * waveId;
+            thread_start[wave_size * waveId] = waveId_start;
+            FillPatternArr(A + waveId_start, sub_list_size, CACHELINE_SIZE);
             // fprintf(stderr, "starting thread %d at %d\n", threadId, threadId_start);
 
             // offset indices
             for (int subIdx = 0; subIdx < sub_list_size; subIdx++)
             {
-                A[threadId_start + subIdx] += threadId_start;
+                A[waveId_start + subIdx] += waveId_start;
             }
+        }
+
+        // make sure all threads in a wave access the same item
+        for (int i = 1; i < threads; i++)
+        {
+            int waveId = i / wave_size;
+            thread_start[i] = thread_start[waveId * wave_size];
+            //fprintf(stderr, "wave %d thread %d starting at %d\n", waveId, i, thread_start[i]);
         }
     }
 

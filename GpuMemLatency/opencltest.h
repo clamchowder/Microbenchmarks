@@ -52,14 +52,16 @@ float latency_test(cl_context context,
     short sattolo,
     short amdLatencyWorkaround,
     int threads,
-    int local_size);
+    int local_size,
+    int wave);
 float tex_latency_test(cl_context context,
     cl_command_queue command_queue,
     cl_kernel kernel,
     uint32_t list_size,
     uint32_t chase_iterations,
     int threads,
-    int local_size);
+    int local_size,
+    int wave_size);
 float bw_test(cl_context context,
     cl_command_queue command_queue,
     cl_kernel kernel,
