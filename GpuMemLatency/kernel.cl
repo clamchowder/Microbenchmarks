@@ -18,8 +18,9 @@ __kernel void tex_latency_test(__read_only image1d_buffer_t A, int count, __glob
     __local uint4 local_a[128];
     int localId = get_local_id(0);
     // uint4 current = read_imageui(A, direct_sampler, 0); // using sampler screws things up
-    uint4 current = read_imageui(A, 0);
-    // printf("start x: %u\n", current.x);
+    int startPos = get_global_size(0) > 1 ? ret[get_global_id(0)] : 0;
+    uint4 current = read_imageui(A, startPos);
+    // printf("start x: %u -> %u\n", startPos, current.x);
     for (int i = 0; i < count; i += 10) {
         // printf("current: %u %u %u %u, address: %d\n", current.x, current.y, current.z, current.w, (int)current.x / 4);
         //current = read_imageui(A, direct_sampler, i);
@@ -34,10 +35,10 @@ __kernel void tex_latency_test(__read_only image1d_buffer_t A, int count, __glob
         current = read_imageui(A, current.x);
         current = read_imageui(A, current.x);
         //printf("%d: current read: %u %u %u %u\n", i, current.x, current.y, current.z, current.w);
-        local_a[localId] = current;
+        // local_a[localId] = current;
     }
 
-    ret[0] = local_a[localId].x;
+    ret[get_global_id(0)] = current.x;
 }
 
 __constant sampler_t funny_sampler = CLK_NORMALIZED_COORDS_TRUE | // coordinates are from 0 to 1 (float)
@@ -87,7 +88,7 @@ __kernel void tex_bw_test(__read_only image2d_t A, int count, __global int* ret)
 // assumes count will be a multiple of 10. but it won't be too inaccurate with a big count
 // not divisible by 10
 __kernel void unrolled_latency_test(__global const int* A, int count, __global int* ret) {
-    int current = A[0];
+    int current = get_global_size(0) > 1 ? ret[get_global_id(0)]: A[0]; // this will test vector latency on AMD. Set to A[0] for scalar latency
     int result;
     for (int i = 0; i < count; i += 10) {
         result += current;
@@ -116,7 +117,7 @@ __kernel void unrolled_latency_test(__global const int* A, int count, __global i
 }
 
 __kernel void unrolled_latency_test_amdvectorworkaround(__global const int* A, int count, __global int* ret) {
-    int start = A[1 + get_local_id(0)];
+    int start = A[1 + get_local_id(0)]; // only the first element in a 64B line is nonzero, but the compiler can't determine that
     int current = A[start];
     int result;
     for (int i = 0; i < count; i += 10) {

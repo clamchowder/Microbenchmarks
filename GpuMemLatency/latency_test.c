@@ -1,12 +1,15 @@
 #include "opencltest.h"
 
+// list_size = number of 4B (32-bit) elements
 float latency_test(cl_context context,
     cl_command_queue command_queue,
     cl_kernel kernel,
     uint32_t list_size,
     uint32_t chase_iterations,
     short sattolo,
-    short amdworkaround)
+    short amdworkaround,
+    int threads,
+    int local_size)
 {
     size_t global_item_size = 1, local_item_size = 1;
     cl_int ret;
@@ -15,29 +18,49 @@ float latency_test(cl_context context,
     uint32_t result;
     uint32_t stride = 1211;
     uint32_t* A = (uint32_t*)malloc(sizeof(uint32_t) * list_size);
-    memset(A, 0, sizeof(uint32_t) * list_size);
-    if (sattolo) {
-        FillPatternArr((uint32_t*)A, list_size, CACHELINE_SIZE);
-    }
-    else {
-        for (int i = 0; i < list_size; i++)
-        {
-            A[i] = (i + stride) % list_size;
-        }
-    }
 
     if (amdworkaround)
     {
         local_item_size = 2;
         global_item_size = 2;
     }
+    else if (threads && local_size)
+    {
+        local_item_size = local_size;
+        global_item_size = threads;
+    }
+
+    // Fill pattern arr
+    uint32_t* thread_start = (uint32_t*)malloc(sizeof(uint32_t) * (global_item_size));
+    memset(A, 0, sizeof(uint32_t) * list_size);
+    if (threads < 2) {
+        FillPatternArr(A, list_size, CACHELINE_SIZE);
+        thread_start[0] = 0;
+    }
+    else
+    {
+        // partition pattern arr
+        int sub_list_size = list_size / threads;
+        for (int threadId = 0; threadId < threads; threadId++)
+        {
+            int threadId_start = sub_list_size * threadId;
+            thread_start[threadId] = threadId_start;
+            FillPatternArr(A + threadId_start, sub_list_size, CACHELINE_SIZE);
+
+            // offset indices
+            for (int subIdx = 0; subIdx < sub_list_size; subIdx++)
+            {
+                A[threadId_start + subIdx] += threadId_start;
+            }
+        }
+    }
 
     // copy array to device
     cl_mem a_mem_obj = clCreateBuffer(context, CL_MEM_READ_ONLY, list_size * sizeof(uint32_t), NULL, &ret);
     clEnqueueWriteBuffer(command_queue, a_mem_obj, CL_TRUE, 0, list_size * sizeof(uint32_t), A, 0, NULL, NULL);
 
-    cl_mem result_obj = clCreateBuffer(context, CL_MEM_READ_WRITE, sizeof(uint32_t), NULL, &ret);
-    clEnqueueWriteBuffer(command_queue, result_obj, CL_TRUE, 0, sizeof(uint32_t), &result, 0, NULL, NULL);
+    cl_mem result_obj = clCreateBuffer(context, CL_MEM_READ_WRITE, global_item_size * sizeof(uint32_t), NULL, &ret);
+    clEnqueueWriteBuffer(command_queue, result_obj, CL_TRUE, 0, global_item_size * sizeof(uint32_t), thread_start, 0, NULL, NULL);
     clFinish(command_queue);
 
     // Set kernel arguments
@@ -91,16 +114,47 @@ float tex_latency_test(cl_context context,
     cl_command_queue command_queue,
     cl_kernel kernel,
     uint32_t list_size,
-    uint32_t chase_iterations)
+    uint32_t chase_iterations,
+    int threads,
+    int local_size)
 {
     size_t global_item_size = 1, local_item_size = 1;
     cl_int ret = 0;
     uint32_t result;
     cl_mem a_mem_obj = NULL, result_obj = NULL, tex_obj = NULL;
     float latency = 0;
+
+    if (threads > 1)
+    {
+        global_item_size = threads;
+        local_item_size = local_size;
+    }
+
     uint32_t* A = (uint32_t*)malloc(sizeof(uint32_t) * list_size);
+    uint32_t* thread_start = (uint32_t*)malloc(sizeof(uint32_t) * (global_item_size));
     memset(A, 0, sizeof(uint32_t) * list_size);
-    FillPatternArr((uint32_t*)A, list_size, CACHELINE_SIZE);
+    if (threads < 2) {
+        FillPatternArr(A, list_size, CACHELINE_SIZE);
+        thread_start[0] = 0;
+    }
+    else
+    {
+        // partition pattern arr
+        int sub_list_size = list_size / threads;
+        for (int threadId = 0; threadId < threads; threadId++)
+        {
+            int threadId_start = sub_list_size * threadId;
+            thread_start[threadId] = threadId_start;
+            FillPatternArr(A + threadId_start, sub_list_size, CACHELINE_SIZE);
+            // fprintf(stderr, "starting thread %d at %d\n", threadId, threadId_start);
+
+            // offset indices
+            for (int subIdx = 0; subIdx < sub_list_size; subIdx++)
+            {
+                A[threadId_start + subIdx] += threadId_start;
+            }
+        }
+    }
 
     // use buffer as texture
     a_mem_obj = clCreateBuffer(context, CL_MEM_READ_ONLY, list_size * sizeof(uint32_t), NULL, &ret);
@@ -133,9 +187,9 @@ float tex_latency_test(cl_context context,
         fprintf(stderr, "Failed to copy image: %d\n", ret);
         goto texLatencyCleanup;
     }
-
-    result_obj = clCreateBuffer(context, CL_MEM_READ_WRITE, sizeof(uint32_t), NULL, &ret);
-    clEnqueueWriteBuffer(command_queue, result_obj, CL_TRUE, 0, sizeof(uint32_t), &result, 0, NULL, NULL);
+    
+    result_obj = clCreateBuffer(context, CL_MEM_READ_WRITE, global_item_size * sizeof(uint32_t), NULL, &ret);
+    clEnqueueWriteBuffer(command_queue, result_obj, CL_TRUE, 0, global_item_size * sizeof(uint32_t), thread_start, 0, NULL, NULL);
     clFinish(command_queue);
 
     ret = clSetKernelArg(kernel, 0, sizeof(cl_mem), (void*)&tex_obj);
@@ -144,7 +198,7 @@ float tex_latency_test(cl_context context,
     ret = clSetKernelArg(kernel, 3, sizeof(cl_int), (void*)&list_size);
 
     start_timing();
-    // Execute the OpenCL kernel. launch a single thread
+    // Execute the OpenCL kernel
     ret = clEnqueueNDRangeKernel(command_queue, kernel, 1, NULL, &global_item_size, &local_item_size, 0, NULL, NULL);
     if (ret != CL_SUCCESS)
     {
@@ -164,9 +218,10 @@ float tex_latency_test(cl_context context,
     uint64_t time_diff_ms = end_timing();
     latency = 1e6 * (float)time_diff_ms / (float)chase_iterations;
 
-    ret = clEnqueueReadBuffer(command_queue, result_obj, CL_TRUE, 0, sizeof(uint32_t), &result, 0, NULL, NULL);
-    //fprintf(stderr, "Result: %d\n", result);
+    ret = clEnqueueReadBuffer(command_queue, result_obj, CL_TRUE, 0, global_item_size * sizeof(uint32_t), thread_start, 0, NULL, NULL);
     clFinish(command_queue);
+
+    // for (int i = 0; i < global_item_size; i++) fprintf(stderr, "Thread %d ended at %d\n", i, thread_start[i]);
 
 texLatencyCleanup:
     clFlush(command_queue);

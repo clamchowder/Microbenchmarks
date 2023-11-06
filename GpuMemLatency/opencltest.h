@@ -50,12 +50,16 @@ float latency_test(cl_context context,
     uint32_t list_size,
     uint32_t chase_iterations,
     short sattolo,
-    short amdLatencyWorkaround);
+    short amdLatencyWorkaround,
+    int threads,
+    int local_size);
 float tex_latency_test(cl_context context,
     cl_command_queue command_queue,
     cl_kernel kernel,
     uint32_t list_size,
-    uint32_t chase_iterations);
+    uint32_t chase_iterations,
+    int threads,
+    int local_size);
 float bw_test(cl_context context,
     cl_command_queue command_queue,
     cl_kernel kernel,
