@@ -39,7 +39,9 @@ namespace AsmGen
 
             if (isa == IUarchTest.ISA.mips64 || isa == IUarchTest.ISA.riscv)
             {
+                sb.AppendLine("  if (argc == 1 || argc > 1 && strncmp(test_name, \"btb\", 3) != 0) {");
                 sb.AppendLine("preplatencyarr(A, list_size);");
+                sb.AppendLine("  }");
             }
 
             for (int i = 0; i < Counts.Length; i++)

@@ -36,7 +36,7 @@ namespace AsmGen
             }
             else if (isa == IUarchTest.ISA.mips64)
             {
-                string[] nops = new string[] { "  mov $r14, $r0" };
+                string[] nops = new string[] { "  move $r14, $r0" };
                 UarchTestHelpers.GenerateMipsAsmStructureTestFuncs(sb, this.Counts, this.Prefix, nops, nops, includePtrChasingLoads: true);
             }
             else if (isa == IUarchTest.ISA.riscv)

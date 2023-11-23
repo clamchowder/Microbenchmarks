@@ -47,9 +47,9 @@ namespace AsmGen
             {
                 string[] unrolledLoads = new string[4];
                 unrolledLoads[0] = "  ld.d $r15, $r6, 0";
-                unrolledLoads[1] = "  ld.d $r16, $r6, 0";
-                unrolledLoads[2] = "  ld.d $r17, $r6, 0";
-                unrolledLoads[3] = "  ld.d $r18, $r6, 0";
+                unrolledLoads[1] = "  ld.d $r16, $r6, 8";
+                unrolledLoads[2] = "  ld.d $r17, $r6, 16";
+                unrolledLoads[3] = "  ld.d $r18, $r6, 24";
                 UarchTestHelpers.GenerateMipsAsmStructureTestFuncs(sb, this.Counts, this.Prefix, unrolledLoads, unrolledLoads, includePtrChasingLoads: true);
             }
             else if (isa == IUarchTest.ISA.riscv)

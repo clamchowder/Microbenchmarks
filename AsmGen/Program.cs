@@ -17,17 +17,17 @@ namespace AsmGen
         static void Main(string[] args)
         {
             List<IUarchTest> tests = new List<IUarchTest>();
-            tests.Add(new RobTest(2, 64, 1));
+            tests.Add(new RobTest(64, 512, 1));
             tests.Add(new ZeroRobTest(128, 384, 1));
-            tests.Add(new IntRfTest(2, 64, 1));
-            tests.Add(new FpRfTest(2, 64, 1));
+            tests.Add(new IntRfTest(2, 256, 1));
+            tests.Add(new FpRfTest(2, 256, 1));
             tests.Add(new MixIntVec128RfTest(100, 256, 1));
             tests.Add(new Fadd256RfTest(4, 160, 1));
             tests.Add(new MixFAdd256and32RfTest(4, 160, 1));
-            tests.Add(new FlagRfTest(2, 64, 1));
-            tests.Add(new LdqTest(2, 64, 1));
+            tests.Add(new FlagRfTest(2, 256, 1));
+            tests.Add(new LdqTest(2, 256, 1));
             tests.Add(new StqTest(4, 512, 1));
-            tests.Add(new AddSchedTest(2, 64, 1));
+            tests.Add(new AddSchedTest(2, 128, 1));
             tests.Add(new MulSchedTest(4, 64, 1));
             tests.Add(new MaddSchedTest(4, 64, 1));
             tests.Add(new JumpSchedTest(4, 64, 1));
@@ -57,7 +57,7 @@ namespace AsmGen
             tests.Add(new BtbTest(16, BtbTest.BranchType.Conditional));
             tests.Add(new BtbTest(32, BtbTest.BranchType.Conditional));
             tests.Add(new ReturnStackTest(1, 128, 1));
-            tests.Add(new BranchBufferTest(1, 64, 1));
+            tests.Add(new BranchBufferTest(1, 96, 1));
             tests.Add(new IndirectBranchTest(false));
             tests.Add(new BranchHistoryTest());
             tests.Add(new NopLoopTest(512, 1));
@@ -70,7 +70,7 @@ namespace AsmGen
             tests.Add(new AddvNsq(8, 38, 1, 40)); // a710
             */
             tests.Add(new JsCvtNsq(8, 48, 1, 60));// x2
-            tests.Add(new FaddNsq(32, 80, 1, 140)); // x2
+            tests.Add(new FaddNsq(16, 80, 1, 140)); // x2
             tests.Add(new MixAddvJsCvtNsq(8, 80, 1));
             tests.Add(new AddvNsq(8, 48, 1, 60));
             tests.Add(new StoreNsq(8, 30, 1)); // x2
@@ -102,6 +102,7 @@ namespace AsmGen
             foreach (IUarchTest test in tests)
             {
                 if (test.SupportsIsa(isa)) test.GenerateExternLines(sb);
+                Console.WriteLine("Test " + test.Prefix + " supports ISA " + isa);
             }
 
             // no indexed addressing mode on these architectures, so make sure we can do pointer

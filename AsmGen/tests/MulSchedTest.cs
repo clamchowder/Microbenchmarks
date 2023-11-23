@@ -28,10 +28,10 @@ namespace AsmGen
             if (isa == IUarchTest.ISA.amd64)
             {
                 string[] unrolledMuls = new string[4];
-                unrolledMuls[0] = "  imul %rsi, %r15";
-                unrolledMuls[1] = "  imul %rsi, %r14";
-                unrolledMuls[2] = "  imul %rsi, %r13";
-                unrolledMuls[3] = "  imul %rsi, %r12";
+                unrolledMuls[0] = "  imul %rdi, %r15";
+                unrolledMuls[1] = "  imul %rdi, %r14";
+                unrolledMuls[2] = "  imul %rdi, %r13";
+                unrolledMuls[3] = "  imul %rdi, %r12";
                 UarchTestHelpers.GenerateX86AsmStructureTestFuncs(sb, this.Counts, this.Prefix, unrolledMuls, unrolledMuls, includePtrChasingLoads: false);
             }
             else if (isa == IUarchTest.ISA.aarch64)

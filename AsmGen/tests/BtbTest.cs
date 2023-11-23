@@ -239,6 +239,7 @@ namespace AsmGen
                 string funcTargetName = GetBranchFuncName(Counts[i]) + "_itarget";
 
                 sb.AppendLine(funcName + ":");
+                sb.AppendLine("  xor $r12, $r12, $r12");
                 sb.AppendLine("  addi.d $r12, $r12, 1");
                 sb.AppendLine("  xor $r13, $r13, $r13");
                 sb.AppendLine("  la $r14, " + funcTargetName);

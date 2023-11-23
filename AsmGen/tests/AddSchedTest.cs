@@ -28,10 +28,10 @@ namespace AsmGen
             if (isa == IUarchTest.ISA.amd64)
             {
                 string[] unrolledAdds = new string[4];
-                unrolledAdds[0] = "  add %rsi, %r15";
-                unrolledAdds[1] = "  add %rsi, %r14";
-                unrolledAdds[2] = "  add %rsi, %r13";
-                unrolledAdds[3] = "  add %rsi, %r12";
+                unrolledAdds[0] = "  add %rdi, %r15";
+                unrolledAdds[1] = "  add %rdi, %r14";
+                unrolledAdds[2] = "  add %rdi, %r13";
+                unrolledAdds[3] = "  add %rdi, %r12";
                 UarchTestHelpers.GenerateX86AsmStructureTestFuncs(sb, this.Counts, this.Prefix, unrolledAdds, unrolledAdds, includePtrChasingLoads: false);
             }
             else if (isa == IUarchTest.ISA.aarch64)

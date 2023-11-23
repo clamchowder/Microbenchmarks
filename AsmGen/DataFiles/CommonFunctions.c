@@ -13,7 +13,7 @@ void setAffinity(int core) {
     CPU_ZERO(&cpuset);
     CPU_SET(core, &cpuset);
     printf("Set affinity to core %d\n", core);
-    sched_setaffinity(gettid(), sizeof(cpu_set_t), &cpuset);
+    // sched_setaffinity(gettid(), sizeof(cpu_set_t), &cpuset);
 }
 #endif
 
