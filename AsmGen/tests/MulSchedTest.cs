@@ -18,7 +18,7 @@ namespace AsmGen
         {
             if (isa == IUarchTest.ISA.amd64) return true;
             if (isa == IUarchTest.ISA.aarch64) return true;
-            // if (isa == IUarchTest.ISA.mips64) return true;
+            if (isa == IUarchTest.ISA.mips64) return true;
             // if (isa == IUarchTest.ISA.riscv) return true;
             return false;
         }
@@ -46,16 +46,16 @@ namespace AsmGen
             else if (isa == IUarchTest.ISA.mips64)
             {
                 string[] unrolledAdds = new string[4];
-                unrolledAdds[0] = "  add.d $r15, $r15, $r12";
-                unrolledAdds[1] = "  add.d $r16, $r16, $r12";
-                unrolledAdds[2] = "  add.d $r17, $r17, $r12";
-                unrolledAdds[3] = "  add.d $r18, $r18, $r12";
+                unrolledAdds[0] = "  mul.d $r15, $r15, $r12";
+                unrolledAdds[1] = "  mul.d $r16, $r16, $r12";
+                unrolledAdds[2] = "  mul.d $r17, $r17, $r12";
+                unrolledAdds[3] = "  mul.d $r18, $r18, $r12";
 
                 string[] unrolledAdds1 = new string[4];
-                unrolledAdds1[0] = "  add.d $r15, $r15, $r13";
-                unrolledAdds1[1] = "  add.d $r16, $r16, $r13";
-                unrolledAdds1[2] = "  add.d $r17, $r17, $r13";
-                unrolledAdds1[3] = "  add.d $r18, $r18, $r13";
+                unrolledAdds1[0] = "  mul.d $r15, $r15, $r13";
+                unrolledAdds1[1] = "  mul.d $r16, $r16, $r13";
+                unrolledAdds1[2] = "  mul.d $r17, $r17, $r13";
+                unrolledAdds1[3] = "  mul.d $r18, $r18, $r13";
                 UarchTestHelpers.GenerateMipsAsmStructureTestFuncs(sb, this.Counts, this.Prefix, unrolledAdds, unrolledAdds1, includePtrChasingLoads: true);
             }
             else if (isa == IUarchTest.ISA.riscv)
