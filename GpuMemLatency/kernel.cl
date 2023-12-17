@@ -292,7 +292,7 @@ __kernel void sum_bw_test(__global float* A, uint count, uint float4size, __glob
     ret[threadId] = dot(result1, result2) + dot(result3, result4) + dot(result4, result5);
 }
 
-#define local_mem_bw_test_size 2048
+#define local_mem_bw_test_size 4096
 // test bandwidth with local memory. A must be at least local_mem_bw_test_size in floats
 __kernel void local_bw_test(__global float* A, uint count, __global float* ret) {
     __local float local_a[local_mem_bw_test_size];
@@ -325,6 +325,31 @@ __kernel void local_bw_test(__global float* A, uint count, __global float* ret) 
     }
 
     ret[threadId] = acc1 + acc2 + acc3 + acc4;
+}
+
+// let's try the method from zhe jia et al
+__kernel void local_chase_bw(__global uint* A, uint count, __global uint* ret) {
+    __local ulong local_a[local_mem_bw_test_size];
+    int threadId = get_global_id(0);
+    int localId = get_local_id(0);
+    int localSize = get_local_size(0);
+    int groupId = get_group_id(0);
+    uint sink = localId;
+
+    // workgroup-wide copy from global mem into local mem
+    for (int i = get_local_id(0);i < local_mem_bw_test_size; i += get_local_size(0))
+        local_a[i] = A[i];
+    barrier(CLK_LOCAL_MEM_FENCE);
+
+    for (int i = 0; i < count; i += 4)
+    {
+        sink = local_a[sink];
+        sink = local_a[sink];
+        sink = local_a[sink];
+        sink = local_a[sink];
+    }
+
+    ret[threadId] = sink;
 }
 
 // A = inputs, fixed size
