@@ -411,14 +411,15 @@ int main(int argc, char* argv[]) {
     }
     else if (testType == LocalMemChaseBandwidth)
     {
+        fprintf(stderr, "Testing local memory bandwidth using pointer chasing. Ensure wave size is set correctly with -wave\n");
         // ignore chase iterations and auto manage it
         int64_t elapsed_ms = 0, target_ms = 1500;
         chase_iterations = 500000;
         while (elapsed_ms < target_ms / 2)
         {
             result = local_chase_bw_test(context, command_queue, local_bw_kernel, thread_count, local_size, chase_iterations, wave, &elapsed_ms);
-            fprintf(stderr, "%u threads, %u local size, %u iterations ==> %f GB/s, elapsed time %lld ms\n",
-                thread_count, local_size, chase_iterations, result, elapsed_ms);
+            fprintf(stderr, "%u threads, %u local size, %u wave, %u iterations ==> %f GB/s, elapsed time %lld ms\n",
+                thread_count, local_size, wave, chase_iterations, result, elapsed_ms);
             if (elapsed_ms < 25) chase_iterations *= 2;
             else chase_iterations = (uint32_t)((float)chase_iterations * (target_ms / elapsed_ms));
             if (result == 0)
@@ -427,6 +428,8 @@ int main(int argc, char* argv[]) {
                 break;
             }
         }
+
+        printf("Local memory bandwidth: %f GB/s\n", result);
     }
     else if (testType == MemBandwidthWorkgroupScaling)
     {
