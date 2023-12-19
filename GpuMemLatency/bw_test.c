@@ -406,6 +406,84 @@ cleanup:
     return bandwidth;
 }
 
+#define local64_test_size 2048
+float local_64_bw_test(cl_context context,
+    cl_command_queue command_queue,
+    cl_kernel kernel,
+    uint32_t thread_count,
+    uint32_t local_size,
+    uint32_t chase_iterations,
+    int64_t* time_ms)
+{
+    size_t global_item_size = thread_count;
+    size_t local_item_size = local_size;
+    float bandwidth, total_data_gb;
+    cl_int ret;
+    int64_t time_diff_ms;
+
+    uint64_t* A = (uint64_t*)malloc(sizeof(uint64_t) * local64_test_size);
+    uint64_t* result = (uint64_t*)malloc(sizeof(uint64_t) * thread_count);
+
+    if (!A || !result)
+    {
+        fprintf(stderr, "Failed to allocate memory for test size %lu KB\n", local64_test_size * 4);
+    }
+
+    for (uint64_t i = 0; i < local64_test_size; i++)
+    {
+        A[i] = i;
+    }
+
+    // copy array to device
+    cl_mem a_mem_obj = clCreateBuffer(context, CL_MEM_READ_ONLY, local64_test_size * sizeof(uint64_t), NULL, &ret);
+    ret = clEnqueueWriteBuffer(command_queue, a_mem_obj, CL_TRUE, 0, local64_test_size * sizeof(uint64_t), A, 0, NULL, NULL);
+    cl_mem result_obj = clCreateBuffer(context, CL_MEM_READ_WRITE, sizeof(uint64_t) * thread_count, NULL, &ret);
+    ret = clEnqueueWriteBuffer(command_queue, result_obj, CL_TRUE, 0, sizeof(uint64_t) * thread_count, result, 0, NULL, NULL);
+
+    clSetKernelArg(kernel, 0, sizeof(cl_mem), (void*)&a_mem_obj);
+    clSetKernelArg(kernel, 1, sizeof(cl_int), (void*)&chase_iterations);
+    clSetKernelArg(kernel, 2, sizeof(cl_mem), (void*)&result_obj);
+    clFinish(command_queue); // writes should be blocking, but are they?
+
+    start_timing();
+    ret = clEnqueueNDRangeKernel(command_queue, kernel, 1, NULL, &global_item_size, &local_item_size, 0, NULL, NULL);
+    if (ret != CL_SUCCESS)
+    {
+        fprintf(stderr, "Failed to submit kernel to command queue. clEnqueueNDRangeKernel returned %d\n", ret);
+        bandwidth = 0;
+        goto cleanup;
+    }
+
+    ret = clFinish(command_queue); // returns success even when TDR happens?
+    if (ret != CL_SUCCESS)
+    {
+        printf("Failed to finish command queue. clFinish returned %d\n", ret);
+        bandwidth = 0;
+        goto cleanup;
+    }
+
+    time_diff_ms = end_timing();
+    *time_ms = time_diff_ms;
+
+    // each thread does iterations reads
+    total_data_gb = sizeof(float) * ((float)chase_iterations * thread_count + thread_count) / 1e9;
+    bandwidth = 1000 * (float)total_data_gb / (float)time_diff_ms;
+
+    ret = clEnqueueReadBuffer(command_queue, result_obj, CL_TRUE, 0, sizeof(uint64_t) * thread_count, result, 0, NULL, NULL);
+    if (ret != 0) fprintf(stderr, "enqueue read buffer for result failed. ret = %d\n", ret);
+    clFinish(command_queue);
+
+cleanup:
+    clFlush(command_queue);
+    clFinish(command_queue);
+    clReleaseMemObject(a_mem_obj);
+    clReleaseMemObject(result_obj);
+    free(A);
+    free(result);
+    return bandwidth;
+}
+
+
 // default test sizes for link bandwidth
 const uint64_t default_link_test_sizes[] = { 512, 1024, 2048, 4096, 8192, 16384, 32768, 65536, 131072, 262144, 524288, 1048576, 2097152 };
 
