@@ -159,7 +159,7 @@ int main(int argc, char* argv[]) {
                 }
                 else if (_strnicmp(argv[argIdx], "local64bw", 9) == 0) {
                     testType = LocalMem64Bandwidth;
-                    fprintf(stderr, "Testing local memory bandwidth using pointer chasing and lots of waves\n");
+                    fprintf(stderr, "Testing local memory bandwidth using 64-bit loads\n");
                 }
                 else if (_strnicmp(argv[argIdx], "scaling", 7) == 0)
                 {
@@ -383,7 +383,7 @@ int main(int argc, char* argv[]) {
             }
         }
     }
-    else if (testType == LocalMemBandwidth)
+    else if (testType == LocalMemBandwidth || testType == LocalMem64Bandwidth)
     {
         if (chase_iterations_set) 
         {
@@ -405,7 +405,11 @@ int main(int argc, char* argv[]) {
                 chase_iterations = 500000;
                 while (elapsed_ms < target_ms / 2)
                 {
-                    result = local_bw_test(context, command_queue, local_bw_kernel, thread_count, local_size, chase_iterations, &elapsed_ms);
+                    if (testType == LocalMemBandwidth) 
+                        result = local_bw_test(context, command_queue, local_bw_kernel, thread_count, local_size, chase_iterations, &elapsed_ms);
+                    else if (testType == LocalMem64Bandwidth)
+                        result = local_64_bw_test(context, command_queue, local_64_bw_kernel, thread_count, local_size, chase_iterations, &elapsed_ms);
+
                     fprintf(stderr, "%u threads, %u local size, %u iterations ==> %f GB/s, elapsed time %lld ms\n",
                         thread_count, local_size, chase_iterations, result, elapsed_ms);
                     if (elapsed_ms < 25) chase_iterations *= 2;
@@ -422,7 +426,6 @@ int main(int argc, char* argv[]) {
                 if (thread_count_set) break;
                 thread_count *= 2;
                 if (thread_count > thread_high) break;
-                fprintf(stderr, "Increasd thread count to %u\n", thread_count);
             }
 
             printf("Local memory bandwidth: %f GB/s\n", max_bw);
@@ -465,43 +468,6 @@ int main(int argc, char* argv[]) {
 
         printf("Local memory bandwidth: %f GB/s\n", result);
     }
-    else if (testType == LocalMem64Bandwidth)
-    {
-        int thread_scan_done = 0;
-        uint32_t thread_low = 256, thread_high = 524288;
-        fprintf(stderr, "Testing local memory bandwidth using 64-bit loads\n");
-
-        if (!thread_count_set) thread_count = thread_low;
-
-        while (!thread_scan_done) {
-            // ignore chase iterations and auto manage it
-            int64_t elapsed_ms = 0, target_ms = 1500;
-            chase_iterations = 500000;
-
-            if (thread_count_set) thread_scan_done = 0;
-            else
-            {
-                thread_count *= 2;
-                if (thread_count > thread_high) break;
-            }
-
-            while (elapsed_ms < target_ms / 2)
-            {
-                result = local_64_bw_test(context, command_queue, local_64_bw_kernel, thread_count, local_size, chase_iterations, &elapsed_ms);
-                fprintf(stderr, "%u threads, %u local size, %u iterations ==> %f GB/s, elapsed time %lld ms\n",
-                    thread_count, local_size, chase_iterations, result, elapsed_ms);
-                if (elapsed_ms < 25) chase_iterations *= 2;
-                else chase_iterations = (uint32_t)((float)chase_iterations * (target_ms / elapsed_ms));
-                if (result == 0)
-                {
-                    fprintf(stderr, "Run failed\n");
-                    break;
-                }
-            }
-        }
-
-        printf("Local memory bandwidth: %f GB/s\n", result);
-        }
     else if (testType == MemBandwidthWorkgroupScaling)
     {
         uint32_t testSizeCount = sizeof(default_bw_test_sizes) / sizeof(unsigned long long);
