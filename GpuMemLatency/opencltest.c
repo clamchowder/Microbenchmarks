@@ -35,6 +35,7 @@ enum TestType {
     LocalMemChaseBandwidth,
     LocalMem64Bandwidth,
     TextureThroughput,
+    BufferBandwidth,
     MemBandwidthWorkgroupScaling,
     CoreToCore,
     LinkBandwidth,
@@ -161,6 +162,10 @@ int main(int argc, char* argv[]) {
                     testType = LocalMem64Bandwidth;
                     fprintf(stderr, "Testing local memory bandwidth using 64-bit loads\n");
                 }
+                else if (_strnicmp(argv[argIdx], "bufferbw", 8) == 0) {
+                    testType = BufferBandwidth;
+                    fprintf(stderr, "Testing buffer bandwidth\n");
+                }
                 else if (_strnicmp(argv[argIdx], "scaling", 7) == 0)
                 {
                     testType = MemBandwidthWorkgroupScaling;
@@ -242,6 +247,7 @@ int main(int argc, char* argv[]) {
     cl_kernel tex_bw_kernel = clCreateKernel(program, "tex_bw_test", &ret);
     cl_kernel local_bw_chase_kernel = clCreateKernel(program, "local_chase_bw", &ret);
     cl_kernel local_64_bw_kernel = clCreateKernel(program, "local_64_bw_test", &ret);
+    cl_kernel buffer_bw_kernel = clCreateKernel(program, "buffer_bw_test", &ret);
 #pragma endregion opencl_overhead
 
     max_global_test_size = get_max_buffer_size();
@@ -383,12 +389,11 @@ int main(int argc, char* argv[]) {
             }
         }
     }
-    else if (testType == LocalMemBandwidth || testType == LocalMem64Bandwidth)
+    else if (testType == LocalMemBandwidth || testType == LocalMem64Bandwidth || testType == BufferBandwidth)
     {
         if (chase_iterations_set) 
         {
             fprintf(stderr, "Using %u threads, %u local size, %u base iterations\n", thread_count, local_size, chase_iterations);
-            printf("\nLocal memory bandwidth: ");
             int64_t elapsed_ms = 0;
             result = local_bw_test(context, command_queue, local_bw_kernel, thread_count, local_size, chase_iterations, &elapsed_ms);
             printf("%f GB/s\n", result);
@@ -405,10 +410,19 @@ int main(int argc, char* argv[]) {
                 chase_iterations = 500000;
                 while (elapsed_ms < target_ms / 2)
                 {
-                    if (testType == LocalMemBandwidth) 
+                    if (testType == LocalMemBandwidth) {
+                        fprintf(stderr, "Testing local mem bw\n");
                         result = local_bw_test(context, command_queue, local_bw_kernel, thread_count, local_size, chase_iterations, &elapsed_ms);
-                    else if (testType == LocalMem64Bandwidth)
+                    }
+                    else if (testType == LocalMem64Bandwidth) {
+                        fprintf(stderr, "Testing local mem bw with 64-bit loads\n");
                         result = local_64_bw_test(context, command_queue, local_64_bw_kernel, thread_count, local_size, chase_iterations, &elapsed_ms);
+                    }
+                    else if (testType == BufferBandwidth)
+                    {
+                        fprintf(stderr, "Testing buffer bw\n");
+                        result = buffer_bw_test(context, command_queue, buffer_bw_kernel, thread_count, local_size, chase_iterations, &elapsed_ms);
+                    }
 
                     fprintf(stderr, "%u threads, %u local size, %u iterations ==> %f GB/s, elapsed time %lld ms\n",
                         thread_count, local_size, chase_iterations, result, elapsed_ms);
@@ -428,13 +442,13 @@ int main(int argc, char* argv[]) {
                 if (thread_count > thread_high) break;
             }
 
-            printf("Local memory bandwidth: %f GB/s\n", max_bw);
+            printf("Bandwidth: %f GB/s\n", max_bw);
         }
     }
     else if (testType == LocalMemChaseBandwidth)
     {
         int thread_scan_done = 0;
-        uint32_t thread_low = 256, thread_high = 524288;
+        uint32_t thread_low = 256, thread_high = 524288 * 4;
         fprintf(stderr, "Testing local memory bandwidth using pointer chasing. Ensure wave size is set correctly with -wave\n");
 
         if (!thread_count_set) thread_count = thread_low;
