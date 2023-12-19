@@ -396,23 +396,36 @@ int main(int argc, char* argv[]) {
         }
         else
         {
-            int64_t elapsed_ms = 0, target_ms = 1500;
-            chase_iterations = 500000;
-            while (elapsed_ms < target_ms / 2)
-            {
-                result = local_bw_test(context, command_queue, local_bw_kernel, thread_count, local_size, chase_iterations, &elapsed_ms);
-                fprintf(stderr, "%u threads, %u local size, %u iterations ==> %f GB/s, elapsed time %lld ms\n", 
-                    thread_count, local_size, chase_iterations, result, elapsed_ms);
-                if (elapsed_ms < 25) chase_iterations *= 2;
-                else chase_iterations = (uint32_t)((float)chase_iterations * (target_ms / elapsed_ms));
-                if (result == 0)
-                {
-                    fprintf(stderr, "Run failed\n");
-                    break;
-                }
-        }
+            uint32_t thread_low = 1024, thread_high = 1048576;
+            if (!thread_count_set) thread_count = thread_low;
+            float max_bw = 0;
 
-            printf("Local memory bandwidth: %f GB/s\n", result);
+            while (true) {
+                int64_t elapsed_ms = 0, target_ms = 1500;
+                chase_iterations = 500000;
+                while (elapsed_ms < target_ms / 2)
+                {
+                    result = local_bw_test(context, command_queue, local_bw_kernel, thread_count, local_size, chase_iterations, &elapsed_ms);
+                    fprintf(stderr, "%u threads, %u local size, %u iterations ==> %f GB/s, elapsed time %lld ms\n",
+                        thread_count, local_size, chase_iterations, result, elapsed_ms);
+                    if (elapsed_ms < 25) chase_iterations *= 2;
+                    else chase_iterations = (uint32_t)((float)chase_iterations * (target_ms / elapsed_ms));
+                    if (result == 0)
+                    {
+                        fprintf(stderr, "Run failed\n");
+                        break;
+                    }
+
+                    if (result > max_bw) max_bw = result;
+                }
+
+                if (thread_count_set) break;
+                thread_count *= 2;
+                if (thread_count > thread_high) break;
+                fprintf(stderr, "Increasd thread count to %u\n", thread_count);
+            }
+
+            printf("Local memory bandwidth: %f GB/s\n", max_bw);
         }
     }
     else if (testType == LocalMemChaseBandwidth)
