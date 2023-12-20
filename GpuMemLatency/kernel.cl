@@ -44,11 +44,11 @@ __kernel void tex_latency_test(__read_only image1d_buffer_t A, int count, __glob
 __constant sampler_t funny_sampler = CLK_NORMALIZED_COORDS_TRUE | // coordinates are from 0 to 1 (float)
                                         CLK_ADDRESS_REPEAT | // going out of bounds = replicate
                                         CLK_FILTER_LINEAR;   
-__kernel void tex_bw_test(__read_only image2d_t A, int count, __global float* ret) {
+__kernel void tex_bw_test(__read_only image2d_t A, int count, __global int* ret) {
     int localId = get_local_id(0);
     float2 increment;
-    increment.x = 0.01; // guessing
-    increment.y = 0.001;
+    increment.x = 0.00001; // guessing
+    increment.y = 0.000001;
 
     float2 current0, current1, current2, current3;
     current0.x = increment.x * localId;
@@ -76,7 +76,9 @@ __kernel void tex_bw_test(__read_only image2d_t A, int count, __global float* re
         current3 += increment;
     }
 
-    *ret = dot(tmp0, tmp1) + dot(tmp2, tmp3);
+    current0 = current0 + current1 + current2 + current3;
+    *ret = current0.x + current1.x + current2.x + current3.x;
+    *ret += current0.y + current1.y + current2.y + current3.y;
 }
 
 // Cacheline size in bytes, must correspond to what's defined for the latency test
