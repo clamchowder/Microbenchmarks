@@ -15,7 +15,6 @@ __constant sampler_t direct_sampler = CLK_NORMALIZED_COORDS_FALSE | // coordinat
                                         CLK_ADDRESS_NONE | // if it goes out of bounds feel free to explode and die
                                         CLK_FILTER_NEAREST;
 __kernel void tex_latency_test(__read_only image1d_buffer_t A, int count, __global int* ret, int list_size) {
-    __local uint4 local_a[128];
     int localId = get_local_id(0);
     // uint4 current = read_imageui(A, direct_sampler, 0); // using sampler screws things up
     int startPos = get_global_size(0) > 1 ? ret[get_global_id(0)] : 0;
@@ -290,18 +289,18 @@ __kernel void sum_bw_test(__global float* A, uint count, uint float4size, __glob
     ret[threadId] = dot(result1, result2) + dot(result3, result4) + dot(result4, result5);
 }
 
-#define local_mem_bw_test_size 4096
+#define local_mem_bw_test_size 1024
 // test bandwidth with local memory. A must be at least local_mem_bw_test_size in floats
-__kernel void local_bw_test(__global float* A, uint count, __global float* ret) {
-    __local float local_a[local_mem_bw_test_size];
+__kernel void local_bw_test(__global float4* A, uint count, __global float* ret) {
+    __local float4 local_a[local_mem_bw_test_size];
     int threadId = get_global_id(0);
     int localId = get_local_id(0);
     int localSize = get_local_size(0);
     int groupId = get_group_id(0);
-    float acc1 = 1.1;
-    float acc2 = 2.2;
-    float acc3 = 3.3;
-    float acc4 = 4.4;
+    float4 acc1 = A[get_global_id(0) & 0x3FF];
+    float4 acc2 = A[(get_global_id(0) + 1) & 0x3FF];
+    float4 acc3 = A[(get_global_id(0) + 1) & 0x3FF];
+    float4 acc4 = A[(get_global_id(0) + 1) & 0x3FF];
 
     // workgroup-wide copy from global mem into local mem
     for (int i = get_local_id(0);i < local_mem_bw_test_size; i += get_local_size(0))
@@ -312,7 +311,7 @@ __kernel void local_bw_test(__global float* A, uint count, __global float* ret) 
     int idx0 = localId;
     int idx1 = localId + localSize;
     int idx2 = localId + localSize * 2;
-    for (int i = 0; i < count; i += 12) { 
+    for (int i = 0; i < count; i += (12*4)) { 
         acc1 += local_a[idx0] * local_a[idx1] + local_a[idx2];
         acc2 += local_a[idx0 + 1] * local_a[idx1 + 1] + local_a[idx2 + 1];
         acc3 += local_a[idx0 + 2] * local_a[idx1 + 2] + local_a[idx2 + 2];
@@ -322,7 +321,7 @@ __kernel void local_bw_test(__global float* A, uint count, __global float* ret) 
         idx2 = (idx2 + localSize) & 0x3FF;
     }
 
-    ret[threadId] = acc1 + acc2 + acc3 + acc4;
+    ret[threadId] = dot(acc1, acc2) + dot(acc3, acc4);
 }
 
 #define local64_test_size 2048 // size was given in 4B elements. This test uses 8B
