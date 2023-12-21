@@ -140,7 +140,8 @@ float tex_bw_test(cl_context context,
     uint32_t thread_count,
     uint32_t local_size,
     uint32_t randomize,
-    uint32_t chase_iterations)
+    uint32_t chase_iterations,
+    int64_t *time_ms)
 {
     size_t global_item_size = thread_count;
     size_t local_item_size = local_size;
@@ -225,14 +226,15 @@ float tex_bw_test(cl_context context,
     time_diff_ms = end_timing();
     fprintf(stderr, "elapsed time: %lld ms\n", time_diff_ms);
 
-    // each thread does iterations texel reads
-    texels = 1000 * (float)(chase_iterations * thread_count / 1e9) / (float)time_diff_ms;
-
-    //fprintf(stderr, "%llu ms, %llu GB\n", time_diff_ms, total_data_gb);
+    // each thread does iterations samples, and each sample returns a 4-wide vector
+    texels = 1000 * (float)(chase_iterations * thread_count * 4 / 1e9) / (float)time_diff_ms;
+    fprintf(stderr, "%u iterations, %u threads, %lu ms\n", chase_iterations, thread_count, time_diff_ms);
 
     ret = clEnqueueReadBuffer(command_queue, result_obj, CL_TRUE, 0, sizeof(uint32_t) * thread_count, result, 0, NULL, NULL);
     if (ret != 0) fprintf(stderr, "enqueue read buffer for result failed. ret = %d\n", ret);
     clFinish(command_queue);
+
+    *time_ms = time_diff_ms;
 
 tex_bw_cleanup:
     clFlush(command_queue);
