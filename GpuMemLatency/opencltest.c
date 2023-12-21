@@ -324,22 +324,6 @@ int main(int argc, char* argv[]) {
             }
         }
     }
-    else if (testType == TextureThroughput)
-    {
-        cl_ulong max_2d_tex_width = get_max_2d_tex_width();
-        cl_ulong max_2d_tex_height = get_max_2d_tex_height();
-        fprintf(stderr, "max 2D texture dimensions: %lu x %lu\n", max_2d_tex_width, max_2d_tex_height);
-        float gtexels = tex_bw_test(context,
-            command_queue,
-            tex_bw_kernel,
-            256, // width
-            256, // height
-            thread_count,
-            local_size,
-            1,
-            chase_iterations);
-        printf("Texels: %f G/s\n", gtexels);
-    }
     else if (testType == LocalMemLatency)
     {
         cl_kernel local_kernel = clCreateKernel(program, "local_unrolled_latency_test", &ret);
@@ -389,7 +373,7 @@ int main(int argc, char* argv[]) {
             }
         }
     }
-    else if (testType == LocalMemBandwidth || testType == LocalMem64Bandwidth || testType == BufferBandwidth)
+    else if (testType == LocalMemBandwidth || testType == LocalMem64Bandwidth || testType == BufferBandwidth || testType == TextureThroughput)
     {
         if (chase_iterations_set) 
         {
@@ -401,7 +385,7 @@ int main(int argc, char* argv[]) {
         }
         else
         {
-            uint32_t thread_low = 1024, thread_high = 1048576;
+            uint32_t thread_low = 1024, thread_high = 1048576*4;
             if (!thread_count_set) thread_count = thread_low;
             float max_bw = 0;
 
@@ -422,6 +406,20 @@ int main(int argc, char* argv[]) {
                     {
                         fprintf(stderr, "Testing buffer bw\n");
                         result = buffer_bw_test(context, command_queue, buffer_bw_kernel, thread_count, local_size, chase_iterations, &elapsed_ms);
+                    }
+                    else if (testType == TextureThroughput)
+                    {
+                        fprintf(stderr, "Testing texture throughput\n");
+                        result = tex_bw_test(context,
+                            command_queue,
+                            tex_bw_kernel,
+                            256, // width
+                            256, // height
+                            thread_count,
+                            local_size,
+                            0,
+                            chase_iterations,
+                            &elapsed_ms);
                     }
 
                     fprintf(stderr, "%u threads, %u local size, %u iterations ==> %f GB/s, elapsed time %lld ms\n",
