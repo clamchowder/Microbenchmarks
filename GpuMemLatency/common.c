@@ -299,3 +299,61 @@ cl_program build_program(cl_context context, const char* fname)
     free(source_str);
     return program;
 }
+
+void write_program(cl_program program)
+{
+    size_t* binarySizes = NULL;
+    size_t nDevices = 0;
+    cl_int ret, memoryRequired = 0;
+    char fname[255];
+    int i;
+    unsigned char** binaries = NULL;
+
+    ret = clGetProgramInfo(program, CL_PROGRAM_NUM_DEVICES, sizeof(size_t), &nDevices, NULL);
+    if (ret != CL_SUCCESS) {
+        fprintf(stderr, "Could not get number of devices for program\n");
+        return;
+    }
+
+    fprintf(stderr, "Program is associated with %llu devices\n", nDevices);
+    binarySizes = (size_t*)malloc(sizeof(size_t) * nDevices);
+    if (binarySizes == NULL)
+    {
+        fprintf(stderr, "Failed to allocate memory for binary sizes\n");
+        goto getProgram_Fail;
+    }
+
+    ret = clGetProgramInfo(program, CL_PROGRAM_BINARY_SIZES, sizeof(size_t) * nDevices, binarySizes, NULL);
+    if (ret != CL_SUCCESS)
+    {
+        fprintf(stderr, "Could not get program binary sizes\n");
+        goto getProgram_Fail;
+    }
+
+    binaries = (unsigned char*)malloc(nDevices);
+    for (i = 0; i < nDevices; i++) {
+        fprintf(stderr, "Device %d: %llu byte program\n", i, binarySizes[i]);
+        binaries[i] = (char*)malloc(binarySizes[i]);
+    }
+
+    ret = clGetProgramInfo(program, CL_PROGRAM_BINARIES, nDevices * sizeof(unsigned char*), binaries, NULL);
+    if (ret != CL_SUCCESS)
+    {
+        fprintf(stderr, "Could not get program binaries\n");
+        goto getProgram_Fail;
+    }
+
+    for (int i = 0; i < nDevices; i++)
+    {
+        snprintf(fname, 254, "prog%d", i);
+        FILE* dst = fopen(fname, "w");
+        fwrite(binaries[i], 1, binarySizes[i], dst);
+        fclose(dst);
+        fprintf(stderr, "Wrote compiled kernel to %s\n", fname);
+    }
+
+getProgram_Fail:
+    for (int i = 0; i < nDevices; i++) free(binaries[i]);
+    free(binaries);
+    free(binarySizes);
+}

@@ -57,6 +57,7 @@ int main(int argc, char* argv[]) {
     char thread_count_set = 0, local_size_set = 0, chase_iterations_set = 0, skip_set = 0;
     int sizeKb = 0;
     int forceCuCount = 0;
+    int saveprogram = 0;
 
     for (int argIdx = 1; argIdx < argc; argIdx++) {
         if (*(argv[argIdx]) == '-') {
@@ -112,6 +113,10 @@ int main(int argc, char* argv[]) {
                 argIdx++;
                 sizeKb = atoi(argv[argIdx]);
                 fprintf(stderr, "Only testing %d KB\n", sizeKb);
+            }
+            else if (_strnicmp(arg, "saveprogram", 11) == 0) {
+                saveprogram = 1;
+                fprintf(stderr, "Writing compiled program to disk\n");
             }
             else if (_strnicmp(arg, "test", 4) == 0) {
                 argIdx++;
@@ -228,6 +233,7 @@ int main(int argc, char* argv[]) {
 
     // Load kernel
     cl_program program = build_program(context, "kernel.cl");
+    if (saveprogram) write_program(program);
 
     // Create a command queue
     cl_command_queue command_queue = clCreateCommandQueue(context, selected_device_id, 0, &ret);
