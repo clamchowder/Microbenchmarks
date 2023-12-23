@@ -292,7 +292,7 @@ __kernel void sum_bw_test(__global float* A, uint count, uint float4size, __glob
 
 #define local_mem_bw_test_size 1024
 // test bandwidth with local memory. A must be at least local_mem_bw_test_size in floats
-__kernel void local_bw_test(__global float4* A, uint count, __global float* ret) {
+__kernel void local_bw_test(__global float* A, uint count, __global float* ret) {
  __local float local_a[local_mem_bw_test_size];
     int threadId = get_global_id(0);
     int localId = get_local_id(0);
