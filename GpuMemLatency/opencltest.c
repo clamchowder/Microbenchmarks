@@ -438,8 +438,9 @@ int main(int argc, char* argv[]) {
                         break;
                     }
 
-                    if (result > max_bw) max_bw = result;
                 }
+                    
+                if (result > max_bw) max_bw = result;
 
                 if (thread_count_set) break;
                 thread_count *= 2;
