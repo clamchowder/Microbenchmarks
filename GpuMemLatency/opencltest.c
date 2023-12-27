@@ -34,6 +34,7 @@ enum TestType {
     LocalMemBandwidth,
     LocalMemChaseBandwidth,
     LocalMem64Bandwidth,
+    LocalMemFloat4Bandwidth,
     TextureThroughput,
     BufferBandwidth,
     MemBandwidthWorkgroupScaling,
@@ -167,6 +168,10 @@ int main(int argc, char* argv[]) {
                     testType = LocalMem64Bandwidth;
                     fprintf(stderr, "Testing local memory bandwidth using 64-bit loads\n");
                 }
+                else if (_strnicmp(argv[argIdx], "localfloat4bw", 13) == 0) {
+                    testType = LocalMemFloat4Bandwidth;
+                    fprintf(stderr, "Testing local memory bandwidth using float4 (4x32-bit) loads\n");
+                }
                 else if (_strnicmp(argv[argIdx], "bufferbw", 8) == 0) {
                     testType = BufferBandwidth;
                     fprintf(stderr, "Testing buffer bandwidth\n");
@@ -254,6 +259,7 @@ int main(int argc, char* argv[]) {
     cl_kernel local_bw_chase_kernel = clCreateKernel(program, "local_chase_bw", &ret);
     cl_kernel local_64_bw_kernel = clCreateKernel(program, "local_64_bw_test", &ret);
     cl_kernel buffer_bw_kernel = clCreateKernel(program, "buffer_bw_test", &ret);
+    cl_kernel local_float4_bw_kernel = clCreateKernel(program, "local_float4_bw_test", &ret);
 #pragma endregion opencl_overhead
 
     max_global_test_size = get_max_buffer_size();
@@ -271,7 +277,7 @@ int main(int argc, char* argv[]) {
     else if (testType == GlobalMemLatency)
     {
         fprintf(stderr, "Doing %d K p-chase iterations with stride %d over %d KiB region\n", chase_iterations / 1000, stride, list_size * 4 / 1024);
-        printf("\nSattolo, global memory latency (up to %lu K) unroll:\n", max_global_test_size / 1024);
+        printf("\nSattolo, global memory latency (up to %llu K) unroll:\n", max_global_test_size / 1024);
 
         cl_kernel globalMemLatencyKernel = latency_kernel;
         if (amdLatencyWorkaround)
@@ -282,7 +288,7 @@ int main(int argc, char* argv[]) {
 
         for (int size_idx = 0; size_idx < sizeof(default_test_sizes) / sizeof(int); size_idx++) {
             if (max_global_test_size < sizeof(int) * 256 * default_test_sizes[size_idx]) {
-                printf("%d K would exceed device's max buffer size of %lu K, stopping here.\n", default_test_sizes[size_idx], max_global_test_size / 1024);
+                printf("%d K would exceed device's max buffer size of %llu K, stopping here.\n", default_test_sizes[size_idx], max_global_test_size / 1024);
                 break;
             }
             result = latency_test(context, command_queue, 
@@ -297,11 +303,11 @@ int main(int argc, char* argv[]) {
     else if (testType == ConstantMemLatency)
     {
         cl_ulong max_constant_test_size = get_max_constant_buffer_size();
-        printf("\nSattolo, constant memory (up to %lu K), no-unroll:\n", max_constant_test_size / 1024);
+        printf("\nSattolo, constant memory (up to %llu K), no-unroll:\n", max_constant_test_size / 1024);
 
         for (int size_idx = 0; size_idx < sizeof(default_test_sizes) / sizeof(int); size_idx++) {
             if (max_constant_test_size < sizeof(int) * 256 * default_test_sizes[size_idx]) {
-                printf("%d K would exceed device's max constant buffer size of %lu K, stopping here.\n", default_test_sizes[size_idx], max_constant_test_size / 1024);
+                printf("%d K would exceed device's max constant buffer size of %llu K, stopping here.\n", default_test_sizes[size_idx], max_constant_test_size / 1024);
                 break;
             }
             result = latency_test(context, command_queue, constant_kernel, 256 * default_test_sizes[size_idx], scale_iterations(default_test_sizes[size_idx], chase_iterations), true, false, thread_count, local_size, wave);
@@ -317,7 +323,7 @@ int main(int argc, char* argv[]) {
         cl_ulong max_tex_test_size = get_max_tex_buffer_size();
         for (int size_idx = 0; size_idx < sizeof(default_test_sizes) / sizeof(int); size_idx++) {
             if (default_test_sizes[size_idx] * 1024 > max_tex_test_size) {
-                printf("%d K would exceed device's texture buffer size of %lu K, stopping here.\n", default_test_sizes[size_idx], max_tex_test_size / 1024);
+                printf("%d K would exceed device's texture buffer size of %llu K, stopping here.\n", default_test_sizes[size_idx], max_tex_test_size / 1024);
                 break;
             }
 
@@ -339,13 +345,13 @@ int main(int argc, char* argv[]) {
     else if (testType == GlobalMemBandwidth)
     {
         fprintf(stderr, "Using %u threads, %u local size, %u base iterations\n", thread_count, local_size, chase_iterations);
-        printf("\nMemory bandwidth (up to %lu K):\n", max_global_test_size / 1024);
+        printf("\nMemory bandwidth (up to %llu K):\n", max_global_test_size / 1024);
 
         if (!sizeKb) {
             for (int size_idx = 0; size_idx < sizeof(default_bw_test_sizes) / sizeof(unsigned long long); size_idx++) {
                 uint64_t testSizeKb = default_bw_test_sizes[size_idx] / 1024;
                 if ((max_global_test_size / 1024) < testSizeKb) {
-                    printf("%lu K would exceed device's max buffer size of %lu K, stopping here.\n", testSizeKb, max_global_test_size / 1024);
+                    printf("%llu K would exceed device's max buffer size of %llu K, stopping here.\n", testSizeKb, max_global_test_size / 1024);
                     break;
                 }
 
@@ -357,7 +363,7 @@ int main(int argc, char* argv[]) {
                     skip,
                     scale_bw_iterations(chase_iterations, testSizeKb));
 
-                printf("%lu,%f\n", testSizeKb, result);
+                printf("%llu,%f\n", testSizeKb, result);
                 if (result == 0) {
                     printf("Something went wrong, not testing anything bigger.\n");
                     break;
@@ -379,7 +385,11 @@ int main(int argc, char* argv[]) {
             }
         }
     }
-    else if (testType == LocalMemBandwidth || testType == LocalMem64Bandwidth || testType == BufferBandwidth || testType == TextureThroughput)
+    else if (testType == LocalMemBandwidth || 
+        testType == LocalMem64Bandwidth || 
+        testType == BufferBandwidth || 
+        testType == TextureThroughput ||
+        testType == LocalMemFloat4Bandwidth)
     {
         if (chase_iterations_set) 
         {
@@ -407,6 +417,10 @@ int main(int argc, char* argv[]) {
                     else if (testType == LocalMem64Bandwidth) {
                         fprintf(stderr, "Testing local mem bw with 64-bit loads\n");
                         result = local_64_bw_test(context, command_queue, local_64_bw_kernel, thread_count, local_size, chase_iterations, &elapsed_ms);
+                    }
+                    else if (testType == LocalMemFloat4Bandwidth) {
+                        fprintf(stderr, "Testing local mem bw with float4 loads\n");
+                        result = local_bw_test(context, command_queue, local_float4_bw_kernel, thread_count, local_size, chase_iterations, &elapsed_ms);
                     }
                     else if (testType == BufferBandwidth)
                     {
@@ -501,9 +515,9 @@ int main(int argc, char* argv[]) {
                 for (int size_idx = 0; size_idx < testSizeCount; size_idx++)
                 {
                     uint64_t testSizeKb = default_bw_test_sizes[size_idx] / 1024;
-                    fprintf(stderr, "Testing size %lu KB, %u workgroups\n", testSizeKb, workgroupCount);
+                    fprintf(stderr, "Testing size %llu KB, %u workgroups\n", testSizeKb, workgroupCount);
                     if ((max_global_test_size / 1024) < testSizeKb) {
-                        printf("%lu K would exceed device's max buffer size of %lu K\n", testSizeKb, max_global_test_size / 1024);
+                        printf("%llu K would exceed device's max buffer size of %llu K\n", testSizeKb, max_global_test_size / 1024);
                         scalingResults[(workgroupCount - 1) * testSizeCount + size_idx] = 0;
                         continue;
                     }
@@ -517,7 +531,7 @@ int main(int argc, char* argv[]) {
                         scale_bw_iterations(chase_iterations, testSizeKb));
 
                     scalingResults[(workgroupCount - 1) * testSizeCount + size_idx] = result;
-                    fprintf(stderr, "%u workgroups, %lu KB = %f GB/s\n", workgroupCount, testSizeKb, result);
+                    fprintf(stderr, "%u workgroups, %llu KB = %f GB/s\n", workgroupCount, testSizeKb, result);
                 }
             }
             else {
