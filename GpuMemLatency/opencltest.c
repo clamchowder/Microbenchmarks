@@ -1,7 +1,7 @@
 #include "opencltest.h"
 
 // default test sizes for latency, in KB
-int default_test_sizes[] = { 2, 4, 8, 12, 16, 24, 32, 48, 64, 96, 128, 192, 256, 384, 512, 600, 768, 1024, 1536, 2048, 3072, 4096, 5120, 6144, 
+int default_test_sizes[] = { 1, 2, 4, 8, 12, 16, 24, 32, 48, 64, 96, 128, 192, 256, 384, 512, 600, 768, 1024, 1536, 2048, 3072, 4096, 5120, 6144, 
     8192, 16384, 18432, 20480, 24576, 25600, 28672, 32768, 36864, 40960, 41200, 49152, 65536, 98304, 131072, 196608, 262144, 524288, 1048576 };
 
 // lining this up with nemes's VK bw test sizes. units for this one are in bytes
