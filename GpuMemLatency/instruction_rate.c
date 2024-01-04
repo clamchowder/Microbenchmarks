@@ -59,7 +59,7 @@ float instruction_rate_test(cl_context context,
     float gOpsPerSec = 0, opsPerIteration;
     cl_int ret;
     int64_t time_diff_ms;
-    int float4_element_count = local_size * 4;
+    int float4_element_count = thread_count * 4;
 
     cl_program program = build_program(context, "instruction_rate_kernel.cl");
     cl_kernel int32_add_rate_kernel = clCreateKernel(program, "int32_add_rate_test", &ret);
@@ -101,7 +101,7 @@ float instruction_rate_test(cl_context context,
     }
 
     // 4x int4 * 8 per iteration, and count the loop increment too
-    opsPerIteration = 4.0f * 8.0f + 1.0f;
+    opsPerIteration = 4.0f * 8.0f;
     float int32_add_rate = run_rate_test(context, command_queue, int32_add_rate_kernel, thread_count, local_size, chase_iterations,
         float4_element_count, a_mem_obj, result_obj, A, result, opsPerIteration);
     fprintf(stderr, "INT32 G Adds/sec: %f\n", int32_add_rate);
@@ -255,6 +255,8 @@ uint32_t adjust_iterations(uint32_t iterations, uint64_t time_ms)
     return chase_iterations;
 }
 
+// Runs an instruction rate test. The kernel is expected to perform opsPerIteration * chase_iterations operations
+// Returns GOPS
 float run_rate_test(cl_context context,
     cl_command_queue command_queue,
     cl_kernel kernel,
@@ -271,7 +273,7 @@ float run_rate_test(cl_context context,
     size_t global_item_size = thread_count;
     size_t local_item_size = local_size;
     cl_int ret;
-    float gOpsPerSec;
+    float totalOps, gOpsPerSec;
     uint64_t time_diff_ms = 0;
 
     memset(result, 0, sizeof(float) * 4 * thread_count);
@@ -304,14 +306,16 @@ float run_rate_test(cl_context context,
         }
 
         time_diff_ms = end_timing();
+
+        totalOps = (float)chase_iterations * opsPerIteration * (float)thread_count;
+        gOpsPerSec = ((float)totalOps / 1e9) / ((float)time_diff_ms / 1000);
+        //fprintf(stderr, "chase iterations: %d, thread count: %d\n", chase_iterations, thread_count);
+        //fprintf(stderr, "total ops: %f (%.2f G)\ntotal time: %llu ms\n", totalOps, totalOps / 1e9, time_diff_ms);
+
         chase_iterations = adjust_iterations(chase_iterations, time_diff_ms);
         clSetKernelArg(kernel, 1, sizeof(cl_int), (void*)&chase_iterations);
     }
 
-    float totalOps = (float)chase_iterations * opsPerIteration * (float)thread_count;
-    gOpsPerSec = ((float)totalOps / 1e9) / ((float)time_diff_ms / 1000);
-    //fprintf(stderr, "chase iterations: %d, thread count: %d\n", chase_iterations, thread_count);
-    //fprintf(stderr, "total ops: %f (%.2f G)\ntotal time: %llu ms\n", totalOps, totalOps / 1e9, time_diff_ms);
     return gOpsPerSec;
 }
 
