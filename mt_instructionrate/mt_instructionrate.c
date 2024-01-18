@@ -45,6 +45,11 @@ int *coreList = NULL;
 #include "x86_mt_instructionrate.c"
 #endif
 
+
+#ifdef __PPC64__
+#include "ppc64_mt_instructionrate.c"
+#endif
+
 int main(int argc, char *argv[]) {
    char parseBuffer[512];
    int parseIndices[64];
@@ -111,7 +116,6 @@ float measureFunction(uint64_t baseIterations, uint64_t (*testFunc)(uint64_t, vo
   pthread_t* testThreads = (pthread_t*)malloc(threadCount * sizeof(pthread_t));
 #else
   HANDLE* testThreads = (HANDLE*)malloc(threadCount * sizeof(HANDLE));
-  DWORD* tids = (DWORD*)malloc(threadCount * sizeof(DWORD));
 #endif
 
   do {
