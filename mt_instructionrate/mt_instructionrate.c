@@ -5,18 +5,22 @@
 #include <math.h>
 #include <string.h>
 #include <pthread.h>
+#include <unistd.h>
+#include <sys/syscall.h>
 
 #include "../Common/timing.h"
+
+#define gettid() ((pid_t)syscall(SYS_gettid))
 
 struct TestThreadData {
     float timeMs;  // written by thread to indicate elapsed runtime for that thread
     uint64_t iterations;
     void *testData;
     int core;     // -1 = don't set affinity. otherwise set affinity to specified core
-    uint64_t (*testfunc)(uint64_t, void *);
+    uint64_t (*testfunc)(uint64_t, void *) __attribute__((ms_abi));
 };
 
-float measureFunction(uint64_t baseIterations, uint64_t (*testFunc)(uint64_t, void *), void *data);
+float measureFunction(uint64_t baseIterations, uint64_t (*testFunc)(uint64_t, void *) __attribute((ms_abi)), void *data);
 void *TestThread(void *param);
 
 int threadCount = 1;
@@ -25,6 +29,10 @@ int *coreList = NULL;
 #ifdef __aarch64__
 #include "arm_mt_instructionrate.c"
 #endif 
+
+#ifdef __x86_64
+#include "x86_mt_instructionrate.c"
+#endif
 
 int main(int argc, char *argv[]) {
    char parseBuffer[512];
@@ -75,7 +83,7 @@ int main(int argc, char *argv[]) {
 
 // return billion operations per second
 // test function must perform iterations ops
-float measureFunction(uint64_t baseIterations, uint64_t (*testFunc)(uint64_t, void *), void *data){
+float measureFunction(uint64_t baseIterations, uint64_t (*testFunc)(uint64_t, void *) __attribute__((ms_abi)), void *data){
   int toleranceMet = 0, minTimeMet = 0;
   unsigned int timeMs;
   pthread_t *testThreads = (pthread_t *)malloc(threadCount * sizeof(pthread_t));
