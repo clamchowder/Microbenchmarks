@@ -3,6 +3,18 @@ extern uint64_t sse_int32_mul_test(uint64_t iterations, void* data) SMALLKITTEN;
 extern uint64_t avx2_int32_add_test(uint64_t iterations, void* data) SMALLKITTEN;
 extern uint64_t avx2_int32_mul_test(uint64_t iterations, void* data) SMALLKITTEN;
 
+#ifndef _MSC_VER
+#include <cpuid.h>
+void __cpuidex(int *data, int function, int subfunction) {
+  int eax, ebx, ecx, edx;
+  __cpuid_count(function, subfunction, eax, ebx, ecx, edx);
+  data[0] = eax;
+  data[1] = ebx;
+  data[2] = ecx;
+  data[3] = edx;
+}
+#endif
+
 
 void RunTests() {
   int cpuid_data[4];

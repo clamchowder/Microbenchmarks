@@ -7,7 +7,10 @@
 
 #ifndef _MSC_VER
 #include <pthread.h>
+#include <unistd.h>
+#include <sys/syscall.h>
 #define SMALLKITTEN __attribute__((ms_abi))
+#define gettid() ((pid_t)syscall(SYS_gettid))
 #else 
 #include <Windows.h>
 #define SMALLKITTEN
@@ -15,7 +18,6 @@
 #endif
 #include "../Common/timing.h"
 
-#define gettid() ((pid_t)syscall(SYS_gettid))
 
 struct TestThreadData {
     float timeMs;  // written by thread to indicate elapsed runtime for that thread
@@ -183,17 +185,13 @@ void *TestThread(void *param) {
     sched_setaffinity(gettid(), sizeof(cpu_set_t), &cpuset);
   }
   
-  struct timeval startTv, endTv;
-  gettimeofday(&startTv, NULL);
+  struct timeval start1;
 #else
-  struct timeb start, end;
-  start_timing(&start);
+  struct timeb start1;
 #endif
+  start_timing_ts(&start1);
   testData->testfunc(testData->iterations, testData->testData);
-#ifndef _MSC_VER
-  gettimeofday(&endTv, NULL);
-  testData->timeMs = (float)((endTv.tv_sec - startTv.tv_sec) * 1000 + (endTv.tv_usec - startTv.tv_usec) / 1000);
-#endif
-  testData->timeMs = end_timing(&start);
+  testData->timeMs = end_timing_ts(&start1);
+
   return NULL;
 }
