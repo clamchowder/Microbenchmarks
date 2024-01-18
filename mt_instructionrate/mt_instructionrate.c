@@ -7,21 +7,25 @@
 
 #ifndef _MSC_VER
 #include <pthread.h>
-#else
+#define SMALLKITTEN __attribute__((ms_abi))
+#else 
 #include <Windows.h>
+#define SMALLKITTEN
+#define _CRT_SECURE_NO_WARNINGS
 #endif
-
 #include "../Common/timing.h"
+
+#define gettid() ((pid_t)syscall(SYS_gettid))
 
 struct TestThreadData {
     float timeMs;  // written by thread to indicate elapsed runtime for that thread
     uint64_t iterations;
     void *testData;
     int core;     // -1 = don't set affinity. otherwise set affinity to specified core
-    uint64_t (*testfunc)(uint64_t, void *);
+    uint64_t (*testfunc)(uint64_t, void *) SMALLKITTEN;
 };
 
-float measureFunction(uint64_t baseIterations, uint64_t (*testFunc)(uint64_t, void *), void *data);
+float measureFunction(uint64_t baseIterations, uint64_t (*testFunc)(uint64_t, void *) SMALLKITTEN, void *data);
 void *TestThread(void *param);
 
 int threadCount = 1;
@@ -30,6 +34,14 @@ int *coreList = NULL;
 #ifdef __aarch64__
 #include "arm_mt_instructionrate.c"
 #endif 
+
+#ifdef __x86_64
+#include "x86_mt_instructionrate.c"
+#endif
+
+#ifdef _MSC_VER
+#include "x86_mt_instructionrate.c"
+#endif
 
 int main(int argc, char *argv[]) {
    char parseBuffer[512];
@@ -80,7 +92,7 @@ int main(int argc, char *argv[]) {
 
 // return billion operations per second
 // test function must perform iterations ops
-float measureFunction(uint64_t baseIterations, uint64_t (*testFunc)(uint64_t, void *), void *data){
+float measureFunction(uint64_t baseIterations, uint64_t (*testFunc)(uint64_t, void *) SMALLKITTEN, void *data){
   int toleranceMet = 0, minTimeMet = 0;
   unsigned int timeMs;
   
