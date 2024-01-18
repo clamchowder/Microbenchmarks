@@ -4,7 +4,12 @@
 #include <stdint.h>
 #include <math.h>
 #include <string.h>
+
+#ifndef _MSC_VER
 #include <pthread.h>
+#else
+#include <Windows.h>
+#endif
 
 #include "../Common/timing.h"
 
@@ -78,7 +83,7 @@ int main(int argc, char *argv[]) {
 float measureFunction(uint64_t baseIterations, uint64_t (*testFunc)(uint64_t, void *), void *data){
   int toleranceMet = 0, minTimeMet = 0;
   unsigned int timeMs;
-  pthread_t *testThreads = (pthread_t *)malloc(threadCount * sizeof(pthread_t));
+  
   struct TestThreadData *testData = (struct TestThreadData *)malloc(threadCount * sizeof(struct TestThreadData));
   for (int threadIdx = 0; threadIdx < threadCount; threadIdx++) {
     testData[threadIdx].iterations = baseIterations;
@@ -88,15 +93,32 @@ float measureFunction(uint64_t baseIterations, uint64_t (*testFunc)(uint64_t, vo
     else testData[threadIdx].core = coreList[threadIdx];
   }
 
+#ifndef _MSC_VER
+  pthread_t* testThreads = (pthread_t*)malloc(threadCount * sizeof(pthread_t));
+#else
+  HANDLE* testThreads = (HANDLE*)malloc(threadCount * sizeof(HANDLE));
+  DWORD* tids = (DWORD*)malloc(threadCount * sizeof(DWORD));
+#endif
+
   do {
     start_timing();
     for (int threadIdx = 0; threadIdx < threadCount; threadIdx++) {
+#ifndef _MSC_VER
       pthread_create(testThreads + threadIdx, NULL, TestThread, testData + threadIdx);
+#else
+      testThreads[threadIdx] = CreateThread(NULL, 0, TestThread, testData + threadIdx, CREATE_SUSPENDED, NULL, NULL);
+      SetThreadAffinityMask(testThreads[threadIdx], 1UL << testData[threadIdx].core);
+      ResumeThread(testThreads[threadIdx]);
+#endif
     }
 
     float maxThreadTime = -1, minThreadTime = -1;
     for (int threadIdx = 0; threadIdx < threadCount; threadIdx++) {
+#ifndef _MSC_VER
       pthread_join(testThreads[threadIdx], NULL);
+#else
+      WaitForMultipleObjects((DWORD)threadCount, testThreads, TRUE, INFINITE);
+#endif
       fprintf(stderr, "Thread %d took %f ms\n", threadIdx, testData[threadIdx].timeMs);
       if (maxThreadTime < 0 || testData[threadIdx].timeMs > maxThreadTime) maxThreadTime = testData[threadIdx].timeMs;
       if (minThreadTime < 0 || testData[threadIdx].timeMs < minThreadTime) minThreadTime = testData[threadIdx].timeMs;
@@ -140,7 +162,8 @@ float measureFunction(uint64_t baseIterations, uint64_t (*testFunc)(uint64_t, vo
 
 void *TestThread(void *param) {
   struct TestThreadData *testData = (struct TestThreadData *)param;
-  struct timeval startTv, endTv;
+
+#ifndef _MSC_VER
   if (testData->core >= 0) {
     cpu_set_t cpuset;
     CPU_ZERO(&cpuset);
@@ -148,9 +171,17 @@ void *TestThread(void *param) {
     sched_setaffinity(gettid(), sizeof(cpu_set_t), &cpuset);
   }
   
+  struct timeval startTv, endTv;
   gettimeofday(&startTv, NULL);
+#else
+  struct timeb start, end;
+  start_timing(&start);
+#endif
   testData->testfunc(testData->iterations, testData->testData);
+#ifndef _MSC_VER
   gettimeofday(&endTv, NULL);
   testData->timeMs = (float)((endTv.tv_sec - startTv.tv_sec) * 1000 + (endTv.tv_usec - startTv.tv_usec) / 1000);
+#endif
+  testData->timeMs = end_timing(&start);
   return NULL;
 }
