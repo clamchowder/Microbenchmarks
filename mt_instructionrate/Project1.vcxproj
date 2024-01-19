@@ -141,6 +141,10 @@
       <Command Condition="'$(Configuration)|$(Platform)'=='Release|x64'">nasm -f win64 InstructionRateFunctions.asm</Command>
       <Message Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Building asm functions</Message>
       <Outputs Condition="'$(Configuration)|$(Platform)'=='Release|x64'">InstructionRateFunctions.obj</Outputs>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">false</ExcludedFromBuild>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">nasm -f win64 InstructionRateFunctions.asm</Command>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">InstructionRateFunctions.obj</Outputs>
+      <Message Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Building asm functions</Message>
     </CustomBuild>
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
