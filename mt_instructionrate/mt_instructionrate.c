@@ -9,7 +9,11 @@
 #include <pthread.h>
 #include <unistd.h>
 #include <sys/syscall.h>
+#ifdef __x86_64
 #define SMALLKITTEN __attribute__((ms_abi))
+#else
+#define SMALLKITTEN
+#endif
 #define gettid() ((pid_t)syscall(SYS_gettid))
 #else 
 #include <Windows.h>
