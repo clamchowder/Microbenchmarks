@@ -4,7 +4,8 @@ float int_atomic_latency_test(cl_context context,
     cl_command_queue command_queue,
     cl_kernel kernel,
     uint32_t iterations,
-    short local)
+    short local,
+    uint32_t *time_ms)
 {
     cl_int ret;
     cl_int result = 0;
@@ -38,6 +39,7 @@ float int_atomic_latency_test(cl_context context,
     }
     clFinish(command_queue);
     time_diff_ms = end_timing();
+    *time_ms = time_diff_ms;
     latency = (1e6 * (float)time_diff_ms / (float)(iterations)) / 2;
 
 cleanup:
