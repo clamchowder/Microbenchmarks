@@ -139,16 +139,16 @@ void RunTests() {
     avx512Int64Muls = measureFunction(iterations, avx512_int64_mul_test, int64TestArr);
   }
 
-  printf("-----GOPS/s-----\n");
+  printf("\n-----GOPS/s-----\n");
 
   // INT32
   printf("\n-----INT32-----\n");
   printf("SSE INT32 Adds: %f\n", sseInt32Adds);
   if (avx2_supported) printf("AVX2 INT32 Adds: %f\n", avx2Int32Adds);
-  if (avx512_supported) printf("AVX512 INT64 Adds: %f\n", avx512Int64Adds);
+  if (avx512_supported) printf("AVX512 INT32 Adds: %f\n", avx512Int32Adds);
   printf("SSE INT32 Multiplies: %f\n", sseInt32Muls);
   if (avx2_supported) printf("AVX2 INT32 Multiplies: %f\n", avx2Int32Muls);
-  if (avx512_supported) printf("AVX512 INT64 Multiplies: %f\n", avx512Int64Muls);
+  if (avx512_supported) printf("AVX512 INT32 Multiplies: %f\n", avx512Int32Muls);
 
   // FP32
   printf("\n-----FP32-----\n");
