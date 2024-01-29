@@ -14,6 +14,7 @@
 #include <intrin.h>
 #include <immintrin.h>
 #include <windows.h>
+#include "../../Common/timing.h"
 
 #define NUMA_STRIPE 1
 #define NUMA_SEQ 2
@@ -35,6 +36,7 @@ enum NopType { None, FourByte, EightByte, K8_FourByte, Branch16, LEA };
 struct BandwidthTestThreadData {
     uint32_t iterations;
     uint32_t arr_length;
+    unsigned int elapsed_time;
     float* arr;
     float bw; // written to by the thread
 };
@@ -86,6 +88,7 @@ float __fastcall instr_read(void* arr, uint32_t arr_length, uint32_t iterations)
 void PrintNumaInfo();
 uint32_t GetIterationCount(uint32_t testSize, uint32_t threads);
 DWORD WINAPI ReadBandwidthTestThread(LPVOID param);
+unsigned long long scale_iterations_to_target(unsigned long long last_iteration_count, float last_time, float target_time);
 
 int numa = 0;
 char coreNode, memNode;
@@ -347,9 +350,15 @@ int main(int argc, char *argv[]) {
     }
     else {
         printf("Using %d threads\n", threads);
+        float* results = (float*)malloc(sizeof(float) * (sizeof(default_test_sizes) / sizeof(int)));
         for (int i = 0; i < sizeof(default_test_sizes) / sizeof(int); i++) {
             float bw = MeasureBw(default_test_sizes[i], GetIterationCount(default_test_sizes[i], threads), threads, shared, instr);
-            if (bw > 0) printf("%d,%f\n", default_test_sizes[i], bw);
+            if (bw > 0) fprintf(stderr, "%d KB: %f GB/s\n", default_test_sizes[i], bw);
+            results[i] = bw;
+        }
+
+        for (int i = 0; i < sizeof(default_test_sizes) / sizeof(int); i++) {
+            printf("%d,%f\n", default_test_sizes[i], results[i]);
         }
     }
 
@@ -415,6 +424,7 @@ float MeasureBw(uint32_t sizeKb, uint32_t iterations, uint32_t threads, int shar
     DWORD* tids = (DWORD*)malloc(threads * sizeof(DWORD));
     struct BandwidthTestThreadData* threadData = (struct BandwidthTestThreadData*)malloc(threads * sizeof(struct BandwidthTestThreadData));
 
+    // Allocate memory and fill arrays
     for (uint64_t i = 0; i < threads; i++) {
         char node;
         if (shared) {
@@ -425,7 +435,7 @@ float MeasureBw(uint32_t sizeKb, uint32_t iterations, uint32_t threads, int shar
             if (!numa) threadData[i].arr = (float*)VirtualAlloc(NULL, elements * sizeof(float), MEM_COMMIT | MEM_RESERVE, protection_flags);
             else if (numa == NUMA_STRIPE) {
                 node = GetStripeNode(i);
-                threadData[i].arr = (float *)VirtualAllocExNuma(
+                threadData[i].arr = (float*)VirtualAllocExNuma(
                     GetCurrentProcess(),
                     NULL,
                     elements * sizeof(float),
@@ -475,38 +485,107 @@ float MeasureBw(uint32_t sizeKb, uint32_t iterations, uint32_t threads, int shar
             }
 
             threadData[i].iterations = iterations * threads;
-        }
-
-        threadData[i].arr_length = elements;
-        threadData[i].bw = 0;
-        testThreads[i] = CreateThread(NULL, 0, ReadBandwidthTestThread, threadData + i, CREATE_SUSPENDED, tids + i);
-
-        // turns out setting affinity makes no difference, and it's easier to set affinity via start /affinity <mask> anyway
-        //SetThreadAffinityMask(testThreads[i], 1UL << i);
-        if (numa == NUMA_STRIPE || numa == NUMA_SEQ) {
-            ULONGLONG mask;
-            //fprintf(stderr, "Thread %d pinned to node %d\n", i, node);
-            GetNumaNodeProcessorMask(node, &mask);
-            SetThreadAffinityMask(testThreads[i], mask);
-        }
-        else if (numa == NUMA_CROSSNODE) {
-            ULONGLONG mask;
-            GetNumaNodeProcessorMask(coreNode, &mask);
-            SetThreadAffinityMask(testThreads[i], mask);
+            threadData[i].elapsed_time = 0;
         }
     }
+    
+    int64_t time_diff_ms = 0, target_time_ms = 3000, max_target_time_ms = 7000;
+    int tolerance_met = 0;
 
-    ftime(&start);
-    for (uint32_t i = 0; i < threads; i++) ResumeThread(testThreads[i]);
-    WaitForMultipleObjects((DWORD)threads, testThreads, TRUE, INFINITE);
-    ftime(&end);
+    while ((time_diff_ms < target_time_ms / 2) || !tolerance_met) {
+        // Create threads
+        int scaled_back = 0;
+        for (uint64_t i = 0; i < threads; i++) {
+            char node;
+            if (numa == NUMA_STRIPE) node = GetStripeNode(i);
+            if (numa == NUMA_SEQ) node = GetSeqNode(i);
+            threadData[i].arr_length = elements;
+            threadData[i].bw = 0;
+            testThreads[i] = CreateThread(NULL, 0, ReadBandwidthTestThread, threadData + i, CREATE_SUSPENDED, tids + i);
 
-    int64_t time_diff_ms = 1000 * (end.time - start.time) + (end.millitm - start.millitm);
-    double gbTransferred = (uint64_t)iterations * sizeof(float) * elements * threads / (double)1e9;
-    bw = 1000 * gbTransferred / (double)time_diff_ms;
-    if (!shared) bw = bw * threads;
-    //printf("%u iterations\n", iterations);
-    //printf("%f GB, %lu ms\n", gbTransferred, time_diff_ms);
+            // turns out setting affinity makes no difference, and it's easier to set affinity via start /affinity <mask> anyway
+            SetThreadAffinityMask(testThreads[i], 1UL << i);
+            if (numa == NUMA_STRIPE || numa == NUMA_SEQ) {
+                ULONGLONG mask;
+                //fprintf(stderr, "Thread %d pinned to node %d\n", i, node);
+                GetNumaNodeProcessorMask(node, &mask);
+                SetThreadAffinityMask(testThreads[i], mask);
+            }
+            else if (numa == NUMA_CROSSNODE) {
+                ULONGLONG mask;
+                GetNumaNodeProcessorMask(coreNode, &mask);
+                SetThreadAffinityMask(testThreads[i], mask);
+            }
+        }
+
+        ftime(&start);
+        for (uint32_t i = 0; i < threads; i++) ResumeThread(testThreads[i]);
+        WaitForMultipleObjects((DWORD)threads, testThreads, TRUE, INFINITE);
+        ftime(&end);
+
+        for (int i = 0; i < threads; i++)
+        {
+            CloseHandle(testThreads[i]);
+            testThreads[i] = INVALID_HANDLE_VALUE;
+        }
+
+        time_diff_ms = 1000 * (end.time - start.time) + (end.millitm - start.millitm);
+
+        // calculate data transferred using each thread's iteration count
+        uint64_t totalIterations = 0;
+        for (int i = 0; i < threads; i++) totalIterations += threadData[i].iterations;
+        double gbTransferred = totalIterations * sizeof(float) * elements / (double)1e9;
+        bw = 1000 * gbTransferred / (double)time_diff_ms;
+        fprintf(stderr, "Current bandwidth: %f GB/s\n", bw);
+
+        int64_t max_time = 0;
+        int max_time_thread = 0;
+        for (int i = 0; i < threads; i++) {
+            fprintf(stderr, "Thread %d: %u iterations, %u ms\n", i, threadData[i].iterations, threadData[i].elapsed_time);
+            if (threadData[i].elapsed_time > max_time) {
+                max_time = threadData[i].elapsed_time;
+                max_time_thread = i;
+            }
+        }
+
+        // only scale back once
+        if (max_time > max_target_time_ms && !scaled_back)
+        {
+            uint64_t new_iterations = scale_iterations_to_target(threadData[max_time_thread].iterations, max_time, target_time_ms);
+            for (int i = 0; i < threads; i++) threadData[i].iterations = (uint32_t)new_iterations;
+            scaled_back = 1;
+            continue;
+        }
+
+        if (max_time < target_time_ms / 2)
+        {
+            uint64_t new_iterations = scale_iterations_to_target(threadData[0].iterations, max_time, target_time_ms);
+            for (int i = 0; i < threads; i++) threadData[i].iterations = (uint32_t)new_iterations;
+        }
+        else
+        {
+            float max_diff = 0.0f;
+            for (int i = 0; i < threads; i++)
+            {
+                float diff = ((float)max_time - threadData[i].elapsed_time) / max_time;
+                if (diff > max_diff) max_diff = diff;
+            }
+
+            fprintf(stderr, "Variation: %f\n", max_diff);
+
+            if (max_diff > 0.1f)
+            {
+                for (int i = 0; i < threads; i++)
+                {
+                    threadData[i].iterations = scale_iterations_to_target(threadData[i].iterations, threadData[i].elapsed_time, max_time);
+                }
+            }
+            else
+            {
+                tolerance_met = 1;
+            }
+        }
+    }
 
     free(testThreads);
     if (shared) VirtualFree(testArr, elements * sizeof(float), MEM_RELEASE);
@@ -702,9 +781,13 @@ float avx_read(float* arr, uint64_t arr_length, uint64_t iterations) {
 #endif
 
 DWORD WINAPI ReadBandwidthTestThread(LPVOID param) {
+    struct timeb start, end;
     BandwidthTestThreadData* bwTestData = (BandwidthTestThreadData*)param;
+    ftime(&start);
     float sum = bw_func(bwTestData->arr, bwTestData->arr_length, bwTestData->iterations);
-    if (sum == 0) printf("woohoo\n");
+    ftime(&end);
+    bwTestData->elapsed_time = 1000 * (end.time - start.time) + (end.millitm - start.millitm);
+    if (sum == 0) printf("why zero\n");
     return 0;
 }
 
@@ -757,4 +840,11 @@ char GetSeqNode(uint64_t threadIdx) {
     unsigned char node;
     GetNumaProcessorNode(clippedThreadIdx, &node);
     return node;
+}
+
+// straight up copied from timing.c because VS can't link
+unsigned long long scale_iterations_to_target(unsigned long long last_iteration_count, float last_time, float target_time) {
+    // safety measure to deal with nasty timer precision issues if the system is fast
+    if (last_time < 50) return last_iteration_count * 2;
+    return last_iteration_count * (target_time / last_time);
 }
