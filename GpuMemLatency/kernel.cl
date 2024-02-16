@@ -114,6 +114,35 @@ __kernel void unrolled_latency_test(__global const int* A, int count, __global i
     ret[0] = result;
 }
 
+__kernel void scalar_unrolled_latency_test(__global const int* A, int count, __global int* ret) {
+    int current = get_num_groups(0) > 1 ? ret[get_group_id(0)]: A[0];
+    int result;
+    for (int i = 0; i < count; i += 10) {
+        result += current;
+        current = A[current];
+        result += current;
+        current = A[current];
+        result += current;
+        current = A[current];
+        result += current;
+        current = A[current];
+        result += current;
+        current = A[current];
+        result += current;
+        current = A[current];
+        result += current;
+        current = A[current];
+        result += current;
+        current = A[current];
+        result += current;
+        current = A[current];
+        result += current;
+        current = A[current];
+    }
+
+    ret[0] = result;
+}
+
 __kernel void unrolled_latency_test_amdvectorworkaround(__global const int* A, int count, __global int* ret) {
     int start = A[1 + get_local_id(0)]; // only the first element in a 64B line is nonzero, but the compiler can't determine that
     int current = A[start];

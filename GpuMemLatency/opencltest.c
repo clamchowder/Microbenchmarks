@@ -24,7 +24,8 @@ cl_ulong get_max_buffer_size();
 cl_ulong get_max_constant_buffer_size();
 
 enum TestType {
-    GlobalMemLatency,
+    VectorMemLatency,
+    ScalarMemLatency,
     ConstantMemLatency,
     LocalMemLatency,
     TexMemLatency,
@@ -54,7 +55,7 @@ int main(int argc, char* argv[]) {
     float result;
     int platform_index = -1, device_index = -1;
     short amdLatencyWorkaround = false;
-    enum TestType testType = GlobalMemLatency;
+    enum TestType testType = VectorMemLatency;
     char thread_count_set = 0, local_size_set = 0, chase_iterations_set = 0, skip_set = 0;
     int sizeKb = 0;
     int forceCuCount = 0;
@@ -121,9 +122,13 @@ int main(int argc, char* argv[]) {
             }
             else if (_strnicmp(arg, "test", 4) == 0) {
                 argIdx++;
-                if (_strnicmp(argv[argIdx], "latency", 7) == 0) {
-                    testType = GlobalMemLatency;
-                    fprintf(stderr, "Testing global memory latency\n");
+                if (_strnicmp(argv[argIdx], "vectorlatency", 7) == 0) {
+                    testType = VectorMemLatency;
+                    fprintf(stderr, "Testing global memory latency, vector accesses\n");
+                }
+                if (_strnicmp(argv[argIdx], "scalarlatency", 7) == 0) {
+                    testType = ScalarMemLatency;
+                    fprintf(stderr, "Testing global memory latency, scalar accesses\n");
                 }
                 else if (_strnicmp(argv[argIdx], "constantlatency", 15) == 0) {
                     testType = ConstantMemLatency;
@@ -244,7 +249,8 @@ int main(int argc, char* argv[]) {
     cl_command_queue command_queue = clCreateCommandQueue(context, selected_device_id, 0, &ret);
     fprintf(stderr, "clCreateCommandQueue returned %d\n", ret);
 
-    cl_kernel latency_kernel = clCreateKernel(program, "unrolled_latency_test", &ret);
+    cl_kernel vector_latency_kernel = clCreateKernel(program, "unrolled_latency_test", &ret);
+    cl_kernel scalar_latency_kernel = clCreateKernel(program, "scalar_unrolled_latency_test", &ret);
     cl_kernel latency_kernel_amdworkaround = clCreateKernel(program, "unrolled_latency_test_amdvectorworkaround", &ret);
     cl_kernel bw_kernel = clCreateKernel(program, "sum_bw_test", &ret);
     cl_kernel constant_kernel = clCreateKernel(program, "constant_unrolled_latency_test", &ret);
@@ -286,17 +292,13 @@ int main(int argc, char* argv[]) {
         }
         printf("local atomic latency: %f\n", result);
     }
-    else if (testType == GlobalMemLatency)
+    else if (testType == VectorMemLatency || testType == ScalarMemLatency)
     {
         fprintf(stderr, "Doing %d K p-chase iterations with stride %d over %d KiB region\n", chase_iterations / 1000, stride, list_size * 4 / 1024);
         printf("\nSattolo, global memory latency (up to %llu K) unroll:\n", max_global_test_size / 1024);
 
-        cl_kernel globalMemLatencyKernel = latency_kernel;
-        if (amdLatencyWorkaround)
-        {
-            fprintf(stderr, "Using workaround to hit vector cache on AMD GPUs, GCN and later, instead of the scalar cache\n");
-            globalMemLatencyKernel = latency_kernel_amdworkaround;
-        }
+        cl_kernel globalMemLatencyKernel = vector_latency_kernel;
+        if (testType == ScalarMemLatency) globalMemLatencyKernel = scalar_latency_kernel;
 
         for (int size_idx = 0; size_idx < sizeof(default_test_sizes) / sizeof(int); size_idx++) {
             if (max_global_test_size < sizeof(int) * 256 * default_test_sizes[size_idx]) {
@@ -616,7 +618,7 @@ int main(int argc, char* argv[]) {
     cleanup:
     ret = clFlush(command_queue);
     ret = clFinish(command_queue);
-    ret = clReleaseKernel(latency_kernel);
+    ret = clReleaseKernel(vector_latency_kernel);
     ret = clReleaseProgram(program);
     ret = clReleaseCommandQueue(command_queue);
     ret = clReleaseContext(context);
