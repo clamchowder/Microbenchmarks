@@ -325,7 +325,7 @@ int main(int argc, char* argv[]) {
                 break;
             }
             result = latency_test(context, command_queue, 
-                globalMemLatencyKernel, 256 * default_test_sizes[size_idx], scale_iterations(default_test_sizes[size_idx], chase_iterations), true, thread_count, local_size, wave, NULL);
+                globalMemLatencyKernel, 256 * default_test_sizes[size_idx], scale_iterations(default_test_sizes[size_idx], chase_iterations), false, thread_count, local_size, wave, NULL);
             printf("%d,%f\n", default_test_sizes[size_idx], result);
             if (result == 0) {
                 printf("Something went wrong, not testing anything bigger.\n");
@@ -365,7 +365,7 @@ int main(int argc, char* argv[]) {
                 printf("%d K would exceed device's max constant buffer size of %llu K, stopping here.\n", default_test_sizes[size_idx], max_constant_test_size / 1024);
                 break;
             }
-            result = latency_test(context, command_queue, constant_kernel, 256 * default_test_sizes[size_idx], scale_iterations(default_test_sizes[size_idx], chase_iterations), true, thread_count, local_size, wave, NULL);
+            result = latency_test(context, command_queue, constant_kernel, 256 * default_test_sizes[size_idx], scale_iterations(default_test_sizes[size_idx], chase_iterations), false, thread_count, local_size, wave, NULL);
             printf("%d,%f\n", default_test_sizes[size_idx], result);
             if (result == 0) {
                 printf("Something went wrong, not testing anything bigger.\n");
@@ -397,7 +397,7 @@ int main(int argc, char* argv[]) {
         uint32_t elapsed_ms = 0, target_ms = 2000;
         chase_iterations = 50000;
         while (elapsed_ms < target_ms / 2) {
-            result = latency_test(context, command_queue, local_kernel, 1024, chase_iterations, true, thread_count, local_size, wave, &elapsed_ms);
+            result = latency_test(context, command_queue, local_kernel, 1024, chase_iterations, false, thread_count, local_size, wave, &elapsed_ms);
             fprintf(stderr, "%u iterations, %u ms -> %f ns\n", chase_iterations, elapsed_ms, result);
             chase_iterations = scale_iterations_to_target(chase_iterations, elapsed_ms, target_ms);
         }

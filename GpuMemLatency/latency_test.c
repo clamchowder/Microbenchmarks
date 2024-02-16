@@ -6,7 +6,7 @@ float latency_test(cl_context context,
     cl_kernel kernel,
     uint32_t list_size,
     uint32_t chase_iterations,
-    short sattolo,
+    short uniform,
     int threads,
     int local_size,
     int wave_size,
@@ -29,7 +29,7 @@ float latency_test(cl_context context,
     // Fill pattern arr
     uint32_t* thread_start = (uint32_t*)malloc(sizeof(uint32_t) * (global_item_size));
     memset(A, 0, sizeof(uint32_t) * list_size);
-    if (threads < 2) {
+    if (threads < 2 || uniform) {
         FillPatternArr(A, list_size, CACHELINE_SIZE);
         thread_start[0] = 0;
     }
