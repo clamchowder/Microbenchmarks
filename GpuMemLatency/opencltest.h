@@ -44,7 +44,8 @@ float int_atomic_latency_test(cl_context context,
     cl_command_queue command_queue,
     cl_kernel kernel,
     uint32_t iterations,
-    short local);
+    short local,
+    uint32_t *time_ms);
 float latency_test(cl_context context,
     cl_command_queue command_queue,
     cl_kernel kernel,
@@ -54,7 +55,8 @@ float latency_test(cl_context context,
     short amdLatencyWorkaround,
     int threads,
     int local_size,
-    int wave);
+    int wave,
+    uint32_t *elapsed_ms);
 float tex_latency_test(cl_context context,
     cl_command_queue command_queue,
     cl_kernel kernel,

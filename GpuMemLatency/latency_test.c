@@ -10,7 +10,8 @@ float latency_test(cl_context context,
     short amdworkaround,
     int threads,
     int local_size,
-    int wave_size)
+    int wave_size,
+    uint32_t *elapsed_ms)
 {
     size_t global_item_size = 1, local_item_size = 1;
     cl_int ret;
@@ -107,6 +108,7 @@ float latency_test(cl_context context,
     }
 
     time_diff_ms = end_timing();
+    if (elapsed_ms != NULL) *elapsed_ms = time_diff_ms;
     latency = 1e6 * (float)time_diff_ms / (float)chase_iterations;
 
     ret = clEnqueueReadBuffer(command_queue, result_obj, CL_TRUE, 0, sizeof(uint32_t), &result, 0, NULL, NULL);
