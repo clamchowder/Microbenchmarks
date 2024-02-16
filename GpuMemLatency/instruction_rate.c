@@ -61,7 +61,7 @@ float instruction_rate_test(cl_context context,
     int64_t time_diff_ms;
     int float4_element_count = thread_count * 4;
 
-    cl_program program = build_program(context, "instruction_rate_kernel.cl");
+    cl_program program = build_program(context, "instruction_rate_kernel.cl", NULL);
     cl_kernel int32_add_rate_kernel = clCreateKernel(program, "int32_add_rate_test", &ret);
     cl_kernel int32_mul_rate_kernel = clCreateKernel(program, "int32_mul_rate_test", &ret);
     cl_kernel fp32_add_rate_kernel = clCreateKernel(program, "fp32_add_rate_test", &ret);
@@ -410,7 +410,7 @@ float fp64_instruction_rate_test(cl_context context,
 
     memset(result, 0, sizeof(float) * 4 * thread_count);
 
-    cl_program program = build_program(context, "instruction_rate_fp64_kernel.cl");
+    cl_program program = build_program(context, "instruction_rate_fp64_kernel.cl", NULL);
     cl_kernel fp64_add_rate_kernel = clCreateKernel(program, "fp64_add_rate_test", &ret);
     cl_kernel fp64_fma_rate_kernel = clCreateKernel(program, "fp64_fma_rate_test", &ret);
     cl_kernel fp64_mad_rate_kernel = clCreateKernel(program, "fp64_mad_rate_test", &ret);
@@ -456,7 +456,7 @@ float fp16_instruction_rate_test(cl_context context,
 
     memset(result, 0, sizeof(float) * 4 * thread_count);
 
-    cl_program program = build_program(context, "instruction_rate_fp16_kernel.cl");
+    cl_program program = build_program(context, "instruction_rate_fp16_kernel.cl", NULL);
     cl_kernel fp16_add_rate_kernel = clCreateKernel(program, "fp16_add_rate_test", &ret);
     cl_kernel fp16_fma_rate_kernel = clCreateKernel(program, "fp16_fma_rate_test", &ret);
     totalOps = 8.0f * 8.0f;

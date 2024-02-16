@@ -267,7 +267,7 @@ get_context_from_user_end:
     return context;
 }
 
-cl_program build_program(cl_context context, const char* fname)
+cl_program build_program(cl_context context, const char* fname, const char *params)
 {
     cl_int ret;
     FILE* fp = NULL;
@@ -283,7 +283,7 @@ cl_program build_program(cl_context context, const char* fname)
     fclose(fp);
 
     cl_program program = clCreateProgramWithSource(context, 1, (const char**)&source_str, (const size_t*)&source_size, &ret);
-    ret = clBuildProgram(program, 1, &selected_device_id, NULL, NULL, NULL);
+    ret = clBuildProgram(program, 1, &selected_device_id, params, NULL, NULL);
     //fprintf(stderr, "clBuildProgram %s returned %d\n", fname, ret);
     if (ret == -11)
     {

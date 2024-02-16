@@ -7,7 +7,6 @@ float latency_test(cl_context context,
     uint32_t list_size,
     uint32_t chase_iterations,
     short sattolo,
-    short amdworkaround,
     int threads,
     int local_size,
     int wave_size,
@@ -21,12 +20,7 @@ float latency_test(cl_context context,
     uint32_t stride = 1211;
     uint32_t* A = (uint32_t*)malloc(sizeof(uint32_t) * list_size);
 
-    if (amdworkaround)
-    {
-        local_item_size = 2;
-        global_item_size = 2;
-    }
-    else if (threads && local_size)
+    if (threads && local_size)
     {
         local_item_size = local_size;
         global_item_size = threads;

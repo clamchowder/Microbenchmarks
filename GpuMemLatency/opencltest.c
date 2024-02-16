@@ -27,6 +27,7 @@ enum TestType {
     VectorMemLatency,
     ScalarMemLatency,
     ConstantMemLatency,
+    LocalMemCapacity,
     LocalMemLatency,
     TexMemLatency,
     GlobalAtomicLatency,
@@ -54,12 +55,15 @@ int main(int argc, char* argv[]) {
     uint32_t thread_count = 1, local_size = 1, skip = 0, wave = 0;
     float result;
     int platform_index = -1, device_index = -1;
-    short amdLatencyWorkaround = false;
     enum TestType testType = VectorMemLatency;
     char thread_count_set = 0, local_size_set = 0, chase_iterations_set = 0, skip_set = 0;
     int sizeKb = 0;
     int forceCuCount = 0;
     int saveprogram = 0;
+
+    // vars for local mem capacity testing
+    int local_mem_size_kb = 0; // local mem allocated for each wg
+    int group_count = 0;       // max wg count
 
     for (int argIdx = 1; argIdx < argc; argIdx++) {
         if (*(argv[argIdx]) == '-') {
@@ -107,14 +111,22 @@ int main(int argc, char* argv[]) {
                 skip = atoi(argv[argIdx]);
                 fprintf(stderr, "Workgroups will be spaced %u apart\n", skip);
             }
-            else if (_strnicmp(arg, "amdlatencyworkaround", 20) == 0) {
-                amdLatencyWorkaround = true;
-                fprintf(stderr, "Using workaround to hit AMD vector cache (not scalar cache)\n");
-            }
             else if (_strnicmp(arg, "sizekb", 6) == 0) {
                 argIdx++;
                 sizeKb = atoi(argv[argIdx]);
                 fprintf(stderr, "Only testing %d KB\n", sizeKb);
+            }
+            else if (_strnicmp(arg, "localmemsize", 12) == 0)
+            {
+                argIdx++;
+                local_mem_size_kb = atoi(argv[argIdx]);
+                fprintf(stderr, "Testing with %d of local memory allocated per WG\n", local_mem_size_kb);
+            }
+            else if (_strnicmp(arg, "groupcount", 10) == 0)
+            {
+                argIdx++;
+                group_count = atoi(argv[argIdx]);
+                fprintf(stderr, "Testing with up to %d WGs\n", group_count);
             }
             else if (_strnicmp(arg, "saveprogram", 11) == 0) {
                 saveprogram = 1;
@@ -122,17 +134,24 @@ int main(int argc, char* argv[]) {
             }
             else if (_strnicmp(arg, "test", 4) == 0) {
                 argIdx++;
-                if (_strnicmp(argv[argIdx], "vectorlatency", 7) == 0) {
+                if (_strnicmp(argv[argIdx], "vectorlatency", 13) == 0) {
                     testType = VectorMemLatency;
                     fprintf(stderr, "Testing global memory latency, vector accesses\n");
                 }
-                if (_strnicmp(argv[argIdx], "scalarlatency", 7) == 0) {
+                if (_strnicmp(argv[argIdx], "scalarlatency", 13) == 0) {
                     testType = ScalarMemLatency;
                     fprintf(stderr, "Testing global memory latency, scalar accesses\n");
                 }
                 else if (_strnicmp(argv[argIdx], "constantlatency", 15) == 0) {
                     testType = ConstantMemLatency;
                     fprintf(stderr, "Testing constant memory latency\n");
+                }
+                else if (_strnicmp(argv[argIdx], "localmemcapacity", 16) == 0) {
+                    testType = LocalMemCapacity;
+                    fprintf(stderr, "Testing GPU-wide local memory capacity. Make sure localmemsize/groupcount are set appropriately!\n");
+
+                    if (sizeKb = 0) sizeKb = 1;
+                    if (group_count == 0) group_count = 16;
                 }
                 else if (_strnicmp(argv[argIdx], "globalatomic", 13) == 0) {
                     testType = GlobalAtomicLatency;
@@ -242,7 +261,7 @@ int main(int argc, char* argv[]) {
     if (context == NULL) exit(1);
 
     // Load kernel
-    cl_program program = build_program(context, "kernel.cl");
+    cl_program program = build_program(context, "kernel.cl", NULL);
     if (saveprogram) write_program(program);
 
     // Create a command queue
@@ -306,12 +325,34 @@ int main(int argc, char* argv[]) {
                 break;
             }
             result = latency_test(context, command_queue, 
-                globalMemLatencyKernel, 256 * default_test_sizes[size_idx], (default_test_sizes[size_idx], chase_iterations), true, amdLatencyWorkaround, thread_count, local_size, wave, NULL);
+                globalMemLatencyKernel, 256 * default_test_sizes[size_idx], scale_iterations(default_test_sizes[size_idx], chase_iterations), true, thread_count, local_size, wave, NULL);
             printf("%d,%f\n", default_test_sizes[size_idx], result);
             if (result == 0) {
                 printf("Something went wrong, not testing anything bigger.\n");
                 break;
             }
+        }
+    }
+    else if (testType == LocalMemCapacity)
+    {
+        char build_options[128];
+        const char* local_mem_define_prefix = "-D LATENCY_LOCAL_MEM_SIZE=";
+        memset(build_options, 0, 128);
+        memcpy(build_options, local_mem_define_prefix, 26);
+        snprintf(build_options + 26, 128 - 26, "%u", 256 * local_mem_size_kb);
+        cl_program program = build_program(context, "local_mem_latency_kernel.cl", build_options);
+        cl_kernel local_mem_capacity_kernel = clCreateKernel(program, "unrolled_latency_test_localmem", &ret);
+        if (ret != CL_SUCCESS)
+        {
+            fprintf(stderr, "Could not create local mem capacity testing kernel\n");
+            exit(0);
+        }
+
+        fprintf(stderr, "Testing local memory capacity with %u KB of local mem per WG, up to %u WGs\n", local_mem_size_kb, group_count);
+        printf("Groups,Local Mem Capacity,Latency\n");
+        for (int groups = 1; groups <= group_count; groups++) {
+            result = latency_test(context, command_queue, local_mem_capacity_kernel, 256 * sizeKb, scale_iterations(sizeKb, chase_iterations), true, groups, 1, 1, NULL);
+            printf("%d,%d,%f\n", groups, groups* local_mem_size_kb, result);
         }
     }
     else if (testType == ConstantMemLatency)
@@ -324,7 +365,7 @@ int main(int argc, char* argv[]) {
                 printf("%d K would exceed device's max constant buffer size of %llu K, stopping here.\n", default_test_sizes[size_idx], max_constant_test_size / 1024);
                 break;
             }
-            result = latency_test(context, command_queue, constant_kernel, 256 * default_test_sizes[size_idx], scale_iterations(default_test_sizes[size_idx], chase_iterations), true, false, thread_count, local_size, wave, NULL);
+            result = latency_test(context, command_queue, constant_kernel, 256 * default_test_sizes[size_idx], scale_iterations(default_test_sizes[size_idx], chase_iterations), true, thread_count, local_size, wave, NULL);
             printf("%d,%f\n", default_test_sizes[size_idx], result);
             if (result == 0) {
                 printf("Something went wrong, not testing anything bigger.\n");
@@ -356,7 +397,7 @@ int main(int argc, char* argv[]) {
         uint32_t elapsed_ms = 0, target_ms = 2000;
         chase_iterations = 50000;
         while (elapsed_ms < target_ms / 2) {
-            result = latency_test(context, command_queue, local_kernel, 1024, chase_iterations, true, false, thread_count, local_size, wave, &elapsed_ms);
+            result = latency_test(context, command_queue, local_kernel, 1024, chase_iterations, true, thread_count, local_size, wave, &elapsed_ms);
             fprintf(stderr, "%u iterations, %u ms -> %f ns\n", chase_iterations, elapsed_ms, result);
             chase_iterations = scale_iterations_to_target(chase_iterations, elapsed_ms, target_ms);
         }
