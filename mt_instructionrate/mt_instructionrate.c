@@ -148,7 +148,7 @@ float measureFunction(uint64_t baseIterations, uint64_t (*testFunc)(uint64_t, vo
 
     timeMs = end_timing();
     minTimeMet = timeMs > 2000; // see if 2 seconds will work
-    toleranceMet = ((maxThreadTime - minThreadTime) / minThreadTime) < 0.1f; // allow 10% variation?
+    toleranceMet = ((maxThreadTime - minThreadTime) / minThreadTime) < 0.2f; // allow 10% variation?
 
     if (!minTimeMet) {
       // Increase iteration count with 3s target

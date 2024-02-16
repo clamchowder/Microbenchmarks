@@ -303,6 +303,8 @@ __kernel void local_bw_test(__global float* A, uint count, __global float* ret) 
     float acc3 = 3.3;
     float acc4 = 4.4;
 
+    //printf("subgroup size %d\n", get_sub_group_size());
+
     // workgroup-wide copy from global mem into local mem
     for (int i = get_local_id(0);i < local_mem_bw_test_size; i += get_local_size(0))
         local_a[i] = A[i];

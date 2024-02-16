@@ -21,7 +21,7 @@ endif
 
 amd64: CC = x86_64-linux-gnu-gcc
 amd64_numa: CC = x86_64-linux-gnu-gcc
-aarch64: CC := aarch64-linux-gnu-gcc
+aarch64: CC := gcc
 aarch64_numa: CC = aarch64-linux-gnu-gcc
 riscv64: CC = riscv64-linux-gnu-gcc
 w64: CC = x86_64-w64-mingw32-gcc
