@@ -3,6 +3,7 @@
 cl_device_id selected_device_id;
 cl_platform_id selected_platform_id;
 cl_ulong max_global_test_size;
+int saveprogram = 0;
 
 // Fills an array using Sattolo's algo
 void FillPatternArr(uint32_t* pattern_arr, uint32_t list_size, uint32_t byte_increment) {
@@ -300,7 +301,7 @@ cl_program build_program(cl_context context, const char* fname, const char *para
     return program;
 }
 
-void write_program(cl_program program)
+void write_program(cl_program program, const char *name)
 {
     size_t* binarySizes = NULL;
     size_t nDevices = 0;
@@ -345,7 +346,7 @@ void write_program(cl_program program)
 
     for (int i = 0; i < nDevices; i++)
     {
-        snprintf(fname, 254, "prog%d", i);
+        snprintf(fname, 254, "prog%d_%s", i);
         FILE* dst = fopen(fname, "w");
         fwrite(binaries[i], 1, binarySizes[i], dst);
         fclose(dst);

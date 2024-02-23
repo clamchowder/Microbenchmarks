@@ -52,7 +52,9 @@ float instruction_rate_test(cl_context context,
     cl_command_queue command_queue,
     uint32_t thread_count,
     uint32_t local_size,
-    uint32_t chase_iterations)
+    uint32_t chase_iterations,
+    int forcefp16,
+    int forcefp64)
 {
     size_t global_item_size = thread_count;
     size_t local_item_size = local_size;
@@ -62,6 +64,7 @@ float instruction_rate_test(cl_context context,
     int float4_element_count = thread_count * 4;
 
     cl_program program = build_program(context, "instruction_rate_kernel.cl", NULL);
+    if (saveprogram) write_program(program, "irate");
     cl_kernel int32_add_rate_kernel = clCreateKernel(program, "int32_add_rate_test", &ret);
     cl_kernel int32_mul_rate_kernel = clCreateKernel(program, "int32_mul_rate_test", &ret);
     cl_kernel fp32_add_rate_kernel = clCreateKernel(program, "fp32_add_rate_test", &ret);
@@ -216,7 +219,7 @@ float instruction_rate_test(cl_context context,
 
     short checkExtensionSupport(const char *extension_name);
     
-    if (checkExtensionSupport("cl_khr_fp64")) {
+    if (checkExtensionSupport("cl_khr_fp64") || forcefp64) {
         fp64_instruction_rate_test(context, command_queue, thread_count, local_size, chase_iterations, float4_element_count,
             a_mem_obj, result_obj, A, result);
     }
@@ -224,7 +227,7 @@ float instruction_rate_test(cl_context context,
         fprintf(stderr, "FP64 not supported\n");
     }
 
-    if (checkExtensionSupport("cl_khr_fp16")) {
+    if (checkExtensionSupport("cl_khr_fp16") || forcefp16) {
         fp16_instruction_rate_test(context, command_queue, thread_count, local_size, chase_iterations, float4_element_count,
             a_mem_obj, result_obj, A, result);
     }
@@ -411,6 +414,7 @@ float fp64_instruction_rate_test(cl_context context,
     memset(result, 0, sizeof(float) * 4 * thread_count);
 
     cl_program program = build_program(context, "instruction_rate_fp64_kernel.cl", NULL);
+    if (saveprogram) write_program(program, "fp64irate");
     cl_kernel fp64_add_rate_kernel = clCreateKernel(program, "fp64_add_rate_test", &ret);
     cl_kernel fp64_fma_rate_kernel = clCreateKernel(program, "fp64_fma_rate_test", &ret);
     cl_kernel fp64_mad_rate_kernel = clCreateKernel(program, "fp64_mad_rate_test", &ret);
@@ -457,6 +461,7 @@ float fp16_instruction_rate_test(cl_context context,
     memset(result, 0, sizeof(float) * 4 * thread_count);
 
     cl_program program = build_program(context, "instruction_rate_fp16_kernel.cl", NULL);
+    if (saveprogram) write_program(program, "fp16irate");
     cl_kernel fp16_add_rate_kernel = clCreateKernel(program, "fp16_add_rate_test", &ret);
     cl_kernel fp16_fma_rate_kernel = clCreateKernel(program, "fp16_fma_rate_test", &ret);
     totalOps = 8.0f * 8.0f;
