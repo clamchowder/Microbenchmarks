@@ -28,9 +28,10 @@
 extern cl_device_id selected_device_id;
 extern cl_platform_id selected_platform_id;
 extern cl_ulong max_global_test_size;
+extern int saveprogram;
 cl_context get_context_from_user(int platform_index, int device_index);
 cl_program build_program(cl_context context, const char* fname, const char *params);
-void write_program(cl_program program);
+void write_program(cl_program program, const char *name);
 void FillPatternArr(uint32_t* pattern_arr, uint32_t list_size, uint32_t byte_increment);
 cl_uint getCuCount();
 size_t getMaxWorkgroupSize();
@@ -124,5 +125,7 @@ float instruction_rate_test(cl_context context,
     cl_command_queue command_queue,
     uint32_t thread_count,
     uint32_t local_size,
-    uint32_t chase_iterations);
+    uint32_t chase_iterations,
+    int forcefp16,
+    int forcefp64);
 #endif
