@@ -133,5 +133,6 @@ float run_divergence_rate_test(cl_context context,
     cl_command_queue command_queue,
     uint32_t thread_count,
     uint32_t local_size,
-    uint32_t wave);
+    uint32_t wave,
+    int *pattern);
 #endif

@@ -44,6 +44,7 @@ enum TestType {
     LinkBandwidth,
     InstructionRate,
     Divergence,
+    Partition,
 };
 
 
@@ -258,6 +259,11 @@ int main(int argc, char* argv[]) {
                         thread_count = 32768;
                         fprintf(stderr, "Selecting local size = %d, threads = %d\n", local_size, thread_count);
                     }
+                }
+                else if (_strnicmp(argv[argIdx], "partition", 9) == 0)
+                {
+                    testType = Partition;
+                    fprintf(stderr, "Testing execution unit partitioning. Make sure wave size is set!\n");
                 }
                 else {
                     fprintf(stderr, "I'm so confused. Unknown test type %s\n", argv[argIdx]);
@@ -677,10 +683,18 @@ int main(int argc, char* argv[]) {
         printf("Contiguous Thread Block Size,FP32 GOPs\n");
         while (current_wave <= max_wave)
         {
-            float gops = run_divergence_rate_test(context, command_queue, thread_count, local_size, current_wave);
+            float gops = run_divergence_rate_test(context, command_queue, thread_count, local_size, current_wave, NULL);
             printf("%d,%f\n", current_wave, gops);
             current_wave *= 2;
         }
+    }
+    else if (testType == Partition)
+    {
+        int pattern[] = { 1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0 };
+
+        // function and its associated kernel serve two purposes
+        float result = run_divergence_rate_test(context, command_queue, thread_count, local_size, wave, pattern);
+        printf("Throughput: %f\n", result);
     }
 
     //printf("If you didn't run this through cmd, now you can copy the results. And press ctrl+c to close");

@@ -325,30 +325,46 @@ float run_rate_test(cl_context context,
 
 
 // Variation of the test above but input array size is aligned with assumed wave size.
+// if partitioning pattern, this will test partitioning with active waves in the specified pattern
 float run_divergence_rate_test(cl_context context,
     cl_command_queue command_queue,
     uint32_t thread_count,
     uint32_t local_size,
-    uint32_t wave)
+    uint32_t wave,
+    int *partitionPattern)
 {
     size_t global_item_size = thread_count;
     size_t local_item_size = local_size;
+    uint32_t actual_threads = thread_count;
     cl_int ret;
     float totalOps, gOpsPerSec;
     uint64_t time_diff_ms = 0;
     uint32_t chase_iterations = 2500000;
 
     cl_program program = build_program(context, "instruction_rate_kernel.cl", NULL);
-    cl_kernel kernel = clCreateKernel(program, "fp32_divergence_rate_test", &ret);
+    cl_kernel kernel = clCreateKernel(program, partitionPattern == NULL ? "fp32_divergence_rate_test" : "fp32_partition_rate_test", &ret);
     
     float* result = (float*)malloc(sizeof(float) * thread_count);
     float* A = (float*)malloc(sizeof(float) * thread_count);
-
     memset(result, 0, sizeof(float) * thread_count);
+
+    if (partitionPattern != NULL) actual_threads = 0;
+
     for (int i = 0; i < thread_count; i++)
     {
-        if ((i / wave) % 2 == 0) A[i] = 0.2f;
-        else A[i] = 0.8f;
+        if (partitionPattern == NULL) {
+            // divergence test
+            if ((i / wave) % 2 == 0) A[i] = 0.2f;
+            else A[i] = 0.8f;
+        }
+        else
+        {
+            if (partitionPattern[(i / wave)]) {
+                A[i] = 0.2f;
+                actual_threads++;
+            }
+            else A[i] = 1.2f;
+        }
     }
 
     cl_mem a_mem_obj = clCreateBuffer(context, CL_MEM_READ_ONLY, thread_count * sizeof(float), NULL, &ret);
@@ -381,7 +397,7 @@ float run_divergence_rate_test(cl_context context,
 
         time_diff_ms = end_timing();
 
-        totalOps = (float)chase_iterations * 8 * (float)thread_count;
+        totalOps = (float)chase_iterations * 8 * (float)actual_threads;
         gOpsPerSec = ((float)totalOps / 1e9) / ((float)time_diff_ms / 1000);
         //fprintf(stderr, "chase iterations: %d, thread count: %d\n", chase_iterations, thread_count);
         //fprintf(stderr, "total ops: %f (%.2f G)\ntotal time: %llu ms\n", totalOps, totalOps / 1e9, time_diff_ms);
