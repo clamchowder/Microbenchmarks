@@ -335,7 +335,7 @@ float run_divergence_rate_test(cl_context context,
 {
     size_t global_item_size = thread_count;
     size_t local_item_size = local_size;
-    uint32_t actual_threads = thread_count;
+    uint32_t active_threads = thread_count;
     cl_int ret;
     float totalOps, gOpsPerSec;
     uint64_t time_diff_ms = 0;
@@ -348,8 +348,9 @@ float run_divergence_rate_test(cl_context context,
     float* A = (float*)malloc(sizeof(float) * thread_count);
     memset(result, 0, sizeof(float) * thread_count);
 
-    if (partitionPattern != NULL) actual_threads = 0;
+    if (partitionPattern != NULL) active_threads = 0;
 
+    fprintf(stderr, "\n");
     for (int i = 0; i < thread_count; i++)
     {
         if (partitionPattern == NULL) {
@@ -361,11 +362,23 @@ float run_divergence_rate_test(cl_context context,
         {
             if (partitionPattern[(i / wave)]) {
                 A[i] = 0.2f;
-                actual_threads++;
+                fprintf(stderr, "a ");
+                active_threads++;
             }
-            else A[i] = 1.2f;
+            else
+            {
+                fprintf(stderr, "_ ");
+                A[i] = 1.2f;
+            }
+
+            if ((i + 1) % wave == 0)
+            {
+                fprintf(stderr, "\n");
+            }
         }
     }
+
+    fprintf(stderr, "\nActive threads: %d\n", active_threads);
 
     cl_mem a_mem_obj = clCreateBuffer(context, CL_MEM_READ_ONLY, thread_count * sizeof(float), NULL, &ret);
     cl_mem result_obj = clCreateBuffer(context, CL_MEM_READ_WRITE, thread_count * sizeof(float), NULL, &ret);
@@ -397,7 +410,7 @@ float run_divergence_rate_test(cl_context context,
 
         time_diff_ms = end_timing();
 
-        totalOps = (float)chase_iterations * 8 * (float)actual_threads;
+        totalOps = (float)chase_iterations * 8 * (float)active_threads;
         gOpsPerSec = ((float)totalOps / 1e9) / ((float)time_diff_ms / 1000);
         //fprintf(stderr, "chase iterations: %d, thread count: %d\n", chase_iterations, thread_count);
         //fprintf(stderr, "total ops: %f (%.2f G)\ntotal time: %llu ms\n", totalOps, totalOps / 1e9, time_diff_ms);

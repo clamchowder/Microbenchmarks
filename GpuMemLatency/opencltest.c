@@ -690,11 +690,19 @@ int main(int argc, char* argv[]) {
     }
     else if (testType == Partition)
     {
-        int pattern[] = { 1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0 };
+        int pattern4[] = { 1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0 };
 
         // function and its associated kernel serve two purposes
-        float result = run_divergence_rate_test(context, command_queue, thread_count, local_size, wave, pattern);
-        printf("Throughput: %f\n", result);
+        float result = run_divergence_rate_test(context, command_queue, thread_count, local_size, wave, pattern4);
+        printf("Throughput (mod 4): %f\n", result);
+
+        int pattern2[] = { 1, 0, 1, 0, 1, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0 };
+        result = run_divergence_rate_test(context, command_queue, thread_count, local_size, wave, pattern2);
+        printf("Throughput (mod 2): %f\n", result);
+
+        int consec_pattern[] = { 1, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 };
+        result = run_divergence_rate_test(context, command_queue, thread_count, local_size, wave, consec_pattern);
+        printf("Throughput (x4): %f\n", result);
     }
 
     //printf("If you didn't run this through cmd, now you can copy the results. And press ctrl+c to close");
