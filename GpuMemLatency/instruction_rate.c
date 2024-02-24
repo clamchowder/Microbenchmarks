@@ -259,6 +259,7 @@ uint32_t adjust_iterations(uint32_t iterations, uint64_t time_ms)
 }
 
 // Runs an instruction rate test. The kernel is expected to perform opsPerIteration * chase_iterations operations
+// Mostly simplifies the uber instruction rate test above. Expects memory to be pre-allocated for example.
 // Returns GOPS
 float run_rate_test(cl_context context,
     cl_command_queue command_queue,
@@ -321,6 +322,83 @@ float run_rate_test(cl_context context,
 
     return gOpsPerSec;
 }
+
+
+// Variation of the test above but input array size is aligned with assumed wave size.
+float run_divergence_rate_test(cl_context context,
+    cl_command_queue command_queue,
+    uint32_t thread_count,
+    uint32_t local_size,
+    uint32_t wave)
+{
+    size_t global_item_size = thread_count;
+    size_t local_item_size = local_size;
+    cl_int ret;
+    float totalOps, gOpsPerSec;
+    uint64_t time_diff_ms = 0;
+    uint32_t chase_iterations = 2500000;
+
+    cl_program program = build_program(context, "instruction_rate_kernel.cl", NULL);
+    cl_kernel kernel = clCreateKernel(program, "fp32_divergence_rate_test", &ret);
+    
+    float* result = (float*)malloc(sizeof(float) * thread_count);
+    float* A = (float*)malloc(sizeof(float) * thread_count);
+
+    memset(result, 0, sizeof(float) * thread_count);
+    for (int i = 0; i < thread_count; i++)
+    {
+        if ((i / wave) % 2 == 0) A[i] = 0.2f;
+        else A[i] = 0.8f;
+    }
+
+    cl_mem a_mem_obj = clCreateBuffer(context, CL_MEM_READ_ONLY, thread_count * sizeof(float), NULL, &ret);
+    cl_mem result_obj = clCreateBuffer(context, CL_MEM_READ_WRITE, thread_count * sizeof(float), NULL, &ret);
+    ret = clEnqueueWriteBuffer(command_queue, a_mem_obj, CL_TRUE, 0, thread_count * sizeof(float), A, 0, NULL, NULL);
+    ret = clEnqueueWriteBuffer(command_queue, result_obj, CL_TRUE, 0, thread_count * sizeof(float), result, 0, NULL, NULL);
+    clSetKernelArg(kernel, 0, sizeof(cl_mem), (void*)&a_mem_obj);
+    clSetKernelArg(kernel, 1, sizeof(cl_int), (void*)&chase_iterations);
+    clSetKernelArg(kernel, 2, sizeof(cl_mem), (void*)&result_obj);
+    clFinish(command_queue);
+
+    // start with a low iteration count and try to make it work for all GPUs without needing manual iteration adjustment
+    while (time_diff_ms < TARGET_TIME_MS / 2) {
+        start_timing();
+        ret = clEnqueueNDRangeKernel(command_queue, kernel, 1, NULL, &global_item_size, &local_item_size, 0, NULL, NULL);
+        if (ret != CL_SUCCESS)
+        {
+            fprintf(stderr, "Failed to submit kernel to command queue. clEnqueueNDRangeKernel returned %d\n", ret);
+            gOpsPerSec = 0;
+            return 0;
+        }
+
+        ret = clFinish(command_queue);
+        if (ret != CL_SUCCESS)
+        {
+            printf("Failed to finish command queue. clFinish returned %d\n", ret);
+            gOpsPerSec = 0;
+            return 0;
+        }
+
+        time_diff_ms = end_timing();
+
+        totalOps = (float)chase_iterations * 8 * (float)thread_count;
+        gOpsPerSec = ((float)totalOps / 1e9) / ((float)time_diff_ms / 1000);
+        //fprintf(stderr, "chase iterations: %d, thread count: %d\n", chase_iterations, thread_count);
+        //fprintf(stderr, "total ops: %f (%.2f G)\ntotal time: %llu ms\n", totalOps, totalOps / 1e9, time_diff_ms);
+
+        chase_iterations = adjust_iterations(chase_iterations, time_diff_ms);
+        clSetKernelArg(kernel, 1, sizeof(cl_int), (void*)&chase_iterations);
+    }
+
+    clReleaseMemObject(a_mem_obj);
+    clReleaseMemObject(result_obj);
+    free(A);
+    free(result);
+    clReleaseKernel(kernel);
+    clReleaseProgram(program);
+    return gOpsPerSec;
+}
+
 
 float run_latency_test(cl_context context,
     cl_command_queue command_queue,

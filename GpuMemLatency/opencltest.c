@@ -43,6 +43,7 @@ enum TestType {
     CoreToCore,
     LinkBandwidth,
     InstructionRate,
+    Divergence,
 };
 
 
@@ -247,6 +248,16 @@ int main(int argc, char* argv[]) {
                 {
                     testType = TextureThroughput;
                     fprintf(stderr, "Testing TMUs\n");
+                }
+                else if (_strnicmp(argv[argIdx], "divergence", 10) == 0)
+                {
+                    testType = Divergence;
+                    fprintf(stderr, "Testing compute throughput with varying numbers of consecutive threads doing the same op\n");
+                    if (!local_size_set && !thread_count_set) {
+                        local_size = 256;
+                        thread_count = 32768;
+                        fprintf(stderr, "Selecting local size = %d, threads = %d\n", local_size, thread_count);
+                    }
                 }
                 else {
                     fprintf(stderr, "I'm so confused. Unknown test type %s\n", argv[argIdx]);
@@ -658,6 +669,18 @@ int main(int argc, char* argv[]) {
     else if (testType == InstructionRate)
     {
         instruction_rate_test(context, command_queue, thread_count, local_size, chase_iterations, forcefp16, forcefp64);
+    }
+    else if (testType == Divergence)
+    {
+        int current_wave = 1;
+        int max_wave = 512;
+        printf("Contiguous Thread Block Size,FP32 GOPs\n");
+        while (current_wave <= max_wave)
+        {
+            float gops = run_divergence_rate_test(context, command_queue, thread_count, local_size, current_wave);
+            printf("%d,%f\n", current_wave, gops);
+            current_wave *= 2;
+        }
     }
 
     //printf("If you didn't run this through cmd, now you can copy the results. And press ctrl+c to close");
