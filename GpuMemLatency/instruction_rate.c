@@ -350,7 +350,8 @@ float run_divergence_rate_test(cl_context context,
 
     if (partitionPattern != NULL) active_threads = 0;
 
-    fprintf(stderr, "\n");
+    if (partitionPattern != NULL) fprintf(stderr, "\n");
+
     for (int i = 0; i < thread_count; i++)
     {
         if (partitionPattern == NULL) {
@@ -378,7 +379,7 @@ float run_divergence_rate_test(cl_context context,
         }
     }
 
-    fprintf(stderr, "\nActive threads: %d\n", active_threads);
+    if (partitionPattern != NULL) fprintf(stderr, "\nActive threads: %d\n", active_threads);
 
     cl_mem a_mem_obj = clCreateBuffer(context, CL_MEM_READ_ONLY, thread_count * sizeof(float), NULL, &ret);
     cl_mem result_obj = clCreateBuffer(context, CL_MEM_READ_WRITE, thread_count * sizeof(float), NULL, &ret);
@@ -571,6 +572,7 @@ float fp16_instruction_rate_test(cl_context context,
     if (saveprogram) write_program(program, "fp16irate");
     cl_kernel fp16_add_rate_kernel = clCreateKernel(program, "fp16_add_rate_test", &ret);
     cl_kernel fp16_fma_rate_kernel = clCreateKernel(program, "fp16_fma_rate_test", &ret);
+    cl_kernel fp16_rsqrt_rate_kernel = clCreateKernel(program, "fp16_rsqrt_rate_test", &ret);
     totalOps = 8.0f * 8.0f;
     gOpsPerSec = run_rate_test(context, command_queue, fp16_add_rate_kernel, thread_count, local_size, low_chase_iterations,
         float4_element_count, a_mem_obj, result_obj, A, result, totalOps);
@@ -578,6 +580,9 @@ float fp16_instruction_rate_test(cl_context context,
     gOpsPerSec = run_rate_test(context, command_queue, fp16_fma_rate_kernel, thread_count, local_size, low_chase_iterations,
         float4_element_count, a_mem_obj, result_obj, A, result, totalOps);
     fprintf(stderr, "FP16 G FMAs/sec: %f : %f FP16 GFLOPs\n", gOpsPerSec, gOpsPerSec * 2);
+    gOpsPerSec = run_rate_test(context, command_queue, fp16_rsqrt_rate_kernel, thread_count, local_size, low_chase_iterations,
+        float4_element_count, a_mem_obj, result_obj, A, result, totalOps);
+    fprintf(stderr, "FP16 G native_rsqrt/sec: %f\n", gOpsPerSec);
 
     return gOpsPerSec;
 }
