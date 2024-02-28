@@ -10,6 +10,7 @@ float latency_test(cl_context context,
     int threads,
     int local_size,
     int wave_size,
+    int stride,
     uint32_t *elapsed_ms)
 {
     size_t global_item_size = 1, local_item_size = 1;
@@ -17,8 +18,6 @@ float latency_test(cl_context context,
     float latency;
     int64_t time_diff_ms;
     uint32_t result;
-    uint32_t stride = 1211;
-    uint32_t* A = (uint32_t*)malloc(sizeof(uint32_t) * list_size);
 
     if (threads && local_size)
     {
@@ -26,11 +25,20 @@ float latency_test(cl_context context,
         global_item_size = threads;
     }
 
+    // Sanity Checks
+    if (stride * 2 > list_size * 4 || // 2 cache lines
+        ((threads > 1) && stride * 2 > (list_size * 4 / (threads / wave_size)))) // handle partition case
+    {
+        fprintf(stderr, "Less than 2 lines will be visited with stride %d, list size %dx 32-bit INTs\n", stride, list_size);
+        return 1.0f;
+    }
+
     // Fill pattern arr
+    uint32_t* A = (uint32_t*)malloc(sizeof(uint32_t) * list_size);
     uint32_t* thread_start = (uint32_t*)malloc(sizeof(uint32_t) * (global_item_size));
     memset(A, 0, sizeof(uint32_t) * list_size);
     if (threads < 2 || uniform) {
-        FillPatternArr(A, list_size, CACHELINE_SIZE);
+        FillPatternArr(A, list_size, stride);
         thread_start[0] = 0;
     }
     else
@@ -44,7 +52,7 @@ float latency_test(cl_context context,
         {
             int waveId_start = sub_list_size * waveId;
             thread_start[wave_size * waveId] = waveId_start;
-            FillPatternArr(A + waveId_start, sub_list_size, CACHELINE_SIZE);
+            FillPatternArr(A + waveId_start, sub_list_size, stride);
             // fprintf(stderr, "starting thread %d at %d\n", threadId, threadId_start);
 
             // offset indices

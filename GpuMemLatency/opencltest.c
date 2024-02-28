@@ -49,7 +49,7 @@ enum TestType {
 
 int main(int argc, char* argv[]) {
     cl_int ret;
-    uint32_t stride = 1211;
+    uint32_t stride = 64;
     uint32_t list_size = 3840 * 2160 * 4;
     uint32_t chase_iterations = 1e6 * 7;
     // skip = 0 means auto
@@ -344,7 +344,7 @@ int main(int argc, char* argv[]) {
                 break;
             }
             result = latency_test(context, command_queue, 
-                globalMemLatencyKernel, 256 * default_test_sizes[size_idx], scale_iterations(default_test_sizes[size_idx], chase_iterations), false, thread_count, local_size, wave, NULL);
+                globalMemLatencyKernel, 256 * default_test_sizes[size_idx], scale_iterations(default_test_sizes[size_idx], chase_iterations), false, thread_count, local_size, wave, stride, NULL);
             printf("%d,%f\n", default_test_sizes[size_idx], result);
             if (result == 0) {
                 printf("Something went wrong, not testing anything bigger.\n");
@@ -370,7 +370,7 @@ int main(int argc, char* argv[]) {
         fprintf(stderr, "Testing local memory capacity with %u KB of local mem per WG, up to %u WGs\n", local_mem_size_kb, group_count);
         printf("Groups,Local Mem Capacity,Latency\n");
         for (int groups = 1; groups <= group_count; groups++) {
-            result = latency_test(context, command_queue, local_mem_capacity_kernel, 256 * sizeKb, scale_iterations(sizeKb, chase_iterations), true, groups, 1, 1, NULL);
+            result = latency_test(context, command_queue, local_mem_capacity_kernel, 256 * sizeKb, scale_iterations(sizeKb, chase_iterations), true, groups, 1, 1, 64, NULL);
             printf("%d,%d,%f\n", groups, groups* local_mem_size_kb, result);
         }
     }
@@ -384,7 +384,7 @@ int main(int argc, char* argv[]) {
                 printf("%d K would exceed device's max constant buffer size of %llu K, stopping here.\n", default_test_sizes[size_idx], max_constant_test_size / 1024);
                 break;
             }
-            result = latency_test(context, command_queue, constant_kernel, 256 * default_test_sizes[size_idx], scale_iterations(default_test_sizes[size_idx], chase_iterations), false, thread_count, local_size, wave, NULL);
+            result = latency_test(context, command_queue, constant_kernel, 256 * default_test_sizes[size_idx], scale_iterations(default_test_sizes[size_idx], chase_iterations), false, thread_count, local_size, wave, stride, NULL);
             printf("%d,%f\n", default_test_sizes[size_idx], result);
             if (result == 0) {
                 printf("Something went wrong, not testing anything bigger.\n");
@@ -416,7 +416,7 @@ int main(int argc, char* argv[]) {
         uint32_t elapsed_ms = 0, target_ms = 2000;
         chase_iterations = 50000;
         while (elapsed_ms < target_ms / 2) {
-            result = latency_test(context, command_queue, local_kernel, 1024, chase_iterations, false, thread_count, local_size, wave, &elapsed_ms);
+            result = latency_test(context, command_queue, local_kernel, 1024, chase_iterations, false, thread_count, local_size, wave, stride, &elapsed_ms);
             fprintf(stderr, "%u iterations, %u ms -> %f ns\n", chase_iterations, elapsed_ms, result);
             chase_iterations = scale_iterations_to_target(chase_iterations, elapsed_ms, target_ms);
         }

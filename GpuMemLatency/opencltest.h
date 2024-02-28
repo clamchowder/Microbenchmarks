@@ -56,6 +56,7 @@ float latency_test(cl_context context,
     int threads,
     int local_size,
     int wave,
+    int stride,
     uint32_t *elapsed_ms);
 float tex_latency_test(cl_context context,
     cl_command_queue command_queue,
