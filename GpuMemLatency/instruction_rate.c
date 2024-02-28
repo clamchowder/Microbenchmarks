@@ -349,7 +349,6 @@ float run_divergence_rate_test(cl_context context,
     memset(result, 0, sizeof(float) * thread_count);
 
     if (partitionPattern != NULL) active_threads = 0;
-
     if (partitionPattern != NULL) fprintf(stderr, "\n");
 
     for (int i = 0; i < thread_count; i++)

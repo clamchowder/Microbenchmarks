@@ -2,7 +2,7 @@
 
 // default test sizes for latency, in KB
 int default_test_sizes[] = { 1, 2, 4, 8, 12, 16, 24, 32, 48, 64, 96, 128, 192, 256, 384, 512, 600, 768, 1024, 1536, 2048, 3072, 4096, 5120, 6144, 
-    8192, 16384, 18432, 20480, 24576, 25600, 28672, 32768, 36864, 40960, 41200, 49152, 65536, 98304, 131072, 196608, 262144, 524288, 1048576 };
+    8192, 16384, 18432, 20480, 24576, 25600, 28672, 32768, 36864, 40960, 41200, 49152, 65536, 98304, 131072, 196608, 262144, 524288, 768432,  819200, 921600, 1048576 };
 
 // lining this up with nemes's VK bw test sizes. units for this one are in bytes
 const uint64_t default_bw_test_sizes[] = {
@@ -690,19 +690,22 @@ int main(int argc, char* argv[]) {
     }
     else if (testType == Partition)
     {
-        int pattern4[] = { 1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0 };
-
         // function and its associated kernel serve two purposes
+        int pattern4[] = { 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0 };
         float result = run_divergence_rate_test(context, command_queue, thread_count, local_size, wave, pattern4);
-        printf("Throughput (mod 4): %f\n", result);
+        printf("Throughput: %f\n", result);
 
-        int pattern2[] = { 1, 0, 1, 0, 1, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0 };
+	int patterns[] = { 1, 1, 0, 0, 1, 1, 0, 0, 1, 1, 0, 0, 1, 1, 0, 0 };
+        result = run_divergence_rate_test(context, command_queue, thread_count, local_size, wave, patterns);
+        printf("Throughput: %f\n", result);
+
+        int pattern2[] = { 1, 1, 1, 1, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0 };
         result = run_divergence_rate_test(context, command_queue, thread_count, local_size, wave, pattern2);
-        printf("Throughput (mod 2): %f\n", result);
+        printf("Throughput: %f\n", result);
 
-        int consec_pattern[] = { 1, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 };
+        int consec_pattern[] = { 1, 1, 1, 1, 0, 0, 0, 0, 1, 1, 1, 1, 0, 0, 0, 0 };
         result = run_divergence_rate_test(context, command_queue, thread_count, local_size, wave, consec_pattern);
-        printf("Throughput (x4): %f\n", result);
+        printf("Throughput: %f\n", result);
     }
 
     //printf("If you didn't run this through cmd, now you can copy the results. And press ctrl+c to close");
