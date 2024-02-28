@@ -59,3 +59,32 @@ __kernel void fp16_fma_rate_test(__global half8 *A, int count, __global half8 *r
 
     ret[get_global_id(0)] = v0 + v1 + v2 + v3 + v4 + v5 + v6 + v7;
 }
+
+__kernel void fp16_rsqrt_rate_test(__global half8 *A, int count, __global half8 *ret) {
+    int tid = get_local_id(0);
+    int max_offset = get_local_size(0);
+    __global half8 *local_a = A;
+
+    int masked_tid = tid & (rate_local_mem_test_size - 1);
+    half8 v0 = local_a[masked_tid];
+    half8 v1 = local_a[masked_tid + 1];
+    half8 v2 = local_a[masked_tid + 2];
+    half8 v3 = local_a[masked_tid + 3];
+    half8 v4 = v0 + v1;
+    half8 v5 = v0 + v2;
+    half8 v6 = v0 + v3;
+    half8 v7 = v1 + v2;
+
+    for (int i = 0; i < count; i++) {
+        v0 = native_rsqrt(v0);
+        v1 = native_rsqrt(v1);
+        v2 = native_rsqrt(v2);
+        v3 = native_rsqrt(v3);
+        v4 = native_rsqrt(v4);
+        v5 = native_rsqrt(v5);
+        v6 = native_rsqrt(v6);
+        v7 = native_rsqrt(v7);
+    }
+
+    ret[get_global_id(0)] = v0 + v1 + v2 + v3 + v4 + v5 + v6 + v7;
+}

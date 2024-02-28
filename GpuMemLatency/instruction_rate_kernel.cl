@@ -722,8 +722,54 @@ __kernel void fp32_divergence_rate_test(__global float *A, int count, __global f
     float acc = A[0];
     float op = A[get_global_id(0)];
 
-    for (int i = 0; i < count; i++) {
-        if (op < 0.5) {
+    if (op < 1.0) {
+        for (int i = 0; i < count; i++) {
+            if (op < 0.5) {
+                v0 += acc;
+                v1 += acc;
+                v2 += acc;
+                v3 += acc;
+                v4 += acc;
+                v5 += acc;
+                v6 += acc;
+                v7 += acc;
+            }
+            else
+            {
+                v0 *= acc;
+                v1 *= acc;
+                v2 *= acc;
+                v3 *= acc;
+                v4 *= acc;
+                v5 *= acc;
+                v6 *= acc;
+                v7 *= acc;
+            }
+        }
+    }
+
+    ret[get_global_id(0)] = v0 + v1 + v2 + v3 + v4 + v5 + v6 + v7;
+}
+
+__kernel void fp32_partition_rate_test(__global float *A, int count, __global float *ret) {
+    int tid = get_local_id(0);
+    int max_offset = get_local_size(0);
+    __global float *local_a = A;
+
+    int masked_tid = tid & (rate_local_mem_test_size - 1);
+    float v0 = local_a[masked_tid];
+    float v1 = local_a[masked_tid + 1];
+    float v2 = local_a[masked_tid + 2];
+    float v3 = local_a[masked_tid + 3];
+    float v4 = v0 + v1;
+    float v5 = v0 + v2;
+    float v6 = v0 + v3;
+    float v7 = v1 + v2;
+    float acc = A[0];
+    float op = A[get_global_id(0)];
+
+    if (op < 1.0) {
+        for (int i = 0; i < count; i++) {
             v0 += acc;
             v1 += acc;
             v2 += acc;
@@ -732,17 +778,6 @@ __kernel void fp32_divergence_rate_test(__global float *A, int count, __global f
             v5 += acc;
             v6 += acc;
             v7 += acc;
-        }
-        else
-        {
-            v0 *= acc;
-            v1 *= acc;
-            v2 *= acc;
-            v3 *= acc;
-            v4 *= acc;
-            v5 *= acc;
-            v6 *= acc;
-            v7 *= acc;
         }
     }
 

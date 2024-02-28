@@ -346,7 +346,7 @@ void write_program(cl_program program, const char *name)
 
     for (int i = 0; i < nDevices; i++)
     {
-        snprintf(fname, 254, "prog%d_%s", i);
+        snprintf(fname, 254, "prog%d_%s", i, name);
         FILE* dst = fopen(fname, "w");
         fwrite(binaries[i], 1, binarySizes[i], dst);
         fclose(dst);
