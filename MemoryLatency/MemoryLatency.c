@@ -33,6 +33,14 @@ int default_test_sizes[] = { 2, 4, 8, 12, 16, 24, 32, 48, 64, 96, 128, 192, 256,
 extern void preplatencyarr(uint64_t *arr, uint64_t len) __attribute__((ms_abi));
 extern uint32_t latencytest(uint64_t iterations, uint64_t *arr) __attribute((ms_abi));
 
+#ifdef __MINGW32__
+int posix_memalign(void **memptr, size_t alignment, size_t size)
+{
+    *memptr = _aligned_malloc(alignment, size);
+    return *memptr != NULL;
+}
+#endif
+
 #define LONGPATTERN 1
 extern uint32_t longpatternlatencytest(uint64_t iterations, uint64_t *arr) __attribute((ms_abi));
 
