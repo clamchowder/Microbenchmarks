@@ -7,6 +7,7 @@
 #include <unistd.h>
 #include <sys/types.h>
 #include <sys/syscall.h>
+#include <pthread.h>
 
 void setAffinity(int core) {
     cpu_set_t cpuset;
@@ -16,6 +17,14 @@ void setAffinity(int core) {
     // sched_setaffinity(gettid(), sizeof(cpu_set_t), &cpuset);
 }
 #endif
+
+struct ThreadData {
+    int* A;
+    int* B;
+    float* fpArr;
+    uint32_t list_size;
+    uint64_t structIterations;
+};
 
 void printCsvHeader(uint32_t* xCounts, uint32_t xLen) {
     printf("x");

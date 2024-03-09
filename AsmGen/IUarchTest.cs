@@ -4,6 +4,7 @@ namespace AsmGen
 {
     public interface IUarchTest
     {
+        public const string ThreadLaunchFunctionPrefix = "ThreadLaunch_";
         // enough to generate global lines, function calls, and let user pick from tests
         public string Prefix { get; }
         public string Description { get; }

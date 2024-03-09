@@ -99,6 +99,7 @@ namespace AsmGen
             sb.AppendLine("#pragma GCC diagnostic ignored \"-Wattributes\"");
             string commonFunctions = File.ReadAllText($"{DataFilesDir}\\CommonFunctions.c");
             sb.AppendLine(commonFunctions);
+
             foreach (IUarchTest test in tests)
             {
                 if (test.SupportsIsa(isa)) test.GenerateExternLines(sb);
@@ -113,7 +114,7 @@ namespace AsmGen
             }
 
             AddCommonInitCode(sb, tests, isa);
-            foreach(IUarchTest test in tests)
+            foreach (IUarchTest test in tests)
             {
                 if (test.SupportsIsa(isa)) test.GenerateTestBlock(sb, isa);
             }
@@ -161,7 +162,7 @@ namespace AsmGen
                     sb.AppendLine("android:");
                     sb.AppendLine("\tclang -march=armv8.3-a -mfpu=neon-fp-armv8 clammicrobench_aarch64.c clammicrobench_aarch64.s -o cb");
                 }
-                else sb.AppendLine($"\tgcc clammicrobench_{isa.ToString()}.c clammicrobench_{isa.ToString()}.s -o cb");
+                else sb.AppendLine($"\tgcc -pthread clammicrobench_{isa.ToString()}.c clammicrobench_{isa.ToString()}.s -o cb");
             }
 
             sb.AppendLine("win64:");
@@ -176,7 +177,7 @@ namespace AsmGen
         {
             sb.AppendLine("int main(int argc, char *argv[]) {");
             sb.AppendLine($"  uint64_t time_diff_ms, iterations = {iterations}, structIterations = {structTestIterations}, tmp;");
-            sb.AppendLine("  double latency; int *A = NULL, *B = NULL; float *fpArr = NULL; char *test_name = NULL; int core_affinity = -1;");
+            sb.AppendLine("  double latency; int *A = NULL, *B = NULL; float *fpArr = NULL; char *test_name = NULL; int core_affinity = -1; int threads = 1;");
             sb.AppendLine("  uint64_t tmpsink;");
             sb.AppendLine("  uint32_t list_size = " + latencyListSize + ";");
 
@@ -199,6 +200,7 @@ namespace AsmGen
             sb.AppendLine("        if (strncmp(arg, \"iterations\", 10) == 0) { argIdx++; iterations = 100 * atoi(argv[argIdx]); }");
             sb.AppendLine("        if (strncmp(arg, \"listsize\", 8) == 0) { argIdx++; list_size = atoi(argv[argIdx]); }");
             sb.AppendLine("        if (strncmp(arg, \"affinity\", 8) == 0) { argIdx++; core_affinity = atoi(argv[argIdx]); }");
+            sb.AppendLine("        if (strncmp(arg, \"threads\", 7) == 0) { argIdx++; threads = atoi(argv[argIdx]); }");
             sb.AppendLine("      }"); // end -arg handling if
             sb.AppendLine("    }"); // end args handling for loop
 
