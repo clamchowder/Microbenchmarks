@@ -1,15 +1,3 @@
-// unused but here as a reference. suffers from loop overhead on AMD cards
-__kernel void simple_latency_test(__global const int* A, int count, __global int* ret) {
-    int current = A[0];
-    int result;
-    for (int i = 0; i < count; i++) {
-        result += current;
-        current = A[current];
-    }
-
-    ret[0] = result;
-}
-
 // not used, I tried
 __constant sampler_t direct_sampler = CLK_NORMALIZED_COORDS_FALSE | // coordinates are from 0 to max dimension size
                                         CLK_ADDRESS_NONE | // if it goes out of bounds feel free to explode and die

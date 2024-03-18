@@ -1,0 +1,40 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <ClCompile Include="..\common\timing.c" />
+    <ClCompile Include="atomic_test.c" />
+    <ClCompile Include="bw_test.c" />
+    <ClCompile Include="common.c" />
+    <ClCompile Include="instruction_rate.c" />
+    <ClCompile Include="texturetest.c" />
+    <ClCompile Include="latency_test.c" />
+    <ClCompile Include="opencltest.c" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="..\common\timing.h" />
+    <ClInclude Include="opencltest.h" />
+  </ItemGroup>
+  <ItemGroup>
+    <CopyFileToFolders Include="instruction_rate_fp16_kernel.cl" />
+    <CopyFileToFolders Include="kernel.cl" />
+    <CopyFileToFolders Include="instruction_rate_kernel.cl" />
+    <CopyFileToFolders Include="instruction_rate_fp64_kernel.cl" />
+    <CopyFileToFolders Include="local_mem_latency_kernel.cl" />
+    <CopyFileToFolders Include="kernels\atomic_exec_latency_test.cl" />
+    <CopyFileToFolders Include="kernels\buffer_bw_test.cl" />
+    <CopyFileToFolders Include="kernels\c2c_atomic_exec_latency_test.cl" />
+    <CopyFileToFolders Include="kernels\constant_unrolled_latency_test.cl" />
+    <CopyFileToFolders Include="kernels\local_64_bw_test.cl" />
+    <CopyFileToFolders Include="kernels\local_atomic_latency_test.cl" />
+    <CopyFileToFolders Include="kernels\tex_bw_test.cl" />
+    <CopyFileToFolders Include="kernels\local_bw_test.cl" />
+    <CopyFileToFolders Include="kernels\local_float4_bw_test.cl" />
+    <CopyFileToFolders Include="kernels\tex_latency_test.cl" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="kernels\local_unrolled_latency_test.cl" />
+    <None Include="kernels\scalar_unrolled_latency_test.cl" />
+    <None Include="kernels\sum_bw_test.cl" />
+    <None Include="kernels\unrolled_latency_test.cl" />
+  </ItemGroup>
+</Project>

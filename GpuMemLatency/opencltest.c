@@ -1,7 +1,7 @@
 #include "opencltest.h"
 
 // default test sizes for latency, in KB
-int default_test_sizes[] = { 1, 2, 4, 8, 12, 16, 24, 32, 48, 64, 96, 128, 192, 256, 384, 512, 600, 768, 1024, 1536, 2048, 3072, 4096, 5120, 6144, 
+int default_test_sizes[] = { 1, 2, 4, 8, 12, 16, 24, 32, 48, 64, 96, 128, 144, 160, 172, 192, 256, 384, 512, 600, 768, 1024, 1536, 2048, 3072, 4096, 5120, 6144, 
     8192, 16384, 18432, 20480, 24576, 25600, 28672, 32768, 36864, 40960, 41200, 49152, 65536, 98304, 131072, 196608, 262144, 524288, 768432,  819200, 921600, 1048576 };
 
 // lining this up with nemes's VK bw test sizes. units for this one are in bytes
@@ -160,7 +160,7 @@ int main(int argc, char* argv[]) {
                     testType = LocalMemCapacity;
                     fprintf(stderr, "Testing GPU-wide local memory capacity. Make sure localmemsize/groupcount are set appropriately!\n");
 
-                    if (sizeKb = 0) sizeKb = 1;
+                    if (sizeKb == 0) sizeKb = 1;
                     if (group_count == 0) group_count = 16;
                 }
                 else if (_strnicmp(argv[argIdx], "globalatomic", 13) == 0) {
@@ -293,29 +293,19 @@ int main(int argc, char* argv[]) {
     cl_command_queue command_queue = clCreateCommandQueue(context, selected_device_id, 0, &ret);
     fprintf(stderr, "clCreateCommandQueue returned %d\n", ret);
 
-    cl_kernel vector_latency_kernel = clCreateKernel(program, "unrolled_latency_test", &ret);
-    cl_kernel scalar_latency_kernel = clCreateKernel(program, "scalar_unrolled_latency_test", &ret);
-    cl_kernel latency_kernel_amdworkaround = clCreateKernel(program, "unrolled_latency_test_amdvectorworkaround", &ret);
-    cl_kernel bw_kernel = clCreateKernel(program, "sum_bw_test", &ret);
-    cl_kernel constant_kernel = clCreateKernel(program, "constant_unrolled_latency_test", &ret);
-    cl_kernel int_exec_latency_test_kernel = clCreateKernel(program, "int_exec_latency_test", &ret);
-    cl_kernel atomic_latency_test_kernel = clCreateKernel(program, "atomic_exec_latency_test", &ret);
-    cl_kernel local_atomic_latency_test_kernel = clCreateKernel(program, "local_atomic_latency_test", &ret);
     cl_kernel c2c_atomic_latency_test_kernel = clCreateKernel(program, "c2c_atomic_exec_latency_test", &ret);
     cl_kernel dummy_add_kernel = clCreateKernel(program, "dummy_add", &ret);
-    cl_kernel local_bw_kernel = clCreateKernel(program, "local_bw_test", &ret);
-    cl_kernel tex_latency_kernel = clCreateKernel(program, "tex_latency_test", &ret);
-    cl_kernel tex_bw_kernel = clCreateKernel(program, "tex_bw_test", &ret);
-    cl_kernel local_bw_chase_kernel = clCreateKernel(program, "local_chase_bw", &ret);
-    cl_kernel local_64_bw_kernel = clCreateKernel(program, "local_64_bw_test", &ret);
-    cl_kernel buffer_bw_kernel = clCreateKernel(program, "buffer_bw_test", &ret);
-    cl_kernel local_float4_bw_kernel = clCreateKernel(program, "local_float4_bw_test", &ret);
+    cl_kernel local_bw_chase_kernel = clCreateKernel(program, "local_chase_kernel", &ret);
 #pragma endregion opencl_overhead
 
     max_global_test_size = get_max_buffer_size();
 
     if (testType == GlobalAtomicLatency)
     {
+        cl_program prog = build_program(context, "atomic_exec_latency_test.cl", NULL);
+        cl_kernel atomic_latency_test_kernel = clCreateKernel(prog, "atomic_exec_latency_test", &ret);
+        if (saveprogram) write_program(program, "atomic_exec_latency_test");
+
         chase_iterations = 200000;
         uint32_t elapsed_ms = 0, target_ms = 2000;
         while (elapsed_ms < target_ms / 2) {
@@ -324,25 +314,45 @@ int main(int argc, char* argv[]) {
             chase_iterations = scale_iterations_to_target(chase_iterations, elapsed_ms, target_ms);
         }
         printf("global atomic latency: %f\n", result);
+        clReleaseKernel(atomic_latency_test_kernel);
+        clReleaseProgram(prog);
     }
     else if (testType == LocalAtomicLatency)
     {
+        cl_program prog = build_program(context, "local_atomic_latency_test.cl", NULL);
+        cl_kernel local_atomic_latency_test_kernel = clCreateKernel(program, "local_atomic_latency_test", &ret);
+        if (saveprogram) write_program(program, "local_atomic_latency_test");
+
         chase_iterations = 500000;
         uint32_t elapsed_ms = 0, target_ms = 2000;
         while (elapsed_ms < target_ms / 2) {
             result = int_atomic_latency_test(context, command_queue, local_atomic_latency_test_kernel, chase_iterations, true, &elapsed_ms);
             fprintf(stderr, "%d iterations, %u ms => %f ns\n", chase_iterations, elapsed_ms, result);
-            chase_iterations = scale_iterations_to_target(chase_iterations, elapsed_ms, target_ms);
+            chase_iterations = scale_iterations_to_target(chase_iterations, (float)elapsed_ms, (float)target_ms);
         }
         printf("local atomic latency: %f\n", result);
+        clReleaseKernel(local_atomic_latency_test_kernel);
+        clReleaseProgram(prog);
     }
     else if (testType == VectorMemLatency || testType == ScalarMemLatency)
     {
+        cl_program prog;
+        cl_kernel globalMemLatencyKernel;
+        if (testType == ScalarMemLatency) 
+        {
+            prog = build_program(context, "scalar_unrolled_latency_test.cl", NULL);
+            globalMemLatencyKernel = clCreateKernel(prog, "scalar_unrolled_latency_test", &ret);
+            if (saveprogram) write_program(prog, "scalar_unrolled_latency_test");
+        }
+        else // Vector mem latency
+        {
+            prog = build_program(context, "unrolled_latency_test.cl", NULL);
+            globalMemLatencyKernel = clCreateKernel(prog, "unrolled_latency_test", &ret);
+            if (saveprogram) write_program(prog, "unrolled_latency_test");
+        }
+
         fprintf(stderr, "Doing %d K p-chase iterations with stride %d over %d KiB region\n", chase_iterations / 1000, stride, list_size * 4 / 1024);
         printf("\nSattolo, global memory latency (up to %llu K) unroll:\n", max_global_test_size / 1024);
-
-        cl_kernel globalMemLatencyKernel = vector_latency_kernel;
-        if (testType == ScalarMemLatency) globalMemLatencyKernel = scalar_latency_kernel;
 
         for (int size_idx = 0; size_idx < sizeof(default_test_sizes) / sizeof(int); size_idx++) {
             if (max_global_test_size < sizeof(int) * 256 * default_test_sizes[size_idx]) {
@@ -357,6 +367,9 @@ int main(int argc, char* argv[]) {
                 break;
             }
         }
+
+        clReleaseKernel(globalMemLatencyKernel);
+        clReleaseProgram(prog);
     }
     else if (testType == LocalMemCapacity)
     {
@@ -373,15 +386,32 @@ int main(int argc, char* argv[]) {
             exit(0);
         }
 
+        if (saveprogram) write_program(program, "local_mem_latency_kernel");
+
         fprintf(stderr, "Testing local memory capacity with %u KB of local mem per WG, up to %u WGs\n", local_mem_size_kb, group_count);
         printf("Groups,Local Mem Capacity,Latency\n");
         for (int groups = 1; groups <= group_count; groups++) {
-            result = latency_test(context, command_queue, local_mem_capacity_kernel, 256 * sizeKb, scale_iterations(sizeKb, chase_iterations), true, groups, 1, 1, 64, NULL);
+            result = latency_test(context, command_queue, 
+                local_mem_capacity_kernel, 
+                256 * sizeKb, 
+                (uint32_t)scale_iterations(sizeKb, chase_iterations), 
+                true, 
+                groups, 
+                1, 
+                1, 
+                64, 
+                NULL);
             printf("%d,%d,%f\n", groups, groups* local_mem_size_kb, result);
         }
+
+        clReleaseKernel(local_mem_capacity_kernel);
+        clReleaseProgram(program);
     }
     else if (testType == ConstantMemLatency)
     {
+        cl_program prog = build_program(context, "constant_unrolled_latency_test.cl", NULL);
+        cl_kernel constant_kernel = clCreateKernel(prog, "constant_unrolled_latency_test", &ret);
+        if (saveprogram) write_program(prog, "constant_unrolled_latency_test");
         cl_ulong max_constant_test_size = get_max_constant_buffer_size();
         printf("\nSattolo, constant memory (up to %llu K), no-unroll:\n", max_constant_test_size / 1024);
 
@@ -397,9 +427,15 @@ int main(int argc, char* argv[]) {
                 break;
             }
         }
+
+        clReleaseKernel(constant_kernel);
+        clReleaseProgram(program);
     }
     else if (testType == TexMemLatency)
     {
+        cl_program prog = build_program(context, "tex_latency_test.cl", NULL);
+        cl_kernel tex_latency_kernel = clCreateKernel(prog, "tex_latency_test", &ret);
+        if (saveprogram) write_program(prog, "tex_latency_test");
         cl_ulong max_tex_test_size = get_max_tex_buffer_size();
         for (int size_idx = 0; size_idx < sizeof(default_test_sizes) / sizeof(int); size_idx++) {
             if (default_test_sizes[size_idx] * 1024 > max_tex_test_size) {
@@ -415,10 +451,16 @@ int main(int argc, char* argv[]) {
                 break;
             }
         }
+
+        clReleaseKernel(tex_latency_kernel);
+        clReleaseProgram(prog);
     }
     else if (testType == LocalMemLatency)
     {
-        cl_kernel local_kernel = clCreateKernel(program, "local_unrolled_latency_test", &ret);
+        cl_program prog = build_program(context, "local_unrolled_latency_test.cl", NULL);
+        cl_kernel local_kernel = clCreateKernel(prog, "local_unrolled_latency_test", &ret);
+        if (saveprogram) write_program(prog, "local_unrolled_latency_test");
+
         uint32_t elapsed_ms = 0, target_ms = 2000;
         chase_iterations = 50000;
         while (elapsed_ms < target_ms / 2) {
@@ -427,9 +469,15 @@ int main(int argc, char* argv[]) {
             chase_iterations = scale_iterations_to_target(chase_iterations, elapsed_ms, target_ms);
         }
         printf("Local mem latency: %f\n", result);
+
+        clReleaseKernel(local_kernel);
+        clReleaseProgram(prog);
     }
     else if (testType == GlobalMemBandwidth)
     {
+        cl_program prog = build_program(context, "sum_bw_test.cl", NULL);
+        cl_kernel bw_kernel = clCreateKernel(prog, "sum_bw_test", &ret);
+        if (saveprogram) write_program(prog, "sum_bw_test");
         fprintf(stderr, "Using %u threads, %u local size, %u base iterations\n", thread_count, local_size, chase_iterations);
         printf("\nMemory bandwidth (up to %llu K):\n", max_global_test_size / 1024);
 
@@ -470,6 +518,9 @@ int main(int argc, char* argv[]) {
                 printf("Something went wrong, not testing anything bigger.\n");
             }
         }
+
+        clReleaseKernel(bw_kernel);
+        clReleaseProgram(prog);
     }
     else if (testType == LocalMemBandwidth || 
         testType == LocalMem64Bandwidth || 
@@ -477,78 +528,96 @@ int main(int argc, char* argv[]) {
         testType == TextureThroughput ||
         testType == LocalMemFloat4Bandwidth)
     {
-        if (chase_iterations_set) 
+        cl_program prog;
+        cl_kernel local_bw_kernel = NULL, local_64_bw_kernel = NULL, local_float4_bw_kernel = NULL, buffer_bw_kernel = NULL, tex_bw_kernel = NULL;
+        if (testType == LocalMemBandwidth)
         {
-            fprintf(stderr, "Using %u threads, %u local size, %u base iterations\n", thread_count, local_size, chase_iterations);
-            int64_t elapsed_ms = 0;
-            result = local_bw_test(context, command_queue, local_bw_kernel, thread_count, local_size, chase_iterations, &elapsed_ms);
-            printf("%f GB/s\n", result);
-            fprintf(stderr, "Elapsed time: %lld ms", elapsed_ms);
+            prog = build_program(context, "local_bw_test.cl", NULL);
+            local_bw_kernel = clCreateKernel(prog, "local_bw_test", &ret);
+            if (saveprogram) write_program(prog, "local_bw_test");
         }
-        else
-        {
-            uint32_t thread_low = 1024, thread_high = 1048576*4;
-            if (!thread_count_set) thread_count = thread_low;
-            float max_bw = 0;
+        else if (testType == LocalMem64Bandwidth) {
+            prog = build_program(context, "local_64_bw_test.cl", NULL);
+            local_64_bw_kernel = clCreateKernel(prog, "local_64_bw_test", &ret);
+            if (saveprogram) write_program(prog, "local_64_bw_test");
+        }
+        else if (testType == LocalMemFloat4Bandwidth) {
+            prog = build_program(context, "local_float4_bw_test.cl", NULL);
+            local_float4_bw_kernel = clCreateKernel(prog, "local_float4_bw_test", &ret);
+            if (saveprogram) write_program(prog, "local_float4_bw_test");
+        }
+        else if (testType == BufferBandwidth) {
+            prog = build_program(context, "buffer_bw_test.cl", NULL);
+            buffer_bw_kernel = clCreateKernel(prog, "buffer_bw_test", &ret);
+            if (saveprogram) write_program(prog, "buffer_bw_test");
+        }
+        else { // tex throughput
+            prog = build_program(context, "tex_bw_test.cl", NULL);
+            tex_bw_kernel = clCreateKernel(prog, "tex_bw_test", &ret);
+            if (saveprogram) write_program(prog, "tex_bw_test");
+        }
 
-            while (true) {
-                int64_t elapsed_ms = 0, target_ms = 1500;
-                chase_iterations = 500000;
-                while (elapsed_ms < target_ms / 2)
-                {
-                    if (testType == LocalMemBandwidth) {
-                        fprintf(stderr, "Testing local mem bw\n");
-                        result = local_bw_test(context, command_queue, local_bw_kernel, thread_count, local_size, chase_iterations, &elapsed_ms);
-                    }
-                    else if (testType == LocalMem64Bandwidth) {
-                        fprintf(stderr, "Testing local mem bw with 64-bit loads\n");
-                        result = local_64_bw_test(context, command_queue, local_64_bw_kernel, thread_count, local_size, chase_iterations, &elapsed_ms);
-                    }
-                    else if (testType == LocalMemFloat4Bandwidth) {
-                        fprintf(stderr, "Testing local mem bw with float4 loads\n");
-                        result = local_bw_test(context, command_queue, local_float4_bw_kernel, thread_count, local_size, chase_iterations, &elapsed_ms);
-                    }
-                    else if (testType == BufferBandwidth)
-                    {
-                        fprintf(stderr, "Testing buffer bw\n");
-                        result = buffer_bw_test(context, command_queue, buffer_bw_kernel, thread_count, local_size, chase_iterations, &elapsed_ms);
-                    }
-                    else if (testType == TextureThroughput)
-                    {
-                        fprintf(stderr, "Testing texture throughput\n");
-                        result = tex_bw_test(context,
-                            command_queue,
-                            tex_bw_kernel,
-                            256, // width
-                            256, // height
-                            thread_count,
-                            local_size,
-                            0,
-                            chase_iterations,
-                            &elapsed_ms);
-                    }
+        uint32_t thread_low = 1024, thread_high = 1048576*4;
+        if (!thread_count_set) thread_count = thread_low;
+        float max_bw = 0;
 
-                    fprintf(stderr, "%u threads, %u local size, %u iterations ==> %f GB/s, elapsed time %lld ms\n",
-                        thread_count, local_size, chase_iterations, result, elapsed_ms);
-                    if (elapsed_ms < 25) chase_iterations *= 2;
-                    else chase_iterations = (uint32_t)((float)chase_iterations * (target_ms / elapsed_ms));
-                    if (result == 0)
-                    {
-                        fprintf(stderr, "Run failed\n");
-                        break;
-                    }
-
+        while (true) {
+            int64_t elapsed_ms = 0, target_ms = 1500;
+            chase_iterations = 500000;
+            while (elapsed_ms < target_ms / 2)
+            {
+                if (testType == LocalMemBandwidth) {
+                    fprintf(stderr, "Testing local mem bw\n");
+                    result = local_bw_test(context, command_queue, local_bw_kernel, thread_count, local_size, chase_iterations, &elapsed_ms);
                 }
-                    
-                if (result > max_bw) max_bw = result;
+                else if (testType == LocalMem64Bandwidth) {
+                    fprintf(stderr, "Testing local mem bw with 64-bit loads\n");
+                    result = local_64_bw_test(context, command_queue, local_64_bw_kernel, thread_count, local_size, chase_iterations, &elapsed_ms);
+                }
+                else if (testType == LocalMemFloat4Bandwidth) {
+                    fprintf(stderr, "Testing local mem bw with float4 loads\n");
+                    result = local_bw_test(context, command_queue, local_float4_bw_kernel, thread_count, local_size, chase_iterations, &elapsed_ms);
+                }
+                else if (testType == BufferBandwidth)
+                {
+                    fprintf(stderr, "Testing buffer bw\n");
+                    result = buffer_bw_test(context, command_queue, buffer_bw_kernel, thread_count, local_size, chase_iterations, &elapsed_ms);
+                }
+                else if (testType == TextureThroughput)
+                {
+                    fprintf(stderr, "Testing texture throughput\n");
+                    result = tex_bw_test(context,
+                        command_queue,
+                        tex_bw_kernel,
+                        256, // width
+                        256, // height
+                        thread_count,
+                        local_size,
+                        0,
+                        chase_iterations,
+                        &elapsed_ms);
+                }
 
-                if (thread_count_set) break;
-                thread_count *= 2;
-                if (thread_count > thread_high) break;
+                fprintf(stderr, "%u threads, %u local size, %u iterations ==> %f GB/s, elapsed time %lld ms\n",
+                    thread_count, local_size, chase_iterations, result, elapsed_ms);
+                if (elapsed_ms < 25) chase_iterations *= 2;
+                else chase_iterations = (uint32_t)((float)chase_iterations * (target_ms / elapsed_ms));
+                if (result == 0)
+                {
+                    fprintf(stderr, "Run failed\n");
+                    break;
+                }
+
             }
+                    
+            if (result > max_bw) max_bw = result;
 
-            printf("Bandwidth: %f GB/s\n", max_bw);
+            if (thread_count_set) break;
+            thread_count *= 2;
+            if (thread_count > thread_high) break;
         }
+
+        printf("Bandwidth: %f GB/s\n", max_bw);
     }
     else if (testType == LocalMemChaseBandwidth)
     {
@@ -589,6 +658,9 @@ int main(int argc, char* argv[]) {
     }
     else if (testType == MemBandwidthWorkgroupScaling)
     {
+        cl_program prog = build_program(context, "sum_bw_test.cl", NULL);
+        cl_kernel bw_kernel = clCreateKernel(prog, "sum_bw_test", &ret);
+        if (saveprogram) write_program(prog, "sum_bw_test");
         uint32_t testSizeCount = sizeof(default_bw_test_sizes) / sizeof(unsigned long long);
         cl_uint cuCount = forceCuCount ? forceCuCount : getCuCount();
 
@@ -663,6 +735,8 @@ int main(int argc, char* argv[]) {
         }
 
         free(scalingResults);
+        clReleaseKernel(bw_kernel);
+        clReleaseProgram(prog);
     }
     else if (testType == CoreToCore)
     {
@@ -715,7 +789,6 @@ int main(int argc, char* argv[]) {
     cleanup:
     ret = clFlush(command_queue);
     ret = clFinish(command_queue);
-    ret = clReleaseKernel(vector_latency_kernel);
     ret = clReleaseProgram(program);
     ret = clReleaseCommandQueue(command_queue);
     ret = clReleaseContext(context);

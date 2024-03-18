@@ -25,9 +25,11 @@ float latency_test(cl_context context,
         global_item_size = threads;
     }
 
+    // fprintf(stderr, "Testing latency with %d threads %d local size %d list size\n", threads, local_size, list_size);
+
     // Sanity Checks
-    if (stride * 2 > list_size * 4 || // 2 cache lines
-        ((threads > 1) && stride * 2 > (list_size * 4 / (threads / wave_size)))) // handle partition case
+    if (!uniform && ((stride * 2 > list_size * 4) || // 2 cache lines
+        ((threads > 1) && (stride * 2 > (list_size * 4 / (threads / wave_size)))))) // handle partition case
     {
         fprintf(stderr, "Less than 2 lines will be visited with stride %d, list size %dx 32-bit INTs\n", stride, list_size);
         return 1.0f;
