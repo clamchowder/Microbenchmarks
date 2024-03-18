@@ -563,7 +563,7 @@ int main(int argc, char* argv[]) {
 
         while (true) {
             int64_t elapsed_ms = 0, target_ms = 1500;
-            chase_iterations = 500000;
+            if (!chase_iterations_set) chase_iterations = 500000;
             while (elapsed_ms < target_ms / 2)
             {
                 if (testType == LocalMemBandwidth) {
@@ -608,6 +608,7 @@ int main(int argc, char* argv[]) {
                     break;
                 }
 
+                if (chase_iterations_set) break;
             }
                     
             if (result > max_bw) max_bw = result;
