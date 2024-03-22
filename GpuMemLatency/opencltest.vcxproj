@@ -212,7 +212,9 @@
       <FileType>Document</FileType>
     </CopyFileToFolders>
     <None Include="kernels\local_unrolled_latency_test.cl" />
-    <None Include="kernels\scalar_unrolled_latency_test.cl" />
+    <CopyFileToFolders Include="kernels\scalar_unrolled_latency_test.cl">
+      <FileType>Document</FileType>
+    </CopyFileToFolders>
     <None Include="kernels\sum_bw_test.cl" />
     <CopyFileToFolders Include="kernels\tex_bw_test.cl">
       <FileType>Document</FileType>
