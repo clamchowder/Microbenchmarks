@@ -88,6 +88,8 @@ namespace AsmGen
                 // launch threads
                 sb.AppendLine("    } else ");
                 sb.AppendLine("        " + Prefix + Counts[i] + $"({GetFunctionCallParameters});");
+                sb.AppendLine("#else");
+                sb.AppendLine("    " + Prefix + Counts[i] + $"({GetFunctionCallParameters});");
                 sb.AppendLine("#endif");
                 sb.AppendLine("    gettimeofday(&endTv, &endTz);");
                 sb.AppendLine("    time_diff_ms = 1000 * (endTv.tv_sec - startTv.tv_sec) + ((endTv.tv_usec - startTv.tv_usec) / 1000);");

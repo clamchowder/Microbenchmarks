@@ -76,6 +76,11 @@ namespace AsmGen
             tests.Add(new StoreNsq(8, 30, 1)); // x2
             tests.Add(new LoadNsq(8, 30, 1)); // x2
 
+            // avx-512
+            tests.Add(new Vec512RfTest(128, 600, 1));
+            tests.Add(new Stq512Test(16, 128, 1));
+            tests.Add(new MaskRfTest(32, 256, 1));
+
             List<Task> tasks = new List<Task>();
             tasks.Add(Task.Run(() => GenerateCFile(tests, IUarchTest.ISA.amd64)));
             tasks.Add(Task.Run(() => GenerateCFile(tests, IUarchTest.ISA.aarch64)));
