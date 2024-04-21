@@ -107,8 +107,11 @@ namespace AsmGen
 
             foreach (IUarchTest test in tests)
             {
-                if (test.SupportsIsa(isa)) test.GenerateExternLines(sb);
-                Console.WriteLine("Test " + test.Prefix + " supports ISA " + isa);
+                if (test.SupportsIsa(isa))
+                {
+                    test.GenerateExternLines(sb);
+                    Console.WriteLine("Test " + test.Prefix + " supports ISA " + isa);
+                }
             }
 
             // no indexed addressing mode on these architectures, so make sure we can do pointer
@@ -208,6 +211,8 @@ namespace AsmGen
             sb.AppendLine("        if (strncmp(arg, \"threads\", 7) == 0) { argIdx++; threads = atoi(argv[argIdx]); }");
             sb.AppendLine("      }"); // end -arg handling if
             sb.AppendLine("    }"); // end args handling for loop
+
+            sb.AppendLine("    if (test_name == NULL) { fprintf(stderr, \"No test specified\\n\"); return 0; }");
 
             // Optional affinity setting for certain troublesome platforms
             // don't need a version that uses Windows affinity APIs because Windows platforms never have this issue
