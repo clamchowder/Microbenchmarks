@@ -17,27 +17,28 @@ namespace AsmGen
         static void Main(string[] args)
         {
             List<IUarchTest> tests = new List<IUarchTest>();
-            tests.Add(new RobTest(384, 768, 1));
-            tests.Add(new ZeroRobTest(384, 768, 1));
-            tests.Add(new IntRfTest(200, 400, 1));
-            tests.Add(new FpRfTest(280, 400, 1));
-            tests.Add(new MixIntVec128RfTest(250, 500, 1));
-            tests.Add(new Fadd256RfTest(280, 400, 1));
-            tests.Add(new MixFAdd256and32RfTest(280, 400, 1));
-            tests.Add(new FlagRfTest(200, 400, 1));
-            tests.Add(new LdqTest(150, 256, 1));
-            tests.Add(new StqTest(100, 512, 1));
-            tests.Add(new AddSchedTest(64, 180, 1));
-            tests.Add(new MulSchedTest(64, 180, 1));
+            tests.Add(new RobTest(128, 512, 1));
+            tests.Add(new ZeroRobTest(128, 512, 1));
+            tests.Add(new IntRfTest(96, 256, 1));
+            tests.Add(new FpRfTest(96, 256, 1));
+            tests.Add(new MixIntVec128RfTest(96, 300, 1));
+            tests.Add(new Fadd256RfTest(64, 256, 1));
+            tests.Add(new MixFAdd256and32RfTest(64, 256, 1));
+            tests.Add(new FlagRfTest(64, 256, 1));
+            tests.Add(new LdqTest(32, 160, 1));
+            tests.Add(new StqTest(32, 100, 1));
+            tests.Add(new AddSchedTest(16, 100, 1));
+            tests.Add(new MulSchedTest(4, 64, 1));
+            tests.Add(new LeaSchedTest(4, 64, 1));
             tests.Add(new MaddSchedTest(4, 64, 1));
             tests.Add(new JumpSchedTest(4, 64, 1));
-            tests.Add(new TakenJumpSchedTest(64, 180, 1));
-            tests.Add(new LoadSchedTest(50, 120, 1));
-            tests.Add(new StoreSchedTest(20, 80, 1));
-            tests.Add(new StoreDataSchedTest(20, 80, 1));
+            tests.Add(new TakenJumpSchedTest(4, 64, 1));
+            tests.Add(new LoadSchedTest(4, 72, 1));
+            tests.Add(new StoreSchedTest(4, 72, 1));
+            tests.Add(new StoreDataSchedTest(4, 80, 1));
             tests.Add(new MixAddJumpSchedTest(64, 180, 1));
-            tests.Add(new FaddSchedTest(64, 180, 1));
-            tests.Add(new FcmpSchedTest(4, 120, 1));
+            tests.Add(new FaddSchedTest(32, 180, 1));
+            tests.Add(new FcmpSchedTest(32, 120, 1));
             tests.Add(new JsCvtSched(8, 120, 1));
             tests.Add(new MixAddvJsCvtSched(8, 120, 1));
             tests.Add(new AddvSched(8, 120, 1));
@@ -73,8 +74,9 @@ namespace AsmGen
             tests.Add(new FaddNsq(16, 80, 1, 140)); // x2
             tests.Add(new MixAddvJsCvtNsq(8, 80, 1));
             tests.Add(new AddvNsq(8, 48, 1, 60));
-            tests.Add(new StoreNsq(8, 30, 1)); // x2
-            tests.Add(new LoadNsq(8, 30, 1)); // x2
+            tests.Add(new StoreNsq(8, 120, 1)); // x2
+            tests.Add(new LoadNsq(8, 70, 1)); // x2
+            tests.Add(new JumpNsqTest(8, 100, 1));
 
             // avx-512
             tests.Add(new Vec512RfTest(128, 600, 1));

@@ -17,11 +17,26 @@ namespace AsmGen
         public override bool SupportsIsa(IUarchTest.ISA isa)
         {
             if (isa == IUarchTest.ISA.aarch64) return true;
+            if (isa == IUarchTest.ISA.amd64) return true;
             return false;
         }
 
         public override void GenerateAsm(StringBuilder sb, IUarchTest.ISA isa)
         {
+            if (isa == IUarchTest.ISA.amd64)
+            {
+                string[] dep = new string[3];
+                dep[0] = "  mov (%r8, %rdi, 4), %r15";
+                dep[1] = "  mov (%r8, %rdi, 4), %r14";
+                dep[2] = "  mov (%r8, %rdi, 4), %r13";
+
+                string[] indep = new string[3];
+                indep[0] = "  mov (%r8), %r15";
+                indep[1] = "  mov (%r8), %r14";
+                indep[2] = "  mov (%r8), %r13";
+
+                UarchTestHelpers.GenerateX86AsmNsqTestFuncs(sb, this.Counts[this.Counts.Length - 1], this.Counts, this.Prefix, dep, indep, ptrChasingLoadsInSq: true);
+            }
             if (isa == IUarchTest.ISA.aarch64)
             {
                 string[] dep = new string[3];
