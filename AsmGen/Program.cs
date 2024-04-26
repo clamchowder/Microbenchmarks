@@ -77,6 +77,7 @@ namespace AsmGen
             tests.Add(new StoreNsq(8, 120, 1)); // x2
             tests.Add(new LoadNsq(8, 70, 1)); // x2
             tests.Add(new JumpNsqTest(8, 100, 1));
+            tests.Add(new StoreDataDivNsqTest(4, 48, 1));
 
             // avx-512
             tests.Add(new Vec512RfTest(128, 600, 1));
