@@ -185,6 +185,15 @@ int main(int argc, char* argv[]) {
                   hugePages = 1;
                   fprintf(stderr, "If applicable, will use huge pages. Will allocate max memory at start, make sure system has enough memory.\n");
             } 
+	    else if (strncmp(arg, "affinity", 8) == 0) {
+                argIdx++;
+		int targetThread = atoi(argv[argIdx]);
+                fprintf(stderr, "Affinity set to core %d\n", targetThread);
+                cpu_set_t cpuset;
+                CPU_ZERO(&cpuset);
+                CPU_SET(targetThread, &cpuset);
+                sched_setaffinity(gettid(), sizeof(cpu_set_t), &cpuset);
+	    }
             #endif
             else if (strncmp(arg, "pagebypage", 10) == 0) {
                 pageByPage = 1;
