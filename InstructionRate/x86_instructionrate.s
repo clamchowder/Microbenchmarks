@@ -106,6 +106,8 @@
 
 .global fma4_256
 .global fma4_128
+.global fdivtest
+.global fdivlattest
 
 /*
   %rdi = arg0 = iteration count
@@ -5183,6 +5185,86 @@ fma4_128_loop:
   vfmaddps %xmm6, %xmm6, %xmm15, %xmm15
   sub %r9, %rdi
   jnz fma4_128_loop
+  movq %xmm1, %rax
+  vzeroupper
+  pop %r8
+  pop %r9
+  ret
+
+
+
+fdivtest:
+  push %r9
+  push %r8
+  mov $20, %r9
+  cvtsi2ss %r9, %xmm6
+  movss %xmm6, %xmm5
+  movss %xmm6, %xmm7
+  movss %xmm6, %xmm8
+  movss %xmm6, %xmm9
+  movss %xmm6, %xmm10
+  movss %xmm6, %xmm11
+  movss %xmm6, %xmm12
+  movss %xmm6, %xmm13
+  movss %xmm6, %xmm14
+  movss %xmm6, %xmm15
+fdivtest_loop:
+  divss %xmm6, %xmm5 
+  divss %xmm6, %xmm7 
+  divss %xmm6, %xmm8 
+  divss %xmm6, %xmm9 
+  divss %xmm6, %xmm10
+  divss %xmm6, %xmm11
+  divss %xmm6, %xmm12
+  divss %xmm6, %xmm13
+  divss %xmm6, %xmm14
+  divss %xmm6, %xmm15
+  divss %xmm6, %xmm5 
+  divss %xmm6, %xmm7 
+  divss %xmm6, %xmm8 
+  divss %xmm6, %xmm9 
+  divss %xmm6, %xmm10
+  divss %xmm6, %xmm11
+  divss %xmm6, %xmm12
+  divss %xmm6, %xmm13
+  divss %xmm6, %xmm14
+  divss %xmm6, %xmm15
+  sub %r9, %rdi
+  jnz fdivtest_loop
+  movq %xmm1, %rax
+  vzeroupper
+  pop %r8
+  pop %r9
+  ret 
+
+fdivlattest:
+  push %r9
+  push %r8
+  mov $20, %r9
+  cvtsi2ss %r9, %xmm6
+fdivlattest_loop:
+  divss %xmm6, %xmm6
+  divss %xmm6, %xmm6
+  divss %xmm6, %xmm6
+  divss %xmm6, %xmm6
+  divss %xmm6, %xmm6
+  divss %xmm6, %xmm6
+  divss %xmm6, %xmm6
+  divss %xmm6, %xmm6
+  divss %xmm6, %xmm6
+  divss %xmm6, %xmm6
+  divss %xmm6, %xmm6
+  divss %xmm6, %xmm6
+  divss %xmm6, %xmm6
+  divss %xmm6, %xmm6
+  divss %xmm6, %xmm6
+  divss %xmm6, %xmm6
+  divss %xmm6, %xmm6
+  divss %xmm6, %xmm6
+  divss %xmm6, %xmm6
+  divss %xmm6, %xmm6
+  sub %r9, %rdi
+  jnz fdivtest_loop
   movq %xmm1, %rax
   vzeroupper
   pop %r8

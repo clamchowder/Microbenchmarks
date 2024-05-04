@@ -119,6 +119,8 @@ extern uint64_t mix256faddintadd(uint64_t iterations) __attribute((sysv_abi));
 
 extern uint64_t fma4_256(uint64_t iterations) __attribute((sysv_abi));
 extern uint64_t fma4_128(uint64_t iterations) __attribute((sysv_abi));
+extern uint64_t fdivtest(uint64_t iterations) __attribute((sysv_abi));
+extern uint64_t fdivlattest(uint64_t iterations) __attribute((sysv_abi));
 
 float fpTestArr[8] __attribute__ ((aligned (64))) = { 0.2, 1.5, 2.7, 3.14, 5.16, 6.3, 7.7, 9.45 };
 float fpSinkArr[8] __attribute__ ((aligned (64))) = { 2.1, 3.2, 4.3, 5.4, 6.2, 7.8, 8.3, 9.4 };
@@ -333,6 +335,10 @@ int main(int argc, char *argv[]) {
     printf("1:1 lea r+r*8/mul per clk: %.4f\n", measureFunction(iterationsHigh, clockSpeedGhz, leamultest));
 
   // vector and FP
+  if (argc == 1 || argc > 1 && strncmp(argv[1], "fdiv", 4) == 0) 
+    printf("divss per clk: %.2f\n", measureFunction(iterationsHigh, clockSpeedGhz, fdivtest));
+  if (argc == 1 || argc > 1 && strncmp(argv[1], "latfdiv", 7) == 0)
+    printf("divss latency: %.2f\n", 1 / measureFunction(iterationsHigh, clockSpeedGhz, fdivlattest));
   if (avx2Supported && (argc == 1 || argc > 1 && strncmp(argv[1], "avx256int", 9) == 0))
     printf("256-bit avx integer add per clk: %.2f\n", measureFunction(iterationsHigh, clockSpeedGhz, add256int));
   if (avx2Supported && (argc == 1 || argc > 1 && strncmp(argv[1], "mixavx256int", 12) == 0))
