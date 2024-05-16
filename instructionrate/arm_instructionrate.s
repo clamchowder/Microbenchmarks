@@ -38,6 +38,8 @@
 .global mixjmpvecmultest 
 .global vecfma128test
 .global latvecfma128test
+.global svefmlatest
+.global latsvefmlatest
 .global scalarfmatest
 .global latscalarfmatest
 
@@ -968,6 +970,79 @@ latvecfmul128test_loop:
   ldp x14, x15, [sp, #0x10]
   add sp, sp, #0x20
   ret 
+
+svefmlafp32test:
+  sub     sp, sp, #0x20
+  stp     x14, x15, [sp, #0x10]
+  mov     x14, 20
+  ptrue   p0.s
+  mov     z16.s, s0
+  mov     z17.s, s0
+  mov     z18.s, s0
+  mov     z19.s, s0
+  mov     z20.s, s0
+  mov     z21.s, s0
+  mov     z22.s, s0
+  mov     z23.s, s0
+  mov     z24.s, s0
+  mov     z25.s, s0
+  mov     z26.s, s0
+  mov     z27.s, s0
+  mov     z28.s, s0
+  mov     z29.s, s0
+  mov     z30.s, s0
+  mov     z31.s, s0
+svefmlafp32test_loop:
+  fmla    z16.s, p0/m, z16.s, z16.s
+  fmla    z17.s, p0/m, z17.s, z17.s
+  fmla    z18.s, p0/m, z18.s, z18.s
+  fmla    z19.s, p0/m, z19.s, z19.s
+  fmla    z20.s, p0/m, z20.s, z20.s
+  fmla    z21.s, p0/m, z21.s, z21.s
+  fmla    z22.s, p0/m, z22.s, z22.s
+  fmla    z23.s, p0/m, z23.s, z23.s
+  fmla    z24.s, p0/m, z24.s, z24.s
+  fmla    z25.s, p0/m, z25.s, z25.s
+  fmla    z26.s, p0/m, z26.s, z26.s
+  fmla    z27.s, p0/m, z27.s, z27.s
+  fmla    z28.s, p0/m, z28.s, z28.s
+  fmla    z29.s, p0/m, z29.s, z29.s
+  fmla    z30.s, p0/m, z30.s, z30.s
+  fmla    z31.s, p0/m, z31.s, z31.s
+  sub     x0, x0, x14
+  cbnz    x0, svefmlafp32test_loop
+  ldp     x14, x15, [sp, #0x10]
+  add     sp, sp, #0x20
+  ret
+
+latsvefmlafp32test:
+  sub     sp, sp, #0x20
+  stp     x14, x15, [sp, #0x10]
+  mov     x14, 20
+  ptrue   p0.s
+  mov     z16.s, s0
+latsvefmlafp32test_loop:
+  fmla    z16.s, p0/m, z16.s, z16.s
+  fmla    z16.s, p0/m, z16.s, z16.s
+  fmla    z16.s, p0/m, z16.s, z16.s
+  fmla    z16.s, p0/m, z16.s, z16.s
+  fmla    z16.s, p0/m, z16.s, z16.s
+  fmla    z16.s, p0/m, z16.s, z16.s
+  fmla    z16.s, p0/m, z16.s, z16.s
+  fmla    z16.s, p0/m, z16.s, z16.s
+  fmla    z16.s, p0/m, z16.s, z16.s
+  fmla    z16.s, p0/m, z16.s, z16.s
+  fmla    z16.s, p0/m, z16.s, z16.s
+  fmla    z16.s, p0/m, z16.s, z16.s
+  fmla    z16.s, p0/m, z16.s, z16.s
+  fmla    z16.s, p0/m, z16.s, z16.s
+  fmla    z16.s, p0/m, z16.s, z16.s
+  fmla    z16.s, p0/m, z16.s, z16.s
+  sub     x0, x0, x14
+  cbnz    x0, latsvefmlafp32test_loop
+  ldp     x14, x15, [sp, #0x10]
+  add     sp, sp, #0x20
+  ret
 
 mixvecfaddfmul128test:
   sub sp, sp, #0x20
