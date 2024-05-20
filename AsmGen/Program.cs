@@ -17,16 +17,16 @@ namespace AsmGen
         static void Main(string[] args)
         {
             List<IUarchTest> tests = new List<IUarchTest>();
-            tests.Add(new RobTest(128, 512, 1));
+            tests.Add(new RobTest(64, 400, 1));
             tests.Add(new ZeroRobTest(128, 512, 1));
-            tests.Add(new IntRfTest(96, 256, 1));
-            tests.Add(new FpRfTest(96, 256, 1));
+            tests.Add(new IntRfTest(32, 256, 1));
+            tests.Add(new FpRfTest(32, 256, 1));
             tests.Add(new MixIntVec128RfTest(96, 300, 1));
-            tests.Add(new Fadd256RfTest(64, 256, 1));
+            tests.Add(new Fadd256RfTest(32, 256, 1));
             tests.Add(new MixFAdd256and32RfTest(64, 256, 1));
-            tests.Add(new FlagRfTest(64, 256, 1));
-            tests.Add(new LdqTest(32, 160, 1));
-            tests.Add(new StqTest(32, 100, 1));
+            tests.Add(new FlagRfTest(32, 256, 1));
+            tests.Add(new LdqTest(16, 160, 1));
+            tests.Add(new StqTest(16, 100, 1));
             tests.Add(new AddSchedTest(16, 100, 1));
             tests.Add(new MulSchedTest(4, 64, 1));
             tests.Add(new LeaSchedTest(4, 64, 1));
@@ -36,9 +36,10 @@ namespace AsmGen
             tests.Add(new LoadSchedTest(4, 72, 1));
             tests.Add(new StoreSchedTest(4, 72, 1));
             tests.Add(new StoreDataSchedTest(4, 80, 1));
-            tests.Add(new MixAddJumpSchedTest(64, 180, 1));
-            tests.Add(new FaddSchedTest(32, 180, 1));
-            tests.Add(new FcmpSchedTest(32, 120, 1));
+            tests.Add(new MixAddJumpSchedTest(64, 100, 1));
+            tests.Add(new FaddSchedTest(10, 80, 1));
+            tests.Add(new FmulSchedTest(10, 80, 1));
+            tests.Add(new FcmpSchedTest(10, 60, 1));
             tests.Add(new JsCvtSched(8, 120, 1));
             tests.Add(new MixAddvJsCvtSched(8, 120, 1));
             tests.Add(new AddvSched(8, 120, 1));
@@ -47,7 +48,7 @@ namespace AsmGen
             tests.Add(new Fadd256SchedTest(4, 200, 1));
             tests.Add(new Fma256SchedTest(4, 200, 1));
             tests.Add(new CvtSchedTest(64, 180, 1));
-            tests.Add(new Fadd128RfTest(200, 400, 1));
+            tests.Add(new Fadd128RfTest(64, 200, 1));
             tests.Add(new BtbTest(4, BtbTest.BranchType.Unconditional));
             tests.Add(new BtbTest(8, BtbTest.BranchType.Unconditional));
             tests.Add(new BtbTest(16, BtbTest.BranchType.Unconditional));
@@ -58,7 +59,7 @@ namespace AsmGen
             tests.Add(new BtbTest(16, BtbTest.BranchType.Conditional));
             tests.Add(new BtbTest(32, BtbTest.BranchType.Conditional));
             tests.Add(new ReturnStackTest(1, 128, 1));
-            tests.Add(new BranchBufferTest(100, 160, 1));
+            tests.Add(new BranchBufferTest(16, 100, 1));
             tests.Add(new IndirectBranchTest(false));
             tests.Add(new BranchHistoryTest());
             tests.Add(new NopLoopTest(512, 1));
@@ -78,6 +79,9 @@ namespace AsmGen
             tests.Add(new LoadNsq(8, 70, 1)); // x2
             tests.Add(new JumpNsqTest(8, 100, 1));
             tests.Add(new StoreDataDivNsqTest(4, 48, 1));
+            tests.Add(new StoreDivSchedTest(4, 50, 1));
+            tests.Add(new StoreDivNsqTest(4, 60, 1));
+            tests.Add(new MixStoreDivSchedTest(4, 50, 1));
 
             // avx-512
             tests.Add(new Vec512RfTest(128, 600, 1));
@@ -168,7 +172,7 @@ namespace AsmGen
                 sb.AppendLine(isa.ToString() + ":");
                 if (isa == IUarchTest.ISA.aarch64)
                 {
-                    sb.AppendLine($"\tgcc -march=armv8.5-a+aes clammicrobench_{isa.ToString()}.c clammicrobench_{isa.ToString()}.s -o cb");
+                    sb.AppendLine($"\tgcc -march=armv8.5-a+aes clammicrobench_{isa.ToString()}.c clammicrobench_{isa.ToString()}.s -o cb -static");
                     // hack for stupid compilers that need a ton of flags to do basic things
                     sb.AppendLine("android:");
                     sb.AppendLine("\tclang -march=armv8.3-a -mfpu=neon-fp-armv8 clammicrobench_aarch64.c clammicrobench_aarch64.s -o cb");

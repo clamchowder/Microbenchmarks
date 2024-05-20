@@ -2,13 +2,13 @@
 
 namespace AsmGen
 {
-    public class StoreDataDivNsqTest : UarchTest
+    public class StoreDivNsqTest : UarchTest
     {
-        public StoreDataDivNsqTest(int low, int high, int step)
+        public StoreDivNsqTest(int low, int high, int step)
         {
             this.Counts = UarchTestHelpers.GenerateCountArray(low, high, step);
-            this.Prefix = "storedatadivnsq";
-            this.Description = "Store Data Scheduler, using DIVs to block retirement";
+            this.Prefix = "storedivnsq";
+            this.Description = "Store Scheduler, using DIVs to block retirement, excluding NSQ";
             this.FunctionDefinitionParameters = "uint64_t iterations, int *arr, float *floatArr";
             this.GetFunctionCallParameters = "structIterations, A, fpArr";
             this.DivideTimeByCount = false;
@@ -26,23 +26,17 @@ namespace AsmGen
             if (isa == IUarchTest.ISA.amd64)
             {
                 // idiv puts remainder in RDX
-                string[] dependentStores = new string[4];
-                dependentStores[0] = "  mov %rdx, (%r8, %r15, 4)";
-                dependentStores[1] = "  mov %rdx, (%r8, %r15, 4)";
-                dependentStores[2] = "  mov %rdx, (%r8, %r15, 4)";
-                dependentStores[3] = "  mov %rdx, (%r8, %r15, 4)";
+                string[] dependentStores = new string[1];
+                dependentStores[0] = "  mov %r15, (%r8, %rdx, 4)";
 
-                string[] independentStores = new string[4];
+                string[] independentStores = new string[1];
                 independentStores[0] = "  mov %r14, (%r8, %r11, 4)";
-                independentStores[1] = "  mov %r14, (%r8, %r11, 4)";
-                independentStores[2] = "  mov %r14, (%r8, %r11, 4)";
-                independentStores[3] = "  mov %r14, (%r8, %r11, 4)";
                 UarchTestHelpers.GenerateX86AsmDivNsqTestFuncs(sb, this.Counts[this.Counts.Length - 1], this.Counts, this.Prefix, dependentStores, independentStores);
             }
             else if (isa == IUarchTest.ISA.aarch64)
             {
                 string[] dependentStores = new string[1];
-                dependentStores[0] = "  str w25, [x2, w15, uxtw #2]";
+                dependentStores[0] = "  str w15, [x2, w25, uxtw #2]";
 
                 string[] independentStores = new string[1];
                 independentStores[0] = "  str w15, [x2, w15, uxtw #2]";
