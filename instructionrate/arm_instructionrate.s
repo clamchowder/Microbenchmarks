@@ -38,10 +38,12 @@
 .global mixjmpvecmultest 
 .global vecfma128test
 .global latvecfma128test
-.global svefmlatest
-.global latsvefmlatest
 .global scalarfmatest
 .global latscalarfmatest
+#ifdef __ARM_FEATURE_SVE
+.global svefmatest
+.global latsvefmatest
+#endif
 
 .global mixvecfaddfma128test
 .global mixvecfmulfma128test
@@ -971,7 +973,8 @@ latvecfmul128test_loop:
   add sp, sp, #0x20
   ret 
 
-svefmlafp32test:
+#ifdef __ARM_FEATURE_SVE
+svefmatest:
   sub     sp, sp, #0x20
   stp     x14, x15, [sp, #0x10]
   mov     x14, 20
@@ -992,7 +995,7 @@ svefmlafp32test:
   mov     z29.s, s0
   mov     z30.s, s0
   mov     z31.s, s0
-svefmlafp32test_loop:
+svefmatest_loop:
   fmla    z16.s, p0/m, z16.s, z16.s
   fmla    z17.s, p0/m, z17.s, z17.s
   fmla    z18.s, p0/m, z18.s, z18.s
@@ -1009,19 +1012,27 @@ svefmlafp32test_loop:
   fmla    z29.s, p0/m, z29.s, z29.s
   fmla    z30.s, p0/m, z30.s, z30.s
   fmla    z31.s, p0/m, z31.s, z31.s
+  fmla    z16.s, p0/m, z16.s, z16.s
+  fmla    z17.s, p0/m, z17.s, z17.s
+  fmla    z18.s, p0/m, z18.s, z18.s
+  fmla    z19.s, p0/m, z19.s, z19.s
   sub     x0, x0, x14
-  cbnz    x0, svefmlafp32test_loop
+  cbnz    x0, svefmatest_loop
   ldp     x14, x15, [sp, #0x10]
   add     sp, sp, #0x20
   ret
 
-latsvefmlafp32test:
+latsvefmatest:
   sub     sp, sp, #0x20
   stp     x14, x15, [sp, #0x10]
   mov     x14, 20
   ptrue   p0.s
   mov     z16.s, s0
-latsvefmlafp32test_loop:
+latsvefmatest_loop:
+  fmla    z16.s, p0/m, z16.s, z16.s
+  fmla    z16.s, p0/m, z16.s, z16.s
+  fmla    z16.s, p0/m, z16.s, z16.s
+  fmla    z16.s, p0/m, z16.s, z16.s
   fmla    z16.s, p0/m, z16.s, z16.s
   fmla    z16.s, p0/m, z16.s, z16.s
   fmla    z16.s, p0/m, z16.s, z16.s
@@ -1039,10 +1050,11 @@ latsvefmlafp32test_loop:
   fmla    z16.s, p0/m, z16.s, z16.s
   fmla    z16.s, p0/m, z16.s, z16.s
   sub     x0, x0, x14
-  cbnz    x0, latsvefmlafp32test_loop
+  cbnz    x0, latsvefmatest_loop
   ldp     x14, x15, [sp, #0x10]
   add     sp, sp, #0x20
   ret
+#endif
 
 mixvecfaddfmul128test:
   sub sp, sp, #0x20

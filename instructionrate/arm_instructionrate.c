@@ -31,13 +31,17 @@ extern uint64_t latvecfadd128test(uint64_t iterations, float arr[4]);
 extern uint64_t latvecfmul128test(uint64_t iterations, float arr[4]); 
 extern uint64_t mixvecfaddfmul128test(uint64_t iterations, float arr[4]);
 extern uint64_t vecfma128test(uint64_t iterations, float arr[4]);
-extern uint64_t svefmlatest(uint64_t iterations, float arr[4]);
 extern uint64_t scalarfmatest(uint64_t iterations, float arr[4]);
 extern uint64_t latvecfma128test(uint64_t iterations, float arr[4]);
-extern uint64_t latsvefmlatest(uint64_t iterations, float arr[4]);
 extern uint64_t latscalarfmatest(uint64_t iterations, float arr[4]);
 extern uint64_t mixvecfaddfma128test(uint64_t iterations, float arr[4]);
 extern uint64_t mixvecfmulfma128test(uint64_t iterations, float arr[4]);
+
+#ifdef __ARM_FEATURE_SVE
+// Arrays of 64 floats because SVE supports up to 2048-bit wide registers
+extern uint64_t svefmatest(uint64_t iterations, float arr[64]);
+extern uint64_t latsvefmatest(uint64_t iterations, float arr[64]);
+#endif
 
 // see if SIMD pipeline shares ports with scalar ALU ones
 extern uint64_t mixaddvecadd128test(uint64_t iterations, int arr[4]);
@@ -68,6 +72,7 @@ extern uint64_t movzerotest(uint64_t iterations);
 extern uint64_t subzerotest(uint64_t iterations);
 
 float fpTestArr[4] __attribute__ ((aligned (64))) = { 0.2, 1.5, 2.7, 3.14 };
+float sveTestArr[64] __attribute__ ((aligned (64))) = { 0.2f, 1.5f, 2.7f, 3.14f, 0.2f, 1.5f, 2.7f, 3.14f, 0.2f, 1.5f, 2.7f, 3.14f, 0.2f, 1.5f, 2.7f, 3.14f, 0.2f, 1.5f, 2.7f, 3.14f, 0.2f, 1.5f, 2.7f, 3.14f, 0.2f, 1.5f, 2.7f, 3.14f, 0.2f, 1.5f, 2.7f, 3.14f, 0.2f, 1.5f, 2.7f, 3.14f, 0.2f, 1.5f, 2.7f, 3.14f, 0.2f, 1.5f, 2.7f, 3.14f, 0.2f, 1.5f, 2.7f, 3.14f, 0.2f, 1.5f, 2.7f, 3.14f, 0.2f, 1.5f, 2.7f, 3.14f, 0.2f, 1.5f, 2.7f, 3.14f, 0.2f, 1.5f, 2.7f, 3.14f };
 int intTestArr[4] __attribute__ ((aligned (64))) = { 1, 2, 3, 4 };
 int sinkArr[4] __attribute__ ((aligned (64))) = { 2, 3, 4, 5 };
 
@@ -98,13 +103,16 @@ uint64_t vecstorewrapper(uint64_t iterations);
 uint64_t mixloadstorewrapper(uint64_t iterations);
 uint64_t mix21loadstorewrapper(uint64_t iterations);
 uint64_t vecfma128wrapper(uint64_t iterations);
-uint64_t svefmlawrapper(uint64_t iteration);
 uint64_t scalarfmawrapper(uint64_t iterations);
 uint64_t latscalarfmawrapper(uint64_t iterations);
 uint64_t mixvecfaddfma128wrapper(uint64_t iterations);
 uint64_t mixvecfmulfma128wrapper(uint64_t iterations);
 uint64_t latvecfma128wrapper(uint64_t iteration);
-uint64_t latsvefmlawrapper(uint64_t iteration);
+
+#ifdef __ARM_FEATURE_SVE
+uint64_t svefmawrapper(uint64_t iterations);
+uint64_t latsvefmawrapper(uint64_t iterations);
+#endif
 
 int main(int argc, char *argv[]) {
   struct timeval startTv, endTv; 
@@ -172,8 +180,10 @@ int main(int argc, char *argv[]) {
 
   printf("128-bit vector FMA per clk: %.2f\n", measureFunction(iterationsHigh, clockSpeedGhz, vecfma128wrapper));
   printf("128-bit vector FMA latency: %.2f clocks\n", 1 / measureFunction(iterations, clockSpeedGhz, latvecfma128wrapper));
-  printf("SVE vector FMA per clk: %.2f\n", measureFunction(iterationsHigh, clockSpeedGhz, svefmlawrapper));
-  printf("SVE vector FMA latency: %.2f clocks\n", 1 / measureFunction(iterations, clockSpeedGhz, latsvefmlawrapper));
+#ifdef __ARM_FEATURE_SVE
+  printf("SVE vector FMA per clk: %.2f\n", measureFunction(iterationsHigh, clockSpeedGhz, svefmawrapper));
+  printf("SVE vector FMA latency: %.2f clocks\n", 1 / measureFunction(iterations, clockSpeedGhz, latsvefmawrapper));
+#endif
   printf("Scalar FMA per clk: %.2f\n", measureFunction(iterationsHigh, clockSpeedGhz, scalarfmawrapper));
   printf("Scalar FMA latency: %.2f clocks\n", 1 / measureFunction(iterationsHigh, clockSpeedGhz, latscalarfmawrapper));
   printf("1:1 mixed 128-bit vector FMA/FADD per clk: %.2f\n", measureFunction(iterationsHigh, clockSpeedGhz, mixvecfaddfma128wrapper));
@@ -304,10 +314,6 @@ uint64_t vecfma128wrapper(uint64_t iterations) {
   return vecfma128test(iterations, fpTestArr);
 }
 
-uint64_t svefmlawrapper(uint64_t iterations) {
-  return vecfma128test(iterations, fpTestArr);
-}
-
 uint64_t scalarfmawrapper(uint64_t iterations) {
   return scalarfmatest(iterations, fpTestArr);
 }
@@ -320,9 +326,15 @@ uint64_t latvecfma128wrapper(uint64_t iterations) {
   return latvecfma128test(iterations, fpTestArr);
 }
 
-uint64_t latsvefmlawrapper(uint64_t iterations) {
-  return latvecfma128test(iterations, fpTestArr);
+#ifdef __ARM_FEATURE_SVE
+uint64_t svefmawrapper(uint64_t iterations) {
+  return svefmatest(iterations, sveTestArr);
 }
+
+uint64_t latsvefmawrapper(uint64_t iterations) {
+  return latsvefmatest(iterations, sveTestArr);
+}
+#endif
 
 uint64_t mixvecfmulfma128wrapper(uint64_t iterations) {
   return mixvecfmulfma128test(iterations, fpTestArr);
