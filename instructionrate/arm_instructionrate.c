@@ -3,6 +3,10 @@
 #include <time.h>
 #include <stdint.h>
 
+#ifdef __ARM_FEATURE_SVE
+#include <arm_sve.h>
+#endif
+
 extern uint64_t noptest(uint64_t iterations);
 extern uint64_t clktest(uint64_t iterations); 
 
@@ -181,8 +185,8 @@ int main(int argc, char *argv[]) {
   printf("128-bit vector FMA per clk: %.2f\n", measureFunction(iterationsHigh, clockSpeedGhz, vecfma128wrapper));
   printf("128-bit vector FMA latency: %.2f clocks\n", 1 / measureFunction(iterations, clockSpeedGhz, latvecfma128wrapper));
 #ifdef __ARM_FEATURE_SVE
-  printf("SVE vector FMA per clk: %.2f\n", measureFunction(iterationsHigh, clockSpeedGhz, svefmawrapper));
-  printf("SVE vector FMA latency: %.2f clocks\n", 1 / measureFunction(iterations, clockSpeedGhz, latsvefmawrapper));
+  printf("%lu-bit SVE vector FMA per clk: %.2f\n", svcntw() * 32, measureFunction(iterationsHigh, clockSpeedGhz, svefmawrapper));
+  printf("%lu-bit SVE vector FMA latency: %.2f clocks\n", svcntw() * 32, 1 / measureFunction(iterations, clockSpeedGhz, latsvefmawrapper));
 #endif
   printf("Scalar FMA per clk: %.2f\n", measureFunction(iterationsHigh, clockSpeedGhz, scalarfmawrapper));
   printf("Scalar FMA latency: %.2f clocks\n", 1 / measureFunction(iterationsHigh, clockSpeedGhz, latscalarfmawrapper));
