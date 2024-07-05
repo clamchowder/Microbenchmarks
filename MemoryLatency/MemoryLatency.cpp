@@ -13,17 +13,19 @@
 
 #define ITERATIONS 400000000
 
-int default_test_sizes[36] = { 2, 4, 8, 12, 16, 24, 32, 48, 64, 96, 128, 192, 256, 512, 600, 768, 1024, 1536, 2048,
-                               3072, 4096, 5120, 6144, 8192, 10240, 12288, 16384, 24567, 32768, 65536, 98304,
+int default_test_sizes[] = { 2, 4, 8, 12, 16, 24, 32, 48, 64, 96, 128, 192, 256, 512, 600, 768, 1024, 1536, 2048,
+                               3072, 4096, 5120, 6144, 8192, 10240, 12288, 13312, 14336, 15360, 16384, 17408, 18432, 20480, 24567, 32768, 65536, 98304,
                                131072, 262144, 393216, 524288, 1048576 };
 
 float RunComplexTest(uint32_t size_kb, uint64_t iterations, void *mem);
-float RunSimpleAddressingTest(uint32_t size_kb, uint64_t iterations, void* mem);
+float RunSimpleAddressingTest(uint32_t size_kb, uint64_t iterations, void* mem, int stride);
 bool GetPrivilege();
+
+int longpattern = 0;
 
 int main(int argc, char* argv[]) {
     void* arr = NULL;
-    int numa = 0, coreNode = 0, memNode = 0, largepages = 0;
+    int numa = 0, coreNode = 0, memNode = 0, largepages = 0, stride = 64;
     for (int argIdx = 1; argIdx < argc; argIdx++) {
         if (*(argv[argIdx]) == '-') {
             char* arg = argv[argIdx] + 1;
@@ -31,7 +33,12 @@ int main(int argc, char* argv[]) {
                 fprintf(stderr, "Will attempt to use large pages\n");
                 largepages = 1;
                 GetPrivilege();
-            } else if (_strnicmp(arg, "autonuma", 8) == 0) {
+            } else if (_strnicmp(arg, "stride", 6) == 0) {
+                argIdx++;
+                stride = atoi(argv[argIdx]);
+                fprintf(stderr, "Pointer chasing stride: %d bytes\n", stride);
+            }
+            else if (_strnicmp(arg, "autonuma", 8) == 0) {
                 fprintf(stderr, "Testing NUMA, 1 GB test size\n");
                 numa = 1;
             }
@@ -80,7 +87,7 @@ int main(int argc, char* argv[]) {
                 mask = 0;
                 mask |= 1ULL << (ULONGLONG)index;
                 SetProcessAffinityMask(GetCurrentProcess(), mask);
-                float latency = RunSimpleAddressingTest(1048576, ITERATIONS, arr);
+                float latency = RunSimpleAddressingTest(1048576, ITERATIONS, arr, stride);
                 printf(",%f", latency);
                 VirtualFree(arr, 0, MEM_RELEASE);
             }
@@ -122,7 +129,7 @@ int main(int argc, char* argv[]) {
         printf("Region,Latency (ns)\n");
         for (int i = 0; i < sizeof(default_test_sizes) / sizeof(int); i++)
         {
-            printf("%d,%f\n", default_test_sizes[i], RunSimpleAddressingTest(default_test_sizes[i], ITERATIONS, arr));
+            printf("%d,%f\n", default_test_sizes[i], RunSimpleAddressingTest(default_test_sizes[i], ITERATIONS, arr, stride));
         }
     }
 
@@ -175,7 +182,7 @@ void FillPatternArr64(uint64_t* pattern_arr, uint64_t list_size, uint64_t byte_i
     }
 }
 
-float RunSimpleAddressingTest(uint32_t size_kb, uint64_t iterations, void* mem) {
+float RunSimpleAddressingTest(uint32_t size_kb, uint64_t iterations, void* mem, int stride) {
     struct timeb start, end;
     uint32_t list_size = size_kb * 1024 / sizeof(void *);
 
@@ -188,7 +195,7 @@ float RunSimpleAddressingTest(uint32_t size_kb, uint64_t iterations, void* mem) 
     }
 
     memset(A, 0, 1024 * size_kb);
-    FillPatternArr64(A, size_kb * 1024 / sizeof(uint64_t), 64);
+    FillPatternArr64(A, size_kb * 1024 / sizeof(uint64_t), stride);
 
     // translate each array element from an index to an address
     uint64_t** chaseArr = (uint64_t**)A;
