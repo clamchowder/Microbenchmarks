@@ -17,12 +17,9 @@ int default_test_sizes[36] = { 2, 4, 8, 12, 16, 24, 32, 48, 64, 96, 128, 192, 25
                                3072, 4096, 5120, 6144, 8192, 10240, 12288, 16384, 24567, 32768, 65536, 98304,
                                131072, 262144, 393216, 524288, 1048576 };
 
-float RunTest(uint32_t size_kb, uint64_t iterations, void *mem);
-float RunAsmTest(uint32_t size_kb, uint64_t iterations, void* mem);
+float RunComplexTest(uint32_t size_kb, uint64_t iterations, void *mem);
+float RunSimpleAddressingTest(uint32_t size_kb, uint64_t iterations, void* mem);
 bool GetPrivilege();
-
-extern "C" void preplatencyarr(uint64_t * mem, uint64_t element_count);
-extern "C" uint64_t latencytest(uint64_t iterations, uint64_t *mem);
 
 int main(int argc, char* argv[]) {
     void* arr = NULL;
@@ -83,7 +80,7 @@ int main(int argc, char* argv[]) {
                 mask = 0;
                 mask |= 1ULL << (ULONGLONG)index;
                 SetProcessAffinityMask(GetCurrentProcess(), mask);
-                float latency = RunAsmTest(1048576, ITERATIONS, arr);
+                float latency = RunSimpleAddressingTest(1048576, ITERATIONS, arr);
                 printf(",%f", latency);
                 VirtualFree(arr, 0, MEM_RELEASE);
             }
@@ -125,7 +122,7 @@ int main(int argc, char* argv[]) {
         printf("Region,Latency (ns)\n");
         for (int i = 0; i < sizeof(default_test_sizes) / sizeof(int); i++)
         {
-            printf("%d,%f\n", default_test_sizes[i], RunAsmTest(default_test_sizes[i], ITERATIONS, arr));
+            printf("%d,%f\n", default_test_sizes[i], RunSimpleAddressingTest(default_test_sizes[i], ITERATIONS, arr));
         }
     }
 
@@ -178,7 +175,7 @@ void FillPatternArr64(uint64_t* pattern_arr, uint64_t list_size, uint64_t byte_i
     }
 }
 
-float RunAsmTest(uint32_t size_kb, uint64_t iterations, void* mem) {
+float RunSimpleAddressingTest(uint32_t size_kb, uint64_t iterations, void* mem) {
     struct timeb start, end;
     uint32_t list_size = size_kb * 1024 / sizeof(void *);
 
@@ -192,11 +189,23 @@ float RunAsmTest(uint32_t size_kb, uint64_t iterations, void* mem) {
 
     memset(A, 0, 1024 * size_kb);
     FillPatternArr64(A, size_kb * 1024 / sizeof(uint64_t), 64);
-    preplatencyarr(A, size_kb * 1024 / sizeof(uint64_t));
+
+    // translate each array element from an index to an address
+    uint64_t** chaseArr = (uint64_t**)A;
+    for (int i = 0; i < list_size; i++)
+    {
+        chaseArr[i] = (A + A[i]);
+    }
+
     uint64_t scaled_iterations = scale_iterations(size_kb, iterations);
+    uint64_t sum = 0;
+    uint64_t* current = chaseArr[0];
 
     ftime(&start);
-    uint64_t sum = latencytest(scaled_iterations, A);
+    for (int i = 0; i < scaled_iterations; i++) {
+        current = *((uint64_t**)current);
+        sum += (uint64_t)current;
+    }
     ftime(&end);
     int64_t time_diff_ms = 1000 * (end.time - start.time) + (end.millitm - start.millitm);
     float latency = 1e6 * (float)time_diff_ms / (float)scaled_iterations;
@@ -206,7 +215,7 @@ float RunAsmTest(uint32_t size_kb, uint64_t iterations, void* mem) {
     return latency;
 }
 
-float RunTest(uint32_t size_kb, uint64_t iterations, void *mem) {
+float RunComplexTest(uint32_t size_kb, uint64_t iterations, void *mem) {
     struct timeb start, end;
     uint32_t list_size = size_kb * 1024 / 4;
     uint32_t sum = 0, current;
