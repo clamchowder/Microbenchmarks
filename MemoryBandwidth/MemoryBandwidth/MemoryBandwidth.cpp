@@ -490,7 +490,7 @@ float MeasureBw(uint32_t sizeKb, uint32_t iterations, uint32_t threads, int shar
     }
     
     int64_t time_diff_ms = 0, target_time_ms = 3000, max_target_time_ms = 7000;
-    int tolerance_met = 0;
+    int tolerance_met = 0, n_scale_attempts = 0;
 
     while ((time_diff_ms < target_time_ms / 2) || !tolerance_met) {
         // Create threads
@@ -571,20 +571,26 @@ float MeasureBw(uint32_t sizeKb, uint32_t iterations, uint32_t threads, int shar
                 if (diff > max_diff) max_diff = diff;
             }
 
-            fprintf(stderr, "Variation: %f\n", max_diff);
+            fprintf(stderr, "%d KB: Variation: %f\n", sizeKb, max_diff);
 
-            if (max_diff > 0.1f)
+            if (max_diff > 0.15f)
             {
                 for (int i = 0; i < threads; i++)
                 {
                     threadData[i].iterations = scale_iterations_to_target(threadData[i].iterations, threadData[i].elapsed_time, max_time);
                 }
+
+                // give it some time to cool
+                Sleep(6000);
             }
             else
             {
                 tolerance_met = 1;
             }
         }
+
+        n_scale_attempts++;
+        if (n_scale_attempts > 8) break;
     }
 
     free(testThreads);
