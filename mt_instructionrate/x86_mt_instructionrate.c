@@ -36,14 +36,14 @@ extern uint64_t avx512_fp64_fma_test(uint64_t iterations, void *data) SMALLKITTE
 
 #ifndef _MSC_VER
 #include <cpuid.h>
-void __cpuidex(int *data, int function, int subfunction) {
-  int eax, ebx, ecx, edx;
-  __cpuid_count(function, subfunction, eax, ebx, ecx, edx);
-  data[0] = eax;
-  data[1] = ebx;
-  data[2] = ecx;
-  data[3] = edx;
-}
+//void __cpuidex(int *data, int function, int subfunction) {
+//  int eax, ebx, ecx, edx;
+//  __cpuid_count(function, subfunction, eax, ebx, ecx, edx);
+//  data[0] = eax;
+//  data[1] = ebx;
+//  data[2] = ecx;
+//  data[3] = edx;
+//}
 #endif
 
 

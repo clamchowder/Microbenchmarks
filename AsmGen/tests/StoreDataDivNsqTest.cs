@@ -17,6 +17,7 @@ namespace AsmGen
         public override bool SupportsIsa(IUarchTest.ISA isa)
         {
             if (isa == IUarchTest.ISA.amd64) return true;
+            if (isa == IUarchTest.ISA.aarch64) return true;
             return false;
         }
 
@@ -37,6 +38,16 @@ namespace AsmGen
                 independentStores[2] = "  mov %r14, (%r8, %r11, 4)";
                 independentStores[3] = "  mov %r14, (%r8, %r11, 4)";
                 UarchTestHelpers.GenerateX86AsmDivNsqTestFuncs(sb, this.Counts[this.Counts.Length - 1], this.Counts, this.Prefix, dependentStores, independentStores);
+            }
+            else if (isa == IUarchTest.ISA.aarch64)
+            {
+                string[] dependentStores = new string[1];
+                dependentStores[0] = "  str w25, [x2, w15, uxtw #2]";
+
+                string[] independentStores = new string[1];
+                independentStores[0] = "  str w15, [x2, w15, uxtw #2]";
+
+                UarchTestHelpers.GenerateArmAsmDivNsqTestFuncs(sb, this.Counts[this.Counts.Length - 1], this.Counts, this.Prefix, dependentStores, independentStores);
             }
         }
     }

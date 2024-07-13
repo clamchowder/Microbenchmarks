@@ -69,6 +69,7 @@ float instruction_rate_test(cl_context context,
     cl_kernel int32_mul_rate_kernel = clCreateKernel(program, "int32_mul_rate_test", &ret);
     cl_kernel fp32_add_rate_kernel = clCreateKernel(program, "fp32_add_rate_test", &ret);
     cl_kernel fp32_fma_rate_kernel = clCreateKernel(program, "fp32_fma_rate_test", &ret);
+    cl_kernel fp32_builtin_fma_rate_kernel = clCreateKernel(program, "fp32_builtin_fma_rate_test", &ret);
     cl_kernel fp32_mad_rate_kernel = clCreateKernel(program, "fp32_mad_rate_test", &ret);
     cl_kernel fp32_rcp_rate_kernel = clCreateKernel(program, "fp32_rcp_rate_test", &ret);
     cl_kernel fp32_rsqrt_rate_kernel = clCreateKernel(program, "fp32_rsqrt_rate_test", &ret);
@@ -128,6 +129,7 @@ float instruction_rate_test(cl_context context,
     }
 
     opsPerIteration = 4.0f * 8.0f;
+
     float fp32_add_rate = run_rate_test(context, command_queue, fp32_add_rate_kernel, thread_count, local_size, chase_iterations,
         float4_element_count, a_mem_obj, result_obj, A, result, opsPerIteration);
     fprintf(stderr, "FP32 G Adds/sec: %f\n", fp32_add_rate);
@@ -137,7 +139,11 @@ float instruction_rate_test(cl_context context,
 
     float fp32_fma_rate = run_rate_test(context, command_queue, fp32_fma_rate_kernel, thread_count, local_size, chase_iterations,
         float4_element_count, a_mem_obj, result_obj, A, result, opsPerIteration);
-    fprintf(stderr, "FP32 G FMA/sec: %f : %f GFLOPs\n", fp32_fma_rate, fp32_fma_rate * 2);
+    fprintf(stderr, "FP32 G FMA/sec: %f : %f GFLOPs\n", fp32_fma_rate, fp32_fma_rate * 2); 
+
+    float builtin_fp32_fma_rate = run_rate_test(context, command_queue, fp32_builtin_fma_rate_kernel, thread_count, local_size, chase_iterations,
+        float4_element_count, a_mem_obj, result_obj, A, result, opsPerIteration);
+    fprintf(stderr, "FP32 G fma()/sec: %f : %f GFLOPs\n", builtin_fp32_fma_rate, builtin_fp32_fma_rate * 2);
 
     fp32_fma_rate = run_rate_test(context, command_queue, fp32_mad_rate_kernel, thread_count, local_size, chase_iterations,
         float4_element_count, a_mem_obj, result_obj, A, result, opsPerIteration);

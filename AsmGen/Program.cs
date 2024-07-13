@@ -22,7 +22,7 @@ namespace AsmGen
             tests.Add(new IntRfTest(96, 256, 1));
             tests.Add(new FpRfTest(256, 512, 1));
             tests.Add(new MixIntVec128RfTest(96, 300, 1));
-            tests.Add(new Fadd256RfTest(64, 256, 1));
+            tests.Add(new Fadd256RfTest(32, 256, 1));
             tests.Add(new MixFAdd256and32RfTest(64, 256, 1));
             tests.Add(new FlagRfTest(64, 256, 1));
             tests.Add(new LdqTest(150, 250, 1));
@@ -37,9 +37,10 @@ namespace AsmGen
             tests.Add(new LoadSchedTest(4, 72, 1));
             tests.Add(new StoreSchedTest(4, 72, 1));
             tests.Add(new StoreDataSchedTest(4, 80, 1));
-            tests.Add(new MixAddJumpSchedTest(64, 180, 1));
-            tests.Add(new FaddSchedTest(32, 180, 1));
-            tests.Add(new FcmpSchedTest(32, 120, 1));
+            tests.Add(new MixAddJumpSchedTest(64, 100, 1));
+            tests.Add(new FaddSchedTest(10, 80, 1));
+            tests.Add(new FmulSchedTest(10, 80, 1));
+            tests.Add(new FcmpSchedTest(10, 60, 1));
             tests.Add(new JsCvtSched(8, 120, 1));
             tests.Add(new MixAddvJsCvtSched(8, 120, 1));
             tests.Add(new AddvSched(8, 120, 1));
@@ -79,8 +80,9 @@ namespace AsmGen
             tests.Add(new LoadNsq(8, 70, 1)); // x2
             tests.Add(new JumpNsqTest(8, 100, 1));
             tests.Add(new StoreDataDivNsqTest(4, 48, 1));
-            tests.Add(new StoreDivNsqTest(4, 48, 1));
-            tests.Add(new FpStoreDataNsqTest(4, 80, 1));
+            tests.Add(new StoreDivSchedTest(4, 50, 1));
+            tests.Add(new StoreDivNsqTest(4, 60, 1));
+            tests.Add(new MixStoreDivSchedTest(4, 50, 1));
 
             // avx-512
             tests.Add(new Vec512RfTest(128, 600, 1));
@@ -171,7 +173,7 @@ namespace AsmGen
                 sb.AppendLine(isa.ToString() + ":");
                 if (isa == IUarchTest.ISA.aarch64)
                 {
-                    sb.AppendLine($"\tgcc -march=armv8.5-a+aes clammicrobench_{isa.ToString()}.c clammicrobench_{isa.ToString()}.s -o cb");
+                    sb.AppendLine($"\tgcc -march=armv8.5-a+aes clammicrobench_{isa.ToString()}.c clammicrobench_{isa.ToString()}.s -o cb -static");
                     // hack for stupid compilers that need a ton of flags to do basic things
                     sb.AppendLine("android:");
                     sb.AppendLine("\tclang -march=armv8.3-a -mfpu=neon-fp-armv8 clammicrobench_aarch64.c clammicrobench_aarch64.s -o cb");

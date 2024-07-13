@@ -318,6 +318,36 @@ __kernel void fp32_fma_rate_test(__global float4 *A, int count, __global float4 
     ret[get_global_id(0)] = v0 + v1 + v2 + v3 + v4 + v5 + v6 + v7;
 }
 
+__kernel void fp32_builtin_fma_rate_test(__global float4 *A, int count, __global float4 *ret) {
+    int tid = get_local_id(0);
+    int max_offset = get_local_size(0);
+    __global float4 *local_a = A;
+
+    int masked_tid = tid & (rate_local_mem_test_size - 1);
+    float4 v0 = local_a[masked_tid];
+    float4 v1 = local_a[masked_tid + 1];
+    float4 v2 = local_a[masked_tid + 2];
+    float4 v3 = local_a[masked_tid + 3];
+    float4 v4 = local_a[masked_tid + 4];
+    float4 v5 = local_a[masked_tid + 5];
+    float4 v6 = local_a[masked_tid + 6];
+    float4 v7 = local_a[masked_tid + 7];
+    float4 acc = local_a[0];
+
+    for (int i = 0; i < count; i++) {
+	v0 = fma(acc, v0, v0);
+	v1 = fma(acc, v1, v1);
+	v2 = fma(acc, v2, v2);
+	v3 = fma(acc, v3, v3);
+	v4 = fma(acc, v4, v4);
+	v5 = fma(acc, v5, v5);
+	v6 = fma(acc, v6, v6);
+	v7 = fma(acc, v7, v7);
+    }
+
+    ret[get_global_id(0)] = v0 + v1 + v2 + v3 + v4 + v5 + v6 + v7;
+}
+
 __kernel void fp32_mad_rate_test(__global float4 *A, int count, __global float4 *ret) {
     int tid = get_local_id(0);
     int max_offset = get_local_size(0);

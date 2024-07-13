@@ -8,7 +8,7 @@ namespace AsmGen
         {
             this.Counts = UarchTestHelpers.GenerateCountArray(low, high, step);
             this.Prefix = "mixaddjumpsched";
-            this.Description = "Scheduler, Mixed Adds and Not-Taken Jumps in 2:1 ratio";
+            this.Description = "Scheduler, Mixed Adds and Not-Taken Jumps in 3:1 ratio";
             this.FunctionDefinitionParameters = "uint64_t iterations, int *arr";
             this.GetFunctionCallParameters = "structIterations, A";
             this.DivideTimeByCount = false;
@@ -27,20 +27,22 @@ namespace AsmGen
         {
             if (isa == IUarchTest.ISA.amd64)
             {
-                string[] unrolledJumps = new string[3];
+                string[] unrolledJumps = new string[4];
                 unrolledJumps[0] = "  cmp %rdi, %rsi\n  je mixaddjumpsched_reallybadthing";
                 unrolledJumps[1] = "  add %rsi, %r15";
                 unrolledJumps[2] = "  add %rsi, %r14";
+                unrolledJumps[3] = "  add %rsi, %r14";
                 UarchTestHelpers.GenerateX86AsmStructureTestFuncs(sb, this.Counts, this.Prefix, unrolledJumps, unrolledJumps, includePtrChasingLoads: true);
 
                 sb.AppendLine("mixaddjumpsched_reallybadthing:\n  int3");
             }
             else if (isa == IUarchTest.ISA.aarch64)
             {
-                string[] unrolledJumps = new string[3];
+                string[] unrolledJumps = new string[4];
                 unrolledJumps[0] = "  cmp x25, x26\n  b.eq mixaddjumpsched_reallybadthing";
                 unrolledJumps[1] = "  add x15, x15, x25";
                 unrolledJumps[2] = "  add x14, x14, x25";
+                unrolledJumps[3] = "  add x14, x14, x25";
                 UarchTestHelpers.GenerateArmAsmStructureTestFuncs(sb, this.Counts, this.Prefix, unrolledJumps, unrolledJumps, includePtrChasingLoads: true);
                 sb.AppendLine("mixaddjumpsched_reallybadthing:\n  .word 0xf7f0a000");
             }
