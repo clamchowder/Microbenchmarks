@@ -16,8 +16,8 @@ namespace AsmGen
             Description = "Indirect branch prediction";
             FunctionDefinitionParameters = "uint64_t iterations, uint32_t **arr, uint32_t arrLen, uint64_t **scratch";
             DivideTimeByCount = true;
-            branchCounts = new int[] { 1, 2, 4, 8, 16, 32, 64, 128, 256, 512 };
-            targetCounts = new int[] { 2, 4, 8, 12, 16, 24, 32, 48, 64, 96, 128 };
+            branchCounts = new int[] { 1, 2, 4, 8, 16, 32, 64, 128, 256, 512, 640, 768, 896, 1024 };
+            targetCounts = new int[] { 2, 4, 8, 12, 16, 24, 32, 48, 64, 96, 128, 160, 192, 256, 384, 448, 512 };
             globalHistoryAssistBits = 4;
             this.assists = assist;
         }
