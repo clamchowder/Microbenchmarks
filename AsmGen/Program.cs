@@ -26,6 +26,7 @@ namespace AsmGen
             tests.Add(new FlagRfTest(8, 100, 1, initialDependentBranch: true));
             tests.Add(new LdqTest(4, 100, 1, initialDependentBranch: true));
             tests.Add(new LdqTest(4, 100, 1, initialDependentBranch: false));
+            tests.Add(new MixLdqVecLdqTest(4, 100, 1, initialDependentBranch: true));
             tests.Add(new StqTest(4, 100, 1, initialDependentBranch: true));
             tests.Add(new MixIntVec128RfTest(4, 100, 1, initialDependentBranch: true));
             tests.Add(new MixIntRfDepBranchTest(4, 100, 1, 2));
