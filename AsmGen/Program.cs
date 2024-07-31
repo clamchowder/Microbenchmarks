@@ -19,6 +19,13 @@ namespace AsmGen
             List<IUarchTest> tests = new List<IUarchTest>();
             tests.Add(new RobTest(12, 800, 1, initialDependentBranch: false));
             tests.Add(new A73RobTest(4, 160, 1));
+
+            // avx-512
+            tests.Add(new Vec512RfTest(128, 600, 1));
+            tests.Add(new Stq512Test(16, 128, 1, differentLines: true));
+            tests.Add(new Stq512Test(16, 128, 1, differentLines: false));
+            tests.Add(new MaskRfTest(32, 256, 1));
+
             tests.Add(new ZeroRobTest(12, 800, 1, initialDependentBranch: false));
             tests.Add(new IntRfTest(100, 400, 1, initialDependentBranch: false));
             tests.Add(new FpRfTest(100, 400, 1, initialDependentBranch: false));;
@@ -72,12 +79,6 @@ namespace AsmGen
             tests.Add(new NopLoopTest(512, 1));
             tests.Add(new AddLoopTest(4, 100, 1));
             tests.Add(new AeseSchedTest(4, 64, 1));
-
-            // avx-512
-            tests.Add(new Vec512RfTest(128, 600, 1));
-            tests.Add(new Stq512Test(16, 128, 1, differentLines: true));
-            tests.Add(new Stq512Test(16, 128, 1, differentLines: false));
-            tests.Add(new MaskRfTest(32, 256, 1));
 
             List<Task> tasks = new List<Task>();
             tasks.Add(Task.Run(() => GenerateCFile(tests, IUarchTest.ISA.amd64)));
