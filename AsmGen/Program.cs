@@ -17,17 +17,15 @@ namespace AsmGen
         static void Main(string[] args)
         {
             List<IUarchTest> tests = new List<IUarchTest>();
-            tests.Add(new RobTest(12, 260, 1, initialDependentBranch: true));
+            tests.Add(new RobTest(12, 800, 1, initialDependentBranch: false));
             tests.Add(new A73RobTest(4, 160, 1));
-            tests.Add(new ZeroRobTest(12, 500, 1, initialDependentBranch: true));
-            tests.Add(new IntRfTest(8, 100, 1, initialDependentBranch: true));
-            tests.Add(new IntRfTestDependentStore(4, 100, 1));
-            tests.Add(new FpRfTest(8, 100, 1, initialDependentBranch: true));;
-            tests.Add(new FlagRfTest(8, 100, 1, initialDependentBranch: true));
-            tests.Add(new LdqTest(4, 100, 1, initialDependentBranch: true));
-            tests.Add(new LdqTest(4, 100, 1, initialDependentBranch: false));
-            tests.Add(new StqTest(4, 100, 1, initialDependentBranch: true));
-            tests.Add(new MixIntVec128RfTest(4, 100, 1, initialDependentBranch: true));
+            tests.Add(new ZeroRobTest(12, 800, 1, initialDependentBranch: false));
+            tests.Add(new IntRfTest(100, 400, 1, initialDependentBranch: false));
+            tests.Add(new FpRfTest(100, 400, 1, initialDependentBranch: false));;
+            tests.Add(new FlagRfTest(8, 100, 1, initialDependentBranch: false));
+            tests.Add(new LdqTest(180, 400, 1, initialDependentBranch: false));
+            tests.Add(new StqTest(4, 200, 1, initialDependentBranch: false));
+            tests.Add(new MixIntVec128RfTest(4, 600, 1, initialDependentBranch: false));
             tests.Add(new MixIntRfDepBranchTest(4, 100, 1, 2));
             tests.Add(new MixIntRfDepBranchTest(4, 100, 1, 4));
             tests.Add(new MixIntRfDepBranchTest(4, 100, 1, 8));
@@ -66,8 +64,8 @@ namespace AsmGen
             tests.Add(new BtbTest(16, BtbTest.BranchType.Conditional));
             tests.Add(new BtbTest(32, BtbTest.BranchType.Conditional));
             tests.Add(new ReturnStackTest(1, 128, 1));
-            tests.Add(new BranchBufferTest(4, 100, 1, initialDependentBranch: true));
-            tests.Add(new TakenBranchBufferTest(4, 100, 1, initialDependentBranch: true));
+            tests.Add(new BranchBufferTest(4, 300, 1, initialDependentBranch: false));
+            tests.Add(new TakenBranchBufferTest(4, 300, 1, initialDependentBranch: false));
             tests.Add(new MixBranchStoreTest(4, 100, 1, initialDependentBranch: true));
             tests.Add(new IndirectBranchTest(false));
             tests.Add(new BranchHistoryTest());
@@ -77,7 +75,8 @@ namespace AsmGen
 
             // avx-512
             tests.Add(new Vec512RfTest(128, 600, 1));
-            tests.Add(new Stq512Test(16, 128, 1));
+            tests.Add(new Stq512Test(16, 128, 1, differentLines: true));
+            tests.Add(new Stq512Test(16, 128, 1, differentLines: false));
             tests.Add(new MaskRfTest(32, 256, 1));
 
             List<Task> tasks = new List<Task>();
@@ -133,6 +132,7 @@ namespace AsmGen
 
         static void GenerateAsmFile(List<IUarchTest> tests, IUarchTest.ISA isa)
         {
+            string filename = "clammicrobench_" + isa.ToString() + ".s";
             StringBuilder sb = new StringBuilder();
             sb.AppendLine(".text");
 
@@ -145,15 +145,19 @@ namespace AsmGen
                 UarchTest.GenerateRiscvPrepArrayFunction(sb);
             }
 
+            File.WriteAllText(filename, sb.ToString());
+            sb.Clear();
+
             foreach (IUarchTest test in tests)
             {
                 if (test.SupportsIsa(isa))
                 {
+                    sb.Clear();
                     test.GenerateAsmGlobalLines(sb);
                     test.GenerateAsm(sb, isa);
+                    File.AppendAllText(filename, sb.ToString());
                 }
             }
-            File.WriteAllText("clammicrobench_" + isa.ToString() + ".s", sb.ToString());
         }
 
         static void GenerateMakefile()
