@@ -4,18 +4,21 @@ namespace AsmGen
 {
     public class FpRfTest : UarchTest
     {
-        public FpRfTest(int low, int high, int step)
+        private bool initialDependentBranch;
+        public FpRfTest(int low, int high, int step, bool initialDependentBranch)
         {
             this.Counts = UarchTestHelpers.GenerateCountArray(low, high, step);
-            this.Prefix = "fprf";
-            this.Description = "FP Register File";
+            this.Prefix = "fprf" + (initialDependentBranch ? "db" : string.Empty);
+            this.Description = "FP Register File" + (initialDependentBranch ? ", preceded by dependent branch" : string.Empty);
             this.FunctionDefinitionParameters = "uint64_t iterations, int *arr, float *floatArr";
             this.GetFunctionCallParameters = "structIterations, A, fpArr";
             this.DivideTimeByCount = false;
+            this.initialDependentBranch = initialDependentBranch;
         }
 
         public override bool SupportsIsa(IUarchTest.ISA isa)
         {
+            if (this.initialDependentBranch && isa != IUarchTest.ISA.aarch64) return false;
             if (isa == IUarchTest.ISA.amd64) return true;
             if (isa == IUarchTest.ISA.aarch64) return true;
             if (isa == IUarchTest.ISA.mips64) return true;
@@ -42,6 +45,7 @@ namespace AsmGen
             }
             else if (isa == IUarchTest.ISA.aarch64)
             {
+                string postLoadInstrs = this.initialDependentBranch ? UarchTestHelpers.GetArmDependentBranch(this.Prefix) : null;
                 string initInstrs = "  ldr s17, [x2]\n" +
                     "  ldr s18, [x2, 4]\n" +
                     "  ldr s19, [x2, 8]\n" +
@@ -53,7 +57,9 @@ namespace AsmGen
                 unrolledAdds[1] = "  fadd s19, s19, s17";
                 unrolledAdds[2] = "  fadd s20, s20, s17";
                 unrolledAdds[3] = "  fadd s21, s21, s17";
-                UarchTestHelpers.GenerateArmAsmStructureTestFuncs(sb, this.Counts, this.Prefix, unrolledAdds, unrolledAdds, includePtrChasingLoads: false, initInstrs);
+                UarchTestHelpers.GenerateArmAsmStructureTestFuncs(
+                    sb, this.Counts, this.Prefix, unrolledAdds, unrolledAdds, includePtrChasingLoads: false, initInstrs, postLoadInstrs1: postLoadInstrs, postLoadInstrs2: postLoadInstrs);
+                if (this.initialDependentBranch) sb.AppendLine(UarchTestHelpers.GetArmDependentBranchTarget(this.Prefix));
             }
             else if (isa == IUarchTest.ISA.mips64)
             {

@@ -1045,6 +1045,17 @@ namespace AsmGen
             }
         }
 
+        // Just to deal with A73
+        public static string GetArmDependentBranch(string prefix)
+        {
+            return $"  cmp x25, x26\n  b.eq {prefix}_badthing";
+        }
+
+        public static string GetArmDependentBranchTarget(string prefix)
+        {
+            return $"{prefix}_badthing:\n  .word 0xf7f0a000";
+        }
+
         public static void GenerateArmAsmDivNsqTestFuncs(StringBuilder sb,
             int maxSize,
             int[] counts,

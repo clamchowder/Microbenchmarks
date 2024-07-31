@@ -5,16 +5,17 @@ namespace AsmGen
     public class RobTest : UarchTest
     {
         private string[] nops;
-
-        public RobTest(int low, int high, int step)
+        private bool initialDependentBranch;
+        public RobTest(int low, int high, int step, bool initialDependentBranch)
         {
             this.Counts = UarchTestHelpers.GenerateCountArray(low, high, step);
-            this.Prefix = "rob";
+            this.Prefix = "rob" + (initialDependentBranch ? "db" : string.Empty);
             this.Description = "Reorder Buffer Test";
             this.FunctionDefinitionParameters = "uint64_t iterations, int *arr";
             this.GetFunctionCallParameters = "structIterations, A";
             this.DivideTimeByCount = false;
             this.nops = new string[] { "nop" };
+            this.initialDependentBranch = initialDependentBranch;
         }
 
         public override bool SupportsIsa(IUarchTest.ISA isa)
@@ -34,7 +35,9 @@ namespace AsmGen
             }
             else if (isa == IUarchTest.ISA.aarch64)
             {
-                UarchTestHelpers.GenerateArmAsmStructureTestFuncs(sb, this.Counts, this.Prefix, nops, nops, true);
+                string postLoadInstrs = this.initialDependentBranch ? UarchTestHelpers.GetArmDependentBranch(this.Prefix) : null;
+                UarchTestHelpers.GenerateArmAsmStructureTestFuncs(sb, this.Counts, this.Prefix, nops, nops, true, postLoadInstrs1: postLoadInstrs, postLoadInstrs2: postLoadInstrs);
+                if (this.initialDependentBranch) sb.AppendLine(UarchTestHelpers.GetArmDependentBranchTarget(this.Prefix));
             }
             else if (isa == IUarchTest.ISA.mips64)
             {
