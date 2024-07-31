@@ -17,9 +17,9 @@ namespace AsmGen
         static void Main(string[] args)
         {
             List<IUarchTest> tests = new List<IUarchTest>();
-            tests.Add(new RobTest(12, 260, 1, initialDependentBranch: true));
+            tests.Add(new RobTest(12, 100, 1, initialDependentBranch: true));
             tests.Add(new A73RobTest(4, 160, 1));
-            tests.Add(new ZeroRobTest(12, 500, 1, initialDependentBranch: true));
+            tests.Add(new ZeroRobTest(12, 100, 1, initialDependentBranch: true));
             tests.Add(new IntRfTest(8, 100, 1, initialDependentBranch: true));
             tests.Add(new IntRfTestDependentStore(4, 100, 1));
             tests.Add(new FpRfTest(8, 100, 1, initialDependentBranch: true));;
@@ -29,10 +29,6 @@ namespace AsmGen
             tests.Add(new MixLdqVecLdqTest(4, 100, 1, initialDependentBranch: true));
             tests.Add(new StqTest(4, 100, 1, initialDependentBranch: true));
             tests.Add(new MixIntVec128RfTest(4, 100, 1, initialDependentBranch: true));
-            tests.Add(new MixIntRfDepBranchTest(4, 100, 1, 2));
-            tests.Add(new MixIntRfDepBranchTest(4, 100, 1, 4));
-            tests.Add(new MixIntRfDepBranchTest(4, 100, 1, 8));
-            tests.Add(new MixIntRfDepBranchTest(4, 100, 1, 16));
             tests.Add(new AddSchedTest(16, 100, 1));
             tests.Add(new MulSchedTest(4, 64, 1));
             tests.Add(new LeaSchedTest(4, 64, 1));
