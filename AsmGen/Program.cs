@@ -253,7 +253,7 @@ namespace AsmGen
             sb.AppendLine("  posix_memalign((void **)&B, 64, sizeof(int) * list_size);\n");
             sb.AppendLine("#endif");
             sb.AppendLine("  for (int i = 0; i < list_size; i++) { B[i] = i; }\n");
-            sb.AppendLine("  fpArr = (float*)malloc(sizeof(float) * list_size);\n");
+            sb.AppendLine("  posix_memalign((void **)&fpArr, 64, sizeof(float) * list_size);");
             sb.AppendLine("  for (int i = 0;i < list_size; i++) { fpArr[i] = i + .1; }\n");
         }
     }
