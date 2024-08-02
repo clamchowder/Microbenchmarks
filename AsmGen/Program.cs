@@ -29,6 +29,7 @@ namespace AsmGen
             tests.Add(new MixLdqVecLdqTest(4, 100, 1, initialDependentBranch: true));
             tests.Add(new StqTest(4, 100, 1, initialDependentBranch: true));
             tests.Add(new MixIntVec128RfTest(4, 100, 1, initialDependentBranch: true));
+            tests.Add(new MixBranchStoreTest(2, 100, 1, mixNops: false, initialDependentBranch: true));
 
             List<Task> tasks = new List<Task>();
             tasks.Add(Task.Run(() => GenerateCFile(tests, IUarchTest.ISA.amd64)));
