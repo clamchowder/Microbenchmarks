@@ -27,10 +27,10 @@ namespace AsmGen
             tests.Add(new MaskRfTest(32, 256, 1));
 
             tests.Add(new ZeroRobTest(12, 800, 1, initialDependentBranch: false));
-            tests.Add(new IntRfTest(100, 400, 1, initialDependentBranch: false));
-            tests.Add(new FpRfTest(100, 400, 1, initialDependentBranch: false));;
+            tests.Add(new IntRfTest(60, 400, 1, initialDependentBranch: false));
+            tests.Add(new FpRfTest(60, 800, 1, initialDependentBranch: false));;
             tests.Add(new FlagRfTest(8, 100, 1, initialDependentBranch: false));
-            tests.Add(new LdqTest(180, 400, 1, initialDependentBranch: false));
+            tests.Add(new LdqTest(80, 250, 1, initialDependentBranch: false));
             tests.Add(new StqTest(4, 200, 1, initialDependentBranch: false));
             tests.Add(new MixIntVec128RfTest(4, 600, 1, initialDependentBranch: false));
             tests.Add(new MixIntRfDepBranchTest(4, 100, 1, 2));
@@ -48,7 +48,7 @@ namespace AsmGen
             tests.Add(new StoreSchedTest(4, 72, 1));
             tests.Add(new StoreDataSchedTest(4, 80, 1));
             tests.Add(new MixAddJumpSchedTest(64, 100, 1));
-            tests.Add(new FaddSchedTest(10, 80, 1));
+            tests.Add(new FaddSchedTest(10, 200, 1));
             tests.Add(new FmulSchedTest(10, 80, 1));
             tests.Add(new FcmpSchedTest(10, 60, 1));
             tests.Add(new JsCvtSched(8, 120, 1));
@@ -79,6 +79,7 @@ namespace AsmGen
             tests.Add(new NopLoopTest(512, 1));
             tests.Add(new AddLoopTest(4, 100, 1));
             tests.Add(new AeseSchedTest(4, 64, 1));
+            tests.Add(new FpStoreDataNsqTest(20, 150, 1));
 
             List<Task> tasks = new List<Task>();
             tasks.Add(Task.Run(() => GenerateCFile(tests, IUarchTest.ISA.amd64)));
