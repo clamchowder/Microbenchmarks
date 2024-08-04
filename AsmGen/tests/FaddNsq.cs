@@ -8,7 +8,7 @@ namespace AsmGen
         public FaddNsq(int low, int high, int step, int totalOps)
         {
             this.Counts = UarchTestHelpers.GenerateCountArray(low, high, step);
-            this.Prefix = "faddnsq";
+            this.Prefix = "faddnsq" + totalOps;
             this.Description = "FADD, excluding possible NSQ";
             this.FunctionDefinitionParameters = "uint64_t iterations, int *arr, float *floatArr";
             this.GetFunctionCallParameters = "structIterations, A, fpArr";

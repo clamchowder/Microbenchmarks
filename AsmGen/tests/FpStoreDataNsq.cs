@@ -7,7 +7,7 @@ namespace AsmGen
         public FpStoreDataNsqTest(int low, int high, int step)
         {
             this.Counts = UarchTestHelpers.GenerateCountArray(low, high, step);
-            this.Prefix = "fpstoredatansq";
+            this.Prefix = "fpstoredatansq" + high;
             this.Description = "Store FP 32-bit data scheduler capacity, excluding nsq";
             this.FunctionDefinitionParameters = "uint64_t iterations, int *arr, float *floatArr";
             this.GetFunctionCallParameters = "structIterations, A, fpArr";

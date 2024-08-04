@@ -18,7 +18,6 @@ namespace AsmGen
         {
             List<IUarchTest> tests = new List<IUarchTest>();
             tests.Add(new RobTest(12, 800, 1, initialDependentBranch: false));
-            tests.Add(new A73RobTest(4, 160, 1));
 
             // avx-512
             tests.Add(new Vec512RfTest(128, 600, 1));
@@ -48,8 +47,8 @@ namespace AsmGen
             tests.Add(new StoreSchedTest(4, 72, 1));
             tests.Add(new StoreDataSchedTest(4, 80, 1));
             tests.Add(new MixAddJumpSchedTest(64, 100, 1));
-            tests.Add(new FaddSchedTest(10, 200, 1));
-            tests.Add(new FmulSchedTest(10, 80, 1));
+            tests.Add(new FaddSchedTest(30, 250, 1));
+            tests.Add(new FmulSchedTest(30, 250, 1));
             tests.Add(new FcmpSchedTest(10, 60, 1));
             tests.Add(new JsCvtSched(8, 120, 1));
             tests.Add(new MixAddvJsCvtSched(8, 120, 1));
@@ -79,7 +78,10 @@ namespace AsmGen
             tests.Add(new NopLoopTest(512, 1));
             tests.Add(new AddLoopTest(4, 100, 1));
             tests.Add(new AeseSchedTest(4, 64, 1));
-            tests.Add(new FpStoreDataNsqTest(20, 150, 1));
+            tests.Add(new FpStoreDataNsqTest(20, 230, 1));
+            tests.Add(new FpStoreDataNsqTest(10, 115, 1));
+            tests.Add(new FaddNsq(20, 230, 1, 230));
+            tests.Add(new FaddNsq(20, 115, 1, 115));
 
             List<Task> tasks = new List<Task>();
             tasks.Add(Task.Run(() => GenerateCFile(tests, IUarchTest.ISA.amd64)));
