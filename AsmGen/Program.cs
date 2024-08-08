@@ -87,6 +87,7 @@ namespace AsmGen
             tests.Add(new MixVec512Vec256BlockRfTest(200, 400, 1, 240));
             tests.Add(new MixVec512Vec256BlockRfTest(200, 400, 1, 144));
             tests.Add(new MixVec512Vec256BlockRfTest(200, 400, 1, 120));
+            tests.Add(new MmxRfTest(20, 200, 1));
 
             List<Task> tasks = new List<Task>();
             tasks.Add(Task.Run(() => GenerateCFile(tests, IUarchTest.ISA.amd64)));
