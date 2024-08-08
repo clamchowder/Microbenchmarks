@@ -47,41 +47,6 @@ namespace AsmGen
                 sb.AppendLine("extern \"C\" uint64_t " + test.Prefix + counts[i] + $"({test.FunctionDefinitionParameters});");
         }
 
-        public static void GenerateTestBlock(StringBuilder sb, UarchTest test)
-        {
-            sb.AppendLine("  if (argc > 1 && strncmp(test_name, \"" + test.Prefix + "\", " + test.Prefix.Length + ") == 0) {");
-            sb.AppendLine("    printf(\"" + test.Description + ":\\n\");");
-
-            int[] counts = test.Counts;
-            for (int i = 0; i < counts.Length; i++)
-            {
-                // use more iterations (iterations = structIterations * 100) and divide iteration count by tested-thing count
-                // for certain tests like call stack depth
-                if (test.DivideTimeByCount)
-                {
-                    sb.AppendLine("    tmp = structIterations;");
-                    sb.AppendLine("    structIterations = iterations / " + counts[i] + ";");
-                }
-
-                sb.AppendLine("    gettimeofday(&startTv, &startTz);");
-                sb.AppendLine("    " + test.Prefix + counts[i] + $"({test.GetFunctionCallParameters});");
-                sb.AppendLine("    gettimeofday(&endTv, &endTz);");
-                sb.AppendLine("    time_diff_ms = 1000 * (endTv.tv_sec - startTv.tv_sec) + ((endTv.tv_usec - startTv.tv_usec) / 1000);");
-                if (test.DivideTimeByCount)
-                    sb.AppendLine("    latency = 1e6 * (float)time_diff_ms / (float)(iterations);");
-                else
-                    sb.AppendLine("    latency = 1e6 * (float)time_diff_ms / (float)(structIterations);");
-                sb.AppendLine("    printf(\"" + counts[i] + ",%f\\n\", latency);\n");
-
-                if (test.DivideTimeByCount)
-                {
-                    sb.AppendLine("    structIterations = tmp;");
-                }
-            }
-
-            sb.AppendLine("  }\n");
-        }
-
         /// <summary>
         /// Generates test functions in assembly, with filler instructions between two divs
         /// Args are put into rcx, rdx, r8 (in that order) to match Windows calling convention
@@ -324,7 +289,8 @@ namespace AsmGen
             string initInstrs = null,
             string postLoadInstrs1 = null,
             string postLoadInstrs2 = null,
-            bool lfence = true)
+            bool lfence = true,
+            string cleanupInstrs = null)
         {
             for (int i = 0; i < counts.Length; i++)
             {
@@ -383,6 +349,7 @@ namespace AsmGen
 
                 sb.AppendLine("  dec %rcx");
                 sb.AppendLine("  jne " + funcName + "start");
+                if (cleanupInstrs != null) sb.AppendLine(cleanupInstrs);
                 sb.AppendLine("  pop %rdx");
                 sb.AppendLine("  pop %rcx");
                 sb.AppendLine("  pop %r8");

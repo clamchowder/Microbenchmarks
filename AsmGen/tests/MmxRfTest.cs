@@ -26,11 +26,15 @@ namespace AsmGen
 
         public void GenerateX86GccAsm(StringBuilder sb)
         {
-            string initInstrs = "  movq (%rdx), %mm0\n" +
+            string initInstrs = 
+                "  fsave (%r8)\n" +
+                "  movq (%rdx), %mm0\n" +
                 "  movq 8(%rdx), %mm1\n" +
                 "  movq 16(%rdx), %mm2\n" +
                 "  movq 24(%rdx), %mm3\n" +
                 "  movq 32(%rdx), %mm4\n";
+
+            string cleanupInstrs = "  frstor (%r8)";
 
             string[] unrolledAdds = new string[4];
             unrolledAdds[0] = "  paddw %mm0, %mm1";
@@ -38,7 +42,8 @@ namespace AsmGen
             unrolledAdds[2] = "  paddw %mm0, %mm3";
             unrolledAdds[3] = "  paddw %mm0, %mm4";
 
-            UarchTestHelpers.GenerateX86AsmStructureTestFuncs(sb, this.Counts, this.Prefix, unrolledAdds, unrolledAdds, initInstrs: initInstrs);
+            UarchTestHelpers.GenerateX86AsmStructureTestFuncs(
+                sb, this.Counts, this.Prefix, unrolledAdds, unrolledAdds, initInstrs: initInstrs, cleanupInstrs: cleanupInstrs);
         }
     }
 }
