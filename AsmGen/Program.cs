@@ -20,7 +20,6 @@ namespace AsmGen
             tests.Add(new RobTest(12, 800, 1, initialDependentBranch: false));
 
             // avx-512
-            tests.Add(new Vec512RfTest(128, 600, 1));
             tests.Add(new Stq512Test(16, 128, 1, differentLines: true));
             tests.Add(new Stq512Test(16, 128, 1, differentLines: false));
             tests.Add(new MaskRfTest(32, 256, 1));
@@ -58,8 +57,9 @@ namespace AsmGen
             tests.Add(new Fadd256SchedTest(4, 200, 1));
             tests.Add(new Fma256SchedTest(4, 200, 1));
             tests.Add(new CvtSchedTest(64, 180, 1));
-            tests.Add(new Fadd128RfTest(4, 200, 1, initialDependentBranch: true));
-            tests.Add(new MixLdqStqTest(4, 120, 1, initialDependentBranch: true));
+            tests.Add(new Fadd128RfTest(200, 400, 1, false));
+            tests.Add(new Fadd256RfTest(200, 400, 1, Fadd256RfTest.TestMode.none));
+            tests.Add(new Fadd256RfTest(200, 400, 1, Fadd256RfTest.TestMode.pendingavx512instr));
             tests.Add(new BtbTest(4, BtbTest.BranchType.Unconditional));
             tests.Add(new BtbTest(8, BtbTest.BranchType.Unconditional));
             tests.Add(new BtbTest(16, BtbTest.BranchType.Unconditional));
@@ -80,8 +80,13 @@ namespace AsmGen
             tests.Add(new AeseSchedTest(4, 64, 1));
             tests.Add(new FpStoreDataNsqTest(20, 230, 1));
             tests.Add(new FpStoreDataNsqTest(10, 115, 1));
-            tests.Add(new FaddNsq(20, 230, 1, 230));
-            tests.Add(new FaddNsq(20, 115, 1, 115));
+            //tests.Add(new FaddNsq(20, 230, 1, 230));
+            //tests.Add(new FaddNsq(20, 115, 1, 115));
+            tests.Add(new Vec512RfTest(20, 500, 1));
+            tests.Add(new MixVec512Vec256RfTest(20, 500, 1));
+            tests.Add(new MixVec512Vec256BlockRfTest(200, 400, 1, 240));
+            tests.Add(new MixVec512Vec256BlockRfTest(200, 400, 1, 144));
+            tests.Add(new MixVec512Vec256BlockRfTest(200, 400, 1, 120));
 
             List<Task> tasks = new List<Task>();
             tasks.Add(Task.Run(() => GenerateCFile(tests, IUarchTest.ISA.amd64)));

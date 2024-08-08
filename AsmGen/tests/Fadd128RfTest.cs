@@ -1,4 +1,5 @@
-﻿using System.Text;
+﻿using System.Collections.Generic;
+using System.Text;
 
 namespace AsmGen
 {
@@ -29,17 +30,13 @@ namespace AsmGen
         {
             if (isa == IUarchTest.ISA.amd64)
             {
-                string initInstrs = "  vmovups (%r8), %ymm0\n" +
-                 "  vmovups %ymm0, %ymm1\n" +
-                 "  vmovups %ymm0, %ymm2\n" +
-                 "  vmovups %ymm0, %ymm3\n" +
-                 "  vmovups %ymm0, %ymm4\n";
+                string initInstrs = "  vmovups (%r8), %ymm0\n";
 
-                string[] unrolledAdds = new string[4];
-                unrolledAdds[0] = "  vaddps %ymm0, %ymm1, %ymm1";
-                unrolledAdds[1] = "  vaddps %ymm0, %ymm2, %ymm2";
-                unrolledAdds[2] = "  vaddps %ymm0, %ymm3, %ymm3";
-                unrolledAdds[3] = "  vaddps %ymm0, %ymm4, %ymm3";
+                for (int i = 1; i < 16; i++) initInstrs += $"  vmovups %ymm0, %ymm{i}\n";
+
+                List<string> unrolledAddsList = new List<string>();
+                for (int i = 1; i < 16; i++) unrolledAddsList.Add($"  vaddps %ymm0, %ymm{i}, %ymm{i}");
+                string[] unrolledAdds = unrolledAddsList.ToArray();
 
                 UarchTestHelpers.GenerateX86AsmStructureTestFuncs(sb, this.Counts, this.Prefix, unrolledAdds, unrolledAdds, initInstrs: initInstrs);
             }
