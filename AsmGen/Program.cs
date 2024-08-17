@@ -20,8 +20,8 @@ namespace AsmGen
             tests.Add(new RobTest(12, 800, 1, initialDependentBranch: false));
 
             // avx-512
-            tests.Add(new Stq512Test(16, 128, 1, differentLines: true));
-            tests.Add(new Stq512Test(16, 128, 1, differentLines: false));
+            tests.Add(new Stq512Test(16, 300, 1, differentLines: true));
+            tests.Add(new Stq512Test(16, 300, 1, differentLines: false));
             tests.Add(new MaskRfTest(32, 256, 1));
 
             tests.Add(new ZeroRobTest(12, 800, 1, initialDependentBranch: false));
@@ -29,7 +29,7 @@ namespace AsmGen
             tests.Add(new FpRfTest(60, 800, 1, initialDependentBranch: false));;
             tests.Add(new FlagRfTest(8, 100, 1, initialDependentBranch: false));
             tests.Add(new LdqTest(80, 250, 1, initialDependentBranch: false));
-            tests.Add(new StqTest(4, 200, 1, initialDependentBranch: false));
+            tests.Add(new StqTest(4, 300, 1, initialDependentBranch: false));
             tests.Add(new MixIntVec128RfTest(4, 600, 1, initialDependentBranch: false));
             tests.Add(new MixIntRfDepBranchTest(4, 100, 1, 2));
             tests.Add(new MixIntRfDepBranchTest(4, 100, 1, 4));
@@ -84,9 +84,10 @@ namespace AsmGen
             //tests.Add(new FaddNsq(20, 115, 1, 115));
             tests.Add(new Vec512RfTest(20, 500, 1));
             tests.Add(new MixVec512Vec256RfTest(20, 500, 1));
-            tests.Add(new MixVec512Vec256BlockRfTest(200, 400, 1, 240));
-            tests.Add(new MixVec512Vec256BlockRfTest(200, 400, 1, 144));
-            tests.Add(new MixVec512Vec256BlockRfTest(200, 400, 1, 120));
+            tests.Add(new MixVec512Vec256BlockRfTest(200, 500, 1, 240));
+            tests.Add(new MixVec512Vec256BlockRfTest(200, 500, 1, 144));
+            tests.Add(new MixVec512Vec256BlockRfTest(200, 500, 1, 120));
+            tests.Add(new MixVec512Vec256BlockRfTest(200, 500, 1, 60));
             tests.Add(new MmxRfTest(20, 200, 1));
 
             List<Task> tasks = new List<Task>();

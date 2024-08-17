@@ -46,14 +46,14 @@ namespace AsmGen
                 for (int i = 0; i < nTiny; i++)
                 {
                     int regNum = ((i & 1) == 0) ? i & 0x1F : (i + 1) & 0x1F;
-                    instrsList.Add($"  vaddps %ymm2, %ymm{regNum}, %ymm{regNum}");
+                    instrsList.Add($"  vxorps %ymm2, %ymm{regNum}, %ymm{regNum}");
                 }
 
                 for (int i = nTiny; i < this.Counts[this.Counts.Length - 1];i++)
                 {
                     int regNum = ((i & 1) == 0) ? i: (i + 1);
                     regNum = (regNum + 1) & 0x1F;
-                    instrsList.Add($"  vaddps %zmm1, %zmm{regNum}, %zmm{regNum}");
+                    instrsList.Add($"  vxorps %zmm1, %zmm{regNum}, %zmm{regNum}");
                 }
 
                 string[] unrolledAdds = instrsList.ToArray();
