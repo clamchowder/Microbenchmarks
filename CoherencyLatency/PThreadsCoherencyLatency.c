@@ -20,7 +20,7 @@
 typedef struct LatencyThreadData {
     uint64_t start;
     uint64_t iterations;
-    uint64_t *target;
+    volatile uint64_t *target;
     unsigned int processorIndex;
 } LatencyData;
 
@@ -33,6 +33,8 @@ typedef struct LatencyPairRunData {
 } LatencyPairRunData;
 
 void *LatencyTestThread(void *param);
+void *NoLockLatencyTestThread(void *param);
+void *(*testFunc)(void *) = LatencyTestThread;
 void *RunTest(void *param);
 
 int main(int argc, char *argv[]) {
@@ -45,8 +47,6 @@ int main(int argc, char *argv[]) {
     numProcs = get_nprocs();
     fprintf(stderr, "Number of CPUs: %u\n", numProcs);
 
-
-
     for (int argIdx = 1; argIdx < argc; argIdx++) {
         if (*(argv[argIdx]) == '-') {
             char* arg = argv[argIdx] + 1;
@@ -55,8 +55,9 @@ int main(int argc, char *argv[]) {
                 iter = atoi(argv[argIdx]);
                 fprintf(stderr, "%lu iterations requested\n", iter);
             }
-            else if (strncmp(arg, "bounce", 6) == 0) {
-                fprintf(stderr, "Bouncy\n");
+            else if (strncmp(arg, "nolock", 6) == 0) {
+                fprintf(stderr, "No locks, plain loads and stores\n");
+                testFunc = NoLockLatencyTestThread;
             }
             else if (strncmp(arg, "offset", 6) == 0) {
                 argIdx++;
@@ -221,7 +222,7 @@ void *RunTest(void *param) {
   lat2.start = 2;
   lat2.target = pairRunData->target;
   lat2.processorIndex = processor2;
-  latency = TimeThreads(processor1, processor2, iter, &lat1, &lat2, LatencyTestThread);
+  latency = TimeThreads(processor1, processor2, iter, &lat1, &lat2, NoLockLatencyTestThread);
   fprintf(stderr, "%d to %d: %f ns\n", processor1, processor2, latency);
   pairRunData->result = latency;
   return NULL;
@@ -243,3 +244,22 @@ void *LatencyTestThread(void *param) {
 
     pthread_exit(NULL);
 }
+
+void *NoLockLatencyTestThread(void *param) {
+    LatencyData *latencyData = (LatencyData *)param;
+    cpu_set_t cpuset;
+    uint64_t current = latencyData->start;
+
+    CPU_ZERO(&cpuset);
+    CPU_SET(latencyData->processorIndex, &cpuset);
+    sched_setaffinity(gettid(), sizeof(cpu_set_t), &cpuset);
+
+    while (current <= 2 * latencyData->iterations) {
+        if (*(latencyData->target) == current - 1) {
+            *(latencyData->target) = current;
+            current += 2;
+        } 
+    }
+
+    pthread_exit(NULL);
+} 
