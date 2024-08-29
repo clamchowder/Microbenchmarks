@@ -2,27 +2,21 @@
 
 namespace AsmGen
 {
-    public class IntRfTest : UarchTest
+    public class IntRfTestDependentStore : UarchTest
     {
-        private bool initialDependentBranch;
-        public IntRfTest(int low, int high, int step, bool initialDependentBranch)
+        public IntRfTestDependentStore(int low, int high, int step)
         {
             this.Counts = UarchTestHelpers.GenerateCountArray(low, high, step);
-            this.Prefix = "intrf" + (initialDependentBranch ? "db" : string.Empty);
-            this.Description = "Integer Register File" + (initialDependentBranch ? ", preceded by dependent branch" : string.Empty);
-            this.FunctionDefinitionParameters = "uint64_t iterations, int *arr";
-            this.GetFunctionCallParameters = "structIterations, A";
+            this.Prefix = "intrfds";
+            this.Description = "Integer Register File, preceded by a dependent store";
+            this.FunctionDefinitionParameters = "uint64_t iterations, int *arr, float *floatArr";
+            this.GetFunctionCallParameters = "structIterations, A, fpArr";
             this.DivideTimeByCount = false;
-            this.initialDependentBranch = initialDependentBranch;
         }
 
         public override bool SupportsIsa(IUarchTest.ISA isa)
         {
-            if (this.initialDependentBranch && isa != IUarchTest.ISA.aarch64) return false;
-            if (isa == IUarchTest.ISA.amd64) return true;
             if (isa == IUarchTest.ISA.aarch64) return true;
-            if (isa == IUarchTest.ISA.mips64) return true;
-            if (isa == IUarchTest.ISA.riscv) return true;
             return false;
         }
 
@@ -39,15 +33,15 @@ namespace AsmGen
             }
             else if (isa == IUarchTest.ISA.aarch64)
             {
-                string postLoadInstrs = this.initialDependentBranch ? UarchTestHelpers.GetArmDependentBranch(this.Prefix) : null;
+                string postLoadInstrs1 = "str w15, [x2, w25, uxtw #2]";
+                string postLoadInstrs2 = "str w15, [x2, w26, uxtw #2]";
                 string[] unrolledAdds = new string[4];
                 unrolledAdds[0] = "  add x15, x15, x11";
                 unrolledAdds[1] = "  add x14, x14, x11";
                 unrolledAdds[2] = "  add x13, x13, x11";
                 unrolledAdds[3] = "  add x12, x12, x11";
                 UarchTestHelpers.GenerateArmAsmStructureTestFuncs(
-                    sb, this.Counts, this.Prefix, unrolledAdds, unrolledAdds, includePtrChasingLoads: true, postLoadInstrs1: postLoadInstrs, postLoadInstrs2: postLoadInstrs);
-                if (this.initialDependentBranch) sb.AppendLine(UarchTestHelpers.GetArmDependentBranchTarget(this.Prefix));
+                    sb, this.Counts, this.Prefix, unrolledAdds, unrolledAdds, includePtrChasingLoads: true, postLoadInstrs1: postLoadInstrs1, postLoadInstrs2: postLoadInstrs2);
             }
             else if (isa == IUarchTest.ISA.mips64)
             {

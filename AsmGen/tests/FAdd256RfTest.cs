@@ -4,14 +4,24 @@ namespace AsmGen
 {
     public class Fadd256RfTest : UarchTest
     {
-        public Fadd256RfTest(int low, int high, int step)
+        public enum TestMode
+        {
+            none,
+            setavx512regs,
+            pendingavx512instr
+        }
+        private bool populateAvx512Regs;
+        private bool pendingAvx512Instr;
+        public Fadd256RfTest(int low, int high, int step, TestMode mode)
         {
             this.Counts = UarchTestHelpers.GenerateCountArray(low, high, step);
-            this.Prefix = "fadd256rf";
-            this.Description = "256-bit FP/vector RF capacity";
+            this.Prefix = "fadd256rf" + mode;
+            this.Description = "256-bit FP/vector RF capacity, " + mode;
             this.FunctionDefinitionParameters = "uint64_t iterations, int *arr, float *floatArr";
             this.GetFunctionCallParameters = "structIterations, A, fpArr";
             this.DivideTimeByCount = false;
+            if (mode == TestMode.setavx512regs) populateAvx512Regs = true;
+            else if (mode == TestMode.pendingavx512instr) pendingAvx512Instr = true;
         }
 
         public override bool SupportsIsa(IUarchTest.ISA isa)
@@ -32,13 +42,29 @@ namespace AsmGen
                  "  vmovups %ymm0, %ymm3\n" +
                  "  vmovups %ymm0, %ymm4\n";
 
+                if (this.populateAvx512Regs)
+                {
+                    for (int i = 5; i < 32; i++)
+                    {
+                        initInstrs += "  vmovups 64(%r8), %zmm" + i + "\n";
+                    }
+                }
+
+                string postLoadInstr = string.Empty;
+
+                if (this.pendingAvx512Instr)
+                {
+                    initInstrs += "  vmovups 64(%r8), %zmm5\n  vmovups 128(%r8), %zmm6\n";
+                    postLoadInstr = "  vaddps %zmm5, %zmm6, %zmm6";
+                }
+
                 string[] unrolledAdds = new string[4];
                 unrolledAdds[0] = "  vaddps %ymm0, %ymm1, %ymm1";
                 unrolledAdds[1] = "  vaddps %ymm0, %ymm2, %ymm2";
                 unrolledAdds[2] = "  vaddps %ymm0, %ymm3, %ymm3";
                 unrolledAdds[3] = "  vaddps %ymm0, %ymm4, %ymm3";
 
-                UarchTestHelpers.GenerateX86AsmStructureTestFuncs(sb, this.Counts, this.Prefix, unrolledAdds, unrolledAdds, initInstrs: initInstrs);
+                UarchTestHelpers.GenerateX86AsmStructureTestFuncs(sb, this.Counts, this.Prefix, unrolledAdds, unrolledAdds, initInstrs: initInstrs, postLoadInstrs1: postLoadInstr, postLoadInstrs2: postLoadInstr);
             }
             else if (isa == IUarchTest.ISA.aarch64)
             {

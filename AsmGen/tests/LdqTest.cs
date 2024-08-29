@@ -4,18 +4,21 @@ namespace AsmGen
 {
     public class LdqTest : UarchTest
     {
-        public LdqTest(int low, int high, int step)
+        bool initialDependentBranch;
+        public LdqTest(int low, int high, int step, bool initialDependentBranch)
         {
             this.Counts = UarchTestHelpers.GenerateCountArray(low, high, step);
-            this.Prefix = "ldq";
-            this.Description = "Load Queue";
+            this.Prefix = "ldq" + (initialDependentBranch ? "db" : string.Empty);
+            this.Description = "Load Queue" + (initialDependentBranch ? ", preceded by dependent branch"  : string.Empty);
             this.FunctionDefinitionParameters = "uint64_t iterations, int *arr, float *floatArr";
             this.GetFunctionCallParameters = "structIterations, A, fpArr";
             this.DivideTimeByCount = false;
+            this.initialDependentBranch = initialDependentBranch;
         }
 
         public override bool SupportsIsa(IUarchTest.ISA isa)
         {
+            if (this.initialDependentBranch && isa != IUarchTest.ISA.aarch64) return false;
             if (isa == IUarchTest.ISA.amd64) return true;
             if (isa == IUarchTest.ISA.aarch64) return true;
             if (isa == IUarchTest.ISA.mips64) return true;
@@ -36,12 +39,15 @@ namespace AsmGen
             }
             else if (isa == IUarchTest.ISA.aarch64)
             {
+                string postLoadInstr = this.initialDependentBranch ? UarchTestHelpers.GetArmDependentBranch(this.Prefix) : null;
                 string[] unrolledLoads = new string[4];
                 unrolledLoads[0] = "  ldr x15, [x2]";
                 unrolledLoads[1] = "  ldr x14, [x2]";
                 unrolledLoads[2] = "  ldr x13, [x2]";
                 unrolledLoads[3] = "  ldr x12, [x2]";
-                UarchTestHelpers.GenerateArmAsmStructureTestFuncs(sb, this.Counts, this.Prefix, unrolledLoads, unrolledLoads, includePtrChasingLoads: true);
+                UarchTestHelpers.GenerateArmAsmStructureTestFuncs(
+                    sb, this.Counts, this.Prefix, unrolledLoads, unrolledLoads, includePtrChasingLoads: true, postLoadInstrs1: postLoadInstr, postLoadInstrs2: postLoadInstr);
+                if (this.initialDependentBranch) sb.AppendLine(UarchTestHelpers.GetArmDependentBranchTarget(this.Prefix));
             }
             else if (isa == IUarchTest.ISA.mips64)
             {

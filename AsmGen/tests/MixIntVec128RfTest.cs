@@ -4,20 +4,23 @@ namespace AsmGen
 {
     public class MixIntVec128RfTest : UarchTest
     {
-        public MixIntVec128RfTest(int low, int high, int step)
+        private bool initialDependentBranch;
+        public MixIntVec128RfTest(int low, int high, int step, bool initialDependentBranch)
         {
             this.Counts = UarchTestHelpers.GenerateCountArray(low, high, step);
-            this.Prefix = "mixintvec128";
-            this.Description = "Mixed integer and 128-bit vector register file capacity";
+            this.Prefix = "mixintvec128" + (initialDependentBranch ? "db" : string.Empty);
+            this.Description = "Mixed integer and 128-bit vector register file capacity" + (initialDependentBranch ? ", preceded by dependent branch" : string.Empty);
             this.FunctionDefinitionParameters = "uint64_t iterations, int *arr, float *floatArr";
             this.GetFunctionCallParameters = "structIterations, A, fpArr";
             this.DivideTimeByCount = false;
+            this.initialDependentBranch = initialDependentBranch;
         }
 
         public override bool SupportsIsa(IUarchTest.ISA isa)
         {
+            if (this.initialDependentBranch && isa != IUarchTest.ISA.aarch64) return false;
             if (isa == IUarchTest.ISA.amd64) return true;
-            if (isa == IUarchTest.ISA.aarch64) return false;
+            if (isa == IUarchTest.ISA.aarch64) return true;
             return false;
         }
 
@@ -42,6 +45,7 @@ namespace AsmGen
             }
             else if (isa == IUarchTest.ISA.aarch64)
             {
+                string postLoadInstrs = this.initialDependentBranch ? UarchTestHelpers.GetArmDependentBranch(this.Prefix) : null;
                 string initInstrs = "  ldr q0, [x1]\n" +
                 "  ldr q1, [x1, #0x10]\n" +
                 "  ldr q2, [x1, #0x20]\n" +
@@ -53,7 +57,9 @@ namespace AsmGen
                 unrolledAdds[1] = "  add x15, x15, x11";
                 unrolledAdds[2] = "  add v2.4s, v2.4s, v0.4s";
                 unrolledAdds[3] = "  add x14, x14, x11";
-                UarchTestHelpers.GenerateArmAsmStructureTestFuncs(sb, this.Counts, this.Prefix, unrolledAdds, unrolledAdds, false, initInstrs);
+                UarchTestHelpers.GenerateArmAsmStructureTestFuncs(
+                    sb, this.Counts, this.Prefix, unrolledAdds, unrolledAdds, false, initInstrs, postLoadInstrs1: postLoadInstrs, postLoadInstrs2: postLoadInstrs);
+                if (this.initialDependentBranch) sb.AppendLine(UarchTestHelpers.GetArmDependentBranchTarget(this.Prefix));
             }
         }
     }

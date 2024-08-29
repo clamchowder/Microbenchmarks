@@ -2,19 +2,17 @@
 
 namespace AsmGen
 {
-    public class BranchBufferTest : UarchTest
+    public class TakenBranchBufferTest : UarchTest
     {
-        private bool mixNops;
         private bool initialDependentBranch;
-        public BranchBufferTest(int low, int high, int step, bool mixNops = false, bool initialDependentBranch = false)
+        public TakenBranchBufferTest(int low, int high, int step, bool initialDependentBranch)
         {
             this.Counts = UarchTestHelpers.GenerateCountArray(low, high, step);
-            this.Prefix = "bob" + (initialDependentBranch ? "db" : string.Empty);
-            this.Description = "Branch Order Buffer Test (not-taken branches pending retire)" + (initialDependentBranch ? ", preceded by dependent branch" : string.Empty); ;
+            this.Prefix = "tbb" + (initialDependentBranch ? "db" : string.Empty);
+            this.Description = "Taken Branch Buffer Test (taken branches pending retire)" + (initialDependentBranch ? ", preceded by dependent branch" : string.Empty);
             this.FunctionDefinitionParameters = "uint64_t iterations, int *arr";
             this.GetFunctionCallParameters = "structIterations, A";
             this.DivideTimeByCount = false;
-            this.mixNops = mixNops;
             this.initialDependentBranch = initialDependentBranch;
         }
 
@@ -23,25 +21,15 @@ namespace AsmGen
             if (this.initialDependentBranch && isa != IUarchTest.ISA.aarch64) return false;
             if (isa == IUarchTest.ISA.amd64) return true;
             if (isa == IUarchTest.ISA.aarch64) return true;
-            if (isa == IUarchTest.ISA.mips64) return true;
+            // if (isa == IUarchTest.ISA.mips64) return true;
+            // if (isa == IUarchTest.ISA.riscv) return true;
             return false;
         }
 
         public override void GenerateAsm(StringBuilder sb, IUarchTest.ISA isa)
         {
-            if (isa == IUarchTest.ISA.amd64)
-            {
-                GenerateX86GccAsm(sb);
-            }
-            else if (isa == IUarchTest.ISA.aarch64)
-            {
-                GenerateArmAsm(sb);
-                if (this.initialDependentBranch) sb.AppendLine(UarchTestHelpers.GetArmDependentBranchTarget(this.Prefix));
-            }
-            else if (isa == IUarchTest.ISA.mips64)
-            {
-                GenerateMipsAsm(sb);
-            }
+            if (isa == IUarchTest.ISA.amd64) GenerateX86GccAsm(sb);
+            else if (isa == IUarchTest.ISA.aarch64) GenerateArmAsm(sb);
         }
 
         public void GenerateX86GccAsm(StringBuilder sb)
@@ -82,10 +70,9 @@ namespace AsmGen
                 for (int fillerIdx = 0; fillerIdx < Counts[i]; fillerIdx++)
                 {
                     string jumpLabel = $"{funcName}_edi_target{fillerIdx}";
-                    sb.AppendLine($"  cmp %r14, %r11");
-                    sb.AppendLine($"  je {jumpLabel}");
-                    // try to space the jumps out a bit
-                    if (this.mixNops) sb.AppendLine($"  nop");
+                    sb.AppendLine($"  jmp {jumpLabel}");
+                    sb.AppendLine(".align 16");
+                    if (fillerIdx % 2 == 0) sb.AppendLine("  nop");
                     sb.AppendLine($"{jumpLabel}:");
                 }
 
@@ -93,10 +80,10 @@ namespace AsmGen
                 for (int fillerIdx = 0; fillerIdx < Counts[i]; fillerIdx++)
                 {
                     string jumpLabel = $"{funcName}_esi_target{fillerIdx}";
-                    sb.AppendLine($"  cmp %r14, %r11");
-                    sb.AppendLine($"  je {jumpLabel}");
-                    if (this.mixNops) sb.AppendLine($"  nop");
+                    sb.AppendLine($"  jmp {jumpLabel}");
                     // try to space the jumps out a bit
+                    sb.AppendLine(".align 16");
+                    if (fillerIdx % 2 == 0) sb.AppendLine("  nop");
                     sb.AppendLine($"{jumpLabel}:");
                 }
 
@@ -144,8 +131,7 @@ namespace AsmGen
                 for (int fillerIdx = 0; fillerIdx < Counts[i]; fillerIdx++)
                 {
                     string jumpLabel = $"{funcName}_w25_target{fillerIdx}";
-                    sb.AppendLine($"  cmp x15, x10");
-                    sb.AppendLine($"  b.eq {jumpLabel}");
+                    sb.AppendLine($"  b {jumpLabel}");
                     sb.AppendLine($"{jumpLabel}:");
                 }
 
@@ -154,8 +140,7 @@ namespace AsmGen
                 for (int fillerIdx = 0; fillerIdx < Counts[i]; fillerIdx++)
                 {
                     string jumpLabel = $"{funcName}_w26_target{fillerIdx}";
-                    sb.AppendLine($"  cmp x15, x10");
-                    sb.AppendLine($"  b.eq {jumpLabel}");
+                    sb.AppendLine($"  b {jumpLabel}");
                     sb.AppendLine($"{jumpLabel}:");
                 }
 
@@ -168,48 +153,8 @@ namespace AsmGen
                 sb.AppendLine("  add sp, sp, #0x50");
                 sb.AppendLine("  ret\n\n");
             }
-        }
 
-        public void GenerateMipsAsm(StringBuilder sb)
-        {
-            StringBuilder ntJumpTargets = new StringBuilder();
-            for (int i = 0; i < Counts.Length; i++)
-            {
-                string initInstrs = "  move $r15, $r0\n  addi.d $r15, $r15, 15";
-                string funcName = this.Prefix + Counts[i];
-
-                // args in r4 = iterations, r5 = list, r6 = list (sink)
-                // use r12 and r13 for ptr chasing loads, r14 as decrement for iteration count
-                sb.AppendLine("\n" + funcName + ":");
-                sb.AppendLine("  ld.d $r12, $r5, 0");
-                sb.AppendLine("  ld.d $r13, $r5, 64");
-                sb.AppendLine("  xor $r14, $r14, $r14");
-                sb.AppendLine("  addi.d $r14, $r14, 1");
-                sb.AppendLine(initInstrs);
-                sb.AppendLine("\n" + funcName + "start:");
-                sb.AppendLine("  ld.d $r12, $r12, 0");
-                int fillerInstrCount = Counts[i];
-                for (int instrIdx = 0; instrIdx < fillerInstrCount; instrIdx++)
-                {
-                    string jumpLabel = "dontenduphere_r12_" + this.Prefix + "_" + Counts[i] + "_" + instrIdx;
-                    sb.AppendLine($"  beqz $r15, {jumpLabel}");
-                    ntJumpTargets.AppendLine(jumpLabel + ":");
-                    ntJumpTargets.AppendLine("  jr $r1");
-                }
-                sb.AppendLine("  ld.d $r13, $r13, 0");
-                for (int instrIdx = 0; instrIdx < fillerInstrCount; instrIdx++)
-                {
-                    string jumpLabel = "dontenduphere_r13_" + this.Prefix + "_" + Counts[i] + "_" + instrIdx;
-                    sb.AppendLine($"  beqz $r15, {jumpLabel}");
-                    ntJumpTargets.AppendLine(jumpLabel + ":");
-                    ntJumpTargets.AppendLine("  jr $r1");
-                }
-                sb.AppendLine("  sub.d $r4, $r4, $r14");
-                sb.AppendLine("  bnez $r4, " + funcName + "start");
-                sb.AppendLine(" jr $r1");
-            }
-
-            sb.AppendLine(ntJumpTargets.ToString());
+            if (this.initialDependentBranch) sb.AppendLine(UarchTestHelpers.GetArmDependentBranchTarget(this.Prefix));
         }
     }
 }

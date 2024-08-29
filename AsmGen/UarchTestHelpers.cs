@@ -47,41 +47,6 @@ namespace AsmGen
                 sb.AppendLine("extern \"C\" uint64_t " + test.Prefix + counts[i] + $"({test.FunctionDefinitionParameters});");
         }
 
-        public static void GenerateTestBlock(StringBuilder sb, UarchTest test)
-        {
-            sb.AppendLine("  if (argc > 1 && strncmp(test_name, \"" + test.Prefix + "\", " + test.Prefix.Length + ") == 0) {");
-            sb.AppendLine("    printf(\"" + test.Description + ":\\n\");");
-
-            int[] counts = test.Counts;
-            for (int i = 0; i < counts.Length; i++)
-            {
-                // use more iterations (iterations = structIterations * 100) and divide iteration count by tested-thing count
-                // for certain tests like call stack depth
-                if (test.DivideTimeByCount)
-                {
-                    sb.AppendLine("    tmp = structIterations;");
-                    sb.AppendLine("    structIterations = iterations / " + counts[i] + ";");
-                }
-
-                sb.AppendLine("    gettimeofday(&startTv, &startTz);");
-                sb.AppendLine("    " + test.Prefix + counts[i] + $"({test.GetFunctionCallParameters});");
-                sb.AppendLine("    gettimeofday(&endTv, &endTz);");
-                sb.AppendLine("    time_diff_ms = 1000 * (endTv.tv_sec - startTv.tv_sec) + ((endTv.tv_usec - startTv.tv_usec) / 1000);");
-                if (test.DivideTimeByCount)
-                    sb.AppendLine("    latency = 1e6 * (float)time_diff_ms / (float)(iterations);");
-                else
-                    sb.AppendLine("    latency = 1e6 * (float)time_diff_ms / (float)(structIterations);");
-                sb.AppendLine("    printf(\"" + counts[i] + ",%f\\n\", latency);\n");
-
-                if (test.DivideTimeByCount)
-                {
-                    sb.AppendLine("    structIterations = tmp;");
-                }
-            }
-
-            sb.AppendLine("  }\n");
-        }
-
         /// <summary>
         /// Generates test functions in assembly, with filler instructions between two divs
         /// Args are put into rcx, rdx, r8 (in that order) to match Windows calling convention
@@ -324,7 +289,8 @@ namespace AsmGen
             string initInstrs = null,
             string postLoadInstrs1 = null,
             string postLoadInstrs2 = null,
-            bool lfence = true)
+            bool lfence = true,
+            string cleanupInstrs = null)
         {
             for (int i = 0; i < counts.Length; i++)
             {
@@ -383,6 +349,7 @@ namespace AsmGen
 
                 sb.AppendLine("  dec %rcx");
                 sb.AppendLine("  jne " + funcName + "start");
+                if (cleanupInstrs != null) sb.AppendLine(cleanupInstrs);
                 sb.AppendLine("  pop %rdx");
                 sb.AppendLine("  pop %rcx");
                 sb.AppendLine("  pop %r8");
@@ -1032,6 +999,99 @@ namespace AsmGen
                 {
                     sb.AppendLine(fillerInstrs2[addIdx]);
                     addIdx = (addIdx + 1) % fillerInstrs2.Length;
+                }
+
+                sb.AppendLine("  sub x0, x0, 1");
+                sb.AppendLine("  cbnz x0, " + funcName + "start");
+                sb.AppendLine("  ldp x25, x26, [sp, #0x40]");
+                sb.AppendLine("  ldp x10, x11, [sp, #0x30]");
+                sb.AppendLine("  ldp x12, x13, [sp, #0x20]");
+                sb.AppendLine("  ldp x14, x15, [sp, #0x10]");
+                sb.AppendLine("  add sp, sp, #0x50");
+                sb.AppendLine("  ret\n\n");
+            }
+        }
+
+        // Just to deal with A73
+        public static string GetArmDependentBranch(string prefix)
+        {
+            return $"  cmp x25, x26\n  b.eq {prefix}_badthing";
+        }
+
+        public static string GetArmDependentBranchTarget(string prefix)
+        {
+            return $"{prefix}_badthing:\n  .word 0xf7f0a000";
+        }
+
+        public static void GenerateArmAsmDivNsqTestFuncs(StringBuilder sb,
+            int maxSize,
+            int[] counts,
+            string funcNamePrefix,
+            string[] depInstrs,
+            string[] indepInstrs,
+            bool divsInSq = false,
+            string initInstrs = null)
+        {
+            for (int i = 0; i < counts.Length; i++)
+            {
+                string funcName = funcNamePrefix + counts[i];
+
+                // args in x0 = iterations, x1 = list size, x2 = list (sink)
+                sb.AppendLine("\n" + funcName + ":");
+                sb.AppendLine("  sub sp, sp, #0x50");
+                sb.AppendLine("  stp x14, x15, [sp, #0x10]");
+                sb.AppendLine("  stp x12, x13, [sp, #0x20]");
+                sb.AppendLine("  stp x10, x11, [sp, #0x30]");
+                sb.AppendLine("  stp x25, x26, [sp, #0x40]");
+                sb.AppendLine("  mov x15, 1");
+                sb.AppendLine("  mov x14, 2");
+                sb.AppendLine("  mov x13, 3");
+                sb.AppendLine("  mov x12, 4");
+                sb.AppendLine("  mov x11, 5");
+                if (initInstrs != null) sb.AppendLine(initInstrs);
+                sb.AppendLine("  mov w25, 0x0");
+                sb.AppendLine("  mov w26, 0x40");
+                sb.AppendLine("\n" + funcName + "start:");
+                sb.AppendLine("  mov w25, w1");
+                sb.AppendLine("  udiv w25, w25, w13");
+                sb.AppendLine("  udiv w25, w25, w13");
+                sb.AppendLine("  udiv w25, w25, w13");
+                sb.AppendLine("  udiv w25, w25, w13");
+                sb.AppendLine("  udiv w25, w25, w13");
+                int fillerInstrCount = divsInSq ? counts[i] - 6 : counts[i];
+                for (int fillerIdx = 0, depInstrIdx = 0, indepInstrIdx = 0; fillerIdx < maxSize; fillerIdx++)
+                {
+                    if (fillerIdx < fillerInstrCount)
+                    {
+                        sb.AppendLine(depInstrs[depInstrIdx]);
+                        depInstrIdx = (depInstrIdx + 1) % depInstrs.Length;
+                    }
+                    else
+                    {
+                        sb.AppendLine(indepInstrs[indepInstrIdx]);
+                        indepInstrIdx = (indepInstrIdx + 1) % indepInstrs.Length;
+                    }
+                }
+                sb.AppendLine("  mov w26, w1");
+                sb.AppendLine("  udiv w26, w26, w13");
+                sb.AppendLine("  udiv w26, w26, w13");
+                sb.AppendLine("  udiv w26, w26, w13");
+                sb.AppendLine("  udiv w26, w26, w13");
+                sb.AppendLine("  udiv w26, w26, w13");
+                sb.AppendLine("  mov w25, w26");
+
+                for (int fillerIdx = 0, depInstrIdx = 0, indepInstrIdx = 0; fillerIdx < maxSize; fillerIdx++)
+                {
+                    if (fillerIdx < fillerInstrCount)
+                    {
+                        sb.AppendLine(depInstrs[depInstrIdx]);
+                        depInstrIdx = (depInstrIdx + 1) % depInstrs.Length;
+                    }
+                    else
+                    {
+                        sb.AppendLine(indepInstrs[indepInstrIdx]);
+                        indepInstrIdx = (indepInstrIdx + 1) % indepInstrs.Length;
+                    }
                 }
 
                 sb.AppendLine("  sub x0, x0, 1");

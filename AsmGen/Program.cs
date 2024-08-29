@@ -17,27 +17,38 @@ namespace AsmGen
         static void Main(string[] args)
         {
             List<IUarchTest> tests = new List<IUarchTest>();
-            tests.Add(new RobTest(384, 768, 1));
-            tests.Add(new ZeroRobTest(384, 768, 1));
-            tests.Add(new IntRfTest(200, 400, 1));
-            tests.Add(new FpRfTest(280, 400, 1));
-            tests.Add(new MixIntVec128RfTest(250, 500, 1));
-            tests.Add(new Fadd256RfTest(280, 400, 1));
-            tests.Add(new MixFAdd256and32RfTest(280, 400, 1));
-            tests.Add(new FlagRfTest(200, 400, 1));
-            tests.Add(new LdqTest(150, 256, 1));
-            tests.Add(new StqTest(100, 512, 1));
-            tests.Add(new AddSchedTest(64, 180, 1));
-            tests.Add(new MulSchedTest(64, 180, 1));
+            tests.Add(new RobTest(12, 800, 1, initialDependentBranch: false));
+
+            // avx-512
+            tests.Add(new Stq512Test(16, 300, 1, differentLines: true));
+            tests.Add(new Stq512Test(16, 300, 1, differentLines: false));
+            tests.Add(new MaskRfTest(32, 256, 1));
+
+            tests.Add(new ZeroRobTest(12, 800, 1, initialDependentBranch: false));
+            tests.Add(new IntRfTest(60, 400, 1, initialDependentBranch: false));
+            tests.Add(new FpRfTest(60, 800, 1, initialDependentBranch: false));;
+            tests.Add(new FlagRfTest(8, 100, 1, initialDependentBranch: false));
+            tests.Add(new LdqTest(80, 250, 1, initialDependentBranch: false));
+            tests.Add(new StqTest(4, 300, 1, initialDependentBranch: false));
+            tests.Add(new MixIntVec128RfTest(4, 600, 1, initialDependentBranch: false));
+            tests.Add(new MixIntRfDepBranchTest(4, 100, 1, 2));
+            tests.Add(new MixIntRfDepBranchTest(4, 100, 1, 4));
+            tests.Add(new MixIntRfDepBranchTest(4, 100, 1, 8));
+            tests.Add(new MixIntRfDepBranchTest(4, 100, 1, 16));
+            tests.Add(new AddSchedTest(16, 100, 1));
+            tests.Add(new MulSchedTest(4, 64, 1));
+            tests.Add(new LeaSchedTest(4, 64, 1));
             tests.Add(new MaddSchedTest(4, 64, 1));
             tests.Add(new JumpSchedTest(4, 64, 1));
-            tests.Add(new TakenJumpSchedTest(64, 180, 1));
-            tests.Add(new LoadSchedTest(50, 120, 1));
-            tests.Add(new StoreSchedTest(20, 80, 1));
-            tests.Add(new StoreDataSchedTest(20, 80, 1));
-            tests.Add(new MixAddJumpSchedTest(64, 180, 1));
-            tests.Add(new FaddSchedTest(64, 180, 1));
-            tests.Add(new FcmpSchedTest(4, 120, 1));
+            tests.Add(new MixJumpThenAddSched(20, 160, 1));
+            tests.Add(new TakenJumpSchedTest(4, 64, 1));
+            tests.Add(new LoadSchedTest(4, 72, 1));
+            tests.Add(new StoreSchedTest(4, 72, 1));
+            tests.Add(new StoreDataSchedTest(4, 80, 1));
+            tests.Add(new MixAddJumpSchedTest(64, 100, 1));
+            tests.Add(new FaddSchedTest(30, 250, 1));
+            tests.Add(new FmulSchedTest(30, 250, 1));
+            tests.Add(new FcmpSchedTest(10, 60, 1));
             tests.Add(new JsCvtSched(8, 120, 1));
             tests.Add(new MixAddvJsCvtSched(8, 120, 1));
             tests.Add(new AddvSched(8, 120, 1));
@@ -46,7 +57,9 @@ namespace AsmGen
             tests.Add(new Fadd256SchedTest(4, 200, 1));
             tests.Add(new Fma256SchedTest(4, 200, 1));
             tests.Add(new CvtSchedTest(64, 180, 1));
-            tests.Add(new Fadd128RfTest(200, 400, 1));
+            tests.Add(new Fadd128RfTest(200, 400, 1, false));
+            tests.Add(new Fadd256RfTest(200, 400, 1, Fadd256RfTest.TestMode.none));
+            tests.Add(new Fadd256RfTest(200, 400, 1, Fadd256RfTest.TestMode.pendingavx512instr));
             tests.Add(new BtbTest(4, BtbTest.BranchType.Unconditional));
             tests.Add(new BtbTest(8, BtbTest.BranchType.Unconditional));
             tests.Add(new BtbTest(16, BtbTest.BranchType.Unconditional));
@@ -57,24 +70,25 @@ namespace AsmGen
             tests.Add(new BtbTest(16, BtbTest.BranchType.Conditional));
             tests.Add(new BtbTest(32, BtbTest.BranchType.Conditional));
             tests.Add(new ReturnStackTest(1, 128, 1));
-            tests.Add(new BranchBufferTest(100, 160, 1));
+            tests.Add(new BranchBufferTest(4, 300, 1, initialDependentBranch: false));
+            tests.Add(new TakenBranchBufferTest(4, 300, 1, initialDependentBranch: false));
+            tests.Add(new MixBranchStoreTest(4, 100, 1, initialDependentBranch: true));
             tests.Add(new IndirectBranchTest(false));
             tests.Add(new BranchHistoryTest());
             tests.Add(new NopLoopTest(512, 1));
-            tests.Add(new AddLoopTest(68, 256, 1));
+            tests.Add(new AddLoopTest(4, 100, 1));
             tests.Add(new AeseSchedTest(4, 64, 1));
-            /*
-            tests.Add(new JsCvtNsq(8, 38, 1, 40)); // a710
-            tests.Add(new FaddNsq(8, 48, 1, 55)); // a710
-            tests.Add(new MixAddvJsCvtNsq(8, 55, 1)); // a710
-            tests.Add(new AddvNsq(8, 38, 1, 40)); // a710
-            */
-            tests.Add(new JsCvtNsq(8, 48, 1, 60));// x2
-            tests.Add(new FaddNsq(16, 80, 1, 140)); // x2
-            tests.Add(new MixAddvJsCvtNsq(8, 80, 1));
-            tests.Add(new AddvNsq(8, 48, 1, 60));
-            tests.Add(new StoreNsq(8, 30, 1)); // x2
-            tests.Add(new LoadNsq(8, 30, 1)); // x2
+            tests.Add(new FpStoreDataNsqTest(20, 230, 1));
+            tests.Add(new FpStoreDataNsqTest(10, 115, 1));
+            //tests.Add(new FaddNsq(20, 230, 1, 230));
+            //tests.Add(new FaddNsq(20, 115, 1, 115));
+            tests.Add(new Vec512RfTest(20, 500, 1));
+            tests.Add(new MixVec512Vec256RfTest(20, 500, 1));
+            tests.Add(new MixVec512Vec256BlockRfTest(200, 500, 1, 240));
+            tests.Add(new MixVec512Vec256BlockRfTest(200, 500, 1, 144));
+            tests.Add(new MixVec512Vec256BlockRfTest(200, 500, 1, 120));
+            tests.Add(new MixVec512Vec256BlockRfTest(200, 500, 1, 60));
+            tests.Add(new MmxRfTest(20, 200, 1));
 
             List<Task> tasks = new List<Task>();
             tasks.Add(Task.Run(() => GenerateCFile(tests, IUarchTest.ISA.amd64)));
@@ -102,8 +116,11 @@ namespace AsmGen
 
             foreach (IUarchTest test in tests)
             {
-                if (test.SupportsIsa(isa)) test.GenerateExternLines(sb);
-                Console.WriteLine("Test " + test.Prefix + " supports ISA " + isa);
+                if (test.SupportsIsa(isa))
+                {
+                    test.GenerateExternLines(sb);
+                    Console.WriteLine("Test " + test.Prefix + " supports ISA " + isa);
+                }
             }
 
             // no indexed addressing mode on these architectures, so make sure we can do pointer
@@ -126,6 +143,7 @@ namespace AsmGen
 
         static void GenerateAsmFile(List<IUarchTest> tests, IUarchTest.ISA isa)
         {
+            string filename = "clammicrobench_" + isa.ToString() + ".s";
             StringBuilder sb = new StringBuilder();
             sb.AppendLine(".text");
 
@@ -138,15 +156,19 @@ namespace AsmGen
                 UarchTest.GenerateRiscvPrepArrayFunction(sb);
             }
 
+            File.WriteAllText(filename, sb.ToString());
+            sb.Clear();
+
             foreach (IUarchTest test in tests)
             {
                 if (test.SupportsIsa(isa))
                 {
+                    sb.Clear();
                     test.GenerateAsmGlobalLines(sb);
                     test.GenerateAsm(sb, isa);
+                    File.AppendAllText(filename, sb.ToString());
                 }
             }
-            File.WriteAllText("clammicrobench_" + isa.ToString() + ".s", sb.ToString());
         }
 
         static void GenerateMakefile()
@@ -157,7 +179,7 @@ namespace AsmGen
                 sb.AppendLine(isa.ToString() + ":");
                 if (isa == IUarchTest.ISA.aarch64)
                 {
-                    sb.AppendLine($"\tgcc -march=armv8.5-a+aes clammicrobench_{isa.ToString()}.c clammicrobench_{isa.ToString()}.s -o cb");
+                    sb.AppendLine($"\tgcc -march=armv8.5-a+aes clammicrobench_{isa.ToString()}.c clammicrobench_{isa.ToString()}.s -o cb -static");
                     // hack for stupid compilers that need a ton of flags to do basic things
                     sb.AppendLine("android:");
                     sb.AppendLine("\tclang -march=armv8.3-a -mfpu=neon-fp-armv8 clammicrobench_aarch64.c clammicrobench_aarch64.s -o cb");
@@ -204,6 +226,8 @@ namespace AsmGen
             sb.AppendLine("      }"); // end -arg handling if
             sb.AppendLine("    }"); // end args handling for loop
 
+            sb.AppendLine("    if (test_name == NULL) { fprintf(stderr, \"No test specified\\n\"); return 0; }");
+
             // Optional affinity setting for certain troublesome platforms
             // don't need a version that uses Windows affinity APIs because Windows platforms never have this issue
             sb.AppendLine("#ifndef __MINGW32__");
@@ -239,7 +263,7 @@ namespace AsmGen
             sb.AppendLine("  posix_memalign((void **)&B, 64, sizeof(int) * list_size);\n");
             sb.AppendLine("#endif");
             sb.AppendLine("  for (int i = 0; i < list_size; i++) { B[i] = i; }\n");
-            sb.AppendLine("  fpArr = (float*)malloc(sizeof(float) * list_size);\n");
+            sb.AppendLine("  posix_memalign((void **)&fpArr, 64, sizeof(float) * list_size);");
             sb.AppendLine("  for (int i = 0;i < list_size; i++) { fpArr[i] = i + .1; }\n");
         }
     }
