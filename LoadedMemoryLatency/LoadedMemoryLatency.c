@@ -99,9 +99,12 @@ int main(int argc, char *argv[]) {
     }
 
     printf("BW Threads, Bandwidth (GB/s), Latency (ns)\n");
-    for (int bwThreadCount = 0; bwThreadCount < bwThreadCap; bwThreadCount++) {
+    for (int bwThreadCount = 0; bwThreadCount <= bwThreadCap; bwThreadCount++) {
         printf("%d, %f, %f\n", bwThreadCount, bandwidths[bwThreadCount], latencies[bwThreadCount]);
     }
+
+    free(latencies);
+    free(bandwidths);
     return 0;
 }
 
