@@ -47,6 +47,7 @@ int main(int argc, char *argv[]) {
     int bwThreadCap = get_nprocs() - 1;
     int coreCount = get_nprocs();
     int latencyCore = 0;
+    int *customCores = NULL;
     for (int argIdx = 1; argIdx < argc; argIdx++) {
         if (*(argv[argIdx]) == '-') {
             char *arg = argv[argIdx] + 1;
@@ -67,6 +68,34 @@ int main(int argc, char *argv[]) {
                 argIdx++;
                 throttle = atoi(argv[argIdx]);
                 fprintf(stderr, "Pulling memory bandwidth test threads back, factor of %d\n", throttle);
+            } else if (strncmp(arg, "bwcores", 7) == 0) {
+                argIdx++;
+                char *customCoreListStr = argv[argIdx];
+                bwThreadCap = 1;
+                for (int i = 0; customCoreListStr[i] != 0; i++) {   // shell should null terminate this
+                    if (customCoreListStr[i] == ',') {
+                        bwThreadCap++;
+                    }
+                }
+
+                customCores = (int *)malloc(sizeof(int) * bwThreadCap);
+                memset(customCores, 0, sizeof(int) * bwThreadCap);
+                int commaIdx = 1;
+                for (int i = 0; customCoreListStr[i] != 0; i++) {
+                    if (customCoreListStr[i] == ',') {
+                        customCores[commaIdx] = i + 1;
+                        commaIdx++;
+                        customCoreListStr[i] = '\0';
+                    }
+                }
+
+                fprintf(stderr, "Cores used for bandwidth load:");
+                for (int i = 0; i < bwThreadCap; i++) {
+                    customCores[i] = atoi(customCoreListStr + customCores[i]);
+                    fprintf(stderr, " %d", customCores[i]);
+                }
+
+                fprintf(stderr, "\n");
             }
         }
     }
@@ -79,17 +108,17 @@ int main(int argc, char *argv[]) {
     CPU_ZERO(&bw_cpuset);
 
     fprintf(stderr, "%d cores, will use up to %d for BW threads\n", coreCount, bwThreadCap);
-
     float *latencies = (float *)malloc(sizeof(float) * bwThreadCap + 1);
     float *bandwidths = (float *)malloc(sizeof(float) * bwThreadCap + 1);
     for (int bwThreadCount = 0; bwThreadCount <= bwThreadCap; bwThreadCount++) {
         float bw;
-        int nextCore = coreCount - bwThreadCount;
-        fprintf(stderr, "next core is %d\n", nextCore);
-        CPU_SET(nextCore, &bw_cpuset);
-        CPU_SET(nextCore, &bw_cpuset);
-        CPU_SET(nextCore, &bw_cpuset);
-        CPU_SET(nextCore, &bw_cpuset);
+        int nextCore;
+        if (bwThreadCount > 0) {
+            if (customCores == NULL) nextCore = coreCount - bwThreadCount - 1;
+            else nextCore = customCores[bwThreadCount - 1] ;
+            fprintf(stderr, "next core is %d\n", nextCore);
+            CPU_SET(nextCore, &bw_cpuset);
+        }
 
         if (nextCore < 0) break;
         float latencyNs = RunTest(latency_cpuset, bw_cpuset, bwThreadCount, 1, &bw);
@@ -105,6 +134,7 @@ int main(int argc, char *argv[]) {
 
     free(latencies);
     free(bandwidths);
+    if (customCores != NULL) free(customCores);
     return 0;
 }
 
@@ -220,8 +250,6 @@ void *RunLatencyTest(void *param) {
     // fucking affinity setting does not work
     int rc = sched_setaffinity(0, sizeof(cpu_set_t), &(testData->cpuset));
     if (rc != 0) fprintf(stderr, "Latency thread failed to set affinity\n");
-
-    fprintf(stderr, "Latency test iterations: %u\n", iterations);
 
     // Run test
     gettimeofday(&startTv, &startTz);
