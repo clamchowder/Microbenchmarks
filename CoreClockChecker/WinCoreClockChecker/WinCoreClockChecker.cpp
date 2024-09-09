@@ -25,6 +25,7 @@ struct ClockTestData {
 float* runMtClockTest(int* cores, int nCores);
 void PrintResults(int* cores, float* results, int coreCount);
 void RunCoreByCoreClockTest(int* cores, int coreCount);
+void RunEvenCoreTest(int coreCount);
 
 uint64_t start_iterations = 8e9;
 
@@ -32,6 +33,14 @@ int main(int argc, char *argv[])
 {
     // Test E-Cores one by one
     start_iterations = 8e9;
+
+    if (argc > 1)
+    {
+        int evenCoreCount = atoi(argv[1]);
+        printf("Even Cores, core count %d\n");
+        RunEvenCoreTest(evenCoreCount);
+    }
+
     int eCoreCount = sizeof(ECoreTestOrder) / sizeof(int);
     printf("E-Cores, Warmup:\n");
     RunCoreByCoreClockTest(ECoreTestOrder, sizeof(ECoreTestOrder) / sizeof(int));
@@ -53,6 +62,18 @@ int main(int argc, char *argv[])
     RunCoreByCoreClockTest(AllCores, sizeof(AllCores) / sizeof(int));
 
     return 0;
+}
+
+void RunEvenCoreTest(int coreCount)
+{
+    int* coreSequence = (int *)malloc(sizeof(int) * coreCount);
+    for (int i = 0; i < coreCount; i++)
+    {
+        coreSequence[i] = i * 2;
+    }
+
+    RunCoreByCoreClockTest(coreSequence, coreCount);
+    free(coreSequence);
 }
 
 void RunCoreByCoreClockTest(int *cores, int coreCount)

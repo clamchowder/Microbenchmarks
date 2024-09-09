@@ -30,7 +30,7 @@ int default_test_sizes[35] = { 2, 4, 8, 12, 16, 24, 32, 48, 64, 96, 128, 192, 25
                                131072, 262144, 393216, 524288 };
 #endif
 
-enum NopType { None, FourByte, EightByte, K8_FourByte, Branch16, LEA };
+enum NopType { None, FourByte, EightByte, K8_FourByte, Branch16, TenByte, LEA };
 
 struct BandwidthTestThreadData {
     uint32_t iterations;
@@ -211,6 +211,11 @@ int main(int argc, char *argv[]) {
                 else if (_strnicmp(argv[argIdx], "branch16", 6) == 0) {
                     instr = Branch16;
                     fprintf(stderr, "Using branch per 16B\n");
+                }
+                else if (_strnicmp(argv[argIdx], "instr10", 7) == 0)
+                {
+                    instr = TenByte;
+                    fprintf(stderr, "Using 10B NOPs\n");
                 }
                 else {
                     methodSet = 0;
@@ -534,10 +539,12 @@ void FillInstructionArray(uint64_t* arr, uint64_t sizeKb, enum NopType nopSize)
 
     char lea[8] = { 0x48, 0x8D, 0x04, 0x4B, 0x66, 0x0F, 0xEF, 0xC0 };
 
+    char nop10b[10] = { 0x66, 0x66, 0xf, 0x1f, 0x84, 0, 0, 0, 0, 0 };
+
     uint64_t elements = (sizeKb * 1024 / 8) - 1; // leave room for ret
     unsigned char* functionEnd = (unsigned char*)(arr + elements);
 
-    if (nopSize != Branch16) {
+    if (nopSize != Branch16 && nopSize != TenByte) {
         uint64_t* nopPtr;
         if (nopSize == EightByte) nopPtr = (uint64_t*)(nop8b);
         else if (nopSize == FourByte) nopPtr = (uint64_t*)(nop4b);
@@ -554,7 +561,18 @@ void FillInstructionArray(uint64_t* arr, uint64_t sizeKb, enum NopType nopSize)
 
         functionEnd[0] = 0xC3;
     }
-    else {
+    else if (nopSize == TenByte) {
+        char* targetArr = (char*)arr;
+        uint64_t targetArrLenBytes = sizeKb * 1024 - 2; // leave room for ret
+        int targetArrIdx;
+        for (targetArrIdx = 0; targetArrIdx + 10 < targetArrLenBytes; targetArrIdx += 10)
+        {
+            memcpy(targetArr + targetArrIdx, nop10b, 10);
+        }
+
+        targetArr[targetArrIdx] = 0xC3;
+    }
+    else if (nopSize == Branch16) {
         // jump forward 14 bytes
         char branch16b[8] = { 0xEB, 0x0E, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00 };
         char ret8b[8] = { 0xC3, 0, 0, 0, 0, 0, 0, 0 };
