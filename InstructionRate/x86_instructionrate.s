@@ -108,6 +108,8 @@
 .global fma4_128
 .global fdivtest
 .global fdivlattest
+.global fmuldenormtest
+.global fmuldenormlattest
 
 /*
   %rdi = arg0 = iteration count
@@ -5270,3 +5272,100 @@ fdivlattest_loop:
   pop %r8
   pop %r9
   ret
+
+fmuldenormlattest:
+  push %r9
+  push %r8
+  mov $0x00800000, %r9 /* smallest normal */
+  mov $0x3f000000, %r8 /* 0.5 */
+  movq %r9, %xmm6
+  movq %r8, %xmm7
+	mov $0x40000000, %r8 /* 2 */
+	movq %r8, %xmm4
+  mov $20, %r9
+fmuldenormlattest_loop:
+  mulss %xmm5, %xmm6
+  mulss %xmm5, %xmm6
+  mulss %xmm5, %xmm6
+  mulss %xmm5, %xmm6
+  mulss %xmm5, %xmm6
+  mulss %xmm5, %xmm6
+  mulss %xmm5, %xmm6
+  mulss %xmm5, %xmm6
+  mulss %xmm5, %xmm6
+  mulss %xmm5, %xmm6
+  mulss %xmm5, %xmm6
+  mulss %xmm5, %xmm6
+  mulss %xmm4, %xmm6
+  mulss %xmm4, %xmm6
+  mulss %xmm4, %xmm6
+  mulss %xmm4, %xmm6
+  mulss %xmm4, %xmm6
+  mulss %xmm4, %xmm6
+  mulss %xmm4, %xmm6
+  mulss %xmm4, %xmm6
+  sub %r9, %rdi
+  jnz fmuldenormlattest_loop
+  movq %xmm1, %rax
+  vzeroupper
+  pop %r8
+  pop %r9
+  ret
+
+fmuldenormtest:
+  push %r9
+  push %r8
+  mov $0x00800000, %r9
+  mov $0x3e4ccccd, %r8
+  movq %r9, %xmm6
+  movq %r8, %xmm7
+  movaps %xmm7, %xmm5
+  mov $20, %r9
+fmuldenormtest_loop:
+  mulss %xmm6, %xmm5
+  movaps %xmm7, %xmm5
+  mulss %xmm6, %xmm5
+  movaps %xmm7, %xmm5
+  mulss %xmm6, %xmm5
+  movaps %xmm7, %xmm5
+  mulss %xmm6, %xmm5
+  movaps %xmm7, %xmm5
+  mulss %xmm6, %xmm5
+  movaps %xmm7, %xmm5
+  mulss %xmm6, %xmm5
+  movaps %xmm7, %xmm5
+  mulss %xmm6, %xmm5
+  movaps %xmm7, %xmm5
+  mulss %xmm6, %xmm5
+  movaps %xmm7, %xmm5
+  mulss %xmm6, %xmm5
+  movaps %xmm7, %xmm5
+  mulss %xmm6, %xmm5
+  movaps %xmm7, %xmm5
+  mulss %xmm6, %xmm5
+  movaps %xmm7, %xmm5
+  mulss %xmm6, %xmm5
+  movaps %xmm7, %xmm5
+  mulss %xmm6, %xmm5
+  movaps %xmm7, %xmm5
+  mulss %xmm6, %xmm5
+  movaps %xmm7, %xmm5
+  mulss %xmm6, %xmm5
+  movaps %xmm7, %xmm5
+  mulss %xmm6, %xmm5
+  movaps %xmm7, %xmm5
+  mulss %xmm6, %xmm5
+  movaps %xmm7, %xmm5
+  mulss %xmm6, %xmm5
+  movaps %xmm7, %xmm5
+  mulss %xmm6, %xmm5
+  movaps %xmm7, %xmm5
+  mulss %xmm6, %xmm5
+  movaps %xmm7, %xmm5
+  sub %r9, %rdi
+  jnz fmuldenormtest_loop
+  movq %xmm1, %rax
+  vzeroupper
+  pop %r8
+  pop %r9
+  ret 

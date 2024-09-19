@@ -25,6 +25,10 @@
 #include <numa.h>
 #endif
 
+#ifndef gettid
+#define gettid() ((pid_t)syscall(SYS_gettid))
+#endif
+
 #define HUGEPAGE_HACK 1
 #undef HUGEPAGE_HACK
 

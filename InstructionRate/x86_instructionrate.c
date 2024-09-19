@@ -9,6 +9,8 @@
 #include <string.h>
 #include <cpuid.h>
 #include <pthread.h>
+#include <xmmintrin.h>
+#include <pmmintrin.h>
 
 // make mingw happy for cross compiling
 #ifdef __MINGW32__
@@ -122,6 +124,8 @@ extern uint64_t fma4_256(uint64_t iterations) __attribute((sysv_abi));
 extern uint64_t fma4_128(uint64_t iterations) __attribute((sysv_abi));
 extern uint64_t fdivtest(uint64_t iterations) __attribute((sysv_abi));
 extern uint64_t fdivlattest(uint64_t iterations) __attribute((sysv_abi));
+extern uint64_t fmuldenormtest(uint64_t iterations) __attribute((sysv_abi)); 
+extern uint64_t fmuldenormlattest(uint64_t iterations) __attribute((sysv_abi)); 
 
 float fpTestArr[8] __attribute__ ((aligned (64))) = { 0.2, 1.5, 2.7, 3.14, 5.16, 6.3, 7.7, 9.45 };
 float fpSinkArr[8] __attribute__ ((aligned (64))) = { 2.1, 3.2, 4.3, 5.4, 6.2, 7.8, 8.3, 9.4 };
@@ -391,6 +395,20 @@ int main(int argc, char *argv[]) {
     printf("128-bit sse int add per clk: %.2f\n", measureFunction(iterationsHigh, clockSpeedGhz, add128int));
   if (testName == NULL || argc > 1 && strncmp(argv[1], "mul128int", 9) == 0)
     printf("128-bit sse int mul per clk: %.2f\n", measureFunction(iterationsHigh, clockSpeedGhz, mul128int));
+
+  // set no ftz or daz
+  _MM_SET_FLUSH_ZERO_MODE(_MM_FLUSH_ZERO_OFF);
+  _MM_SET_DENORMALS_ZERO_MODE(_MM_DENORMALS_ZERO_OFF);
+  if (argc == 1 || argc > 1 && strncmp(argv[1], "fmuldenorm", 10) == 0)  {
+    float denormTp = measureFunction(iterations, clockSpeedGhz, fmuldenormtest);
+    printf("Scalar FP32 multiply -> denorm per clk: %.2f (%.2f recip)\n", denormTp, 1/denormTp);
+  }
+
+  _MM_SET_FLUSH_ZERO_MODE(_MM_FLUSH_ZERO_ON);
+  _MM_SET_DENORMALS_ZERO_MODE(_MM_DENORMALS_ZERO_ON); 
+  if (argc == 1 || argc > 1 && strncmp(argv[1], "fmuldenormftz", 13) == 0) {
+    printf("Scalar FP32 multiply -> denorm (ftz/daz) per clk: %.2f\n", measureFunction(iterationsHigh, clockSpeedGhz, fmuldenormtest)); 
+  }
 
   if (fmaSupported) {
       if (avx2Supported && (testName == NULL || argc > 1 && strncmp(argv[1], "fma256", 6) == 0))
