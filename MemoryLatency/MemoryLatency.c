@@ -86,6 +86,7 @@ float RunTest(uint32_t size_kb, uint32_t iterations, uint32_t *preallocatedArr);
 float RunAsmTest(uint32_t size_kb, uint32_t iterations, uint32_t *preallocatedArr);
 float RunTlbTest(uint32_t size_kb, uint32_t iterations, uint32_t *preallocatedArr);
 float RunMlpTest(uint32_t size_kb, uint32_t iterations, uint32_t parallelism);
+float RunAopTest(uint32_t size_kb, uint32_t iterations, uint32_t *preallocatedArr);
 void RunStlfTest(uint32_t iterations, int mode, int pageEnd, int loadDistance);
 void FillPatternArr64(uint64_t *pattern_arr, uint64_t list_size, uint64_t byte_increment);
 void FillPatternArr(uint32_t *pattern_arr, uint32_t list_size, uint32_t byte_increment);
@@ -121,6 +122,9 @@ int main(int argc, char* argv[]) {
                 } else if (strncmp(testType, "mlp", 3) == 0) {
                     mlpTest = 32;
                     fprintf(stderr, "Running memory parallelism test\n");
+                } else if (strncmp(testType, "aop", 3) == 0) {
+                    testFunc = RunAopTest;
+                    fprintf(stderr, "Running array-of-pointers test\n");
                 }
                 #ifndef UNKNOWN_ARCH
                 else if (strncmp(testType, "asm", 3) == 0) {
@@ -524,6 +528,60 @@ float RunTest(uint32_t size_kb, uint32_t iterations, uint32_t *preallocatedArr) 
     if (preallocatedArr == NULL) free(A);
 
     if (sum == 0) printf("sum == 0 (?)\n");
+    return latency;
+}
+
+// Test array of pointers
+float RunAopTest(uint32_t size_kb, uint32_t iterations, uint32_t *preallocatedArr) {
+    struct timeval startTv, endTv;
+    struct timezone startTz, endTz;
+    uint32_t element_count = size_kb * 1024 / 64;  // 64B cachelines
+    uint32_t sum = 0, current;
+
+    // allocate pattern array
+    uint32_t *pattern_arr = (uint32_t *)malloc(element_count * sizeof(uint32_t));
+    uint32_t **pointer_arr = (uint32_t **)malloc(element_count * sizeof(uint32_t *));
+
+    for (int i = 0; i < element_count; i++) pattern_arr[i] = i;
+    
+    int iter = element_count;
+    while (iter > 1) {
+        iter -= 1;
+        int j = iter - 1 == 0 ? 0 : rand() % (iter - 1);
+        uint32_t tmp = pattern_arr[iter];
+        pattern_arr[iter] = pattern_arr[j];
+        pattern_arr[j] = tmp;
+    }
+
+    uint32_t *A;
+    if (preallocatedArr == NULL) {
+        if (0 != posix_memalign((void **)(&A), 64, 1024 * size_kb)) {
+            fprintf(stderr, "Failed to allocate memory for %u KB test\n", size_kb);
+        }
+    } else {
+        A = (uint32_t *)preallocatedArr;
+    }
+
+    // make pattern array actually pointers
+    for (int i = 0; i < element_count; i++) {
+        pointer_arr[i] = A + (pattern_arr[i] * (64 / sizeof(uint32_t)));
+        *pointer_arr[i] = i + 1;
+    }
+    free(pattern_arr); 
+
+    uint32_t scaled_iterations = scale_iterations(size_kb, iterations);
+    gettimeofday(&startTv, &startTz);
+    for (int i = 0; i < scaled_iterations;) {
+        for (int pointer_idx = 0; (pointer_idx < element_count) && (i < scaled_iterations); pointer_idx++, i++)
+            sum += *pointer_arr[pointer_idx]; 
+    }
+    gettimeofday(&endTv, &endTz);
+    uint64_t time_diff_ms = 1000 * (endTv.tv_sec - startTv.tv_sec) + ((endTv.tv_usec - startTv.tv_usec) / 1000);
+    float latency = 1e6 * (float)time_diff_ms / (float)scaled_iterations;
+    if (sum == 0) fprintf(stderr, "something is not right\n");
+    if (preallocatedArr == NULL) free(A);
+
+    free(pointer_arr);
     return latency;
 }
 
