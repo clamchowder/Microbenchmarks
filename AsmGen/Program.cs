@@ -29,7 +29,7 @@ namespace AsmGen
             tests.Add(new FpRfTest(60, 800, 1, initialDependentBranch: false));;
             tests.Add(new FlagRfTest(8, 100, 1, initialDependentBranch: false));
             tests.Add(new LdqTest(80, 250, 1, initialDependentBranch: false));
-            tests.Add(new StqTest(4, 300, 1, initialDependentBranch: false));
+            tests.Add(new StqTest(4, 300, 1, initialDependentBranch: false, spaced: true));
             tests.Add(new MixIntVec128RfTest(4, 600, 1, initialDependentBranch: false));
             tests.Add(new MixIntRfDepBranchTest(4, 100, 1, 2));
             tests.Add(new MixIntRfDepBranchTest(4, 100, 1, 4));
@@ -53,10 +53,11 @@ namespace AsmGen
             tests.Add(new MixAddvJsCvtSched(8, 120, 1));
             tests.Add(new AddvSched(8, 120, 1));
             tests.Add(new FmovSched(8, 120, 1));
+            tests.Add(new FaddNsq(4, 140, 1, 200));
             tests.Add(new Fadd128SchedTest(4, 200, 1));
             tests.Add(new Fadd256SchedTest(4, 200, 1));
             tests.Add(new Fma256SchedTest(4, 200, 1));
-            tests.Add(new CvtSchedTest(64, 180, 1));
+            tests.Add(new CvtSchedTest(4, 180, 1));
             tests.Add(new Fadd128RfTest(200, 400, 1, false));
             tests.Add(new Fadd256RfTest(200, 400, 1, Fadd256RfTest.TestMode.none));
             tests.Add(new Fadd256RfTest(200, 400, 1, Fadd256RfTest.TestMode.pendingavx512instr));
@@ -69,7 +70,7 @@ namespace AsmGen
             tests.Add(new BtbTest(8, BtbTest.BranchType.Conditional));
             tests.Add(new BtbTest(16, BtbTest.BranchType.Conditional));
             tests.Add(new BtbTest(32, BtbTest.BranchType.Conditional));
-            tests.Add(new ReturnStackTest(1, 128, 1));
+            tests.Add(new ReturnStackTest(1, 256, 1));
             tests.Add(new BranchBufferTest(4, 300, 1, initialDependentBranch: false));
             tests.Add(new TakenBranchBufferTest(4, 300, 1, initialDependentBranch: false));
             tests.Add(new MixBranchStoreTest(4, 100, 1, initialDependentBranch: true));
@@ -77,11 +78,10 @@ namespace AsmGen
             tests.Add(new BranchHistoryTest());
             tests.Add(new NopLoopTest(512, 1));
             tests.Add(new AddLoopTest(4, 100, 1));
-            tests.Add(new AeseSchedTest(4, 64, 1));
+            tests.Add(new AeseSchedTest(4, 180, 1));
             tests.Add(new FpStoreDataNsqTest(20, 230, 1));
             tests.Add(new FpStoreDataNsqTest(10, 115, 1));
-            //tests.Add(new FaddNsq(20, 230, 1, 230));
-            //tests.Add(new FaddNsq(20, 115, 1, 115));
+            tests.Add(new AesencNsq(4, 100, 1, 200));
             tests.Add(new Vec512RfTest(20, 500, 1));
             tests.Add(new MixVec512Vec256RfTest(20, 500, 1));
             tests.Add(new MixVec512Vec256BlockRfTest(200, 500, 1, 240));

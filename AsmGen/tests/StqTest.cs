@@ -1,11 +1,14 @@
-﻿using System.Text;
+﻿using System.Collections.Generic;
+using System.Text;
 
 namespace AsmGen
 {
     public class StqTest : UarchTest
     {
         private bool initialDependentBranch;
-        public StqTest(int low, int high, int step, bool initialDependentBranch)
+        private bool spaced;
+
+        public StqTest(int low, int high, int step, bool initialDependentBranch, bool spaced)
         {
             this.Counts = UarchTestHelpers.GenerateCountArray(low, high, step);
             this.Prefix = "stq" + (initialDependentBranch ? "db" : string.Empty);
@@ -14,6 +17,7 @@ namespace AsmGen
             this.GetFunctionCallParameters = "structIterations, A, fpArr";
             this.DivideTimeByCount = false;
             this.initialDependentBranch = initialDependentBranch;
+            this.spaced = spaced;
         }
 
         public override bool SupportsIsa(IUarchTest.ISA isa)
@@ -30,12 +34,38 @@ namespace AsmGen
         {
             if (isa == IUarchTest.ISA.amd64)
             {
-                string[] unrolledStores = new string[4];
-                unrolledStores[0] = "  mov %r15, (%r8)";
-                unrolledStores[1] = "  mov %r14, (%r8)";
-                unrolledStores[2] = "  mov %r13, (%r8)";
-                unrolledStores[3] = "  mov %r12, (%r8)";
-                UarchTestHelpers.GenerateX86AsmStructureTestFuncs(sb, this.Counts, this.Prefix, unrolledStores, unrolledStores, includePtrChasingLoads: false);
+                string[] unrolledStores;
+                string postLoadInstrs = "";
+                if (spaced)
+                {
+                    postLoadInstrs = "mov %r8, %r11";
+                    List<string> storeInstrs = new List<string>();
+                    for (int i = 0; i < this.Counts[Counts.Length - 1]; i++)
+                    {
+                        // Send to different cache lines
+                        storeInstrs.Add("  mov %r15, (%r11)\n  add $64, %r11");
+                    }
+
+                    unrolledStores = storeInstrs.ToArray();
+                }
+                else
+                {
+                    unrolledStores = new string[4];
+                    unrolledStores[0] = "  mov %r15, (%r8)";
+                    unrolledStores[1] = "  mov %r14, (%r8)";
+                    unrolledStores[2] = "  mov %r13, (%r8)";
+                    unrolledStores[3] = "  mov %r12, (%r8)";
+                }
+
+                UarchTestHelpers.GenerateX86AsmStructureTestFuncs(
+                    sb, 
+                    this.Counts, 
+                    this.Prefix, 
+                    unrolledStores, 
+                    unrolledStores, 
+                    postLoadInstrs1: postLoadInstrs, 
+                    postLoadInstrs2: postLoadInstrs, 
+                    includePtrChasingLoads: false);
             }
             else if (isa == IUarchTest.ISA.aarch64)
             {

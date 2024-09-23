@@ -16,12 +16,24 @@ namespace AsmGen
 
         public override bool SupportsIsa(IUarchTest.ISA isa)
         {
+            if (isa == IUarchTest.ISA.amd64) return true;
             if (isa == IUarchTest.ISA.aarch64) return true;
             return false;
         }
 
         public override void GenerateAsm(StringBuilder sb, IUarchTest.ISA isa)
         {
+            if (isa == IUarchTest.ISA.amd64)
+            {
+                string[] unrolledAdds = new string[4];
+                unrolledAdds[0] = "  aesenc %xmm0, %xmm1";
+                unrolledAdds[1] = "  aesenc %xmm0, %xmm2";
+                unrolledAdds[2] = "  aesenc %xmm0, %xmm3";
+                unrolledAdds[3] = "  aesenc %xmm0, %xmm4";
+
+                UarchTestHelpers.GenerateX86AsmFpSchedTestFuncs(sb, this.Counts, this.Prefix, unrolledAdds, unrolledAdds);
+            }
+
             if (isa == IUarchTest.ISA.aarch64)
             {
                 string postLoadInstrs1 = "  ldr q0, [x2, w25, uxtw#0]";
