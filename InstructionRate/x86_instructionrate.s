@@ -2108,7 +2108,7 @@ latadd128int_loop:
 
 add128int:
   push %r9
-  mov $20, %r9
+  mov $16, %r9
   movq %r9, %xmm1
   //vpbroadcastq %xmm1, %xmm0
 add128int_loop:
@@ -2117,23 +2117,19 @@ add128int_loop:
   paddq %xmm2, %xmm2
   paddq %xmm3, %xmm3
   paddq %xmm4, %xmm4
+  paddq %xmm5, %xmm5
+  paddq %xmm6, %xmm6
+  paddq %xmm7, %xmm7
   paddq %xmm0, %xmm0
   paddq %xmm1, %xmm1
   paddq %xmm2, %xmm2
   paddq %xmm3, %xmm3
   paddq %xmm4, %xmm4
-  paddq %xmm0, %xmm0
-  paddq %xmm1, %xmm1
-  paddq %xmm2, %xmm2
-  paddq %xmm3, %xmm3
-  paddq %xmm4, %xmm4
-  paddq %xmm0, %xmm0
-  paddq %xmm1, %xmm1
-  paddq %xmm2, %xmm2
-  paddq %xmm3, %xmm3
-  paddq %xmm4, %xmm4
+  paddq %xmm5, %xmm5
+  paddq %xmm6, %xmm6
+  paddq %xmm7, %xmm7 
   sub %r9, %rdi
-  jnz add128int_loop
+  jg add128int_loop
   movq %xmm1, %rax
   pop %r9
   ret
