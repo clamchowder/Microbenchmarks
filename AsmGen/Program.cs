@@ -36,6 +36,7 @@ namespace AsmGen
             tests.Add(new MixIntRfDepBranchTest(4, 100, 1, 8));
             tests.Add(new MixIntRfDepBranchTest(4, 100, 1, 16));
             tests.Add(new AddSchedTest(16, 100, 1));
+            tests.Add(new PdepSchedTest(10, 100, 1));
             tests.Add(new MulSchedTest(4, 64, 1));
             tests.Add(new LeaSchedTest(4, 64, 1));
             tests.Add(new MaddSchedTest(4, 64, 1));
@@ -43,7 +44,10 @@ namespace AsmGen
             tests.Add(new MixJumpThenAddSched(20, 160, 1));
             tests.Add(new TakenJumpSchedTest(4, 64, 1));
             tests.Add(new LoadSchedTest(4, 72, 1));
+            tests.Add(new StoreNsq(4, 100, 1));
+            tests.Add(new LoadNsq(10, 100, 1));
             tests.Add(new StoreSchedTest(4, 72, 1));
+            tests.Add(new StoreDataNsq(20, 70, 1));
             tests.Add(new StoreDataSchedTest(4, 80, 1));
             tests.Add(new MixAddJumpSchedTest(64, 100, 1));
             tests.Add(new FaddSchedTest(30, 250, 1));
@@ -54,13 +58,13 @@ namespace AsmGen
             tests.Add(new AddvSched(8, 120, 1));
             tests.Add(new FmovSched(8, 120, 1));
             tests.Add(new FaddNsq(4, 140, 1, 200));
+            tests.Add(new AddNsq(4, 128, 1, 128));
             tests.Add(new Fadd128SchedTest(4, 200, 1));
             tests.Add(new Fadd256SchedTest(4, 200, 1));
             tests.Add(new Fma256SchedTest(4, 200, 1));
             tests.Add(new CvtSchedTest(4, 180, 1));
             tests.Add(new Fadd128RfTest(200, 400, 1, false));
             tests.Add(new Fadd256RfTest(200, 400, 1, Fadd256RfTest.TestMode.none));
-            tests.Add(new Fadd256RfTest(200, 400, 1, Fadd256RfTest.TestMode.pendingavx512instr));
             tests.Add(new BtbTest(4, BtbTest.BranchType.Unconditional));
             tests.Add(new BtbTest(8, BtbTest.BranchType.Unconditional));
             tests.Add(new BtbTest(16, BtbTest.BranchType.Unconditional));
@@ -79,15 +83,10 @@ namespace AsmGen
             tests.Add(new NopLoopTest(512, 1));
             tests.Add(new AddLoopTest(4, 100, 1));
             tests.Add(new AeseSchedTest(4, 180, 1));
+            tests.Add(new VecMulNsq(4, 160, 1, 160));
             tests.Add(new FpStoreDataNsqTest(20, 230, 1));
             tests.Add(new FpStoreDataNsqTest(10, 115, 1));
-            tests.Add(new AesencNsq(4, 100, 1, 200));
-            tests.Add(new Vec512RfTest(20, 500, 1));
-            tests.Add(new MixVec512Vec256RfTest(20, 500, 1));
-            tests.Add(new MixVec512Vec256BlockRfTest(200, 500, 1, 240));
-            tests.Add(new MixVec512Vec256BlockRfTest(200, 500, 1, 144));
-            tests.Add(new MixVec512Vec256BlockRfTest(200, 500, 1, 120));
-            tests.Add(new MixVec512Vec256BlockRfTest(200, 500, 1, 60));
+            tests.Add(new AesencNsq(4, 100, 1, 160));
             tests.Add(new MmxRfTest(20, 200, 1));
 
             List<Task> tasks = new List<Task>();
