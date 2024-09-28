@@ -119,6 +119,7 @@ extern uint64_t aesencadd128(uint64_t iterations) __attribute((sysv_abi));
 extern uint64_t aesencfma128(uint64_t iterations) __attribute((sysv_abi));
 extern uint64_t aesencmul128(uint64_t iterations) __attribute((sysv_abi));
 extern uint64_t mix256faddintadd(uint64_t iterations) __attribute((sysv_abi));
+extern uint64_t movqtoxmmtest(uint64_t iterations) __attribute((sysv_abi));
 
 extern uint64_t fma4_256(uint64_t iterations) __attribute((sysv_abi));
 extern uint64_t fma4_128(uint64_t iterations) __attribute((sysv_abi));
@@ -447,6 +448,9 @@ int main(int argc, char *argv[]) {
     printf("256-bit FADD per clk: %.2f\n", measureFunction(iterations, clockSpeedGhz, add256fp));
   if (avx2Supported && (testName == NULL || argc > 1 && strncmp(argv[1], "fmul256", 6) == 0))
     printf("256-bit FMUL per clk: %.2f\n", measureFunction(iterations, clockSpeedGhz, mul256fp));
+
+  if (testName == NULL || argc > 1 && strncmp(argv[1], "movqtoxmm", 9) == 0) 
+    printf("MOVQ GPR <-> XMM: %.2f clocks\n", 1 / measureFunction(iterations, clockSpeedGhz, movqtoxmmtest));
 
   // integer multiply. zhaoxin appears to handle 16-bit and 64-bit multiplies differntly
   // unlike Intel/AMD CPUs that behave similarly regardless of register width

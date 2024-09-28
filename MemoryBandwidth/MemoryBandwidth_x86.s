@@ -797,7 +797,7 @@ repstosb_copy_pass_loop:
   rep stosb
   dec %r8
   jnz repstosb_copy_pass_loop
-  movss (%r12), %xmm0
+  movss (%r13), %xmm0
   pop %rdi
   pop %rsi
   pop %r12
@@ -823,7 +823,7 @@ repstosd_copy_pass_loop:
   rep stosl
   dec %r8
   jnz repstosd_copy_pass_loop
-  movss (%r12), %xmm0
+  movss (%r13), %xmm0
   pop %rdi
   pop %rsi
   pop %r12
