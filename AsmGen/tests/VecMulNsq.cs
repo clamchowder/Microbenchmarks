@@ -2,14 +2,14 @@
 
 namespace AsmGen
 {
-    public class AesencNsq : UarchTest
+    public class VecMulNsq : UarchTest
     {
         private int totalOps;
-        public AesencNsq(int low, int high, int step, int totalOps)
+        public VecMulNsq(int low, int high, int step, int totalOps)
         {
             this.Counts = UarchTestHelpers.GenerateCountArray(low, high, step);
-            this.Prefix = "aesencnsq" + totalOps;
-            this.Description = "AESENC, excluding possible NSQ";
+            this.Prefix = "vecmulnsq" + totalOps;
+            this.Description = "Vector Integer Multiply, excluding possible NSQ";
             this.FunctionDefinitionParameters = "uint64_t iterations, int *arr, float *floatArr";
             this.GetFunctionCallParameters = "structIterations, A, fpArr";
             this.DivideTimeByCount = false;
@@ -18,7 +18,7 @@ namespace AsmGen
 
         public override bool SupportsIsa(IUarchTest.ISA isa)
         {
-            // if (isa == IUarchTest.ISA.aarch64) return true;
+            if (isa == IUarchTest.ISA.aarch64) return true;
             if (isa == IUarchTest.ISA.amd64) return true;
             return false;
         }
@@ -30,14 +30,14 @@ namespace AsmGen
                 string postLoadInstrs = "  mov %rdi, %r15\n  add %r8, %r15\n  movdqu (%r15), %xmm1";
                 string initInstrs = "  movdqu (%r8), %xmm2";
                 string[] depInstrs = new string[4];
-                depInstrs[0] = "  aesenc %xmm1, %xmm0";
-                depInstrs[1] = "  aesenc %xmm1, %xmm3";
-                depInstrs[2] = "  aesenc %xmm1, %xmm4";
-                depInstrs[3] = "  aesenc %xmm1, %xmm5";
+                depInstrs[0] = "  pmulld %xmm1, %xmm0";
+                depInstrs[1] = "  pmulld %xmm1, %xmm3";
+                depInstrs[2] = "  pmulld %xmm1, %xmm4";
+                depInstrs[3] = "  pmulld %xmm1, %xmm5";
 
                 string[] indepInstrs = new string[2];
-                indepInstrs[0] = "  aesenc %xmm2, %xmm6";
-                indepInstrs[1] = "  aesenc %xmm2, %xmm7";
+                indepInstrs[0] = "  pmulld %xmm2, %xmm6";
+                indepInstrs[1] = "  pmulld %xmm2, %xmm7";
                 UarchTestHelpers.GenerateX86AsmNsqTestFuncs(sb, this.totalOps, this.Counts, this.Prefix, depInstrs, indepInstrs, false, initInstrs, postLoadInstrs);
             }
             else if (isa == IUarchTest.ISA.aarch64)

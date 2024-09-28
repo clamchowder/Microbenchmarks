@@ -77,6 +77,7 @@ namespace AsmGen
                         sb.AppendLine("  call " + GetFunctionName(callDepth, callIdx + 1));
                     }
 
+                    sb.AppendLine(".align 64");
                     sb.AppendLine("  ret");
                 }
             }
