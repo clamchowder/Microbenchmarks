@@ -5231,7 +5231,6 @@ fdivtest_loop:
   sub %r9, %rdi
   jnz fdivtest_loop
   movq %xmm1, %rax
-  vzeroupper
   pop %r8
   pop %r9
   ret 
