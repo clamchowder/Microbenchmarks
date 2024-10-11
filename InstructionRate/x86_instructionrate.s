@@ -92,6 +92,7 @@
 .global add128int
 .global mul128int
 .global mix256faddintadd
+.global movqtoxmmtest
 
 .global pdeptest
 .global pexttest
@@ -5230,7 +5231,6 @@ fdivtest_loop:
   sub %r9, %rdi
   jnz fdivtest_loop
   movq %xmm1, %rax
-  vzeroupper
   pop %r8
   pop %r9
   ret 
@@ -5362,6 +5362,41 @@ fmuldenormtest_loop:
   jnz fmuldenormtest_loop
   movq %xmm1, %rax
   vzeroupper
+  pop %r8
+  pop %r9
+  ret 
+
+movqtoxmmtest:
+  push %r9
+  push %r8
+  push %r10
+  mov $20, %r9
+  mov $123, %r10
+movqtoxmmtest_loop:
+  movq %r10, %xmm1
+  movq %xmm1, %r10
+  movq %r10, %xmm1
+  movq %xmm1, %r10 
+  movq %r10, %xmm1
+  movq %xmm1, %r10 
+  movq %r10, %xmm1
+  movq %xmm1, %r10 
+  movq %r10, %xmm1
+  movq %xmm1, %r10 
+  movq %r10, %xmm1
+  movq %xmm1, %r10
+  movq %r10, %xmm1
+  movq %xmm1, %r10 
+  movq %r10, %xmm1
+  movq %xmm1, %r10 
+  movq %r10, %xmm1
+  movq %xmm1, %r10 
+  movq %r10, %xmm1
+  movq %xmm1, %r10  
+  sub %r9, %rdi
+  jnz movqtoxmmtest_loop
+  movq %xmm1, %rax
+  pop %r10
   pop %r8
   pop %r9
   ret 

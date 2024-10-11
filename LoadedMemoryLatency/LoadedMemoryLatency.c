@@ -48,6 +48,14 @@ int main(int argc, char *argv[]) {
     int coreCount = get_nprocs();
     int latencyCore = 0;
     int *customCores = NULL;
+    if (argc == 1) {
+        fprintf(stderr, "Options:\n");
+        fprintf(stderr, "-bwthreads [int]: Number of bandwidth test threads\n");
+        fprintf(stderr, "-latencyaffinity [int]: Core to run latency test thread on\n");
+        fprintf(stderr, "-bwcores [comma separated list]: Cores to run bandwidth load on\n");
+        fprintf(stderr, "-scaleiterations [int]: Iterations scaling factor\n");
+        fprintf(stderr, "-throttle [int]: Reduce bandwidth load per bandwidth test thread\n");
+    }
     for (int argIdx = 1; argIdx < argc; argIdx++) {
         if (*(argv[argIdx]) == '-') {
             char *arg = argv[argIdx] + 1;
