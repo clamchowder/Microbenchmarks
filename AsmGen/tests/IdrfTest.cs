@@ -34,7 +34,7 @@ namespace AsmGen
                 {
                     if (addIdx < addCount)
                     {
-                        string addInstr = "  add $" + (i + 1) + ", %r1" + (12 + (i % 4));
+                        string addInstr = "  add $" + (i + 1) + ", %r" + (12 + (i % 4));
                         testInstructions.Add(addInstr);
                         addIdx++;
                     }
@@ -46,7 +46,7 @@ namespace AsmGen
                     }
                     else
                     {
-                        string branchInstr = "  test %r11, %r11\n  je {dummyBranchTargetName}";
+                        string branchInstr = $"  test %r11, %r11\n  je {dummyBranchTargetName}";
                         testInstructions.Add(branchInstr);
                     }
                 }
