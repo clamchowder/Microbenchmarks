@@ -69,7 +69,7 @@ namespace AsmGen
                 {
                     string funcName = GetFunctionName(callDepth, callIdx);
                     sb.AppendLine($".global {funcName}");
-                    sb.AppendLine(".align 64"); // https://github.com/clamchowder/Microbenchmarks/issues/14
+                    sb.AppendLine(".align 128"); // https://github.com/clamchowder/Microbenchmarks/issues/14
                     sb.AppendLine($"{funcName}:");
                     if (callIdx < callDepth - 1)
                     {
@@ -77,7 +77,7 @@ namespace AsmGen
                         sb.AppendLine("  call " + GetFunctionName(callDepth, callIdx + 1));
                     }
 
-                    sb.AppendLine(".align 64");
+                    sb.AppendLine(".align 128");
                     sb.AppendLine("  ret");
                 }
             }
