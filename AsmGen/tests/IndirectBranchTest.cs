@@ -21,15 +21,15 @@ namespace AsmGen
         private int[] targetCounts;
         private int globalHistoryAssistBits;
 
-        public IndirectBranchTest()
+        public IndirectBranchTest(int globalHistoryAssistBits)
         {
-            Prefix = "indirectbranch";
-            Description = "Indirect branch prediction";
+            Prefix = "indirectbranch" + globalHistoryAssistBits;
+            Description = $"Indirect branch prediction, {globalHistoryAssistBits} assist bits";
             FunctionDefinitionParameters = "uint64_t iterations, uint32_t **arr, uint32_t arrLen, uint64_t **scratch";
             DivideTimeByCount = true;
             branchCounts = new int[] { 1, 2, 4, 8, 16, 32, 64, 128, 256, 512 };
             targetCounts = new int[] { 2, 4, 8, 12, 16, 24, 32, 48, 64, 96, 128 };
-            globalHistoryAssistBits = 4;
+            this.globalHistoryAssistBits = globalHistoryAssistBits;
             //branchCounts = new int[] { 1, 2 };
             //targetCounts = new int[] { 2, 3 };
         }
