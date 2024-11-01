@@ -490,7 +490,7 @@ float MeasureBw(uint32_t sizeKb, uint32_t iterations, uint32_t threads, int shar
     }
     
     int64_t time_diff_ms = 0, target_time_ms = 3000, max_target_time_ms = 7000;
-    int tolerance_met = 0;
+    int tolerance_met = 0, num_scaling_tries = 0;
 
     while ((time_diff_ms < target_time_ms / 2) || !tolerance_met) {
         // Create threads
@@ -584,6 +584,9 @@ float MeasureBw(uint32_t sizeKb, uint32_t iterations, uint32_t threads, int shar
             {
                 tolerance_met = 1;
             }
+
+            if (max_diff < 0.3f && num_scaling_tries > 5) tolerance_met = 1;
+            num_scaling_tries++;
         }
     }
 
