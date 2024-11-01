@@ -571,14 +571,17 @@ float MeasureBw(uint32_t sizeKb, uint32_t iterations, uint32_t threads, int shar
                 if (diff > max_diff) max_diff = diff;
             }
 
-            fprintf(stderr, "Variation: %f\n", max_diff);
+            fprintf(stderr, "%d KB: Variation: %f\n", sizeKb, max_diff);
 
-            if (max_diff > 0.1f)
+            if (max_diff > 0.15f)
             {
                 for (int i = 0; i < threads; i++)
                 {
                     threadData[i].iterations = scale_iterations_to_target(threadData[i].iterations, threadData[i].elapsed_time, max_time);
                 }
+
+                // give it some time to cool
+                Sleep(6000);
             }
             else
             {
