@@ -127,3 +127,51 @@ cleanup:
     free(result_arr);
     return latency;
 }
+
+float int_atomic_add_test(cl_context context,
+    cl_command_queue command_queue,
+    cl_kernel kernel,
+    size_t threads,
+    size_t localsize)
+{
+    // Loop unroll factor
+    const float opsPerIteration = 8.0f;
+    cl_int ret;
+    int64_t time_diff_ms = 0;
+    float gOpsPerSec;
+    uint32_t iterations = 7000;
+    uint32_t* A = (uint32_t*)malloc(sizeof(uint32_t) * threads);
+    for (int i = 0; i < threads; i++) A[i] = i;
+
+    cl_mem a_mem_obj = clCreateBuffer(context, CL_MEM_READ_WRITE, sizeof(uint32_t) * threads, NULL, &ret);
+    ret = clEnqueueWriteBuffer(command_queue, a_mem_obj, CL_TRUE, 0, sizeof(uint32_t) * threads, A, 0, NULL, NULL);
+    clSetKernelArg(kernel, 0, sizeof(cl_mem), (void*)&a_mem_obj);
+    clSetKernelArg(kernel, 1, sizeof(cl_int), (void*)&iterations);
+    clFinish(command_queue);
+
+    while (time_diff_ms < TARGET_TIME_MS / 2) {
+        start_timing();
+        ret = clEnqueueNDRangeKernel(command_queue, kernel, 1, NULL, &threads, &localsize, 0, NULL, NULL);
+        if (ret != CL_SUCCESS)
+        {
+            fprintf(stderr, "Failed to submit kernel to command queue. clEnqueueNDRangeKernel returned %d\n", ret);
+            gOpsPerSec = 0;
+            goto int_atomic_add_test_end;
+        }
+
+        clFinish(command_queue);
+        time_diff_ms = end_timing();
+        float totalOps = (float)iterations * opsPerIteration * (float)threads;
+        gOpsPerSec = ((float)totalOps / 1e9) / ((float)time_diff_ms / 1000);
+        fprintf(stderr, "GOPS: %f, elapsed time: %lld\n", gOpsPerSec, time_diff_ms);
+
+        iterations = adjust_iterations(iterations, time_diff_ms);
+        clSetKernelArg(kernel, 1, sizeof(cl_int), (void*)&iterations);
+    }
+
+
+int_atomic_add_test_end:
+    clReleaseMemObject(a_mem_obj);
+    free(A);
+    return gOpsPerSec;
+}

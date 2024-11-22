@@ -21,6 +21,7 @@
 #define MAX_SOURCE_SIZE (0x100000)
 
 #define CACHELINE_SIZE 64
+#define TARGET_TIME_MS 2000
 
 #ifndef _MSC_VER
 #define _strnicmp strncmp
@@ -32,6 +33,7 @@ extern int saveprogram;
 cl_context get_context_from_user(int platform_index, int device_index);
 cl_program build_program(cl_context context, const char* fname, const char *params);
 void write_program(cl_program program, const char *name);
+uint32_t adjust_iterations(uint32_t iterations, uint64_t time_ms);
 void FillPatternArr(uint32_t* pattern_arr, uint32_t list_size, uint32_t byte_increment);
 cl_uint getCuCount();
 size_t getMaxWorkgroupSize();
@@ -47,6 +49,11 @@ float int_atomic_latency_test(cl_context context,
     uint32_t iterations,
     short local,
     uint32_t *time_ms);
+float int_atomic_add_test(cl_context context,
+    cl_command_queue command_queue,
+    cl_kernel kernel,
+    size_t threads,
+    size_t localsize);
 float latency_test(cl_context context,
     cl_command_queue command_queue,
     cl_kernel kernel,

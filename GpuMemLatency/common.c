@@ -358,3 +358,14 @@ getProgram_Fail:
     free(binaries);
     free(binarySizes);
 }
+
+// Given last run settings, return target iteration count that should make the next run
+// go for approximately TARGET_TIME_MS
+uint32_t adjust_iterations(uint32_t iterations, uint64_t time_ms)
+{
+    uint32_t chase_iterations = (uint32_t)((float)iterations * TARGET_TIME_MS / (float)time_ms);
+    if (time_ms == 0) chase_iterations = iterations * 100;
+    //fprintf(stderr, "Kernel took %llu ms. Setting iterations = %u\n", time_ms, chase_iterations);
+
+    return chase_iterations;
+}

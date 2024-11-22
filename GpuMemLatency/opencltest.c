@@ -32,6 +32,8 @@ enum TestType {
     TexMemLatency,
     GlobalAtomicLatency,
     LocalAtomicLatency,
+    GlobalAtomicAdd,
+    LocalAtomicAdd,
     GlobalMemBandwidth,
     LocalMemBandwidth,
     LocalMemChaseBandwidth,
@@ -163,9 +165,14 @@ int main(int argc, char* argv[]) {
                     if (sizeKb == 0) sizeKb = 1;
                     if (group_count == 0) group_count = 16;
                 }
-                else if (_strnicmp(argv[argIdx], "globalatomic", 13) == 0) {
+                else if (_strnicmp(argv[argIdx], "globalatomiccmpxchg", 19) == 0) {
                     testType = GlobalAtomicLatency;
-                    fprintf(stderr, "Testing global atomic latency\n");
+                    fprintf(stderr, "Testing global atomic latency (cmpxchg)\n");
+                }
+                else if (_strnicmp(argv[argIdx], "globalatomicadd", 15) == 0)
+                {
+                    testType = GlobalAtomicAdd;
+                    fprintf(stderr, "Testing global atomic add\n");
                 }
                 else if (_strnicmp(argv[argIdx], "locallatency", 13) == 0) {
                     testType = LocalMemLatency;
@@ -175,9 +182,13 @@ int main(int argc, char* argv[]) {
                     testType = TexMemLatency;
                     fprintf(stderr, "Testing texture mem latency\n");
                 }
-                else if (_strnicmp(argv[argIdx], "localatomic", 11) == 0) {
+                else if (_strnicmp(argv[argIdx], "localatomiccmpxchg", 18) == 0) {
                     testType = LocalAtomicLatency;
-                    fprintf(stderr, "Testing local atomic latency\n");
+                    fprintf(stderr, "Testing local atomic latency (cmpxchg)\n");
+                }
+                else if (_strnicmp(argv[argIdx], "localatomicadd", 14) == 0) {
+                    testType = LocalAtomicAdd;
+                    fprintf(stderr, "Testing local atomic add\n");
                 }
                 else if (_strnicmp(argv[argIdx], "bw", 2) == 0) {
                     testType = GlobalMemBandwidth;
@@ -304,7 +315,7 @@ int main(int argc, char* argv[]) {
     {
         cl_program prog = build_program(context, "atomic_exec_latency_test.cl", NULL);
         cl_kernel atomic_latency_test_kernel = clCreateKernel(prog, "atomic_exec_latency_test", &ret);
-        if (saveprogram) write_program(program, "atomic_exec_latency_test");
+        if (saveprogram) write_program(prog, "atomic_exec_latency_test");
 
         chase_iterations = 200000;
         uint32_t elapsed_ms = 0, target_ms = 2000;
@@ -320,8 +331,8 @@ int main(int argc, char* argv[]) {
     else if (testType == LocalAtomicLatency)
     {
         cl_program prog = build_program(context, "local_atomic_latency_test.cl", NULL);
-        cl_kernel local_atomic_latency_test_kernel = clCreateKernel(program, "local_atomic_latency_test", &ret);
-        if (saveprogram) write_program(program, "local_atomic_latency_test");
+        cl_kernel local_atomic_latency_test_kernel = clCreateKernel(prog, "local_atomic_latency_test", &ret);
+        if (saveprogram) write_program(prog, "local_atomic_latency_test");
 
         chase_iterations = 500000;
         uint32_t elapsed_ms = 0, target_ms = 2000;
@@ -333,6 +344,22 @@ int main(int argc, char* argv[]) {
         printf("local atomic latency: %f\n", result);
         clReleaseKernel(local_atomic_latency_test_kernel);
         clReleaseProgram(prog);
+    }
+    else if (testType == GlobalAtomicAdd)
+    {
+        cl_program prog = build_program(context, "atomic_exec_latency_test.cl", NULL);
+        cl_kernel global_atomic_add_kernel = clCreateKernel(prog, "atomic_add_test", &ret);
+        if (saveprogram) write_program(prog, "atomic_exec_latency_test");
+        result = int_atomic_add_test(context, command_queue, global_atomic_add_kernel, thread_count, local_size);
+        fprintf(stderr, "Global atomic INT32 adds: %f GOPS\n", result);
+    }
+    else if (testType == LocalAtomicAdd)
+    {
+        cl_program prog = build_program(context, "local_atomic_latency_test.cl", NULL);
+        cl_kernel local_atomic_add_kernel = clCreateKernel(prog, "local_atomic_add_test", &ret);
+        if (saveprogram) write_program(prog, "local_atomic_latency_test");
+        result = int_atomic_add_test(context, command_queue, local_atomic_add_kernel, thread_count, local_size);
+        fprintf(stderr, "Local atomic INT32 adds: %f GOPS\n", result);
     }
     else if (testType == VectorMemLatency || testType == ScalarMemLatency)
     {
