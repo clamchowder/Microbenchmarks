@@ -9,6 +9,9 @@
 
 #ifndef __MINGW32__
 #include <sys/syscall.h>
+#include <sys/types.h>
+#include <sys/stat.h>
+#include <fcntl.h> 
 #endif
 
 #include <sys/time.h>
@@ -28,6 +31,8 @@
 #ifndef gettid
 #define gettid() ((pid_t)syscall(SYS_gettid))
 #endif
+
+#include "../Common/perfmon.h"
 
 #define HUGEPAGE_HACK 1
 #undef HUGEPAGE_HACK
@@ -557,6 +562,11 @@ void FillInstructionArray(uint64_t *nops, uint64_t sizeKb, int nopSize, int bran
     }
 
     uint64_t elements = sizeKb * 1024 / 8 - 1;
+    // HACK to hit loop buffer
+    if (sizeKb < 1024) {
+        //elements = 100;
+        fprintf(stderr, "Hack hit\n");
+    }
     if (!specialFill) {
         for (uint64_t nopIdx = 0; nopIdx < elements; nopIdx++) {
             nops[nopIdx] = *nop8bptr;
@@ -576,6 +586,26 @@ void FillInstructionArray(uint64_t *nops, uint64_t sizeKb, int nopSize, int bran
         #ifdef __x86_64
         unsigned char *functionEnd = (unsigned char *)(nops + elements);
         functionEnd[0] = 0xC3;
+
+        // HACK zen 4 loop buffer doesn't handle ret
+        if (sizeKb < 1024) {
+            // dec rcx
+            functionEnd[0] = 0x48;
+            functionEnd[1] = 0xff;
+            functionEnd[2] = 0xc9;
+            // jne nopfunc
+            functionEnd[3] = 0x0F;
+            functionEnd[4] = 0x85;
+            int32_t *jumpOffsetLocation = (int32_t *)(functionEnd + 5);
+            // https://stackoverflow.com/questions/14889643/how-encode-a-relative-short-jmp-in-x86
+            // "Whether it's short jump or not, it's always destination - (source + sizeof(instruction))"
+            int32_t jumpOffset = (uint64_t)(nops) - ((uint64_t)(functionEnd + 3) + 6);
+            *jumpOffsetLocation = jumpOffset;
+
+            // ret
+            functionEnd[9] = 0xC3;
+            fprintf(stderr, "hack filled\n");
+        }
         #endif
         #ifdef __aarch64__
         uint64_t *functionEnd = (uint64_t *)(nops + elements);
@@ -598,6 +628,28 @@ void FillInstructionArray(uint64_t *nops, uint64_t sizeKb, int nopSize, int bran
         fprintf(stderr, "mprotect failed, errno %d\n", errno);
     }
 #endif
+    // HACK zen 4 loop buffer. do energy measurement here
+    if (sizeKb < 1024) {
+       struct timeval startTv, endTv;
+       void (*nopfunc)(uint64_t) __attribute((ms_abi)) = (__attribute((ms_abi)) void(*)(uint64_t))nops;
+       // uint64_t hack_iterations = 1990000000; // lb
+       // uint64_t hack_iterations = 90000000;    // oc
+       uint64_t hack_iterations = 10000000;    // oc 
+       
+       fprintf(stderr, "loop buffer hack\n");
+       gettimeofday(&startTv, NULL);
+       uint64_t startCoreEnergy = readmsr(9, 0xC001029A);
+       nopfunc(hack_iterations);
+       uint64_t endCoreEnergy = readmsr(9, 0xC001029A);  
+       gettimeofday(&endTv, NULL);
+       
+       uint64_t coreEnergyDiff = endCoreEnergy - startCoreEnergy; // units = 15.3 micro-joules
+       float coreEnergyJoules = 15.3 * (float)coreEnergyDiff / 1e6;
+       unsigned int elapsed_time_ms = (unsigned int)((endTv.tv_sec - startTv.tv_sec) * 1000 + (endTv.tv_usec - startTv.tv_usec) / 1000); 
+       float elapsed_time_seconds = elapsed_time_ms / 1000.0f;
+       fprintf(stderr, "elapsed energy: %f joules\nelapsed time: %u ms\n", coreEnergyJoules, elapsed_time_ms);
+       fprintf(stderr, "core watts: %f\n", coreEnergyJoules / elapsed_time_seconds);
+    }
 }
 
 // If coreNode and memNode are set, use the specified numa config
