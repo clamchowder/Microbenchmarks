@@ -28,16 +28,16 @@ namespace AsmGen
             if (isa == IUarchTest.ISA.amd64)
             {
                 string[] dependentLoads = new string[4];
-                dependentLoads[0] = "  mov (%r8, %rdi, 4), %r15";
-                dependentLoads[1] = "  mov (%r8, %rdi, 4), %r14";
-                dependentLoads[2] = "  mov (%r8, %rdi, 4), %r13";
-                dependentLoads[3] = "  mov (%r8, %rdi, 4), %r12";
+                dependentLoads[0] = "  mov (%r8, %rdi, 2), %r15";
+                dependentLoads[1] = "  mov 4(%r8, %rdi, 2), %r14";
+                dependentLoads[2] = "  mov 8(%r8, %rdi, 2), %r13";
+                dependentLoads[3] = "  mov 16(%r8, %rdi, 2), %r12";
 
                 string[] dependentLoads1 = new string[4];
-                dependentLoads1[0] = "  mov (%r8, %rsi, 4), %r15";
-                dependentLoads1[1] = "  mov (%r8, %rsi, 4), %r14";
-                dependentLoads1[2] = "  mov (%r8, %rsi, 4), %r13";
-                dependentLoads1[3] = "  mov (%r8, %rsi, 4), %r12";
+                dependentLoads1[0] = "  mov (%r8, %rsi, 2), %r15";
+                dependentLoads1[1] = "  mov 4(%r8, %rsi, 2), %r14";
+                dependentLoads1[2] = "  mov 8(%r8, %rsi, 2), %r13";
+                dependentLoads1[3] = "  mov 16(%r8, %rsi, 2), %r12";
                 UarchTestHelpers.GenerateX86AsmStructureTestFuncs(sb, this.Counts, this.Prefix, dependentLoads, dependentLoads1, includePtrChasingLoads: true);
             }
             else if (isa == IUarchTest.ISA.aarch64)

@@ -17,22 +17,22 @@ namespace AsmGen
         static void Main(string[] args)
         {
             List<IUarchTest> tests = new List<IUarchTest>();
-            tests.Add(new RobTest(12, 800, 1, initialDependentBranch: false));
+            tests.Add(new RobTest(400, 470, 1, initialDependentBranch: false));
             tests.Add(new MaskRfTest(32, 256, 1));
 
             tests.Add(new IdrfTest(32, 192, 1));
             tests.Add(new ZeroRobTest(12, 240, 1, initialDependentBranch: false));
-            tests.Add(new IntRfTest(32, 240, 1, initialDependentBranch: false));
-            tests.Add(new FpRfTest(32, 240, 1, initialDependentBranch: false));;
+            tests.Add(new IntRfTest(250, 300, 1, initialDependentBranch: false));
+            tests.Add(new FpRfTest(250, 340, 1, initialDependentBranch: false));;
             tests.Add(new FlagRfTest(8, 240, 1, initialDependentBranch: false));
-            tests.Add(new LdqTest(10, 240, 1, initialDependentBranch: false));
-            tests.Add(new StqTest(4, 240, 1, initialDependentBranch: false, spaced: true));
+            tests.Add(new LdqTest(100, 240, 1, initialDependentBranch: false));
+            tests.Add(new StqTest(50, 100, 1, initialDependentBranch: false, spaced: true));
             tests.Add(new MixIntVec128RfTest(4, 600, 1, initialDependentBranch: false));
-            tests.Add(new AddSchedTest(16, 100, 1));
-            tests.Add(new PdepSchedTest(10, 100, 1));
-            tests.Add(new RorSchedTest(10, 110, 1));
-            tests.Add(new ShlSchedTest(10, 100, 1));
-            tests.Add(new MulSchedTest(4, 64, 1));
+            tests.Add(new AddSchedTest(70, 120, 1));
+            tests.Add(new PdepSchedTest(16, 100, 1));
+            tests.Add(new RorSchedTest(16, 110, 1));
+            tests.Add(new ShlSchedTest(16, 100, 1));
+            tests.Add(new MulSchedTest(16, 64, 1));
             tests.Add(new LeaSchedTest(4, 64, 1));
             tests.Add(new MaddSchedTest(4, 64, 1));
             tests.Add(new JumpSchedTest(4, 64, 1));
@@ -57,6 +57,8 @@ namespace AsmGen
             tests.Add(new AddvSched(8, 120, 1));
             tests.Add(new FmovSched(8, 120, 1));
             tests.Add(new FaddNsq(4, 64, 1, 110));
+            tests.Add(new FaddNsq(4, 62, 1, 80));
+            tests.Add(new FaddNsq(4, 62, 1, 62));
             tests.Add(new AddNsq(4, 128, 1, 128));
             tests.Add(new Fadd128SchedTest(4, 160, 1));
             tests.Add(new Fadd256SchedTest(4, 160, 1));
@@ -74,13 +76,13 @@ namespace AsmGen
             tests.Add(new BtbTest(16, BtbTest.BranchType.Conditional));
             tests.Add(new BtbTest(32, BtbTest.BranchType.Conditional));
             tests.Add(new ReturnStackTest(1, 128, 1));
-            tests.Add(new BranchBufferTest(4, 200, 1, initialDependentBranch: false));
+            tests.Add(new BranchBufferTest(90, 200, 1, initialDependentBranch: false));
             tests.Add(new TakenBranchBufferTest(4, 200, 1, initialDependentBranch: false));
             tests.Add(new MixBranchStoreTest(4, 100, 1, initialDependentBranch: true));
             tests.Add(new IndirectBranchTest(false));
             tests.Add(new BranchHistoryTest());
             tests.Add(new NopLoopTest(512, 1));
-            tests.Add(new AddLoopTest(4, 100, 1));
+            tests.Add(new StoreDivSchedTest(16, 100, 1));
             tests.Add(new AeseSchedTest(4, 180, 1));
             tests.Add(new VecMulNsq(4, 160, 1, 160));
             tests.Add(new FpStoreDataNsqTest(10, 115, 1));
@@ -106,6 +108,8 @@ namespace AsmGen
             StringBuilder sb = new StringBuilder();
             sb.AppendLine("#define _GNU_SOURCE");
             sb.AppendLine("#include <stdio.h>\n#include<stdint.h>\n#include<sys/time.h>\n#include <stdlib.h>\n#include <string.h>\n#include <time.h>\n");
+            sb.AppendLine("#include <sys/types.h>\n#include <unistd.h>\n#include <sys/stat.h>\n#include <fcntl.h>\n");
+            sb.AppendLine("#include <linux/perf_event.h>\n#include <sys/syscall.h>\n#include <sys/ioctl.h>\n");
             sb.AppendLine("#pragma GCC diagnostic ignored \"-Wattributes\"");
             string commonFunctions = File.ReadAllText($"{DataFilesDir}\\CommonFunctions.c");
             sb.AppendLine(commonFunctions);
@@ -196,6 +200,8 @@ namespace AsmGen
             sb.AppendLine("int main(int argc, char *argv[]) {");
             sb.AppendLine($"  uint64_t time_diff_ms, iterations = {iterations}, structIterations = {structTestIterations}, tmp;");
             sb.AppendLine("  double latency; int *A = NULL, *B = NULL; float *fpArr = NULL; char *test_name = NULL; int core_affinity = -1; int threads = 1;");
+            sb.AppendLine("  int readperfcore = -1;");
+            sb.AppendLine("  uint64_t instr = 0, cycles = 0, pmc0 = 0;");
             sb.AppendLine("  uint64_t tmpsink;");
             sb.AppendLine("  uint32_t list_size = " + latencyListSize + ";");
 
@@ -219,8 +225,11 @@ namespace AsmGen
             sb.AppendLine("        if (strncmp(arg, \"listsize\", 8) == 0) { argIdx++; list_size = atoi(argv[argIdx]); }");
             sb.AppendLine("        if (strncmp(arg, \"affinity\", 8) == 0) { argIdx++; core_affinity = atoi(argv[argIdx]); }");
             sb.AppendLine("        if (strncmp(arg, \"threads\", 7) == 0) { argIdx++; threads = atoi(argv[argIdx]); }");
+            sb.AppendLine("        if (strncmp(arg, \"readperf\", 8) == 0) { argIdx++; readperfcore = atoi(argv[argIdx]); fprintf(stderr, \"reading perf ctrs, core index %d\\n\", readperfcore); }");
             sb.AppendLine("      }"); // end -arg handling if
             sb.AppendLine("    }"); // end args handling for loop
+
+            // sb.AppendLine("    if (readperfcore >= 0) { enableIntelCounters(readperfcore); }");
 
             sb.AppendLine("    if (test_name == NULL) { fprintf(stderr, \"No test specified\\n\"); return 0; }");
 

@@ -69,7 +69,8 @@ namespace AsmGen
                 {
                     string funcName = GetFunctionName(callDepth, callIdx);
                     sb.AppendLine($".global {funcName}");
-                    sb.AppendLine(".align 128"); // https://github.com/clamchowder/Microbenchmarks/issues/14
+                    //sb.AppendLine(".align 160"); // https://github.com/clamchowder/Microbenchmarks/issues/14
+                    //for (int nopIdx = 0; nopIdx < 30; nopIdx++) Append8BNop(sb);
                     sb.AppendLine($"{funcName}:");
                     if (callIdx < callDepth - 1)
                     {
@@ -77,10 +78,16 @@ namespace AsmGen
                         sb.AppendLine("  call " + GetFunctionName(callDepth, callIdx + 1));
                     }
 
-                    sb.AppendLine(".align 128");
+                    // sb.AppendLine(".align 96");
+                    //for (int nopIdx = 0; nopIdx < 20; nopIdx++) Append8BNop(sb);
                     sb.AppendLine("  ret");
                 }
             }
+        }
+
+        private void Append8BNop(StringBuilder sb)
+        {
+            sb.AppendLine(".byte 0x0F, 0x1F, 0x84, 0x00, 0x00, 0x00, 0x00, 0x00");
         }
 
         public void GenerateArmAsm(StringBuilder sb)

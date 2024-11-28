@@ -68,6 +68,11 @@ namespace AsmGen
                     sb.AppendLine("    structIterations = iterations / " + Counts[i] + ";");
                 }
 
+                sb.AppendLine("    if (readperfcore >= 0) {");
+                sb.AppendLine("        start_perf_monitoring();");
+                // sb.AppendLine("        SetAndClearPMC(readperfcore, 0, 0x74, 0x10, 0);");
+                sb.AppendLine("    }");
+
                 sb.AppendLine("    gettimeofday(&startTv, &startTz);");
                 sb.AppendLine("#ifndef __MINGW32__");
                 sb.AppendLine("    if (threads > 1) {");
@@ -92,13 +97,23 @@ namespace AsmGen
                 sb.AppendLine("    " + Prefix + Counts[i] + $"({GetFunctionCallParameters});");
                 sb.AppendLine("#endif");
                 sb.AppendLine("    gettimeofday(&endTv, &endTz);");
+                sb.AppendLine("    if (readperfcore >= 0) {");
+                sb.AppendLine("        stop_perf_monitoring();");
+                //sb.AppendLine("        pmc0 = ReadPMC(readperfcore, 0);");
+                sb.AppendLine("    }");
                 sb.AppendLine("    time_diff_ms = 1000 * (endTv.tv_sec - startTv.tv_sec) + ((endTv.tv_usec - startTv.tv_usec) / 1000);");
                 //sb.AppendLine("    fprintf(stderr, \"%lu ms elapsed, %lu iter\\n\", time_diff_ms, structIterations);");
                 if (DivideTimeByCount)
                     sb.AppendLine("    latency = 1e6 * (float)time_diff_ms / (float)(iterations);");
                 else
                     sb.AppendLine("    latency = 1e6 * (float)time_diff_ms / (float)(structIterations);");
-                sb.AppendLine("    printf(\"" + Counts[i] + ",%f\\n\", latency);\n");
+                sb.AppendLine("    printf(\"" + Counts[i] + ",%f\", latency);\n");
+
+                // print out pmc stats
+                sb.AppendLine("    if (readperfcore >= 0) {");
+                sb.AppendLine("        printf(\",%ld,%ld\", instr, cycles);");
+                sb.AppendLine("    }");
+                sb.AppendLine("    printf(\"\\n\");");
 
                 if (DivideTimeByCount)
                 {
