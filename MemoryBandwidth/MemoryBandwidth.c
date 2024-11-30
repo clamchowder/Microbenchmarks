@@ -7,18 +7,25 @@
 #include <stdint.h>
 #include <string.h>
 
-#ifndef __MINGW32__
-#include <sys/syscall.h>
-#endif
-
 #include <sys/time.h>
 #include <unistd.h>
 #include <sched.h>
 #include <pthread.h>
 #include <sched.h>
 #include <math.h>
-#include <sys/mman.h>
 #include <errno.h>
+
+#ifndef __MINGW32__
+#include <sys/mman.h>
+#include <sys/syscall.h>
+#include <sys/ioctl.h>
+#include <linux/perf_event.h>
+#include <unistd.h>
+#include <sys/types.h>
+#include <sys/stat.h>
+#include <fcntl.h> 
+#include "../Common/perfmon.h"
+#endif 
 
 #ifdef NUMA
 #include <sys/sysinfo.h>
@@ -118,6 +125,8 @@ int hardaffinity = 0;
 int numa = 0;
 #endif
 
+int pmon = 0;
+
 int main(int argc, char *argv[]) {
     int threads = 1;
     int cpuid_data[4];
@@ -188,6 +197,12 @@ int main(int argc, char *argv[]) {
                 autothreads = atoi(argv[argIdx]);
                 fprintf(stderr, "Testing bw scaling up to %d threads\n", autothreads);
             }
+#ifndef __MINGW32__
+            else if (strncmp(arg, "pmon", 4) == 0) {
+                pmon = 1;
+                fprintf(stderr, "Using hardware performance monitoring\n");
+            }
+#endif
 #ifdef NUMA
             else if (strncmp(arg, "numa", 4) == 0) {
                 argIdx++;
@@ -423,18 +438,35 @@ int main(int argc, char *argv[]) {
 #endif
     else {
         printf("Using %d threads\n", threads);
+        printf("Size (KB),Bandwidth (GB/s)");
+#ifndef __MINGW32__
+        if (pmon) {
+            open_perf_monitoring();
+            append_perf_header();
+        }
+#endif
+        printf("\n");
         if (singleSize == 0)
         {
             for (int i = 0; i < testSizeCount; i++)
             {
-                printf("%d,%f\n", default_test_sizes[i], MeasureBw(default_test_sizes[i], GetIterationCount(default_test_sizes[i], threads), threads, shared, nopBytes, 0, 0));
+                printf("%d,%f", default_test_sizes[i], MeasureBw(default_test_sizes[i], GetIterationCount(default_test_sizes[i], threads), threads, shared, nopBytes, 0, 0));
+
+#ifndef __MINGW32__
+                if (pmon) append_perf_values();
+#endif
+                printf("\n");
                 if (sleepTime > 0) sleep(sleepTime);
             }
         }
         else
         {
-            printf("%d,%f\n", singleSize, MeasureBw(singleSize, GetIterationCount(singleSize, threads), threads, shared, nopBytes, 0, 0));
+            printf("%d,%f", singleSize, MeasureBw(singleSize, GetIterationCount(singleSize, threads), threads, shared, nopBytes, 0, 0));
+            append_perf_values();
+            printf("\n");
         }
+
+        close_perf_monitoring();
     }
 
     return 0;
@@ -753,11 +785,17 @@ float MeasureBw(uint64_t sizeKb, uint64_t iterations, uint64_t threads, int shar
         //int pthreadRc = pthread_create(testThreads + i, NULL, ReadBandwidthTestThread, (void *)(threadData + i));
     }
 
-
+    uint64_t instructions, cycles;
+#ifndef __MINGW32__
+    if (pmon) start_perf_monitoring();
+#endif
     gettimeofday(&startTv, &startTz);
     for (uint64_t i = 0; i < threads; i++) pthread_create(testThreads + i, NULL, ReadBandwidthTestThread, (void *)(threadData + i));
     for (uint64_t i = 0; i < threads; i++) pthread_join(testThreads[i], NULL);
     gettimeofday(&endTv, &endTz);
+#ifndef __MINGW32__
+    if (pmon) stop_perf_monitoring(&instructions, &cycles);
+#endif
 
     uint64_t time_diff_ms = 1000 * (endTv.tv_sec - startTv.tv_sec) + ((endTv.tv_usec - startTv.tv_usec) / 1000);
     double gbTransferred = iterations * sizeof(float) * elements * threads / (double)1e9;
