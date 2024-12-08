@@ -137,114 +137,122 @@ uint64_t ReadPMC(uint32_t coreindex, uint32_t pmcindex)
 }
 */
 
+#define PERF_NUM_EVENTS 4
 struct perf_read_data {
     uint64_t nr;
     struct {
         uint64_t value;
         uint64_t id;
-    } values[4];
+    } values[PERF_NUM_EVENTS];
 };
 
-struct perf_event_attr perfInstrsAttr, perfCyclesAttr;
-int perfInstrsFd = -1, perfCyclesFd = -1;
-uint64_t perfInstrsId, perfCyclesId;
+struct perf_select_data {
+    uint64_t id;   // id used to identify the event when it comes back in a group
+    int fd;        // file descriptor
+    struct perf_event_attr attr;
+    uint64_t value;
+    const char* description;
+};
+
+struct perf_select_data perf_selected_events[PERF_NUM_EVENTS];
 struct perf_read_data perfReadData;
+struct timeval perf_startTv, perf_endTv;
+uint64_t perf_time_ms;
+
+// populates basic properties
+void initialize_hw_event(struct perf_event_attr* attr, uint64_t cfg, uint32_t hwid) {
+    memset(attr, 0, sizeof(struct perf_event_attr));
+
+    // low 32 bits of config = hardware event id
+    // high 32 bits = PMU id (atom/core). Get from /sys/devices/<the thing>/type
+    // on Arrow Lake, atom = 10, core = 4 
+    attr->config = cfg | ((uint64_t)hwid << 32);
+    attr->type = PERF_TYPE_HARDWARE;
+    attr->size = sizeof(struct perf_event_attr);
+    attr->disabled = 1;
+    attr->exclude_kernel = 1;
+    attr->exclude_hv = 1;
+    attr->inherit = 1; // include child threads
+    attr->read_format = PERF_FORMAT_GROUP | PERF_FORMAT_ID;
+}
+
+void set_hw_event(struct perf_select_data* evt, int groupfd) {
+    evt->fd = syscall(__NR_perf_event_open, &(evt->attr), 0, -1, groupfd, 0);
+    ioctl(evt->fd, PERF_EVENT_IOC_ID, &(evt->id));
+    fprintf(stderr, "Opened event with fd %d\n", evt->fd);
+}
+
+void open_perf_monitoring() {
+    int groupLeaderFd = -1;
+    memset(perf_selected_events, 0, sizeof(struct perf_select_data) * PERF_NUM_EVENTS);
+
+    // Predefined events: PERF_COUNT_HW_INSTRUCTIONS, PERF_COUNT_HW_CPU_CYCLES
+    perf_selected_events[0].description = "cycles";
+    initialize_hw_event(&(perf_selected_events[0].attr), PERF_COUNT_HW_CPU_CYCLES, 10);
+    set_hw_event(perf_selected_events, -1);
+    groupLeaderFd = perf_selected_events[0].fd;
+
+    perf_selected_events[1].description = "bebound evt 74 umask 1";
+    initialize_hw_event(&(perf_selected_events[1].attr), 0x174, 0);
+    perf_selected_events[1].attr.type = 10;
+    set_hw_event(perf_selected_events + 1, groupLeaderFd);
+
+    perf_selected_events[2].description = "bebound evt 74 umask 4";
+    initialize_hw_event(&(perf_selected_events[2].attr), 0x0474, 0);
+    perf_selected_events[2].attr.type = 10;
+    set_hw_event(perf_selected_events + 2, groupLeaderFd);
+
+    perf_selected_events[3].description = "bebound evt 74 umask 80";
+    initialize_hw_event(&(perf_selected_events[3].attr), 0x8074, 0);
+    perf_selected_events[3].attr.type = 10;
+    set_hw_event(perf_selected_events + 3, groupLeaderFd);
+}
+
 void start_perf_monitoring() {
-    if (perfInstrsFd == -1) close(perfInstrsFd);
-    if (perfCyclesFd == -1) close(perfCyclesFd);
-
-    memset(&perfInstrsAttr, 0, sizeof(struct perf_event_attr));
-    perfInstrsAttr.type = PERF_TYPE_HARDWARE;
-    perfInstrsAttr.size = sizeof(struct perf_event_attr);
-    perfInstrsAttr.config = PERF_COUNT_HW_INSTRUCTIONS;
-    perfInstrsAttr.disabled = 1;
-    perfInstrsAttr.exclude_kernel = 1;
-    perfInstrsAttr.exclude_hv = 1;
-    perfInstrsAttr.read_format = PERF_FORMAT_GROUP | PERF_FORMAT_ID;
-    perfInstrsFd = syscall(__NR_perf_event_open, &perfInstrsAttr, 0, -1, -1, 0);
-    ioctl(perfInstrsFd, PERF_EVENT_IOC_ID, &perfInstrsId);
-
-    memset(&perfCyclesAttr, 0, sizeof(struct perf_event_attr));
-    perfCyclesAttr.type = PERF_TYPE_HARDWARE;
-    perfCyclesAttr.size = sizeof(struct perf_event_attr);
-    perfCyclesAttr.config = PERF_COUNT_HW_CPU_CYCLES;
-    perfCyclesAttr.disabled = 1;
-    perfCyclesAttr.exclude_kernel = 1;
-    perfCyclesAttr.exclude_hv = 1;
-    perfCyclesAttr.read_format = PERF_FORMAT_GROUP | PERF_FORMAT_ID;
-    perfCyclesFd = syscall(__NR_perf_event_open, &perfCyclesAttr, 0, -1, perfInstrsFd, 0);
-    ioctl(perfCyclesFd, PERF_EVENT_IOC_ID, &perfCyclesId);
-
-    ioctl(perfInstrsFd, PERF_EVENT_IOC_RESET, PERF_IOC_FLAG_GROUP);
-    ioctl(perfInstrsFd, PERF_EVENT_IOC_ENABLE, PERF_IOC_FLAG_GROUP);
+    gettimeofday(&perf_startTv, NULL);
+    int groupLeaderFd = perf_selected_events[0].fd;
+    ioctl(groupLeaderFd, PERF_EVENT_IOC_RESET, PERF_IOC_FLAG_GROUP);
+    ioctl(groupLeaderFd, PERF_EVENT_IOC_ENABLE, PERF_IOC_FLAG_GROUP);
 }
 
-void stop_perf_monitoring(uint64_t *instrs, uint64_t *cycles) {
-    ioctl(perfInstrsFd, PERF_EVENT_IOC_DISABLE, PERF_IOC_FLAG_GROUP);
-    read(perfInstrsFd, &perfReadData, sizeof(struct perf_read_data));
-    uint64_t instrs, cycles;
-    for (int i = 0; i < 2; i++) {
-        if (perfReadData.values[i].id == perfInstrsId)
-        {
-            instrs = perfReadData.values[i].value;
-            fprintf(stderr, "Instructions: %lu\n", instrs);
-        }
-        else if (perfReadData.values[i].id == perfCyclesId) {
-            cycles = perfReadData.values[i].value;
-            fprintf(stderr, "Cycles: %lu\n", cycles);
+uint64_t instrs, cycles, llcRef, llcMiss;
+void stop_perf_monitoring() {
+    int readbytes = 0;
+    int groupLeaderFd = perf_selected_events[0].fd;
+    ioctl(groupLeaderFd, PERF_EVENT_IOC_DISABLE, PERF_IOC_FLAG_GROUP);
+    // fprintf(stderr, "read %d bytes\n", sizeof(struct perf_read_data));
+    readbytes = read(groupLeaderFd, &perfReadData, sizeof(struct perf_read_data));
+    //fprintf(stderr, "Read %d bytes into perf_read_data. nr = %lu\n", readbytes, perfReadData.nr);
+    for (int i = 0; i < perfReadData.nr; i++) {
+        for (int evt_idx = 0; evt_idx < PERF_NUM_EVENTS; evt_idx++) {
+            if (perf_selected_events[evt_idx].id == perfReadData.values[i].id) {
+                struct perf_select_data* selected_evt = perf_selected_events + evt_idx;
+                selected_evt->value = perfReadData.values[i].value;
+                // fprintf(stderr, "%s: %lu\n", selected_evt->description, selected_evt->value);
+            }
         }
     }
-    close(perfInstrsFd);
-    close(perfCyclesFd);
+
+    gettimeofday(&perf_endTv, NULL);
+    perf_time_ms = ((perf_endTv.tv_sec - perf_startTv.tv_sec) * 1000 + (perf_endTv.tv_usec - perf_startTv.tv_usec) / 1000);
 }
 
-// returns fd for event
-int perf_event_open(struct perf_event_attr *hw)
-{
-    return syscall(__NR_perf_event_open, hw, 0, -1, -1, 0);
+void close_perf_monitoring() {
+    for (int evt_idx = 0; evt_idx < PERF_NUM_EVENTS; evt_idx++) close(perf_selected_events[evt_idx].fd);
 }
 
-void perf_start_event(int fd) { 
-    ioctl(fd, PERF_EVENT_IOC_RESET, PERF_IOC_FLAG_GROUP); 
-    ioctl(fd, PERF_EVENT_IOC_ENABLE, PERF_IOC_FLAG_GROUP);
-}
-
-uint64_t perf_read_event(int fd) {
-    uint64_t rc;
-    ioctl(fd, PERF_EVENT_IOC_DISABLE, 0);
-    int readrc = read(fd, &rc, 8);
-    if (readrc != 8) fprintf(stderr, "readrc is %d\n", readrc);
-    return rc;
-}
-
-
-void perf_start_instrs_count() {
-    if (perfInstrsFd == -1) {
-        memset(&perfInstrsAttr, 0, sizeof(struct perf_event_attr));
-        perfInstrsAttr.type = PERF_TYPE_HARDWARE;
-        perfInstrsAttr.size = sizeof(struct perf_event_attr);
-        perfInstrsAttr.config = PERF_COUNT_HW_INSTRUCTIONS;
-
-        perfInstrsFd = perf_event_open(&perfInstrsAttr);
-        fprintf(stderr, "perf instructions on fd %d\n", perfInstrsFd);
+void append_perf_header() {
+    for (int evt_idx = 0; evt_idx < PERF_NUM_EVENTS; evt_idx++) {
+        printf(",%s", perf_selected_events[evt_idx].description);
     }
 
-    perf_start_event(perfInstrsFd);
+    printf(",Time (ms)");
 }
 
-void perf_start_cycles_count() {
-    if (perfCyclesFd == -1) {
-        memset(&perfCyclesAttr, 0, sizeof(struct perf_event_attr));
-        perfCyclesAttr.type = PERF_TYPE_HARDWARE;
-        perfCyclesAttr.size = sizeof(struct perf_event_attr);
-        perfCyclesAttr.config = PERF_COUNT_HW_CPU_CYCLES;
-        perfCyclesAttr.disabled = 1;
-        perfCyclesFd = perf_event_open(&perfCyclesAttr);
-        fprintf(stderr, "perf cycles on fd %d\n", perfCyclesFd);
+void append_perf_values() {
+    for (int evt_idx = 0; evt_idx < PERF_NUM_EVENTS; evt_idx++) {
+        printf(",%lu", perf_selected_events[evt_idx].value);
     }
 
-    perf_start_event(perfCyclesFd);
+    printf(",%lu", perf_time_ms);
 }
-
-uint64_t perf_get_instrs_count() { return perf_read_event(perfInstrsFd); }
-uint64_t perf_get_cycles_count() { return perf_read_event(perfCyclesFd); }

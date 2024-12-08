@@ -225,7 +225,7 @@ namespace AsmGen
             sb.AppendLine("        if (strncmp(arg, \"listsize\", 8) == 0) { argIdx++; list_size = atoi(argv[argIdx]); }");
             sb.AppendLine("        if (strncmp(arg, \"affinity\", 8) == 0) { argIdx++; core_affinity = atoi(argv[argIdx]); }");
             sb.AppendLine("        if (strncmp(arg, \"threads\", 7) == 0) { argIdx++; threads = atoi(argv[argIdx]); }");
-            sb.AppendLine("        if (strncmp(arg, \"readperf\", 8) == 0) { argIdx++; readperfcore = atoi(argv[argIdx]); fprintf(stderr, \"reading perf ctrs, core index %d\\n\", readperfcore); }");
+            sb.AppendLine("        if (strncmp(arg, \"readperf\", 8) == 0) { argIdx++; readperfcore = atoi(argv[argIdx]); fprintf(stderr, \"reading perf ctrs\\n\"); open_perf_monitoring(); }");
             sb.AppendLine("      }"); // end -arg handling if
             sb.AppendLine("    }"); // end args handling for loop
 

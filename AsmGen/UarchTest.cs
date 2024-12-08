@@ -50,6 +50,9 @@ namespace AsmGen
         {
             sb.AppendLine("  if (argc > 1 && strncmp(test_name, \"" + Prefix + "\", " + Prefix.Length + ") == 0) {");
             sb.AppendLine("    printf(\"" + Description + ":\\n\");");
+            sb.AppendLine("  if (readperfcore >= 0) {");
+            sb.AppendLine("      printf(\"Ops,Iter Time\"); append_perf_header();printf(\"\\n\");");
+            sb.AppendLine("  }");
 
             if (isa == IUarchTest.ISA.mips64 || isa == IUarchTest.ISA.riscv)
             {
@@ -99,7 +102,6 @@ namespace AsmGen
                 sb.AppendLine("    gettimeofday(&endTv, &endTz);");
                 sb.AppendLine("    if (readperfcore >= 0) {");
                 sb.AppendLine("        stop_perf_monitoring();");
-                //sb.AppendLine("        pmc0 = ReadPMC(readperfcore, 0);");
                 sb.AppendLine("    }");
                 sb.AppendLine("    time_diff_ms = 1000 * (endTv.tv_sec - startTv.tv_sec) + ((endTv.tv_usec - startTv.tv_usec) / 1000);");
                 //sb.AppendLine("    fprintf(stderr, \"%lu ms elapsed, %lu iter\\n\", time_diff_ms, structIterations);");
@@ -111,7 +113,7 @@ namespace AsmGen
 
                 // print out pmc stats
                 sb.AppendLine("    if (readperfcore >= 0) {");
-                sb.AppendLine("        printf(\",%ld,%ld\", instr, cycles);");
+                sb.AppendLine("        append_perf_values();");
                 sb.AppendLine("    }");
                 sb.AppendLine("    printf(\"\\n\");");
 
