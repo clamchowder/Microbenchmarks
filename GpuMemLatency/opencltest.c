@@ -39,6 +39,7 @@ enum TestType {
     LocalMemChaseBandwidth,
     LocalMem64Bandwidth,
     LocalMemFloat4Bandwidth,
+    LoadStoreBandwidth,
     TextureThroughput,
     BufferBandwidth,
     MemBandwidthWorkgroupScaling,
@@ -150,7 +151,7 @@ int main(int argc, char* argv[]) {
                     testType = VectorMemLatency;
                     fprintf(stderr, "Testing global memory latency, vector accesses\n");
                 }
-                if (_strnicmp(argv[argIdx], "scalarlatency", 13) == 0) {
+                else if (_strnicmp(argv[argIdx], "scalarlatency", 13) == 0) {
                     testType = ScalarMemLatency;
                     fprintf(stderr, "Testing global memory latency, scalar accesses\n");
                 }
@@ -220,6 +221,10 @@ int main(int argc, char* argv[]) {
                 else if (_strnicmp(argv[argIdx], "bufferbw", 8) == 0) {
                     testType = BufferBandwidth;
                     fprintf(stderr, "Testing buffer bandwidth\n");
+                }
+                else if (_strnicmp(argv[argIdx], "ldstbw", 6) == 0) {
+                    testType = LoadStoreBandwidth;
+                    fprintf(stderr, "Testing load/store bandwidth\n");
                 }
                 else if (_strnicmp(argv[argIdx], "scaling", 7) == 0)
                 {
@@ -552,11 +557,12 @@ int main(int argc, char* argv[]) {
     else if (testType == LocalMemBandwidth || 
         testType == LocalMem64Bandwidth || 
         testType == BufferBandwidth || 
+        testType == LoadStoreBandwidth ||
         testType == TextureThroughput ||
         testType == LocalMemFloat4Bandwidth)
     {
         cl_program prog;
-        cl_kernel local_bw_kernel = NULL, local_64_bw_kernel = NULL, local_float4_bw_kernel = NULL, buffer_bw_kernel = NULL, tex_bw_kernel = NULL;
+        cl_kernel local_bw_kernel = NULL, local_64_bw_kernel = NULL, local_float4_bw_kernel = NULL, buffer_bw_kernel = NULL, tex_bw_kernel = NULL, loadstore_bw_kernel = NULL;
         if (testType == LocalMemBandwidth)
         {
             prog = build_program(context, "local_bw_test.cl", NULL);
@@ -577,6 +583,12 @@ int main(int argc, char* argv[]) {
             prog = build_program(context, "buffer_bw_test.cl", NULL);
             buffer_bw_kernel = clCreateKernel(prog, "buffer_bw_test", &ret);
             if (saveprogram) write_program(prog, "buffer_bw_test");
+        }
+        else if (testType == LoadStoreBandwidth)
+        {
+            prog = build_program(context, "ldst_bw_test.cl", NULL);
+            loadstore_bw_kernel = clCreateKernel(prog, "ldst_bw_test", &ret);
+            if (saveprogram) write_program(prog, "ldst_bw_test");
         }
         else { // tex throughput
             prog = build_program(context, "tex_bw_test.cl", NULL);
@@ -609,6 +621,11 @@ int main(int argc, char* argv[]) {
                 {
                     fprintf(stderr, "Testing buffer bw\n");
                     result = buffer_bw_test(context, command_queue, buffer_bw_kernel, thread_count, local_size, chase_iterations, &elapsed_ms);
+                }
+                else if (testType == LoadStoreBandwidth)
+                {
+                    fprintf(stderr, "Testing global load bandwidth\n");
+                    result = local_bw_test(context, command_queue, loadstore_bw_kernel, thread_count, local_size, chase_iterations, &elapsed_ms);
                 }
                 else if (testType == TextureThroughput)
                 {
