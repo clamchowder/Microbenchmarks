@@ -159,8 +159,8 @@ float runBufferSharingTest(cl_context context, cl_command_queue command_queue)
         {
             if (!fineGrainedSupport)
             {
-                clEnqueueSVMUnmap(command_queue, testptr, 0, NULL, &buffer_evt);
-                clWaitForEvents(1, &buffer_evt);
+                clEnqueueSVMUnmap(command_queue, testptr, 0, NULL, NULL);
+                clFinish(command_queue);
             }
             
 
@@ -174,8 +174,9 @@ float runBufferSharingTest(cl_context context, cl_command_queue command_queue)
 
             clWaitForEvents(1, &evt);
             if (!fineGrainedSupport) {
-                clEnqueueSVMMap(command_queue, CL_NON_BLOCKING, CL_MAP_READ | CL_MAP_WRITE, testptr, ALLOC_SIZE, 0, NULL, &buffer_evt);
-                clWaitForEvents(1, &buffer_evt);
+                clEnqueueSVMMap(command_queue, CL_NON_BLOCKING, CL_MAP_READ | CL_MAP_WRITE, testptr, ALLOC_SIZE, 0, NULL, NULL);
+                //clWaitForEvents(1, &buffer_evt);
+                clFinish(command_queue);
             }
 
             if (*testptr == current - 1)
