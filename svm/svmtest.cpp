@@ -14,6 +14,7 @@
 #else
 #include <sched.h>
 #include <pthread.h>
+#define _strnicmp strncmp
 #endif
 
 #define TARGET_TIME_MS 2000
