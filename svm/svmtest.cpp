@@ -137,17 +137,17 @@ end:
 float runBufferSharingTest(cl_context context, cl_command_queue command_queue)
 {
     cl_int ret;
-    cl_event evt;
+    cl_event evt, buffer_evt;
     size_t gpu_threads = 1;
     uint64_t time_diff_ms;
     float latency;
     uint32_t* testptr, current = 2, iterations = 1000;
     cl_program program = build_program(context, "atomic_latency_kernel.cl", NULL);
     cl_kernel increment_kernel = clCreateKernel(program, "increment_on_gpu", &ret);
-    int svmSupport = checkSVMSupport(CL_DEVICE_SVM_FINE_GRAIN_BUFFER);
-    if (svmSupport) fprintf(stderr, "Device has SVM fine grained buffer support\n");
+    int fineGrainedSupport = checkSVMSupport(CL_DEVICE_SVM_FINE_GRAIN_BUFFER);
+    if (fineGrainedSupport) fprintf(stderr, "Device has SVM fine grained buffer support\n");
     else fprintf(stderr, "Device can only use coarse grained buffer sharing\n");
-    testptr = (uint32_t*)clSVMAlloc(context, CL_MEM_READ_WRITE | (svmSupport ? CL_MEM_SVM_FINE_GRAIN_BUFFER : 0), ALLOC_SIZE, ALLOC_ALIGN);
+    testptr = (uint32_t*)clSVMAlloc(context, CL_MEM_READ_WRITE | (fineGrainedSupport ? CL_MEM_SVM_FINE_GRAIN_BUFFER : 0), ALLOC_SIZE, ALLOC_ALIGN);
     
     // test setup
     do {
@@ -157,7 +157,12 @@ float runBufferSharingTest(cl_context context, cl_command_queue command_queue)
         start_timing();
         for (int i = 0; i < iterations; i++)
         {
-            if (!svmSupport) clEnqueueSVMMap(command_queue, CL_TRUE, CL_MAP_READ | CL_MAP_WRITE, testptr, ALLOC_SIZE, 0, NULL, NULL);
+            if (!fineGrainedSupport)
+            {
+                clEnqueueSVMUnmap(command_queue, testptr, 0, NULL, &buffer_evt);
+                clWaitForEvents(1, &buffer_evt);
+            }
+            
 
             ret = clEnqueueNDRangeKernel(command_queue, increment_kernel, 1, NULL, &gpu_threads, &gpu_threads, 0, NULL, &evt);
             if (ret != CL_SUCCESS)
@@ -168,10 +173,9 @@ float runBufferSharingTest(cl_context context, cl_command_queue command_queue)
             }
 
             clWaitForEvents(1, &evt);
-            if (!svmSupport)
-            {
-                clEnqueueSVMUnmap(command_queue, testptr, 0, NULL, &evt);
-                clWaitForEvents(1, &evt);
+            if (!fineGrainedSupport) {
+                clEnqueueSVMMap(command_queue, CL_NON_BLOCKING, CL_MAP_READ | CL_MAP_WRITE, testptr, ALLOC_SIZE, 0, NULL, &buffer_evt);
+                clWaitForEvents(1, &buffer_evt);
             }
 
             if (*testptr == current - 1)
@@ -184,8 +188,6 @@ float runBufferSharingTest(cl_context context, cl_command_queue command_queue)
                 fprintf(stderr, "Buffer sharing did not work. Expected %d, test value is still %d\n", current - 1, *testptr);
                 goto bufferend;
             }
-
-            if (!svmSupport) clEnqueueSVMMap(command_queue, CL_TRUE, CL_MAP_READ | CL_MAP_WRITE, testptr, ALLOC_SIZE, 0, NULL, NULL);
         }
         time_diff_ms = end_timing();
         latency = (1e6 * (float)time_diff_ms / (float)(iterations));
