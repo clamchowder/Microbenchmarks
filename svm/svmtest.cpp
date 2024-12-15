@@ -48,15 +48,16 @@ typedef struct LatencyThreadData {
 enum TestType {
     Atomics,
     BufferSharing,
-    Copy
+    Custom
 };
 
 int main(int argc, char* argv[])
 {
     cl_int ret;
-    cl_context context = get_context_from_user(-1, -1);
-    cl_command_queue command_queue = clCreateCommandQueueWithProperties(context, selected_device_id, NULL, &ret);
+    cl_context context = NULL;
+    cl_command_queue command_queue = NULL;
     TestType testType = Atomics;
+    int platform_index = -1, device_index = -1;
 
     for (int argIdx = 1; argIdx < argc; argIdx++) {
         if (*(argv[argIdx]) == '-') {
@@ -72,7 +73,29 @@ int main(int argc, char* argv[])
                 testType = BufferSharing;
                 fprintf(stderr, "Test type = buffer sharing\n");
             }
+            else if (_strnicmp(arg, "custom", 6) == 0)
+            {
+                argIdx++;
+                testType = Custom;
+                fprintf(stderr, "Test type = custom code\n");
+            }
+            else if (_strnicmp(arg, "platform", 8) == 0) {
+                argIdx++;
+                platform_index = atoi(argv[argIdx]);
+                fprintf(stderr, "Using OpenCL platform index %d\n", platform_index);
+            }
+            else if (_strnicmp(arg, "device", 6) == 0) {
+                argIdx++;
+                device_index = atoi(argv[argIdx]);
+                fprintf(stderr, "Using OpenCL device index %d\n", device_index);
+            }
         }
+    }
+
+    if (testType != Custom)
+    {
+        context = get_context_from_user(platform_index, device_index);
+        command_queue = clCreateCommandQueueWithProperties(context, selected_device_id, NULL, &ret);
     }
 
     if (testType == Atomics)
@@ -83,10 +106,31 @@ int main(int argc, char* argv[])
     {
         runBufferSharingTest(context, command_queue);
     }
+    else
+    {
+        float results[4];
+        for (int i = 0; i < 4; i++)
+        {
+            context = get_context_from_user(1, 0);
+            command_queue = clCreateCommandQueueWithProperties(context, selected_device_id, NULL, &ret);
+            SetProcessAffinityMask(GetCurrentProcess(), 1UL << i);
+            results[i] = runAtomicsTest(context, command_queue);
+            clReleaseCommandQueue(command_queue);
+            clReleaseContext(context);
+        }
+
+        printf("CPU,GPU\n");
+        for (int i = 0; i < 4; i++)
+        {
+            printf("%d,%f\n", i, results[i]);
+        }
+    }
 
 end:
-    clReleaseCommandQueue(command_queue);
-    clReleaseContext(context);
+    if (testType != Custom) {
+        clReleaseCommandQueue(command_queue);
+        clReleaseContext(context);
+    }
     return 0;
 }
 
