@@ -11,6 +11,9 @@
 
 #ifdef _MSC_VER
 #include <Windows.h>
+#else
+#include <sched.h>
+#include <pthread.h>
 #endif
 
 cl_device_id selected_device_id;
