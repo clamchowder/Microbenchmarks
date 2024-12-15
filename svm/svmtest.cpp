@@ -108,6 +108,7 @@ int main(int argc, char* argv[])
     }
     else
     {
+#ifdef _MSC_VER
         float results[4];
         for (int i = 0; i < 4; i++)
         {
@@ -124,6 +125,7 @@ int main(int argc, char* argv[])
         {
             printf("%d,%f\n", i, results[i]);
         }
+#endif
     }
 
 end:
