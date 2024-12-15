@@ -1,4 +1,4 @@
-#define CL_TARGET_OPENCL_VERSION 200
+#define CL_TARGET_OPENCL_VERSION 300
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -16,10 +16,12 @@
 #include <pthread.h>
 #endif
 
+#define TARGET_TIME_MS 2000
+
 cl_device_id selected_device_id;
 cl_platform_id selected_platform_id;
 
-int checkSVMSupport();
+int checkSVMSupport(cl_device_svm_capabilities desiredCaps);
 cl_context get_context_from_user(int platform_index, int device_index);
 cl_program build_program(cl_context context, const char* fname, const char* params);
 #ifdef _MSC_VER
@@ -27,6 +29,9 @@ DWORD WINAPI LatencyTestThread(LPVOID param);
 #else
 void* LatencyTestThread(void* param);
 #endif
+
+float runAtomicsTest(cl_context context, cl_command_queue command_queue);
+float runBufferSharingTest(cl_context context, cl_command_queue command_queue);
 
 typedef struct LatencyThreadData {
     uint64_t start;       // initial value to write into target
@@ -40,85 +45,196 @@ typedef struct LatencyThreadData {
 // 4K alignment doesn't work
 #define ALLOC_ALIGN 64
 
+enum TestType {
+    Atomics,
+    BufferSharing,
+    Copy
+};
+
 int main(int argc, char* argv[])
 {
-    cl_int ret, result = 0;
-    cl_program program;
-    cl_kernel atomic_kernel;
+    cl_int ret;
     cl_context context = get_context_from_user(-1, -1);
-    uint32_t* testptr, iterations = 7000000;
-    LatencyData latencyData;
-    cl_mem result_obj, target_mem_obj;
-    float latency;
-    size_t global_item_size = 1;
-    size_t local_item_size = 1;
-    uint64_t time_diff_ms;
     cl_command_queue command_queue = clCreateCommandQueueWithProperties(context, selected_device_id, NULL, &ret);
-    int svmSupport = checkSVMSupport();
-    if (svmSupport) fprintf(stderr, "Device has SVM support\n");
-    else
-    {
-        fprintf(stderr, "SVM atomics are not supported on selected device. Exiting.\n");
-        goto end;
+    TestType testType = Atomics;
+
+    for (int argIdx = 1; argIdx < argc; argIdx++) {
+        if (*(argv[argIdx]) == '-') {
+            char* arg = argv[argIdx] + 1;
+            if (_strnicmp(arg, "atomics", 7) == 0) {
+                argIdx++;
+                testType = Atomics;
+                fprintf(stderr, "Test type = atomics\n");
+            }
+            else if (_strnicmp(arg, "buffersharing", 13) == 0)
+            {
+                argIdx++;
+                testType = BufferSharing;
+                fprintf(stderr, "Test type = buffer sharing\n");
+            }
+        }
     }
 
-    program = build_program(context, "atomic_latency_kernel.cl", NULL);
-    atomic_kernel = clCreateKernel(program, "atomic_exec_latency_test", &ret);
-    testptr = (uint32_t *)clSVMAlloc(context, CL_MEM_READ_WRITE | CL_MEM_SVM_FINE_GRAIN_BUFFER | CL_MEM_SVM_ATOMICS, ALLOC_SIZE, ALLOC_ALIGN);
-    if (testptr == NULL)
+    if (testType == Atomics)
     {
-        fprintf(stderr, "Failed to get memory via clSVMAlloc\n");
-        goto end;
+        runAtomicsTest(context, command_queue);
     }
-
-    target_mem_obj = clCreateBuffer(context, CL_MEM_READ_ONLY | CL_MEM_USE_HOST_PTR, ALLOC_SIZE, testptr, &ret);
-    result_obj = clCreateBuffer(context, CL_MEM_READ_WRITE, sizeof(cl_int), NULL, &result);
-    ret = clEnqueueWriteBuffer(command_queue, result_obj, CL_TRUE, 0, sizeof(cl_int), &result, 0, NULL, NULL);
-    clFinish(command_queue);
-    clSetKernelArg(atomic_kernel, 0, sizeof(cl_mem), (void*)&target_mem_obj);
-    clSetKernelArg(atomic_kernel, 1, sizeof(cl_int), (void*)&iterations);
-    clSetKernelArg(atomic_kernel, 2, sizeof(cl_mem), (void*)&result_obj);
-    latencyData.iterations = iterations;
-    latencyData.start = 2; // GPU thread start = 1
-    latencyData.target = testptr;
-
-#ifdef _MSC_VER
-    HANDLE testThread;
-    DWORD testThreadId;
-    testThread = CreateThread(NULL, 0, LatencyTestThread, &latencyData, CREATE_SUSPENDED, &testThreadId);
-#else
-    pthread_t testThread;
-    pthread_create(&testThread, NULL, LatencyTestThread, (void*)&latencyData);
-#endif
-
-    start_timing();
-#ifdef _MSC_VER
-    ResumeThread(testThread);
-#else
-#endif
-
-    // Blocking call, must come after ResumeThread
-    ret = clEnqueueNDRangeKernel(command_queue, atomic_kernel, 1, NULL, &global_item_size, &local_item_size, 0, NULL, NULL);
-    if (ret != CL_SUCCESS)
+    else if (testType == BufferSharing)
     {
-        fprintf(stderr, "Failed to submit kernel to command queue. clEnqueueNDRangeKernel returned %d\n", ret);
-        latency = 0;
-        goto end;
+        runBufferSharingTest(context, command_queue);
     }
-    clFinish(command_queue);
-#ifdef _MSC_VER
-    WaitForSingleObject(testThread, INFINITE);
-#else
-    pthread_join(testThread, NULL);
-#endif
-    time_diff_ms = end_timing();
-    latency = (1e6 * (float)time_diff_ms / (float)(iterations)) / 2;
-    printf("Latency: %f ns, %lu ms elapsed time\n", latency, time_diff_ms);
 
 end:
     clReleaseCommandQueue(command_queue);
     clReleaseContext(context);
     return 0;
+}
+
+float runBufferSharingTest(cl_context context, cl_command_queue command_queue)
+{
+    cl_int ret;
+    cl_event evt;
+    size_t gpu_threads = 1;
+    uint64_t time_diff_ms;
+    float latency;
+    uint32_t* testptr, current = 2, iterations = 1000;
+    cl_program program = build_program(context, "atomic_latency_kernel.cl", NULL);
+    cl_kernel increment_kernel = clCreateKernel(program, "increment_on_gpu", &ret);
+    int svmSupport = checkSVMSupport(CL_DEVICE_SVM_FINE_GRAIN_BUFFER);
+    if (svmSupport) fprintf(stderr, "Device has SVM fine grained buffer support\n");
+    else fprintf(stderr, "Device can only use coarse grained buffer sharing\n");
+    testptr = (uint32_t*)clSVMAlloc(context, CL_MEM_READ_WRITE | (svmSupport ? CL_MEM_SVM_FINE_GRAIN_BUFFER : 0), ALLOC_SIZE, ALLOC_ALIGN);
+    
+    // test setup
+    do {
+        clSetKernelArgSVMPointer(increment_kernel, 0, testptr);
+        *testptr = 0;
+        current = 2;
+        start_timing();
+        for (int i = 0; i < iterations; i++)
+        {
+            if (!svmSupport) clEnqueueSVMMap(command_queue, CL_TRUE, CL_MAP_READ | CL_MAP_WRITE, testptr, ALLOC_SIZE, 0, NULL, NULL);
+
+            ret = clEnqueueNDRangeKernel(command_queue, increment_kernel, 1, NULL, &gpu_threads, &gpu_threads, 0, NULL, &evt);
+            if (ret != CL_SUCCESS)
+            {
+                fprintf(stderr, "Failed to submit kernel to command queue. clEnqueueNDRangeKernel returned %d\n", ret);
+                latency = 0;
+                goto bufferend;
+            }
+
+            clWaitForEvents(1, &evt);
+            if (!svmSupport)
+            {
+                clEnqueueSVMUnmap(command_queue, testptr, 0, NULL, &evt);
+                clWaitForEvents(1, &evt);
+            }
+
+            if (*testptr == current - 1)
+            {
+                *testptr = current;
+                current += 2;
+            }
+            else
+            {
+                fprintf(stderr, "Buffer sharing did not work. Expected %d, test value is still %d\n", current - 1, *testptr);
+                goto bufferend;
+            }
+
+            if (!svmSupport) clEnqueueSVMMap(command_queue, CL_TRUE, CL_MAP_READ | CL_MAP_WRITE, testptr, ALLOC_SIZE, 0, NULL, NULL);
+        }
+        time_diff_ms = end_timing();
+        latency = (1e6 * (float)time_diff_ms / (float)(iterations));
+        printf("Latency: %f ns, %lu ms elapsed time, %u iterations\n", latency, time_diff_ms, iterations);
+        iterations = scale_iterations_to_target(iterations, time_diff_ms, TARGET_TIME_MS);
+
+    } while (time_diff_ms < TARGET_TIME_MS / 2);
+
+bufferend:
+    clSVMFree(context, testptr);
+    clReleaseKernel(increment_kernel);
+    clReleaseProgram(program);
+    return latency;
+}
+
+float runAtomicsTest(cl_context context, cl_command_queue command_queue)
+{
+    cl_int ret;
+    LatencyData latencyData;
+    float latency;
+    size_t gpu_threads = 1;
+    uint64_t time_diff_ms;
+    uint32_t* testptr, iterations = 1000000;
+    cl_program program;
+    cl_kernel atomic_kernel;
+
+    int svmSupport = checkSVMSupport(CL_DEVICE_SVM_ATOMICS);
+    if (svmSupport) fprintf(stderr, "Device has SVM support\n");
+    else
+    {
+        fprintf(stderr, "SVM atomics are not supported on selected device. Exiting.\n");
+        return 0.0f;
+    }
+
+    program = build_program(context, "atomic_latency_kernel.cl", NULL);
+    atomic_kernel = clCreateKernel(program, "atomic_exec_latency_test", &ret);
+    testptr = (uint32_t*)clSVMAlloc(context, CL_MEM_READ_WRITE | CL_MEM_SVM_FINE_GRAIN_BUFFER | CL_MEM_SVM_ATOMICS, ALLOC_SIZE, ALLOC_ALIGN);
+    if (testptr == NULL)
+    {
+        fprintf(stderr, "Failed to get memory via clSVMAlloc\n");
+        goto atomicsend;
+    }
+
+    clFinish(command_queue);
+    clSetKernelArgSVMPointer(atomic_kernel, 0, testptr);
+
+    do {
+        clSetKernelArg(atomic_kernel, 1, sizeof(cl_int), (void*)&iterations);
+        latencyData.iterations = iterations;
+        latencyData.start = 2; // GPU thread start = 1
+        latencyData.target = testptr;
+        *testptr = 0;
+
+#ifdef _MSC_VER
+        HANDLE testThread;
+        DWORD testThreadId;
+        testThread = CreateThread(NULL, 0, LatencyTestThread, &latencyData, CREATE_SUSPENDED, &testThreadId);
+#else
+        pthread_t testThread;
+        pthread_create(&testThread, NULL, LatencyTestThread, (void*)&latencyData);
+#endif
+
+        start_timing();
+#ifdef _MSC_VER
+        ResumeThread(testThread);
+#else
+#endif
+
+        // Blocking call, must come after ResumeThread
+        ret = clEnqueueNDRangeKernel(command_queue, atomic_kernel, 1, NULL, &gpu_threads, &gpu_threads, 0, NULL, NULL);
+        if (ret != CL_SUCCESS)
+        {
+            fprintf(stderr, "Failed to submit kernel to command queue. clEnqueueNDRangeKernel returned %d\n", ret);
+            latency = 0;
+            goto atomicsend;
+        }
+        clFinish(command_queue);
+#ifdef _MSC_VER
+        WaitForSingleObject(testThread, INFINITE);
+#else
+        pthread_join(testThread, NULL);
+#endif
+        time_diff_ms = end_timing();
+        latency = (1e6 * (float)time_diff_ms / (float)(iterations)) / 2;
+        printf("Latency: %f ns, %lu ms elapsed time, %u iterations\n", latency, time_diff_ms, iterations);
+        iterations = scale_iterations_to_target(iterations, time_diff_ms, TARGET_TIME_MS);
+    } while (time_diff_ms < TARGET_TIME_MS / 2);
+
+atomicsend:
+    clSVMFree(context, testptr);
+    clReleaseKernel(atomic_kernel);
+    clReleaseProgram(program);
+    return latency;
 }
 
 /// <summary>
@@ -154,7 +270,7 @@ void* LatencyTestThread(void* param) {
     }
 
 
-int checkSVMSupport()
+int checkSVMSupport(cl_device_svm_capabilities desiredCaps)
 {
     cl_device_svm_capabilities caps;
     cl_int ret = clGetDeviceInfo(selected_device_id, CL_DEVICE_SVM_CAPABILITIES, sizeof(cl_device_svm_capabilities), &caps, 0);
@@ -164,18 +280,12 @@ int checkSVMSupport()
         return 0;
     }
 
-    int atomics_support = CL_DEVICE_SVM_ATOMICS & caps;
-    if (!atomics_support)
-    {
-        fprintf(stderr, "Device does not support atomics on shared memory\n");
-    }
-
     if (caps & CL_DEVICE_SVM_COARSE_GRAIN_BUFFER) fprintf(stderr, "Device supports coarse grained buffer sharing\n");
     if (caps & CL_DEVICE_SVM_FINE_GRAIN_BUFFER) fprintf(stderr, "Device supports fine grained buffer sharing\n");
     if (caps & CL_DEVICE_SVM_FINE_GRAIN_SYSTEM) fprintf(stderr, "Device supports sharing virtual memory allocated on host\n");
     if (caps & CL_DEVICE_SVM_ATOMICS) fprintf(stderr, "Device supports atomic operations on shared memory\n");
 
-    return atomics_support;
+    return caps & desiredCaps;
 }
 
 #define MAX_SOURCE_SIZE (0x100000)

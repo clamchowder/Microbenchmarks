@@ -32,7 +32,12 @@ DWORD RunLatencyTest(void* param);
 bool GetPrivilege();
 float RunTest(uint64_t latencyAffinityMask, uint64_t bwAffinityMask, int bwThreadCount, int hugepages, float* measuredBw);
 
-uint64_t BandwidthTestMemoryKB = 1048576;
+void StartMonitoring();
+void EndMonitoring();
+void SetupMonitoring();
+void CloseMonitoring();
+
+uint64_t BandwidthTestMemoryKB = 1048576 * 4;
 uint64_t LatencyTestMemoryKB = 1048576;
 uint64_t LatencyTestIterations = 1e5;
 uint64_t throttle = 0;
@@ -109,6 +114,7 @@ int main(int argc, char* argv[]) {
     }
 
     GetPrivilege();
+    //SetupMonitoring();
 
     uint64_t latencyAffinityMask = 1UL << latencyCore;
     uint64_t bwAffinityMask = 0;
@@ -140,6 +146,7 @@ int main(int argc, char* argv[]) {
     free(latencies);
     free(bandwidths);
     if (customCores != NULL) free(customCores);
+    //CloseMonitoring();
     return 0;
 }
 
@@ -187,6 +194,7 @@ float RunTest(uint64_t latencyAffinity, uint64_t bwAffinity, int bwThreadCount, 
         SetThreadAffinityMask(threadHandles[threadIdx], bwAffinity);
     }
 
+    //StartMonitoring();
     ftime(&start);
     // start bw test threads
     for (int threadIdx = 0; threadIdx < bwThreadCount; threadIdx++) {
@@ -201,18 +209,25 @@ float RunTest(uint64_t latencyAffinity, uint64_t bwAffinity, int bwThreadCount, 
 
     WaitForMultipleObjects(bwThreadCount, threadHandles, true, INFINITE);
     ftime(&end);
+    //EndMonitoring();
 
     // count on a cacheline basis even though the test only loads 4B at a time
     uint64_t latencyReadBytes = 64 * LatencyTestIterations;
 
     uint64_t time_diff_ms = 1000 * (end.time - start.time) + (end.millitm - start.millitm);
     float totalReadData = (float)latencyReadBytes;
+    float bwReadBytes = 0.0f;
     for (int threadIdx = 0; threadIdx < bwThreadCount; threadIdx++) {
         free(bandwidthTestData[threadIdx].arr);
         totalReadData += (float)bandwidthTestData[threadIdx].read_bytes;
+        bwReadBytes += (float)bandwidthTestData[threadIdx].read_bytes;
     }
 
     *measuredBw = 1000 * (totalReadData / (float)1e9) / (float)time_diff_ms;
+    float bwBandwidth = 1000 * (bwReadBytes / (float)1e9) / (float)time_diff_ms;
+    float latencyBandwidth = 1000 * (latencyReadBytes / (float)1e9) / (float)time_diff_ms;
+
+    fprintf(stderr, "%d bw threads - %f BW bandwidth, %f latency bandwidth\n", bwThreadCount, bwBandwidth, latencyBandwidth);
 
     free(bandwidthTestData);
     if (map_failed) free(latencyArr);
@@ -278,6 +293,109 @@ DWORD ReadBandwidthTestThread(void* param) {
     uint64_t totalDataBytes = asm_read(bwTestData->arr, bwTestData->arr_length_bytes, bwTestData->flag, throttle);
     bwTestData->read_bytes = totalDataBytes;
     return 0;
+}
+
+// For winring0
+#define RDMSR_FUNCTION 0x821
+#define WRMSR_FUNCTION 0x822
+#define WINRING0_DEVICE_TYPE 40000
+HANDLE driverHandle = INVALID_HANDLE_VALUE;
+
+void SetupMonitoring() {
+    driverHandle = CreateFileA("\\\\.\\WinRing0_1_2_0", FILE_SHARE_READ | FILE_SHARE_WRITE, 0, NULL, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, NULL);
+    if (driverHandle == INVALID_HANDLE_VALUE)
+    {
+        fprintf(stderr, "Could not open WinRing0 driver: %d\n", GetLastError());
+    }
+}
+
+uint64_t ReadMsr(uint32_t index)
+{
+    uint32_t code = (WINRING0_DEVICE_TYPE << 16) | (RDMSR_FUNCTION << 2);
+    uint64_t rc;
+    DWORD bytesReturned;
+    if (!DeviceIoControl(driverHandle, code, &index, sizeof(uint32_t), &rc, sizeof(uint64_t), &bytesReturned, NULL))
+    {
+        fprintf(stderr, "ReadMsr failed (ioctl returned false)\n");
+    }
+
+    return rc;
+}
+
+void WriteMsr(uint32_t index, uint64_t value)
+{
+    uint32_t code = (WINRING0_DEVICE_TYPE << 16) | (WRMSR_FUNCTION << 2);
+    char inputBuffer[sizeof(uint32_t) + sizeof(uint64_t)];
+    *(uint32_t*)inputBuffer = index;
+    *(uint64_t*)(inputBuffer + sizeof(uint32_t)) = value;
+    DWORD bytesReturned;
+    if (!DeviceIoControl(driverHandle, code, &inputBuffer, sizeof(uint32_t) + sizeof(uint64_t), NULL, 0, &bytesReturned, NULL))
+    {
+        fprintf(stderr, "WriteMsr failed (ioctl returned false)\n");
+    }
+}
+
+#define L3_PERF_CTL0 0xC0010230
+#define L3_PERF_CTL1 0xC0010232
+#define L3_PERF_CTL2 0xC0010234
+#define L3_PERF_CTL3 0xC0010236
+#define L3_PERF_CTR0 0xC0010231
+#define L3_PERF_CTR1 0xC0010233
+#define L3_PERF_CTR2 0xC0010235
+#define L3_PERF_CTR3 0xC0010237
+
+void ClearL3Counters() {
+    WriteMsr(L3_PERF_CTR0, 0);
+    WriteMsr(L3_PERF_CTR1, 0);
+    WriteMsr(L3_PERF_CTR2, 0);
+    WriteMsr(L3_PERF_CTR3, 0);
+}
+
+void StartMonitoring() {
+    uint64_t l3access = 0x0300c0000040ff04;
+    uint64_t l3miss = 0x0300c00000400104;
+    uint64_t l3miss_sampled_dram_req = 0x0303c000004003ad;
+    uint64_t l3miss_sampled_dram_req_latency = 0x0303c000004003ac;
+
+    SetThreadAffinityMask(GetCurrentThread(), 1); // use core 0 in ccd 0
+    WriteMsr(L3_PERF_CTL0, l3access);
+    WriteMsr(L3_PERF_CTL1, l3miss);
+    WriteMsr(L3_PERF_CTL2, l3miss_sampled_dram_req);
+    WriteMsr(L3_PERF_CTL3, l3miss_sampled_dram_req_latency);
+    ClearL3Counters();
+
+    SetThreadAffinityMask(GetCurrentThread(), 16); // use core 0 in ccd 1
+    WriteMsr(L3_PERF_CTL0, l3access);
+    WriteMsr(L3_PERF_CTL1, l3miss);
+    WriteMsr(L3_PERF_CTL2, l3miss_sampled_dram_req);
+    WriteMsr(L3_PERF_CTL3, l3miss_sampled_dram_req_latency);
+    ClearL3Counters();
+}
+
+void EndMonitoring() {
+    SetThreadAffinityMask(GetCurrentThread(), 1); // use core 0 in ccd 0
+    uint64_t ccd0L3Access = ReadMsr(L3_PERF_CTR0);
+    uint64_t ccd0L3Miss = ReadMsr(L3_PERF_CTR1);
+    uint64_t ccd0L3SampledDramReq = ReadMsr(L3_PERF_CTR2);
+    uint64_t ccd0L3SampledDramReqLatency = ReadMsr(L3_PERF_CTR3);
+    float ccd0SampledLatencyNs = 10.0f * ccd0L3SampledDramReqLatency / ccd0L3SampledDramReq;
+    ClearL3Counters();
+
+    SetThreadAffinityMask(GetCurrentThread(), 16); // use core 0 in ccd 1
+    uint64_t ccd1L3Access = ReadMsr(L3_PERF_CTR0);
+    uint64_t ccd1L3Miss = ReadMsr(L3_PERF_CTR1);
+    uint64_t ccd1L3SampledDramReq = ReadMsr(L3_PERF_CTR2);
+    uint64_t ccd1L3SampledDramReqLatency = ReadMsr(L3_PERF_CTR3);
+    float ccd1SampledLatencyNs = 10.0f * ccd1L3SampledDramReqLatency / ccd1L3SampledDramReq;
+    ClearL3Counters();
+
+    fprintf(stderr, "CCD 0: %f ns, CCD1: %f ns\n", ccd0SampledLatencyNs, ccd1SampledLatencyNs);
+}
+
+void CloseMonitoring()
+{
+    if (driverHandle != INVALID_HANDLE_VALUE) CloseHandle(driverHandle);
+    driverHandle = INVALID_HANDLE_VALUE;
 }
 
 bool GetPrivilege()
