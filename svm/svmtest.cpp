@@ -24,6 +24,8 @@ cl_context get_context_from_user(int platform_index, int device_index);
 cl_program build_program(cl_context context, const char* fname, const char* params);
 #ifdef _MSC_VER
 DWORD WINAPI LatencyTestThread(LPVOID param);
+#else
+void* LatencyTestThread(void* param);
 #endif
 
 typedef struct LatencyThreadData {
@@ -86,7 +88,7 @@ int main(int argc, char* argv[])
     testThread = CreateThread(NULL, 0, LatencyTestThread, &latencyData, CREATE_SUSPENDED, &testThreadId);
 #else
     pthread_t testThread;
-    pthread_create(&testThread, NULL, LatencyTestThread, (void*)latencyData);
+    pthread_create(&testThread, NULL, LatencyTestThread, (void*)&latencyData);
 #endif
 
     start_timing();
@@ -107,7 +109,7 @@ int main(int argc, char* argv[])
 #ifdef _MSC_VER
     WaitForSingleObject(testThread, INFINITE);
 #else
-    pthread_join(testThread, &ret);
+    pthread_join(testThread, NULL);
 #endif
     time_diff_ms = end_timing();
     latency = (1e6 * (float)time_diff_ms / (float)(iterations)) / 2;
