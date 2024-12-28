@@ -27,7 +27,7 @@ namespace AsmGen
             DivideTimeByCount = true;
             branchCounts = new int[] { 1, 2, 4, 8, 16, 32, 64, 128, 256, 512 };
             historyCounts = new int[] { 2, 4, 8, 12, 16, 24, 32, 48, 64, 96, 128, 192, 256, 512, 600, 768, 1024, 1536,
-              2048, 3072, 4096, 5120, 6144, 8192, 10240, 12288, 16384, 24567, 32768, 65536 };
+              2048, 3072, 4096, 5120, 6144, 8192, 10240, 12288, 16384, 24567, 32768 };
         }
 
         public bool SupportsIsa(IUarchTest.ISA isa)
@@ -35,6 +35,7 @@ namespace AsmGen
             if (isa == IUarchTest.ISA.amd64) return true;
             if (isa == IUarchTest.ISA.aarch64) return true;
             if (isa == IUarchTest.ISA.mips64) return true;
+            if (isa == IUarchTest.ISA.riscv) return true;
             return false;
         }
 
@@ -43,6 +44,7 @@ namespace AsmGen
             if (isa == IUarchTest.ISA.aarch64) GenerateArmAsm(sb);
             if (isa == IUarchTest.ISA.amd64) GenerateX86GccAsm(sb);
             if (isa == IUarchTest.ISA.mips64) GenerateMipsAsm(sb);
+            if (isa == IUarchTest.ISA.riscv) GenerateRiscvAsm(sb);
         }
 
         public void GenerateArmAsm(StringBuilder sb)
@@ -194,6 +196,60 @@ namespace AsmGen
                 sb.AppendLine("  move $r4, $r18"); // return the count of NT branches for tracking RNG quality
 
                 sb.AppendLine("  jr $r1");
+            }
+        }
+
+        public void GenerateRiscvAsm(StringBuilder sb)
+        {
+            // Generate an array of branch history test functions, one for each branch count
+            for (int i = 0; i < branchCounts.Length; i++)
+            {
+                // branchtestFunc(iterations, testArrToArr, historyLen)
+                // a0 = iterations, a1 = array of pointers to pattern arrays for each branch, a2 = length of each array (history length)
+                // t0-t7 temporary registers
+
+                // write code here
+                string functionLabel = Prefix + branchCounts[i];
+                sb.AppendLine("\n" + functionLabel + ":");
+                sb.AppendLine("  addi sp, sp, -16");
+                sb.AppendLine("  sd s0, (sp)");
+                // t1 = index into pattern array
+                sb.AppendLine("  li t1, 0");
+                sb.AppendLine("  li t6, 0");
+
+                string loopLabel = functionLabel + "_loop";
+                sb.AppendLine("\n" + loopLabel + ":");
+                sb.AppendLine("  mv t2, a1"); // start of array of pointers to pattern arrays
+
+                // generate branchCount blocks, each of which traverses its own array
+                for (int branchCount = 0; branchCount < branchCounts[i]; branchCount++)
+                {
+                    string jumpTarget = functionLabel + branchCounts[i] + "_zero" + branchCount;
+
+                    // load the branch's pattern array (a1 -> ptr -> array)
+                    sb.AppendLine("  ld t3, (t2)");            // load pointer to array
+
+                    // t3 = base address of branch's array
+                    sb.AppendLine("  slli t4, t1, 2");
+                    sb.AppendLine("  add t4, t4, t3");
+                    sb.AppendLine("  lw t5, (t4)");    // should have 1 or 0
+                    sb.AppendLine("  addi t2, t2, 8"); // next branch
+                    sb.AppendLine($"  beq t5, x0, {jumpTarget}");
+                    sb.AppendLine("  addi t6, t6, 1");  // dummy increment to track not-taken/taken branch ratio
+                    sb.AppendLine(jumpTarget + ":");
+                }
+
+                sb.AppendLine("  addi t1, t1, 1"); // increment array index
+                sb.AppendLine("  slt s0, t1, a2"); // 1 if within range
+                sb.AppendLine("  mul t1, t1, s0"); // multiply by 1 if within range, 0 otherwise
+
+                // decrement iteration count
+                sb.AppendLine("  addi a0, a0, -1");
+                sb.AppendLine($"  bne a0, x0, {loopLabel}");
+                sb.AppendLine("  mv a0, t6");
+                sb.AppendLine("  ld s0, (sp)");
+                sb.AppendLine("  addi sp, sp, 16");
+                sb.AppendLine("  ret");
             }
         }
 
