@@ -18,6 +18,7 @@ namespace AsmGen
         {
             if (isa == IUarchTest.ISA.amd64) return true;
             if (isa == IUarchTest.ISA.aarch64) return true;
+            if (isa == IUarchTest.ISA.riscv) return true;
             return false;
         }
 
@@ -52,6 +53,19 @@ namespace AsmGen
                 dependentLoads1[2] = "  str w13, [x2, w26, uxtw #2]";
                 dependentLoads1[3] = "  ldr w12, [x1, w26, uxtw #0]";
                 UarchTestHelpers.GenerateArmAsmStructureTestFuncs(sb, this.Counts, this.Prefix, dependentLoads, dependentLoads1, includePtrChasingLoads: true);
+            }
+            else if (isa == IUarchTest.ISA.riscv)
+            {
+                // x5 and x6 are pointer chasing loads
+                string postLoadInstrs1 = "  andi x7, x5, 0xF\n  add x7, x7, x12";
+                string postLoadInstrs2 = "  andi x7, x6, 0xF\n  add x7, x7, x12";
+                string[] dependentLoads = new string[4];
+                dependentLoads[0] = "  sd x28, (a2)";
+                dependentLoads[1] = "  ld x29, 8(a2)";
+                dependentLoads[2] = "  sd x30, 16(a2)";
+                dependentLoads[3] = "  ld x31, 24(a2)";
+                UarchTestHelpers.GenerateRiscvAsmStructureTestFuncs(sb, this.Counts, this.Prefix, dependentLoads, dependentLoads, includePtrChasingLoads: true,
+                    postLoadInstrs1: postLoadInstrs1, postLoadInstrs2: postLoadInstrs2);
             }
         }
     }

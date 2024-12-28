@@ -60,12 +60,14 @@ namespace AsmGen
             }
             else if (isa == IUarchTest.ISA.riscv)
             {
+                string postLoadInstrs = this.initialDependentBranch ? UarchTestHelpers.GetRiscvDependentBranch(this.Prefix) : null;
                 string[] unrolledAdds = new string[4];
                 unrolledAdds[0] = "  add x28, x28, x29";
                 unrolledAdds[1] = "  add x30, x30, x29";
                 unrolledAdds[2] = "  add x31, x31, x29";
                 unrolledAdds[3] = "  add x18, x18, x29";
-                UarchTestHelpers.GenerateRiscvAsmStructureTestFuncs(sb, this.Counts, this.Prefix, unrolledAdds, unrolledAdds, includePtrChasingLoads: true);
+                UarchTestHelpers.GenerateRiscvAsmStructureTestFuncs(sb, this.Counts, this.Prefix, unrolledAdds, unrolledAdds, includePtrChasingLoads: true, postLoadInstrs1: postLoadInstrs, postLoadInstrs2: postLoadInstrs);
+                if (this.initialDependentBranch) sb.AppendLine(UarchTestHelpers.GetRiscvDependentBranchTarget(this.Prefix));
             }
         }
     }

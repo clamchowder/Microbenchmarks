@@ -1023,6 +1023,16 @@ namespace AsmGen
             return $"{prefix}_badthing:\n  .word 0xf7f0a000";
         }
 
+        public static string GetRiscvDependentBranch(string prefix)
+        {
+            return $"  beq x5, x6, {prefix}_badthing";
+        }
+
+        public static string GetRiscvDependentBranchTarget(string prefix)
+        {
+            return $"{prefix}_badthing:\n  .word 0x00000000";
+        }
+
         public static void GenerateArmAsmDivNsqTestFuncs(StringBuilder sb,
             int maxSize,
             int[] counts,

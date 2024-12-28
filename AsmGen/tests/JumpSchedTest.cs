@@ -19,7 +19,7 @@ namespace AsmGen
             if (isa == IUarchTest.ISA.amd64) return true;
             if (isa == IUarchTest.ISA.aarch64) return true;
             // if (isa == IUarchTest.ISA.mips64) return true;
-            // if (isa == IUarchTest.ISA.riscv) return true;
+            if (isa == IUarchTest.ISA.riscv) return true;
             return false;
         }
 
@@ -43,18 +43,10 @@ namespace AsmGen
             else if (isa == IUarchTest.ISA.riscv)
             {
                 // todo
-                string[] unrolledAdds = new string[4];
-                unrolledAdds[0] = "  mul x30, x30, x5";
-                unrolledAdds[1] = "  mul x29, x29, x5";
-                unrolledAdds[2] = "  mul x28, x28, x5";
-                unrolledAdds[3] = "  mul x31, x31, x5";
-
-                string[] unrolledAdds1 = new string[4];
-                unrolledAdds1[0] = "  mul x30, x30, x6";
-                unrolledAdds1[1] = "  mul x31, x31, x6";
-                unrolledAdds1[2] = "  mul x28, x28, x6";
-                unrolledAdds1[3] = "  mul x29, x29, x6";
-                UarchTestHelpers.GenerateRiscvAsmStructureTestFuncs(sb, this.Counts, this.Prefix, unrolledAdds, unrolledAdds1, false);
+                string[] unrolledJumps = new string[1];
+                unrolledJumps[0] = "  beq x5, x6, jumpsched_reallybadthing";
+                UarchTestHelpers.GenerateRiscvAsmStructureTestFuncs(sb, this.Counts, this.Prefix, unrolledJumps, unrolledJumps, false);
+                sb.AppendLine("jumpsched_reallybadthing:\n  .word 0x00000000");
             }
         }
     }

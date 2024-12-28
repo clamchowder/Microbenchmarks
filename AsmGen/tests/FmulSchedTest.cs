@@ -18,6 +18,7 @@ namespace AsmGen
         {
             if (isa == IUarchTest.ISA.amd64) return true;
             if (isa == IUarchTest.ISA.aarch64) return true;
+            if (isa == IUarchTest.ISA.riscv) return true;
             return false;
         }
 
@@ -30,6 +31,10 @@ namespace AsmGen
             else if (isa == IUarchTest.ISA.aarch64)
             {
                 GenerateArmAsm(sb);
+            }
+            else if (isa == IUarchTest.ISA.riscv)
+            {
+                GenerateRiscvAsm(sb);
             }
         }
 
@@ -53,6 +58,26 @@ namespace AsmGen
             unrolledAdds[2] = "  fmul s19, s19, s16";
             unrolledAdds[3] = "  fmul s20, s20, s16";
             UarchTestHelpers.GenerateArmAsmFpSchedTestFuncs(sb, this.Counts, this.Prefix, unrolledAdds, unrolledAdds);
+        }
+
+        public void GenerateRiscvAsm(StringBuilder sb)
+        {
+            string initInstrs = "  fld f0, (x12)\n" +
+                "  fld f1, 8(x12)\n" +
+                "  fld f2, 16(x12)\n" +
+                "  fld f3, 24(x12)\n" +
+                "  fld f4, 32(x12)\n";
+
+            string[] unrolledAdds = new string[4];
+            unrolledAdds[0] = "  fmul.s f0, f0, f4";
+            unrolledAdds[1] = "  fmul.s f1, f1, f4";
+            unrolledAdds[2] = "  fmul.s f2, f2, f4";
+            unrolledAdds[3] = "  fmul.s f3, f3, f4";
+
+            string postLoadInstrs1 = "  andi x7, x5, 0xF\n  add x7, x7, x12\n  fld f4, (x7)";
+            string postLoadInstrs2 = "  andi x7, x6, 0xF\n  add x7, x7, x12\n  fld f4, (x7)";
+            UarchTestHelpers.GenerateRiscvAsmStructureTestFuncs(sb, this.Counts, this.Prefix, unrolledAdds, unrolledAdds, includePtrChasingLoads: false,
+                initInstrs, postLoadInstrs1, postLoadInstrs2);
         }
     }
 }

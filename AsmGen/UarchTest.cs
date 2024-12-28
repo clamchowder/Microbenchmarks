@@ -42,6 +42,7 @@ namespace AsmGen
                 sb.AppendLine("    uint32_t list_size = td->list_size;");
                 sb.AppendLine("    int structIterations = td->structIterations;");
                 sb.AppendLine("    " + Prefix + Counts[i] + $"({GetFunctionCallParameters});");
+                sb.AppendLine("    return NULL;");
                 sb.AppendLine("}");
             }
         }

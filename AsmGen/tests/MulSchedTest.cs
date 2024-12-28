@@ -19,7 +19,7 @@ namespace AsmGen
             if (isa == IUarchTest.ISA.amd64) return true;
             if (isa == IUarchTest.ISA.aarch64) return true;
             if (isa == IUarchTest.ISA.mips64) return true;
-            // if (isa == IUarchTest.ISA.riscv) return true;
+            if (isa == IUarchTest.ISA.riscv) return true;
             return false;
         }
 
@@ -60,18 +60,18 @@ namespace AsmGen
             }
             else if (isa == IUarchTest.ISA.riscv)
             {
-                string[] unrolledAdds = new string[4];
-                unrolledAdds[0] = "  mul x30, x30, x5";
-                unrolledAdds[1] = "  mul x29, x29, x5";
-                unrolledAdds[2] = "  mul x28, x28, x5";
-                unrolledAdds[3] = "  mul x31, x31, x5";
+                string[] unrolledMuls = new string[4];
+                unrolledMuls[0] = "  mul x30, x30, x5";
+                unrolledMuls[1] = "  mul x29, x29, x5";
+                unrolledMuls[2] = "  mul x28, x28, x5";
+                unrolledMuls[3] = "  mul x31, x31, x5";
 
-                string[] unrolledAdds1 = new string[4];
-                unrolledAdds1[0] = "  mul x30, x30, x6";
-                unrolledAdds1[1] = "  mul x31, x31, x6";
-                unrolledAdds1[2] = "  mul x28, x28, x6";
-                unrolledAdds1[3] = "  mul x29, x29, x6";
-                UarchTestHelpers.GenerateRiscvAsmStructureTestFuncs(sb, this.Counts, this.Prefix, unrolledAdds, unrolledAdds1, false);
+                string[] unrolledMuls1 = new string[4];
+                unrolledMuls1[0] = "  mul x30, x30, x6";
+                unrolledMuls1[1] = "  mul x31, x31, x6";
+                unrolledMuls1[2] = "  mul x28, x28, x6";
+                unrolledMuls1[3] = "  mul x29, x29, x6";
+                UarchTestHelpers.GenerateRiscvAsmStructureTestFuncs(sb, this.Counts, this.Prefix, unrolledMuls, unrolledMuls1, false);
             }
         }
     }
