@@ -10,7 +10,7 @@ namespace AsmGen
         {
             this.Counts = UarchTestHelpers.GenerateCountArray(low, high, step);
             this.Prefix = "rob" + (initialDependentBranch ? "db" : string.Empty);
-            this.Description = "Reorder Buffer Test";
+            this.Description = "Reorder Buffer Test" + (initialDependentBranch ? " preceded by dependent branch" : string.Empty);
             this.FunctionDefinitionParameters = "uint64_t iterations, int *arr";
             this.GetFunctionCallParameters = "structIterations, A";
             this.DivideTimeByCount = false;
@@ -20,6 +20,13 @@ namespace AsmGen
 
         public override bool SupportsIsa(IUarchTest.ISA isa)
         {
+            if (this.initialDependentBranch)
+            {
+                if (isa == IUarchTest.ISA.aarch64) return true;
+                if (isa == IUarchTest.ISA.riscv) return true;
+                return false;
+            }
+
             if (isa == IUarchTest.ISA.amd64) return true;
             if (isa == IUarchTest.ISA.aarch64) return true;
             if (isa == IUarchTest.ISA.mips64) return true;

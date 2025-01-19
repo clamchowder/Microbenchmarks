@@ -22,7 +22,13 @@ namespace AsmGen
 
         public override bool SupportsIsa(IUarchTest.ISA isa)
         {
-            if (this.initialDependentBranch && isa != IUarchTest.ISA.aarch64) return false;
+            if (this.initialDependentBranch)
+            {
+                if (isa == IUarchTest.ISA.aarch64) return true;
+                if (isa == IUarchTest.ISA.riscv) return true;
+                return false;
+            }
+
             if (isa == IUarchTest.ISA.amd64) return true;
             if (isa == IUarchTest.ISA.aarch64) return true;
             if (isa == IUarchTest.ISA.mips64) return true;
@@ -90,12 +96,15 @@ namespace AsmGen
             }
             else if (isa == IUarchTest.ISA.riscv)
             {
+                string postLoadInstrs = this.initialDependentBranch ? UarchTestHelpers.GetRiscvDependentBranch(this.Prefix) : null;
                 string[] unrolledStores = new string[4];
                 unrolledStores[0] = "  sd x28, (x12)";
                 unrolledStores[1] = "  sd x29, 8(x12)";
                 unrolledStores[2] = "  sd x30, 16(x12)";
                 unrolledStores[3] = "  sd x31, 24(x12)";
-                UarchTestHelpers.GenerateRiscvAsmStructureTestFuncs(sb, this.Counts, this.Prefix, unrolledStores, unrolledStores, false);
+                UarchTestHelpers.GenerateRiscvAsmStructureTestFuncs(sb, this.Counts, this.Prefix, unrolledStores, unrolledStores, false,
+                    postLoadInstrs1: postLoadInstrs, postLoadInstrs2: postLoadInstrs);
+                if (this.initialDependentBranch) sb.AppendLine(UarchTestHelpers.GetRiscvDependentBranchTarget(this.Prefix));
             }
         }
     }

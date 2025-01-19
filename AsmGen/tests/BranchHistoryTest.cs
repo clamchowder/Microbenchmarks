@@ -255,7 +255,7 @@ namespace AsmGen
 
         public void GenerateTestBlock(StringBuilder sb, IUarchTest.ISA isa)
         {
-            sb.AppendLine("  if (argc > 1 && strncmp(test_name, \"" + Prefix + "\", " + Prefix.Length + ") == 0) {");
+            sb.AppendLine("  if (argc > 1 && strcmp(test_name, \"" + Prefix + "\") == 0) {");
             sb.AppendLine("    printf(\"" + Description + ":\\n\");");
             GenerateCommonTestBlock(sb);
             sb.AppendLine("  }\n");
