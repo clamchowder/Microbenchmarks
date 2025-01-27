@@ -21,7 +21,7 @@ riscv64:
 	$(CC) $(CFLAGS) MemoryLatency.c MemoryLatency_riscv.s -o MemoryLatency_riscv64 $(LDFLAGS)
 
 riscv64-numa:
-	$(CC) $(CFLAGS) -DNUMA MemoryLatency.c MemoryLatency_arm.s -o MemoryLatency_riscv64 $(LDFLAGS) -lnuma
+	$(CC) $(CFLAGS) -DNUMA MemoryLatency.c MemoryLatency_riscv.s -o MemoryLatency_riscv64 $(LDFLAGS) -lnuma
 
 w64:
 	$(CC) $(CFLAGS) MemoryLatency.cpp MemoryLatency_x86.s -o MemoryLatency_w64.exe $(LDFLAGS)
