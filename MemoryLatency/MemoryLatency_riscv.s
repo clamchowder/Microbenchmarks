@@ -90,14 +90,14 @@ stlftest32_loop:
 stlftest128:
   mv t4, x0
   addi t4, t4, 32     /* ??? */
-  vsetvli t0, t4, e8  /* request vector length of some big value? always gives back 4 but not if we ask for 4*/
+/*  vsetvli t0, t4, e8  /* request vector length of some big value? always gives back 4 but not if we ask for 4*/
   lw t0, (a1)
   lw t1, 4(a1)
   add t0, t0, a1
   add t1, t1, a1
   mv t3, x0
 stlftest128_loop:
-  vsw.v v0, (t0)
+/*  vsw.v v0, (t0)
   fld f0, (t1)
   vsw.v v0, (t0)
   fld f0, (t1) 
@@ -108,7 +108,7 @@ stlftest128_loop:
   vsw.v v0, (t0)
   fld f0, (t1)
   addi t3, t3, 5
-  blt t3, a0, stlftest128_loop
+  blt t3, a0, stlftest128_loop*/
   ret
 
 matchedstlftest:

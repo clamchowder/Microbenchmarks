@@ -60,7 +60,7 @@ void (*stlfFunc)(uint32_t, char *) __attribute__((fastcall)) = stlftest;
 extern void preplatencyarr(uint64_t *arr, uint64_t len);
 extern uint32_t latencytest(uint64_t iterations, uint64_t *arr);
 
-#define LONGPATTERN 1
+#undef LONGPATTERN 
 extern uint32_t longpatternlatencytest(uint64_t iterations, uint64_t *arr);
 
 extern void matchedstlftest(uint64_t iterations, char *arr);
@@ -674,8 +674,8 @@ float RunAsmTest(uint32_t size_kb, uint32_t iterations, uint32_t *preallocatedAr
     if (longpattern)
         sum = longpatternlatencytest(scaled_iterations, A);
     else
-        sum = latencytest(scaled_iterations, A);
     #endif
+    sum = latencytest(scaled_iterations, A);
     gettimeofday(&endTv, &endTz);
     uint64_t time_diff_ms = 1000 * (endTv.tv_sec - startTv.tv_sec) + ((endTv.tv_usec - startTv.tv_usec) / 1000);
     float latency = 1e6 * (float)time_diff_ms / (float)scaled_iterations;

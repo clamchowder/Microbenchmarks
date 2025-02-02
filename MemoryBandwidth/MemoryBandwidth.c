@@ -36,14 +36,13 @@
 #define gettid() ((pid_t)syscall(SYS_gettid))
 #endif
 
-#define HUGEPAGE_HACK 1
-#undef HUGEPAGE_HACK
+//#define HUGEPAGE_HACK 1
 
 #pragma GCC diagnostic ignored "-Wattributes"
 
 int default_test_sizes[] = { 2, 4, 8, 12, 16, 24, 32, 48, 64, 96, 128, 192, 256, 512, 600, 768, 1024, 1536, 2048, 2560,
                                3072, 4096, 5120, 6144, 8192, 10240, 12288, 14336, 15360, 16384, 18432, 20480, 24567, 32768, 65536, 98304,
-                               131072, 262144, 393216, 524288, 1048576, 1572864, 2097152, 3145728 };
+                               131072, 262144, 393216, 524288, 1048576, 1572864, 2097152 };
 
 typedef struct BandwidthTestThreadData {
     uint64_t iterations;
@@ -616,7 +615,7 @@ void FillInstructionArray(uint64_t *nops, uint64_t sizeKb, int nopSize, int bran
         __builtin___clear_cache(nops, functionEnd);
         #endif
         #ifdef __riscv
-        uint64_t *functionEnd = (unsigned char *)(nops + elements);
+        uint64_t *functionEnd = (uint64_t *)(nops + elements);
         functionEnd[0] = 0x8082;
         #endif 
     }
