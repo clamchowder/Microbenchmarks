@@ -19,8 +19,11 @@ __kernel void local_64_bw_test(__global ulong* A, uint count, __global ulong* re
     for (int i = 0; i < count; i += 8) { 
         acc0 ^= local_a[idx0];
         acc1 ^= local_a[idx1];
-        acc2 ^= local_a[idx0 + 1];
-        acc3 ^= local_a[idx1 + 1];
+        idx0 = (idx0 + localSize) & 0x1FF;
+        idx1 = (idx1 + localSize) & 0x1FF;
+
+        acc3 ^= local_a[idx0];
+        acc4 ^= local_a[idx1];
         idx0 = (idx0 + localSize) & 0x1FF;
         idx1 = (idx1 + localSize) & 0x1FF;
     }

@@ -21,9 +21,21 @@ __kernel void local_float4_bw_test(__global float4* A, uint count, __global floa
     int idx2 = localId + localSize * 2;
     for (int i = 0; i < count; i += (12*4)) { 
         acc1 += local_a[idx0] * local_a[idx1] + local_a[idx2];
-        acc2 += local_a[idx0 + 1] * local_a[idx1 + 1] + local_a[idx2 + 1];
-        acc3 += local_a[idx0 + 2] * local_a[idx1 + 2] + local_a[idx2 + 2];
-        acc4 += local_a[idx0 + 3] * local_a[idx1 + 3] + local_a[idx2 + 3];
+        idx0 = (idx0 + localSize) & 0x3FF;
+        idx1 = (idx1 + localSize) & 0x3FF;
+        idx2 = (idx2 + localSize) & 0x3FF;
+
+        acc2 += local_a[idx0] * local_a[idx1] + local_a[idx2];
+        idx0 = (idx0 + localSize) & 0x3FF;
+        idx1 = (idx1 + localSize) & 0x3FF;
+        idx2 = (idx2 + localSize) & 0x3FF;
+
+        acc3 += local_a[idx0] * local_a[idx1] + local_a[idx2];
+        idx0 = (idx0 + localSize) & 0x3FF;
+        idx1 = (idx1 + localSize) & 0x3FF;
+        idx2 = (idx2 + localSize) & 0x3FF;
+
+        acc4 += local_a[idx0] * local_a[idx1] + local_a[idx2];
         idx0 = (idx0 + localSize) & 0x3FF;
         idx1 = (idx1 + localSize) & 0x3FF;
         idx2 = (idx2 + localSize) & 0x3FF;
