@@ -247,9 +247,9 @@ tex_bw_cleanup:
     return texels;
 }
 
-// must be kept in sync with kernel.cl
+// must be at least as large as local memory test size in kernel
 // list size in 32-bit elements
-#define local_mem_bw_test_size 4096
+#define local_mem_bw_test_size 8192
 float local_bw_test(cl_context context,
     cl_command_queue command_queue,
     cl_kernel kernel,
@@ -309,7 +309,7 @@ float local_bw_test(cl_context context,
     *time_ms = time_diff_ms;
 
     // each thread does iterations reads
-    total_data_gb = sizeof(float) * ((float)chase_iterations * thread_count + thread_count) / 1e9;
+    total_data_gb = sizeof(float) * ((float)chase_iterations * thread_count) / 1e9;
     bandwidth = 1000 * (float)total_data_gb / (float)time_diff_ms;
 
     //fprintf(stderr, "%llu ms, %llu GB\n", time_diff_ms, total_data_gb);
@@ -405,7 +405,7 @@ float buffer_bw_test(cl_context context,
     *time_ms = time_diff_ms;
 
     // each thread does iterations reads
-    total_data_gb = sizeof(float) * ((float)chase_iterations * thread_count + thread_count) / 1e9;
+    total_data_gb = sizeof(float) * ((float)chase_iterations * thread_count) / 1e9;
     bandwidth = 1000 * (float)total_data_gb / (float)time_diff_ms;
 
     //fprintf(stderr, "%llu ms, %llu GB\n", time_diff_ms, total_data_gb);
@@ -485,7 +485,7 @@ float local_chase_bw_test(cl_context context,
     *time_ms = time_diff_ms;
 
     // each thread does iterations reads
-    total_data_gb = sizeof(float) * ((float)chase_iterations * thread_count + thread_count) / 1e9;
+    total_data_gb = sizeof(float) * ((float)chase_iterations * thread_count) / 1e9;
     bandwidth = 1000 * (float)total_data_gb / (float)time_diff_ms;
 
     //fprintf(stderr, "%llu ms, %llu GB\n", time_diff_ms, total_data_gb);
