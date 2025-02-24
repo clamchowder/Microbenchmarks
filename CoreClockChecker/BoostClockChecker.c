@@ -6,36 +6,62 @@
 #include <string.h>
 #include <unistd.h>
 
+#define DUMMY_ARR_SIZE 4096
+
 extern uint64_t clktsctest(uint64_t iterations) __attribute((ms_abi));
+extern uint64_t fma_zmm_tsctest(uint64_t iterations, float *arr) __attribute((ms_abi));
 
 int main(int argc, char *argv[]) {
     struct timeval startTv, endTv;
     uint64_t iterations = 500000, samples = 100;
-    unsigned int sleepSeconds = 5;
+    unsigned int sleepSeconds = 5, switchpoint = 0, switchtests = 0;
     time_t time_diff_ms;
+    float *fpArr = NULL;
 
     for (int argIdx = 1; argIdx < argc; argIdx++) {
         if (*(argv[argIdx]) == '-') {
             char *arg = argv[argIdx] + 1;
-	    if (strncmp(arg, "samples", 7) == 0) {
-	        argIdx++;
-		samples = atol(argv[argIdx]);
-	    } else if (strncmp(arg, "iterations", 10) == 0) {
-	        argIdx++;
-		iterations = atol(argv[argIdx]);
+            if (strncmp(arg, "samples", 7) == 0) {
+                argIdx++;
+            samples = atol(argv[argIdx]);
+            } else if (strncmp(arg, "iterations", 10) == 0) {
+                argIdx++;
+                iterations = atol(argv[argIdx]);
             } else if (strncmp(arg, "sleep", 5) == 0) {
-	        argIdx++;
-		sleepSeconds = atoi(argv[argIdx]);
-	    }
-	}
+                argIdx++;
+                sleepSeconds = atoi(argv[argIdx]);
+            } else if (strncmp(arg, "switchpoint", 11) == 0) {
+                argIdx++;
+                switchtests = 1;
+                switchpoint = atoi(argv[argIdx]);
+                fprintf(stderr, "Switching at %d\n", switchpoint);
+            }
+        }
+    }
+
+    if (switchtests)
+    {
+        fpArr = (float *)malloc(sizeof(float) * DUMMY_ARR_SIZE);
+        for (int i = 0; i < DUMMY_ARR_SIZE; i++) fpArr[i] = 1.1f * i;
     }
 
     sleep(sleepSeconds);
 
     uint64_t *measuredTscs = malloc(samples * sizeof(uint64_t));
+    uint32_t *switchRecord = malloc(samples * sizeof(uint32_t));
     for (uint64_t sampleIdx = 0; sampleIdx < samples; sampleIdx++) {
-        uint64_t elapsedTsc = clktsctest(iterations);
-	measuredTscs[sampleIdx] = elapsedTsc;
+        uint64_t elapsedTsc;
+        uint32_t isSwitched;
+        if (!switchtests || (sampleIdx < switchpoint)) {
+            elapsedTsc = clktsctest(iterations);
+            isSwitched = 0;
+        }
+        else {
+            elapsedTsc = fma_zmm_tsctest(iterations, fpArr);
+            isSwitched = 1;
+        }
+	    measuredTscs[sampleIdx] = elapsedTsc;
+        switchRecord[sampleIdx] = isSwitched;
     }
 
     fprintf(stderr, "Used %lu samples\n", samples);
@@ -52,16 +78,19 @@ int main(int argc, char *argv[]) {
     fprintf(stderr, "TSC = %lu, elapsed ms = %lu\n", referenceElapsedTsc, time_diff_ms);
     fprintf(stderr, "TSC per ms: %f, TSC per ns: %f\n", tsc_per_ms, tsc_per_ns);
 
-    printf("Time (ms), Clk (GHz), TSC\n");
+    printf("Time (ms), Clk (GHz), TSC, Switched\n");
     float elapsedTime = 0;
     for (uint64_t sampleIdx = 0; sampleIdx < samples; sampleIdx++) {
-	// (tsc / ms) * tsc = 1 / ms
-	float elapsedTimeMs = measuredTscs[sampleIdx] / tsc_per_ms;
-	elapsedTime += elapsedTimeMs;
-	float latency = 1e6 * elapsedTimeMs / (float)iterations;
-	float addsPerNs = 1 / latency;
-	printf("%f,%f,%lu\n", elapsedTime, addsPerNs, measuredTscs[sampleIdx]);
+        // (tsc / ms) * tsc = 1 / ms
+        float elapsedTimeMs = measuredTscs[sampleIdx] / tsc_per_ms;
+        elapsedTime += elapsedTimeMs;
+        float latency = 1e6 * elapsedTimeMs / (float)iterations;
+        float addsPerNs = 1 / latency;
+        printf("%f,%f,%lu,%u\n", elapsedTime, addsPerNs, measuredTscs[sampleIdx], switchRecord[sampleIdx]);
     }
 
+    if (fpArr != NULL) free(fpArr);
+    free(measuredTscs);
+    free(switchRecord);
     return 0;
 }
