@@ -55,6 +55,11 @@ int main(int argc, char *argv[]) {
         }
     }
 
+    fprintf(stderr, "Alloc tscs\n");
+    uint64_t *measuredTscs = (uint64_t *)malloc(samples * sizeof(uint64_t));
+    fprintf(stderr, "Alloc switch\n");
+    uint32_t *switchRecord = (uint32_t *)malloc(samples * sizeof(uint32_t)); 
+
     if (switchtests)
     {
         int rc = posix_memalign((void **)(&fpArr), 64, sizeof(float) * DUMMY_ARR_SIZE);
@@ -74,9 +79,6 @@ int main(int argc, char *argv[]) {
     }
 
     sleep(sleepSeconds);
-
-    uint64_t *measuredTscs = malloc(samples * sizeof(uint64_t));
-    uint32_t *switchRecord = malloc(samples * sizeof(uint32_t));
     for (uint64_t sampleIdx = 0; sampleIdx < samples; sampleIdx++) {
         uint64_t elapsedTsc;
         uint32_t isSwitched;
@@ -91,7 +93,7 @@ int main(int argc, char *argv[]) {
             elapsedTsc = fma_zmm_regonly_tsctest(iterations, fpArr);
             isSwitched = 1;
         }
-	      measuredTscs[sampleIdx] = elapsedTsc;
+        measuredTscs[sampleIdx] = elapsedTsc;
         switchRecord[sampleIdx] = isSwitched;
     }
 
@@ -129,7 +131,13 @@ int main(int argc, char *argv[]) {
         }
     }
 
-    if (fpArr != NULL) free(fpArr);
+    if (fpArr != NULL) {
+#ifdef __MINGW32__
+      _aligned_free(fpArr);
+#else
+      free(fpArr);
+#endif
+    }
     free(measuredTscs);
     free(switchRecord);
     return 0;
