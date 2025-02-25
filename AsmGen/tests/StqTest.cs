@@ -97,11 +97,26 @@ namespace AsmGen
             else if (isa == IUarchTest.ISA.riscv)
             {
                 string postLoadInstrs = this.initialDependentBranch ? UarchTestHelpers.GetRiscvDependentBranch(this.Prefix) : null;
-                string[] unrolledStores = new string[4];
-                unrolledStores[0] = "  sd x28, (x12)";
-                unrolledStores[1] = "  sd x29, 8(x12)";
-                unrolledStores[2] = "  sd x30, 16(x12)";
-                unrolledStores[3] = "  sd x31, 24(x12)";
+                string[] unrolledStores;
+                if (this.spaced)
+                {
+                    List<string> stores = new List<string>();
+                    for (int i = 0; i < 32; i++)
+                    {
+                        stores.Add($"  sd x28, {i * 16}(x12)");
+                    }
+
+                    unrolledStores = stores.ToArray();
+                }
+                else
+                {
+                    unrolledStores = new string[4];
+                    unrolledStores[0] = "  sd x28, (x12)";
+                    unrolledStores[1] = "  sd x29, 8(x12)";
+                    unrolledStores[2] = "  sd x30, 16(x12)";
+                    unrolledStores[3] = "  sd x31, 24(x12)";
+                }
+
                 UarchTestHelpers.GenerateRiscvAsmStructureTestFuncs(sb, this.Counts, this.Prefix, unrolledStores, unrolledStores, false,
                     postLoadInstrs1: postLoadInstrs, postLoadInstrs2: postLoadInstrs);
                 if (this.initialDependentBranch) sb.AppendLine(UarchTestHelpers.GetRiscvDependentBranchTarget(this.Prefix));
