@@ -24,6 +24,7 @@ int posix_memalign(void **memptr, size_t alignment, size_t size)
 
 extern uint64_t clktsctest(uint64_t iterations) __attribute((ms_abi));
 extern uint64_t fma_zmm_tsctest(uint64_t iterations, float *arr) __attribute((ms_abi));
+extern uint64_t fma_zmm_regonly_tsctest(uint64_t iterations, float *arr) __attribute((ms_abi));
 
 int main(int argc, char *argv[]) {
     struct timeval startTv, endTv;
@@ -80,13 +81,14 @@ int main(int argc, char *argv[]) {
         uint64_t elapsedTsc;
         uint32_t isSwitched;
         if (!switchtests || (sampleIdx < switchpoint)) {
-            fprintf(stderr, "sample %lu of %lu switch at %lu\n", sampleIdx, samples, switchpoint);
+            //fprintf(stderr, "sample %lu of %lu switch at %lu\n", sampleIdx, samples, switchpoint);
             elapsedTsc = clktsctest(iterations);
             isSwitched = 0;
         }
         else {
-            fprintf(stderr, "sample %lu of %lu after switch\n", sampleIdx, samples);
-            elapsedTsc = fma_zmm_tsctest(iterations, fpArr);
+            //fprintf(stderr, "sample %lu of %lu after switch\n", sampleIdx, samples);
+            // elapsedTsc = fma_zmm_tsctest(iterations, fpArr);
+            elapsedTsc = fma_zmm_regonly_tsctest(iterations, fpArr);
             isSwitched = 1;
         }
 	      measuredTscs[sampleIdx] = elapsedTsc;
