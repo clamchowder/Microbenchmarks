@@ -74,13 +74,13 @@ void open_perf_monitoring() {
     initialize_hw_event(&(perf_selected_events[1].attr), PERF_COUNT_HW_CPU_CYCLES, 0);
     set_hw_event(perf_selected_events + 1, groupLeaderFd);
 
-    perf_selected_events[2].description = "llc_ref";
-    initialize_hw_event(&(perf_selected_events[2].attr), 0x4F2E, 0);
+    perf_selected_events[2].description = "NSQStall";
+    initialize_hw_event(&(perf_selected_events[2].attr), 0x40AE, 0);
     perf_selected_events[2].attr.type = PERF_TYPE_RAW;
     set_hw_event(perf_selected_events + 2, groupLeaderFd);
 
-    perf_selected_events[3].description = "llc_miss";
-    initialize_hw_event(&(perf_selected_events[3].attr), 0x412E, 0);
+    perf_selected_events[3].description = "LDQStall";
+    initialize_hw_event(&(perf_selected_events[3].attr), 0x02AE, 0);
     perf_selected_events[3].attr.type = PERF_TYPE_RAW;
     set_hw_event(perf_selected_events + 3, groupLeaderFd);
 }
@@ -106,12 +106,24 @@ void stop_perf_monitoring() {
                 struct perf_select_data *selected_evt = perf_selected_events + evt_idx;
                 selected_evt->value = perfReadData.values[i].value;
                 // fprintf(stderr, "%s: %lu\n", selected_evt->description, selected_evt->value);
+
+                if (evt_idx == 0) instrs = selected_evt->value;
+                if (evt_idx == 1) cycles = selected_evt->value;
+                if (evt_idx == 2) llcRef = selected_evt->value;
+                if (evt_idx == 3) llcMiss = selected_evt->value;
             }
         }
     }
 
     gettimeofday(&perf_endTv, NULL);
     perf_time_ms = ((perf_endTv.tv_sec - perf_startTv.tv_sec) * 1000 + (perf_endTv.tv_usec - perf_startTv.tv_usec) / 1000); 
+}
+
+void get_basic_perf_data(uint64_t *instrs_out, uint64_t *cycles_out, uint64_t *evt2, uint64_t *evt3) {
+  *instrs_out = instrs;
+  *cycles_out = cycles;
+  *evt2 = llcRef;
+  *evt3 = llcMiss;
 }
 
 void close_perf_monitoring() {
