@@ -288,6 +288,7 @@ float mixed_latency_test(cl_context context,
 
     for (int i = 0; i < threads; i++)
     {
+        if (i % wave_size == 0) fprintf(stderr, "\n---wave---\n");
         int wave_idx = i / wave_size;
         if (wave_idx == wave_offset) {
             thread_start[i] = 0;
@@ -300,6 +301,8 @@ float mixed_latency_test(cl_context context,
 
         fprintf(stderr, "%d ", thread_start[i]);
     }
+
+    fprintf(stderr, "\n");
 
     // copy array to device
     cl_mem a_mem_obj = clCreateBuffer(context, CL_MEM_READ_ONLY, list_size * sizeof(uint32_t), NULL, &ret);
@@ -349,6 +352,7 @@ float mixed_latency_test(cl_context context,
 
     for (int i = 0; i < global_item_size; i++)
     {
+        if (i % wave_size == 0) fprintf(stderr, "\n---wave---\n");
         fprintf(stderr, "%d ", thread_start[i]);
     }
 
@@ -356,7 +360,7 @@ float mixed_latency_test(cl_context context,
 
     int loadcount = thread_start[wave_offset * wave_size];
     float other_latency = 1e6 * (float)time_diff_ms / (float)loadcount;
-    printf("long latency: %f, other latency: %f, other loadcount = %f\n", latency, other_latency, loadcount);
+    printf("long latency: %f, other latency: %f, other loadcount = %d\n", latency, other_latency, loadcount);
     //fprintf(stderr, "Finished reading result. Sum: %d\n", result[0]);
 
 cleanup:
@@ -365,6 +369,7 @@ cleanup:
     clReleaseMemObject(a_mem_obj);
     clReleaseMemObject(result_obj);
     free(A);
+    free(thread_start);
     return latency;
 
 }

@@ -66,6 +66,7 @@ int main(int argc, char* argv[]) {
     int sizeKb = 0;
     int forceCuCount = 0;
     int forcefp16 = 0, forcefp64 = 0;
+    int waveOffset = 4;
 
     // vars for local mem capacity testing
     int local_mem_size_kb = 0; // local mem allocated for each wg
@@ -101,6 +102,12 @@ int main(int argc, char* argv[]) {
                 argIdx++;
                 wave = atoi(argv[argIdx]);
                 fprintf(stderr, "Estimated wave size = %u\n", wave);
+            }
+            else if (_strnicmp(arg, "offsetwave", 10) == 0)
+            {
+                argIdx++;
+                waveOffset = atoi(argv[argIdx]);
+                fprintf(stderr, "For mixed memory latency test, offsetting bw wave by %d\n", argIdx);
             }
             else if (_strnicmp(arg, "platform", 8) == 0) {
                 argIdx++;
@@ -414,7 +421,7 @@ int main(int argc, char* argv[]) {
         prog = build_program(context, "unrolled_latency_test.cl", NULL);
         cl_kernel mixedLatencyKernel = clCreateKernel(prog, "mixed_latency_test", &ret);
         result = mixed_latency_test(context, command_queue, mixedLatencyKernel, 256 * 1048576, chase_iterations,
-            thread_count, local_size, wave, 4, stride);
+            thread_count, local_size, wave, waveOffset, stride);
     }
     else if (testType == LocalMemCapacity)
     {

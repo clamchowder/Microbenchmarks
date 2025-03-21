@@ -51,7 +51,6 @@ __kernel void mixed_latency_test(__global const int *A, int count, __global int 
         __global const int *A2 = A + local_size;
         __global const int *A3 = A + (local_size * 2);
         __global const int *A4 = A + (local_size * 3);
-        //printf("count = %d\n", count);
         while (finish[0] == 0) {
             idx = (idx + local_size) & 0x3FF; // 1024 ints * unroll factor, should fit in cache
             acc1 += A[idx];
@@ -62,7 +61,6 @@ __kernel void mixed_latency_test(__global const int *A, int count, __global int 
             if (atomic_cmpxchg(finish, 1, 2) == 1) break;
         }
 
-        // printf("iter = %d\n", iter);
         ret[get_global_id(0)] = iter;
         ret[1] = acc1 + acc2 + acc3 + acc4;
     } else {
