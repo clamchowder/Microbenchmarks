@@ -27,6 +27,7 @@ enum TestType {
     VectorMemLatency,
     ScalarMemLatency,
     ConstantMemLatency,
+    MixedLatencyTest,
     LocalMemCapacity,
     LocalMemLatency,
     TexMemLatency,
@@ -154,6 +155,10 @@ int main(int argc, char* argv[]) {
                 else if (_strnicmp(argv[argIdx], "scalarlatency", 13) == 0) {
                     testType = ScalarMemLatency;
                     fprintf(stderr, "Testing global memory latency, scalar accesses\n");
+                }
+                else if (_strnicmp(argv[argIdx], "mixedlatency", 12) == 0) {
+                    testType = MixedLatencyTest;
+                    fprintf(stderr, "Testing mixed latency with both indepedent and dependent loads on different waves\n");
                 }
                 else if (_strnicmp(argv[argIdx], "constantlatency", 15) == 0) {
                     testType = ConstantMemLatency;
@@ -402,6 +407,14 @@ int main(int argc, char* argv[]) {
 
         clReleaseKernel(globalMemLatencyKernel);
         clReleaseProgram(prog);
+    }
+    else if (testType == MixedLatencyTest)
+    {
+        cl_program prog;
+        prog = build_program(context, "unrolled_latency_test.cl", NULL);
+        cl_kernel mixedLatencyKernel = clCreateKernel(prog, "mixed_latency_test", &ret);
+        result = mixed_latency_test(context, command_queue, mixedLatencyKernel, 256 * 1048576, chase_iterations,
+            thread_count, local_size, wave, 4, stride);
     }
     else if (testType == LocalMemCapacity)
     {

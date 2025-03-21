@@ -143,4 +143,14 @@ float run_divergence_rate_test(cl_context context,
     uint32_t local_size,
     uint32_t wave,
     int *pattern);
+float mixed_latency_test(cl_context context,
+    cl_command_queue command_queue,
+    cl_kernel kernel,
+    uint32_t list_size,
+    uint32_t chase_iterations,
+    int threads,
+    int local_size,
+    int wave_size,
+    int wave_offset,
+    int stride);
 #endif

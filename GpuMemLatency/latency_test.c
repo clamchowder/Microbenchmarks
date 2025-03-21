@@ -263,3 +263,108 @@ texLatencyCleanup:
     free(A);
     return latency;
 }
+
+float mixed_latency_test(cl_context context,
+    cl_command_queue command_queue,
+    cl_kernel kernel,
+    uint32_t list_size,
+    uint32_t chase_iterations,
+    int threads,
+    int local_size,
+    int wave_size,
+    int wave_offset,
+    int stride)
+{
+    size_t global_item_size = threads, local_item_size = local_size;
+    float latency;
+    int64_t time_diff_ms;
+    cl_int ret;
+
+    // Fill pattern arr
+    uint32_t* A = (uint32_t*)malloc(sizeof(uint32_t) * list_size);
+    uint32_t* thread_start = (uint32_t*)malloc(sizeof(uint32_t) * (global_item_size));
+    memset(A, 0, sizeof(uint32_t) * list_size);
+    FillPatternArr(A, list_size, stride);
+
+    for (int i = 0; i < threads; i++)
+    {
+        int wave_idx = i / wave_size;
+        if (wave_idx == wave_offset) {
+            thread_start[i] = 0;
+        }
+        else if (i == 0)
+        {
+            thread_start[i] = 64;
+        }
+        else thread_start[i] = -1;
+
+        fprintf(stderr, "%d ", thread_start[i]);
+    }
+
+    // copy array to device
+    cl_mem a_mem_obj = clCreateBuffer(context, CL_MEM_READ_ONLY, list_size * sizeof(uint32_t), NULL, &ret);
+    clEnqueueWriteBuffer(command_queue, a_mem_obj, CL_TRUE, 0, list_size * sizeof(uint32_t), A, 0, NULL, NULL);
+
+    cl_mem result_obj = clCreateBuffer(context, CL_MEM_READ_WRITE, global_item_size * sizeof(uint32_t), NULL, &ret);
+    clEnqueueWriteBuffer(command_queue, result_obj, CL_TRUE, 0, global_item_size * sizeof(uint32_t), thread_start, 0, NULL, NULL);
+    clFinish(command_queue);
+
+    // Set kernel arguments
+    ret = clSetKernelArg(kernel, 0, sizeof(cl_mem), (void*)&a_mem_obj);
+    if (ret != CL_SUCCESS)
+    {
+        fprintf(stderr, "Failed to set list as kernel arg. clSetKernelArg returned %d\n", ret);
+        latency = 0;
+        goto cleanup;
+    }
+
+    ret = clSetKernelArg(kernel, 1, sizeof(cl_int), (void*)&chase_iterations);
+    ret = clSetKernelArg(kernel, 2, sizeof(cl_mem), (void*)&result_obj);
+
+    start_timing();
+    // Execute the OpenCL kernel. launch a single thread
+    ret = clEnqueueNDRangeKernel(command_queue, kernel, 1, NULL, &global_item_size, &local_item_size, 0, NULL, NULL);
+    if (ret != CL_SUCCESS)
+    {
+        fprintf(stderr, "Failed to submit kernel to command queue. clEnqueueNDRangeKernel returned %d\n", ret);
+        latency = 0;
+        goto cleanup;
+    }
+
+    ret = clFinish(command_queue); // returns success even when TDR happens?
+    if (ret != CL_SUCCESS)
+    {
+        printf("Failed to finish command queue. clFinish returned %d\n", ret);
+        latency = 0;
+        goto cleanup;
+    }
+
+    time_diff_ms = end_timing();
+    latency = 1e6 * (float)time_diff_ms / (float)chase_iterations;
+
+    fprintf(stderr, "Finished kernel in %lu ms\n", time_diff_ms);
+
+    ret = clEnqueueReadBuffer(command_queue, result_obj, CL_TRUE, 0, sizeof(uint32_t) * global_item_size, thread_start, 0, NULL, NULL);
+    clFinish(command_queue);
+
+    for (int i = 0; i < global_item_size; i++)
+    {
+        fprintf(stderr, "%d ", thread_start[i]);
+    }
+
+    fprintf(stderr, "\n");
+
+    int loadcount = thread_start[wave_offset * wave_size];
+    float other_latency = 1e6 * (float)time_diff_ms / (float)loadcount;
+    printf("long latency: %f, other latency: %f, other loadcount = %f\n", latency, other_latency, loadcount);
+    //fprintf(stderr, "Finished reading result. Sum: %d\n", result[0]);
+
+cleanup:
+    clFlush(command_queue);
+    clFinish(command_queue);
+    clReleaseMemObject(a_mem_obj);
+    clReleaseMemObject(result_obj);
+    free(A);
+    return latency;
+
+}
