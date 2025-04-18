@@ -60,7 +60,7 @@ __kernel void fp16_fma_rate_test(__global half8 *A, int count, __global half8 *r
     ret[get_global_id(0)] = v0 + v1 + v2 + v3 + v4 + v5 + v6 + v7;
 }
 
-__kernel void fp16_rsqrt_rate_test(__global half8 *A, int count, __global half8 *ret) {
+/*__kernel void fp16_rsqrt_rate_test(__global half8 *A, int count, __global half8 *ret) {
     int tid = get_local_id(0);
     int max_offset = get_local_size(0);
     __global half8 *local_a = A;
@@ -87,4 +87,4 @@ __kernel void fp16_rsqrt_rate_test(__global half8 *A, int count, __global half8 
     }
 
     ret[get_global_id(0)] = v0 + v1 + v2 + v3 + v4 + v5 + v6 + v7;
-}
+}*/
