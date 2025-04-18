@@ -28,6 +28,7 @@
 .global depaddimmtest
 .global addmultest
 .global jmpmultest
+.global addjmptest
 .global jmptest
 .global ntjmptest
 .global noptest
@@ -85,6 +86,7 @@
 .global store256
 .global store512
 .global loadscalar
+.global mixedscalarloadstore
 .global spacedstorescalar
 .global mixaddmul128int
 .global mixmul16mul64
@@ -1174,6 +1176,77 @@ ntjmptest_jellydonut:
   pop %rbx
   pop %rsi
   ret
+
+addjmptest:
+  push %rsi
+  push %rbx
+  push %rcx
+  push %rdx
+  push %r8
+  push %r9
+  push %r10
+  push %r11
+  push %r12
+  push %r13
+  push %r14
+  push %r15
+  mov $2, %r8
+  mov $20, %r9
+  xor %rbx, %rbx
+  xor %rcx, %rcx
+  xor %r11, %r11
+  xor %r12, %r12
+  xor %r13, %r13
+  xor %r14, %r14
+  xor %r15, %r15
+  xor %rsi, %rsi
+  mov %r8, %r10
+  mov %r8, %r11
+  mov %r8, %rsi
+  mov %r8, %rax
+  mov %r8, %rdx
+addjmptest_loop:
+  add %r8, %r10
+  add %r11, %r12
+  add %r13, %r14
+  jnz addjmptest_jellydonut
+
+  add %r8, %r10
+  add %r11, %r12
+  add %r13, %r14 
+  jnz addjmptest_jellydonut
+
+  add %r8, %r10
+  add %r11, %r12
+  add %r13, %r14 
+  jnz addjmptest_jellydonut
+
+  add %r8, %r10
+  add %r11, %r12
+  add %r13, %r14  
+  jnz addjmptest_jellydonut
+
+  add %r8, %r10
+  add %r11, %r12
+  add %r13, %r14    
+  jnz addjmptest_jellydonut
+
+  sub %r9, %rdi
+  jnz addjmptest_loop
+addjmptest_jellydonut:
+  pop %r15
+  pop %r14
+  pop %r13
+  pop %r12
+  pop %r11
+  pop %r10
+  pop %r9
+  pop %r8
+  pop %rdx
+  pop %rcx
+  pop %rbx
+  pop %rsi
+  ret 
 
 jmpmultest:
   push %rsi
@@ -4062,6 +4135,49 @@ spacedstorescalar_loop:
   mov %rdi, 1216(%rsi)
   sub %r9, %rdi
   jnz spacedstorescalar_loop
+  pop %r9
+  pop %r8
+  pop %rcx
+  pop %rbx
+  ret
+
+mixedscalarloadstore:
+  push %rbx
+  push %rcx
+  push %r8
+  push %r9
+  push %r10
+  push %r11
+  push %r12
+  push %r13
+  push %r14
+  push %r15
+  mov $20, %r9
+mixedscalarloadstore_loop:
+  mov (%rsi), %r15
+  mov 8(%rsi), %r14
+  mov %r9, 400(%rsi)
+
+  mov 16(%rsi), %r13
+  mov 24(%rsi), %r12
+  mov %r9, 408(%rsi)
+
+  mov 32(%rsi), %r11
+  mov 40(%rsi), %r10
+  mov %r9, 416(%rsi)
+
+  mov 48(%rsi), %r15
+  mov 56(%rsi), %r14
+  mov %r9, 424(%rsi)
+
+  sub %r9, %rdi
+  jg mixedscalarloadstore_loop
+  pop %r15
+  pop %r14
+  pop %r13
+  pop %r12
+  pop %r11
+  pop %r10
   pop %r9
   pop %r8
   pop %rcx

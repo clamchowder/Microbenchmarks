@@ -34,6 +34,7 @@ extern uint64_t mixrorshltest(uint64_t iterations) __attribute((sysv_abi));
 extern uint64_t btstest(uint64_t iterations) __attribute((sysv_abi));
 extern uint64_t btsmultest(uint64_t iterations) __attribute((sysv_abi));
 extern uint64_t addmultest(uint64_t iterations) __attribute((sysv_abi));
+extern uint64_t addjmptest(uint64_t iterations) __attribute((sysv_abi));
 extern uint64_t jmpmultest(uint64_t iterations) __attribute((sysv_abi));
 extern uint64_t jmptest(uint64_t iterations) __attribute((sysv_abi));
 extern uint64_t ntjmptest(uint64_t iterations) __attribute((sysv_abi));
@@ -88,6 +89,7 @@ extern uint64_t mul64(uint64_t iterations) __attribute((sysv_abi));
 extern uint64_t load128(uint64_t iterations, int *arr) __attribute((sysv_abi));
 extern uint64_t spacedload128(uint64_t iterations, int *arr) __attribute((sysv_abi));
 extern uint64_t loadscalar(uint64_t iterations, int *arr) __attribute((sysv_abi));
+extern uint64_t mixedscalarloadstore(uint64_t iterations, int *arr) __attribute((sysv_abi));
 extern uint64_t load256(uint64_t iterations, float *arr) __attribute((sysv_abi));
 extern uint64_t load512(uint64_t iterations, float *arr) __attribute((sysv_abi));
 extern uint64_t store128(uint64_t iterations, int *arr, int *sink) __attribute((sysv_abi));
@@ -135,6 +137,7 @@ int intSinkArr[8] __attribute__ ((aligned (64))) = { 2, 3, 4, 5, 6, 7, 8, 9 };
 
 uint64_t load128wrapper(uint64_t iterations) __attribute((sysv_abi));
 uint64_t loadscalarwrapper(uint64_t iterations) __attribute((sysv_abi));
+uint64_t mixedscalarloadstorewrapper(uint64_t iterations) __attribute((sysv_abi));
 uint64_t spacedload128wrapper(uint64_t iterations) __attribute((sysv_abi));
 uint64_t spacedstorescalarwrapper(uint64_t iterations) __attribute((sysv_abi));
 uint64_t load256wrapper(uint64_t iterations) __attribute((sysv_abi));
@@ -328,6 +331,8 @@ int main(int argc, char *argv[]) {
     printf("4:1 adds/imul per clk: %.2f\n", measureFunction(iterationsHigh, clockSpeedGhz, addmultest));
   if (testName == NULL || argc > 1 && strncmp(argv[1], "jmpmul", 6) == 0)
     printf("1:1 mul/jmp per clk: %.2f\n", measureFunction(iterationsHigh, clockSpeedGhz, jmpmultest));
+  if (testName == NULL || argc > 1 && strncmp(argv[1], "addjmp", 6) == 0)
+    printf("3:1 add/jmp per clk: %.2f\n", measureFunction(iterationsHigh, clockSpeedGhz, addjmptest));
   if (testName == NULL || argc > 1 && strncmp(argv[1], "jmp", 3) == 0)
     printf("taken jmp per clk: %.2f\n", measureFunction(iterationsHigh, clockSpeedGhz, jmptest));
   if (testName == NULL || argc > 1 && strncmp(argv[1], "ntjmp", 5) == 0)
@@ -470,6 +475,8 @@ int main(int argc, char *argv[]) {
   // load/store
   if (testName == NULL || argc > 1 && strncmp(argv[1], "loadscalar", 10) == 0)
     printf("64-bit scalar loads per clk: %.2f\n", measureFunction(iterations, clockSpeedGhz, loadscalarwrapper));
+  if (testName == NULL || argc > 1 && strncmp(argv[1], "mixedscalarloadstore", 20) == 0)
+    printf("2:1 64-bit scalar loads:stores per clk: %.2f\n", measureFunction(iterations, clockSpeedGhz, mixedscalarloadstorewrapper));
   if (testName == NULL || argc > 1 && strncmp(argv[1], "load128", 7) == 0)
     printf("128-bit loads per clk: %.2f\n", measureFunction(iterations, clockSpeedGhz, load128wrapper));
   if (testName == NULL || argc > 1 && strncmp(argv[1], "spacedload128", 13) == 0)
@@ -551,6 +558,11 @@ __attribute((sysv_abi)) uint64_t load256wrapper(uint64_t iterations) {
 __attribute((sysv_abi)) uint64_t loadscalarwrapper(uint64_t iterations) {
   return loadscalar(iterations, intTestArr);
 }
+
+__attribute((sysv_abi)) uint64_t mixedscalarloadstorewrapper(uint64_t iterations) {
+  return loadscalar(iterations, intTestArr);
+}
+ 
 
 __attribute((sysv_abi)) uint64_t load512wrapper(uint64_t iterations) {
   return load512(iterations, fpTestArr);
