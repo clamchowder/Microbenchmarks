@@ -694,7 +694,7 @@ __kernel void int32_mul_latency_test(__global uint *A, int count, __global uint 
     uint v7 = v1 + v2;
     uint acc = local_a[0];
 
-    for (int i = 0; i < count; i++) {
+    for (int i = 0; i < count; i += 4) {
         v0 = v7 * v0;
         v1 = v0 * v1;
         v2 = v1 * v2;
