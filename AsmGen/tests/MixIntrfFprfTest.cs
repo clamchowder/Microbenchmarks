@@ -80,6 +80,8 @@ namespace AsmGen
             }
             else if (isa == IUarchTest.ISA.riscv)
             {
+                if (this.initialDependentBranch) sb.AppendLine(UarchTestHelpers.GetRiscvDependentBranchTarget(this.Prefix));
+                string postLoadInstrs = this.initialDependentBranch ? UarchTestHelpers.GetRiscvDependentBranch(this.Prefix) : string.Empty;
                 string initInstrs = "  fld f0, (x12)\n" +
                     "  fld f1, 8(x12)\n" +
                     "  fld f2, 16(x12)\n" +
@@ -87,16 +89,20 @@ namespace AsmGen
                     "  fld f4, 32(x12)\n";
 
                 List<string> unrolledAdds = new List<string>();
-                unrolledAdds.Add("  fadd.s f0, f0, f4");
+                /* for C910 */
+                for (int i = 0; i < 30; i++) unrolledAdds.Add($"  fadd.s f{i % 4}, f{i % 4}, f4");
+                for (int i = 0; i < 200; i++) unrolledAdds.Add($"  add x28, x28, x29");
+                /*unrolledAdds.Add("  fadd.s f0, f0, f4");
                 unrolledAdds.Add("  add x28, x28, x29");
                 unrolledAdds.Add("  fadd.s f1, f1, f4");
                 unrolledAdds.Add("  add x30, x30, x29");
                 unrolledAdds.Add("  fadd.s f2, f2, f4");
                 unrolledAdds.Add("  add x31, x31, x29");
                 unrolledAdds.Add("  fadd.s f3, f3, f4");
-                unrolledAdds.Add("  add x18, x18, x29");
+                unrolledAdds.Add("  add x18, x18, x29");*/
                 string[] unrolledAddsArr = unrolledAdds.ToArray();
-                UarchTestHelpers.GenerateRiscvAsmStructureTestFuncs(sb, this.Counts, this.Prefix, unrolledAddsArr, unrolledAddsArr, includePtrChasingLoads: false, initInstrs);
+                UarchTestHelpers.GenerateRiscvAsmStructureTestFuncs(sb, this.Counts, this.Prefix, unrolledAddsArr, unrolledAddsArr, 
+                    includePtrChasingLoads: false, initInstrs, postLoadInstrs1: postLoadInstrs, postLoadInstrs2: postLoadInstrs);
             }
         }
     }

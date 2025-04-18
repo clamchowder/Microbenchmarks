@@ -19,7 +19,13 @@ namespace AsmGen
 
         public override bool SupportsIsa(IUarchTest.ISA isa)
         {
-            if (this.initialDependentBranch && isa != IUarchTest.ISA.aarch64) return false;
+            if (this.initialDependentBranch)
+            {
+                if (isa == IUarchTest.ISA.aarch64) return true;
+                if (isa == IUarchTest.ISA.riscv) return true;
+                return false;
+            }
+
             if (isa == IUarchTest.ISA.amd64) return true;
             if (isa == IUarchTest.ISA.aarch64) return true;
             if (isa == IUarchTest.ISA.mips64) return false;
@@ -57,6 +63,17 @@ namespace AsmGen
                 UarchTestHelpers.GenerateArmAsmStructureTestFuncs(
                     sb, this.Counts, this.Prefix, unrolledAdds, unrolledAdds, false, initInstrs, postLoadInstrs1: postLoadInstrs, postLoadInstrs2: postLoadInstrs);
                 if (this.initialDependentBranch) sb.AppendLine(UarchTestHelpers.GetArmDependentBranchTarget(this.Prefix));
+            }
+            else if (isa == IUarchTest.ISA.riscv)
+            {
+                string initInstrs = "  vsetvli t5, t6, e32\n  vlw.v v0, (a1)\n  vlw.v v1, (a1)\n  vlw.v v2, (a1)\n  vlw.v v3, (a1)";
+                string postLoadInstrs = this.initialDependentBranch ? UarchTestHelpers.GetRiscvDependentBranch(this.Prefix) : string.Empty;
+                postLoadInstrs += "\n  mv t6, a2";
+                string[] unrolledInstrs = new string[1];
+                unrolledInstrs[0] = "  vfadd.vv v0, v0, v0";
+                UarchTestHelpers.GenerateRiscvAsmStructureTestFuncs(sb, this.Counts, this.Prefix, unrolledInstrs, unrolledInstrs, false,
+                    initInstrs: initInstrs, postLoadInstrs1: postLoadInstrs, postLoadInstrs2: postLoadInstrs);
+                if (this.initialDependentBranch) sb.AppendLine(UarchTestHelpers.GetRiscvDependentBranchTarget(this.Prefix));
             }
         }
     }
