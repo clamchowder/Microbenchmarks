@@ -421,7 +421,8 @@ float run_divergence_rate_test(cl_context context,
     return gOpsPerSec;
 }
 
-
+// often takes time for clocks to settle?
+#define LATENCY_REPEAT 5
 float run_latency_test(cl_context context,
     cl_command_queue command_queue,
     cl_kernel kernel,
@@ -479,9 +480,23 @@ float run_latency_test(cl_context context,
 
     float totalOps = (float)chase_iterations * opsPerIteration * (float)global_item_size;
     latency = (float)time_diff_ms * 1e6 / totalOps;
+    // fprintf(stderr, "\tinitial run: %f ns latency\n", latency);
+
+    float minLatency = 0.0f;
+    for (int i = 0; i < LATENCY_REPEAT; i++)
+    {
+        start_timing();
+        clEnqueueNDRangeKernel(command_queue, kernel, 1, NULL, &global_item_size, &local_item_size, 0, NULL, NULL);
+        clFinish(command_queue);
+        time_diff_ms = end_timing();
+        latency = (float)time_diff_ms * 1e6 / totalOps;
+        // fprintf(stderr, "\trun %d: %f ns latency\n", i, latency);
+        if (i == 0 || latency < minLatency) minLatency = latency;
+    }
+
     //fprintf(stderr, "chase iterations: %d, thread count: %d\n", chase_iterations, thread_count);
     //fprintf(stderr, "total ops: %f (%.2f G)\ntotal time: %llu ms\n", totalOps, totalOps / 1e9, time_diff_ms);
-    return latency;
+    return minLatency;
 }
 
 // taking out FP64 because some implementations don't support it. putting another build program + create kernel section
@@ -564,7 +579,7 @@ float fp16_instruction_rate_test(cl_context context,
     if (saveprogram) write_program(program, "fp16irate");
     cl_kernel fp16_add_rate_kernel = clCreateKernel(program, "fp16_add_rate_test", &ret);
     cl_kernel fp16_fma_rate_kernel = clCreateKernel(program, "fp16_fma_rate_test", &ret);
-    cl_kernel fp16_rsqrt_rate_kernel = clCreateKernel(program, "fp16_rsqrt_rate_test", &ret);
+    //cl_kernel fp16_rsqrt_rate_kernel = clCreateKernel(program, "fp16_rsqrt_rate_test", &ret);
     totalOps = 8.0f * 8.0f;
     gOpsPerSec = run_rate_test(context, command_queue, fp16_add_rate_kernel, thread_count, local_size, low_chase_iterations,
         float4_element_count, a_mem_obj, result_obj, A, result, totalOps);
@@ -572,9 +587,9 @@ float fp16_instruction_rate_test(cl_context context,
     gOpsPerSec = run_rate_test(context, command_queue, fp16_fma_rate_kernel, thread_count, local_size, low_chase_iterations,
         float4_element_count, a_mem_obj, result_obj, A, result, totalOps);
     fprintf(stderr, "FP16 G FMAs/sec: %f : %f FP16 GFLOPs\n", gOpsPerSec, gOpsPerSec * 2);
-    gOpsPerSec = run_rate_test(context, command_queue, fp16_rsqrt_rate_kernel, thread_count, local_size, low_chase_iterations,
+    /*gOpsPerSec = run_rate_test(context, command_queue, fp16_rsqrt_rate_kernel, thread_count, local_size, low_chase_iterations,
         float4_element_count, a_mem_obj, result_obj, A, result, totalOps);
-    fprintf(stderr, "FP16 G native_rsqrt/sec: %f\n", gOpsPerSec);
+    fprintf(stderr, "FP16 G native_rsqrt/sec: %f\n", gOpsPerSec);*/
 
     return gOpsPerSec;
 }
