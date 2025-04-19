@@ -560,7 +560,7 @@ __attribute((sysv_abi)) uint64_t loadscalarwrapper(uint64_t iterations) {
 }
 
 __attribute((sysv_abi)) uint64_t mixedscalarloadstorewrapper(uint64_t iterations) {
-  return loadscalar(iterations, intTestArr);
+  return mixedscalarloadstore(iterations, intTestArr);
 }
  
 

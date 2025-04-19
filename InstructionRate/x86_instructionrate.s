@@ -4152,7 +4152,7 @@ mixedscalarloadstore:
   push %r13
   push %r14
   push %r15
-  mov $20, %r9
+  mov $12, %r9
 mixedscalarloadstore_loop:
   mov (%rsi), %r15
   mov 8(%rsi), %r14
