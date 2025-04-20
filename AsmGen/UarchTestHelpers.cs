@@ -398,6 +398,7 @@ namespace AsmGen
                 sb.AppendLine("  push %r13");
                 sb.AppendLine("  push %r12");
                 sb.AppendLine("  push %r11");
+                sb.AppendLine("  push %r10");
                 sb.AppendLine("  push %r8");
                 sb.AppendLine("  push %rcx");
                 sb.AppendLine("  push %rdx");
@@ -445,6 +446,7 @@ namespace AsmGen
                 sb.AppendLine("  pop %rdx");
                 sb.AppendLine("  pop %rcx");
                 sb.AppendLine("  pop %r8");
+                sb.AppendLine("  pop %r10");
                 sb.AppendLine("  pop %r11");
                 sb.AppendLine("  pop %r12");
                 sb.AppendLine("  pop %r13");

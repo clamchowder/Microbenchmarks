@@ -28,10 +28,10 @@ namespace AsmGen
             if (isa == IUarchTest.ISA.amd64)
             {
                 string[] unrolledJumps = new string[4];
-                unrolledJumps[0] = "  cmp %rdi, %rsi\n  je mixaddjumpsched_reallybadthing";
+                unrolledJumps[0] = "  cmp %rdi, %rsi\n  je mixaddjumpsched_reallybadthing\n  nop";
                 unrolledJumps[1] = "  add %rsi, %r15";
                 unrolledJumps[2] = "  add %rsi, %r14";
-                unrolledJumps[3] = "  add %rsi, %r14";
+                unrolledJumps[3] = "  add %rsi, %r13\n  nop";
                 UarchTestHelpers.GenerateX86AsmStructureTestFuncs(sb, this.Counts, this.Prefix, unrolledJumps, unrolledJumps, includePtrChasingLoads: true);
 
                 sb.AppendLine("mixaddjumpsched_reallybadthing:\n  int3");
