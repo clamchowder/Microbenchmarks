@@ -39,6 +39,14 @@ namespace AsmGen
             tests.Add(new Fadd256SchedTest(4, 80, 1));
             tests.Add(new MixFaddFmulSchedTest(4, 100, 1));
             tests.Add(new MixAddMulSchedTest(4, 100, 1));
+            tests.Add(new ZeroRobTest(160, 240, 1, false));
+            tests.Add(new MixLoadAddSchedTest(20, 100, 1));
+            tests.Add(new LoadNsq(4, 52, 1));
+            tests.Add(new VecMulNsq(4, 50, 1, 55));
+            tests.Add(new Add128SchedTest(4, 60, 1));
+            tests.Add(new MixAddFadd128SchedTest(20, 100, 1));
+            tests.Add(new Stq256Test(10, 60, 1));
+            tests.Add(new Ldq256Test(10, 80, 1));
 
             List<Task> tasks = new List<Task>();
             tasks.Add(Task.Run(() => GenerateCFile(tests, IUarchTest.ISA.amd64)));
