@@ -4,7 +4,9 @@ namespace AsmGen
 {
     public class JumpSchedTest : UarchTest
     {
-        public JumpSchedTest(int low, int high, int step)
+        private bool appendOr;
+
+        public JumpSchedTest(int low, int high, int step, bool appendOr)
         {
             this.Counts = UarchTestHelpers.GenerateCountArray(low, high, step);
             this.Prefix = "jumpsched";
@@ -12,10 +14,20 @@ namespace AsmGen
             this.FunctionDefinitionParameters = "uint64_t iterations, int *arr";
             this.GetFunctionCallParameters = "structIterations, A";
             this.DivideTimeByCount = false;
+            this.appendOr = appendOr;
+            if (appendOr)
+            {
+                this.Prefix += "or";
+            }
+            else
+            {
+                this.Prefix += "regular";
+            }
         }
 
         public override bool SupportsIsa(IUarchTest.ISA isa)
         {
+            if (appendOr && isa != IUarchTest.ISA.amd64) return false;
             if (isa == IUarchTest.ISA.amd64) return true;
             if (isa == IUarchTest.ISA.aarch64) return true;
             // if (isa == IUarchTest.ISA.mips64) return true;
@@ -28,10 +40,11 @@ namespace AsmGen
             if (isa == IUarchTest.ISA.amd64)
             {
                 string[] unrolledJumps = new string[1];
-                unrolledJumps[0] = "  cmp %rdi, %rsi\n  je jumpsched_reallybadthing";
+                unrolledJumps[0] = $"  cmp %rdi, %rsi\n  je jumpsched_reallybadthing{this.appendOr}";
+                if (appendOr) unrolledJumps[0] += "\n  or $0, %rdi";
                 UarchTestHelpers.GenerateX86AsmStructureTestFuncs(sb, this.Counts, this.Prefix, unrolledJumps, unrolledJumps, includePtrChasingLoads: true);
 
-                sb.AppendLine("jumpsched_reallybadthing:\n  int3");
+                sb.AppendLine($"jumpsched_reallybadthing{this.appendOr}:\n  int3");
             }
             else if (isa == IUarchTest.ISA.aarch64)
             {

@@ -20,7 +20,8 @@ namespace AsmGen
             tests.Add(new AddSchedTest(4, 80, 1));
             tests.Add(new MulSchedTest(4, 80, 1));
             tests.Add(new RorSchedTest(4, 80, 1));
-            tests.Add(new JumpSchedTest(4, 80, 1));
+            tests.Add(new JumpSchedTest(4, 80, 1, false));
+            tests.Add(new JumpSchedTest(4, 80, 1, true));
             tests.Add(new CvtSchedTest(4, 80, 1));
             tests.Add(new FaddSchedTest(4, 80, 1));
             tests.Add(new FmulSchedTest(4, 80, 1));
@@ -35,6 +36,9 @@ namespace AsmGen
             tests.Add(new JumpNsqTest(4, 25, 1));
             tests.Add(new FaddNsq(4, 35, 1, 60));
             tests.Add(new AddNsq(4, 48, 1, 50));
+            tests.Add(new Fadd256SchedTest(4, 80, 1));
+            tests.Add(new MixFaddFmulSchedTest(4, 100, 1));
+            tests.Add(new MixAddMulSchedTest(4, 100, 1));
 
             List<Task> tasks = new List<Task>();
             tasks.Add(Task.Run(() => GenerateCFile(tests, IUarchTest.ISA.amd64)));
