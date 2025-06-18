@@ -785,7 +785,6 @@ float MeasureBw(uint64_t sizeKb, uint64_t iterations, uint64_t threads, int shar
         //int pthreadRc = pthread_create(testThreads + i, NULL, ReadBandwidthTestThread, (void *)(threadData + i));
     }
 
-    uint64_t instructions, cycles;
 #ifndef __MINGW32__
     if (pmon) start_perf_monitoring();
 #endif
@@ -794,7 +793,7 @@ float MeasureBw(uint64_t sizeKb, uint64_t iterations, uint64_t threads, int shar
     for (uint64_t i = 0; i < threads; i++) pthread_join(testThreads[i], NULL);
     gettimeofday(&endTv, &endTz);
 #ifndef __MINGW32__
-    if (pmon) stop_perf_monitoring(&instructions, &cycles);
+    if (pmon) stop_perf_monitoring();
 #endif
 
     uint64_t time_diff_ms = 1000 * (endTv.tv_sec - startTv.tv_sec) + ((endTv.tv_usec - startTv.tv_usec) / 1000);
