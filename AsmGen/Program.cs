@@ -107,7 +107,7 @@ namespace AsmGen
             sb.AppendLine("#define _GNU_SOURCE");
             sb.AppendLine("#include <stdio.h>\n#include<stdint.h>\n#include<sys/time.h>\n#include <stdlib.h>\n#include <string.h>\n#include <time.h>\n");
             sb.AppendLine("#pragma GCC diagnostic ignored \"-Wattributes\"");
-            string commonFunctions = File.ReadAllText($"{DataFilesDir}\\CommonFunctions.c");
+            string commonFunctions = File.ReadAllText(Path.Combine(DataFilesDir, "CommonFunctions.c"));
             sb.AppendLine(commonFunctions);
 
             foreach (IUarchTest test in tests)
@@ -185,6 +185,9 @@ namespace AsmGen
 
             sb.AppendLine("win64:");
             sb.AppendLine($"\tx86_64-w64-mingw32-gcc clammicrobench_{IUarchTest.ISA.amd64.ToString()}.c clammicrobench_{IUarchTest.ISA.amd64.ToString()}.s -o cb.exe");
+
+            sb.AppendLine("clean:");
+            sb.AppendLine("\trm clammicrobench_* cb");
 
             File.WriteAllText("Makefile", sb.ToString());
         }

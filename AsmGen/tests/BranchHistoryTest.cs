@@ -275,7 +275,7 @@ namespace AsmGen
 
             GenerateInitializationCode(sb, true);
 
-            string gccFunction = File.ReadAllText($"{Program.DataFilesDir}\\GccBranchHistFunction.c");
+            string gccFunction = File.ReadAllText(Path.Combine(Program.DataFilesDir, "GccBranchHistFunction.c"));
             sb.AppendLine(gccFunction);
         }
 
@@ -305,7 +305,7 @@ namespace AsmGen
 
         public void GenerateCommonTestBlock(StringBuilder sb)
         {
-            string branchhistMain = File.ReadAllText($"{Program.DataFilesDir}\\BranchhistTestBlock.c");
+            string branchhistMain = File.ReadAllText(Path.Combine(Program.DataFilesDir, "BranchhistTestBlock.c"));
             sb.AppendLine(branchhistMain);
         }
     }

@@ -367,7 +367,7 @@ namespace AsmGen
                     sb.AppendLine("extern uint64_t " + GetFunctionName(branchCounts[branchCountIdx], targetCounts[targetCountIdx]) + $"({FunctionDefinitionParameters}) __attribute((sysv_abi));");
 
             GenerateInitializationCode(sb);
-            string gccFunction = File.ReadAllText($"{Program.DataFilesDir}\\GccIndirectBranchFunction.c");
+            string gccFunction = File.ReadAllText(Path.Combine(Program.DataFilesDir, "GccIndirectBranchFunction.c"));
             sb.AppendLine(gccFunction);
         }
 
@@ -415,7 +415,7 @@ namespace AsmGen
         {
             sb.AppendLine("  if (argc > 1 && strncmp(test_name, \"" + Prefix + "\", " + Prefix.Length + ") == 0) {");
             sb.AppendLine("    printf(\"" + Description + ":\\n\");");
-            string ibMain = File.ReadAllText($"{Program.DataFilesDir}\\IndirectBranchTestBlock.c");
+            string ibMain = File.ReadAllText(Path.Combine(Program.DataFilesDir, "IndirectBranchTestBlock.c"));
             sb.AppendLine(ibMain);
             sb.AppendLine("  }\n");
         }
