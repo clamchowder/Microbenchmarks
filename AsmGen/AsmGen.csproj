@@ -9,22 +9,22 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <None Update="DataFiles\clammicrobench.vcxproj_template">
+    <None Update="$([System.IO.Path]::Combine('Datafiles','clammicrobench.vcxproj_template'))">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
-    <None Update="DataFiles\GccBranchHistFunction.c">
+    <None Update="$([System.IO.Path]::Combine('Datafiles','GccBranchHistFunction.c'))">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
-    <None Update="DataFiles\IndirectBranchTestBlock.c">
+    <None Update="$([System.IO.Path]::Combine('Datafiles','IndirectBranchTestBlock.c'))">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
-    <None Update="DataFiles\BranchhistTestBlock.c">
+    <None Update="$([System.IO.Path]::Combine('Datafiles','BranchhistTestBlock.c'))">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
-    <None Update="DataFiles\GccIndirectBranchFunction.c">
+    <None Update="$([System.IO.Path]::Combine('Datafiles','GccIndirectBranchFunction.c'))">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
-    <None Update="DataFiles\CommonFunctions.c">
+    <None Update="$([System.IO.Path]::Combine('Datafiles','CommonFunctions.c'))">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
   </ItemGroup>
