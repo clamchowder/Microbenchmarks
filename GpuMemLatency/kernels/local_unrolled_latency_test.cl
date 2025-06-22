@@ -1,7 +1,7 @@
 #define local_mem_test_size 1024
 // uses local memory (LDS/shmem)
-__kernel void local_unrolled_latency_test(__global const int* A, int count, __global int* ret) {
-    __local int local_a[local_mem_test_size]; // 4 KB, should be present on all GPUs, amirite?
+__kernel void local_unrolled_latency_test(__global const uint* A, int count, __global uint* ret) {
+    __local uint local_a[local_mem_test_size]; // 4 KB, should be present on all GPUs, amirite?
     // better be fast
     for (int i = get_local_id(0);i < local_mem_test_size; i += get_local_size(0))
         local_a[i] = A[i];
@@ -9,8 +9,8 @@ __kernel void local_unrolled_latency_test(__global const int* A, int count, __gl
 
     // everyone else can chill/get masked off
     if (get_local_id(0) == 0) {
-        int current = local_a[0];
-        int result;
+        uint current = local_a[0];
+        uint result;
         for (int i = 0; i < count; i += 10) {
             result += current;
             current = local_a[current];
