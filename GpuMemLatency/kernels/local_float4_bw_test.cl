@@ -68,31 +68,27 @@ __kernel void mixed_float4_bw_test(__global float4* A, uint count, __global floa
     int idx0 = localId;
     int idx1 = localId + localSize;
     int idx2 = localId + localSize * 2;
-    for (int i = 0; i < count; i += (12*8)) { 
-        acc1 += local_a[idx0] * local_a[idx1] + local_a[idx2];
-        acc5 += A[idx0] * A[idx1] + A[idx2];
+    for (int i = 0; i < count; i += (16*4)) {
+        local_a[idx0] += A[idx1] * A[idx2]; // 4 * (3R 1W)
         idx0 = (idx0 + localSize) & 0x3FF;
         idx1 = (idx1 + localSize) & 0x3FF;
         idx2 = (idx2 + localSize) & 0x3FF;
 
-        acc2 += local_a[idx0] * local_a[idx1] + local_a[idx2];
-        acc6 += A[idx0] * A[idx1] + A[idx2];
+        local_a[idx0] += A[idx1] * A[idx2];
         idx0 = (idx0 + localSize) & 0x3FF;
         idx1 = (idx1 + localSize) & 0x3FF;
         idx2 = (idx2 + localSize) & 0x3FF;
 
-        acc3 += local_a[idx0] * local_a[idx1] + local_a[idx2];
-        acc7 += A[idx0] * A[idx1] + A[idx2];
+        local_a[idx0] += A[idx1] * A[idx2];
         idx0 = (idx0 + localSize) & 0x3FF;
         idx1 = (idx1 + localSize) & 0x3FF;
         idx2 = (idx2 + localSize) & 0x3FF;
 
-        acc4 += local_a[idx0] * local_a[idx1] + local_a[idx2];
-        acc8 += A[idx0] * A[idx1] + A[idx2];
+        local_a[idx0] += A[idx1] * A[idx2];
         idx0 = (idx0 + localSize) & 0x3FF;
         idx1 = (idx1 + localSize) & 0x3FF;
         idx2 = (idx2 + localSize) & 0x3FF;
     }
 
-    ret[threadId] = dot(acc1, acc2) + dot(acc3, acc4) + dot(acc5, acc6) + dot(acc7, acc8);
+    ret[threadId] = dot(local_a[get_local_id(0)], local_a[get_local_id(0) + 1]);
 }
