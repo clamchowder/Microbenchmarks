@@ -86,6 +86,13 @@ float instruction_rate_test(cl_context context,
     cl_kernel int32_add_latency_kernel = clCreateKernel(program, "int32_add_latency_test", &ret);
     cl_kernel int32_mul_latency_kernel = clCreateKernel(program, "int32_mul_latency_test", &ret);
 
+    cl_kernel int32_add_scalar_latency_kernel = clCreateKernel(program, "int32_add_scalar_latency_test", &ret);
+    cl_kernel int32_mul_scalar_latency_kernel = clCreateKernel(program, "int32_mul_scalar_latency_test", &ret);
+    cl_kernel fp32_add_scalar_latency_kernel = clCreateKernel(program, "fp32_add_scalar_latency_test", &ret);
+    cl_kernel fp32_fma_scalar_latency_kernel = clCreateKernel(program, "fp32_fma_scalar_latency_test", &ret);
+    cl_kernel fp32_mul_scalar_latency_kernel = clCreateKernel(program, "fp32_mul_scalar_latency_test", &ret);
+    cl_kernel fp32_mul_latency_kernel = clCreateKernel(program, "fp32_mul_latency_test", &ret);
+
     float* A = (float*)malloc(sizeof(float) * float4_element_count * 4);
     float* result = (float*)malloc(sizeof(float) * 4 * thread_count);
 
@@ -110,16 +117,26 @@ float instruction_rate_test(cl_context context,
         float4_element_count, a_mem_obj, result_obj, A, result, opsPerIteration);
     fprintf(stderr, "INT32 G Adds/sec: %f\n", int32_add_rate);
 
+    printf("===== INT32 add latency =====\n");
     float int32_add_latency = run_latency_test(context, command_queue, int32_add_latency_kernel, chase_iterations, float4_element_count, a_mem_obj, result_obj, A, result, 8.0f);
     fprintf(stderr, "INT32 add latency: %f ns\n", int32_add_latency);
+
+    printf("===== INT32 add latency (scalar) =====\n");
+    int32_add_latency = run_latency_test(context, command_queue, int32_add_scalar_latency_kernel, chase_iterations, float4_element_count, a_mem_obj, result_obj, A, result, 8.0f);
+    fprintf(stderr, "INT32 add latency (scalar): %f ns\n", int32_add_latency);
+
+    printf("===== INT32 mul latency =====\n");
+    float int32_mul_latency = run_latency_test(context, command_queue, int32_mul_latency_kernel, chase_iterations, float4_element_count, a_mem_obj, result_obj, A, result, 8.0f);
+    fprintf(stderr, "INT32 mul latency: %f ns\n", int32_mul_latency);
+
+    printf("===== INT32 mul latency (scalar) =====\n");
+    int32_mul_latency = run_latency_test(context, command_queue, int32_mul_scalar_latency_kernel, chase_iterations, float4_element_count, a_mem_obj, result_obj, A, result, 8.0f);
+    fprintf(stderr, "INT32 mul latency (scalar): %f ns\n", int32_mul_latency);
 
     opsPerIteration = 4.0f * 8.0f;
     float int32_mul_rate = run_rate_test(context, command_queue, int32_mul_rate_kernel, thread_count, local_size, (chase_iterations / 2),
         float4_element_count, a_mem_obj, result_obj, A, result, opsPerIteration);
     fprintf(stderr, "INT32 G Multiplies/sec: %f\n", int32_mul_rate);
-
-    float int32_mul_latency = run_latency_test(context, command_queue, int32_mul_latency_kernel, chase_iterations, float4_element_count, a_mem_obj, result_obj, A, result, 8.0f);
-    fprintf(stderr, "INT32 mul latency: %f ns\n", int32_mul_latency);
 
     // FP32 add and fma test
     cl_float* fp32_A = (cl_float*)A;
@@ -134,8 +151,27 @@ float instruction_rate_test(cl_context context,
         float4_element_count, a_mem_obj, result_obj, A, result, opsPerIteration);
     fprintf(stderr, "FP32 G Adds/sec: %f\n", fp32_add_rate);
 
+    printf("===== FP32 add latency =====\n");
     float fp32_add_latency = run_latency_test(context, command_queue, fp32_add_latency_kernel, chase_iterations, float4_element_count, a_mem_obj, result_obj, A, result, 8.0f);
     fprintf(stderr, "FP32 add latency: %f ns\n", fp32_add_latency);
+
+    printf("===== FP32 add latency (scalar) =====\n");
+    fp32_add_latency = run_latency_test(context, command_queue, fp32_add_scalar_latency_kernel, chase_iterations, float4_element_count, a_mem_obj, result_obj, A, result, 8.0f);
+    fprintf(stderr, "FP32 add latency (scalar): %f ns\n", fp32_add_latency);
+
+    printf("===== FP32 fma latency =====\n");
+    float fp32_fma_latency = run_latency_test(context, command_queue, fp32_fma_latency_kernel, chase_iterations, float4_element_count, a_mem_obj, result_obj, A, result, 8.0f);
+    fprintf(stderr, "FP32 FMA latency: %f ns\n", fp32_fma_latency);
+
+    printf("===== FP32 fma latency (scalar) =====\n");
+    fp32_fma_latency = run_latency_test(context, command_queue, fp32_fma_scalar_latency_kernel, chase_iterations, float4_element_count, a_mem_obj, result_obj, A, result, 8.0f);
+    fprintf(stderr, "FP32 FMA latency (scalar): %f ns\n", fp32_fma_latency);
+
+    printf("===== FP32 mul latency =====\n");
+    fp32_fma_latency = run_latency_test(context, command_queue, fp32_mul_latency_kernel, chase_iterations, float4_element_count, a_mem_obj, result_obj, A, result, 8.0f);
+    fprintf(stderr, "FP32 mul latency: %f ns\n", fp32_fma_latency);
+    fp32_fma_latency = run_latency_test(context, command_queue, fp32_mul_scalar_latency_kernel, chase_iterations, float4_element_count, a_mem_obj, result_obj, A, result, 8.0f);
+    fprintf(stderr, "FP32 mul latency (scalar): %f ns\n", fp32_fma_latency);
 
     float fp32_fma_rate = run_rate_test(context, command_queue, fp32_fma_rate_kernel, thread_count, local_size, chase_iterations,
         float4_element_count, a_mem_obj, result_obj, A, result, opsPerIteration);
@@ -148,9 +184,6 @@ float instruction_rate_test(cl_context context,
     fp32_fma_rate = run_rate_test(context, command_queue, fp32_mad_rate_kernel, thread_count, local_size, chase_iterations,
         float4_element_count, a_mem_obj, result_obj, A, result, opsPerIteration);
     fprintf(stderr, "FP32 G mad()/sec: %f : %f GFLOPs\n", fp32_fma_rate, fp32_fma_rate * 2);
-
-    float fp32_fma_latency = run_latency_test(context, command_queue, fp32_fma_latency_kernel, chase_iterations, float4_element_count, a_mem_obj, result_obj, A, result, 8.0f);
-    fprintf(stderr, "FP32 FMA latency: %f ns\n", fp32_fma_latency);
 
     float fp32_rcp_rate = run_rate_test(context, command_queue, fp32_rcp_rate_kernel, thread_count, local_size, chase_iterations,
         float4_element_count, a_mem_obj, result_obj, A, result, opsPerIteration);
