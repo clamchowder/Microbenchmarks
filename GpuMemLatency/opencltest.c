@@ -39,6 +39,7 @@ enum TestType {
     LocalMemChaseBandwidth,
     LocalMem64Bandwidth,
     LocalMemFloat4Bandwidth,
+    MixedFloat4Bandwidth,
     LoadStoreBandwidth,
     TextureThroughput,
     BufferBandwidth,
@@ -217,6 +218,10 @@ int main(int argc, char* argv[]) {
                 else if (_strnicmp(argv[argIdx], "localfloat4bw", 13) == 0) {
                     testType = LocalMemFloat4Bandwidth;
                     fprintf(stderr, "Testing local memory bandwidth using float4 (4x32-bit) loads\n");
+                }
+                else if (_strnicmp(argv[argIdx], "mixedbw", 7) == 0) {
+                    testType = MixedFloat4Bandwidth;
+                    fprintf(stderr, "Mixed local/global load bw test with float4\n");
                 }
                 else if (_strnicmp(argv[argIdx], "bufferbw", 8) == 0) {
                     testType = BufferBandwidth;
@@ -559,10 +564,12 @@ int main(int argc, char* argv[]) {
         testType == BufferBandwidth || 
         testType == LoadStoreBandwidth ||
         testType == TextureThroughput ||
-        testType == LocalMemFloat4Bandwidth)
+        testType == LocalMemFloat4Bandwidth ||
+        testType == MixedFloat4Bandwidth)
     {
         cl_program prog;
         cl_kernel local_bw_kernel = NULL, local_64_bw_kernel = NULL, local_float4_bw_kernel = NULL, buffer_bw_kernel = NULL, tex_bw_kernel = NULL, loadstore_bw_kernel = NULL;
+        cl_kernel mixed_bw_kernel = NULL;
         if (testType == LocalMemBandwidth)
         {
             prog = build_program(context, "local_bw_test.cl", NULL);
@@ -590,6 +597,12 @@ int main(int argc, char* argv[]) {
             loadstore_bw_kernel = clCreateKernel(prog, "ldst_bw_test", &ret);
             if (saveprogram) write_program(prog, "ldst_bw_test");
         }
+        else if (testType == MixedFloat4Bandwidth)
+        {
+            prog = build_program(context, "local_float4_bw_test.cl", NULL);
+            mixed_bw_kernel = clCreateKernel(prog, "mixed_float4_bw_test", NULL);
+            if (saveprogram) write_program(prog, "mixed_float4_bw_test");
+        }
         else { // tex throughput
             prog = build_program(context, "tex_bw_test.cl", NULL);
             tex_bw_kernel = clCreateKernel(prog, "tex_bw_test", &ret);
@@ -616,6 +629,10 @@ int main(int argc, char* argv[]) {
                 else if (testType == LocalMemFloat4Bandwidth) {
                     fprintf(stderr, "Testing local mem bw with float4 loads\n");
                     result = local_bw_test(context, command_queue, local_float4_bw_kernel, thread_count, local_size, chase_iterations, &elapsed_ms);
+                }
+                else if (testType == MixedFloat4Bandwidth) {
+                    fprintf(stderr, "Testing mixed local/global bw with float4 loads\n");
+                    result = local_bw_test(context, command_queue, mixed_bw_kernel, thread_count, local_size, chase_iterations, &elapsed_ms);
                 }
                 else if (testType == BufferBandwidth)
                 {
