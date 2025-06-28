@@ -49,6 +49,7 @@ enum TestType {
     InstructionRate,
     Divergence,
     Partition,
+    MemDivergence
 };
 
 
@@ -159,6 +160,10 @@ int main(int argc, char* argv[]) {
                 else if (_strnicmp(argv[argIdx], "constantlatency", 15) == 0) {
                     testType = ConstantMemLatency;
                     fprintf(stderr, "Testing constant memory latency\n");
+                }
+                else if (_strnicmp(argv[argIdx], "memdivergence", 13) == 0) {
+                    testType = MemDivergence;
+                    fprintf(stderr, "Testing memory access divergence cost\n");
                 }
                 else if (_strnicmp(argv[argIdx], "localmemcapacity", 16) == 0) {
                     testType = LocalMemCapacity;
@@ -407,6 +412,41 @@ int main(int argc, char* argv[]) {
 
         clReleaseKernel(globalMemLatencyKernel);
         clReleaseProgram(prog);
+    }
+    else if (testType == MemDivergence) {
+        cl_program vecProg, texProg;
+        cl_kernel vecKernel, texKernel;
+        fprintf(stderr, "Testing mem divergence with localsize %d, test size %d KB\n", local_size, sizeKb);
+
+        // vector
+        vecProg = build_program(context, "unrolled_latency_test.cl", NULL);
+        if (saveprogram) write_program(vecProg, "vector_unrolled_latency_test");
+        vecKernel = clCreateKernel(vecProg, "unrolled_latency_test", &ret);
+
+        texProg = build_program(context, "tex_latency_test.cl", NULL);
+        texKernel = clCreateKernel(texProg, "tex_latency_test", &ret);
+        if (saveprogram) write_program(texProg, "tex_latency_test");
+
+        float* memDivergenceResults = (float*)malloc(sizeof(float) * local_size * 2);
+        for (int threadCount = 1; threadCount <= local_size; threadCount++) {
+            float vecResult = latency_test(context, command_queue, vecKernel, 256 * sizeKb, scale_iterations(sizeKb, chase_iterations), false, threadCount, threadCount, 1, stride, NULL);
+            memDivergenceResults[threadCount * 2] = vecResult;
+
+            float texResult = tex_latency_test(context, command_queue, texKernel, 256 * sizeKb, scale_iterations(sizeKb, chase_iterations), threadCount, threadCount, 1);
+            memDivergenceResults[threadCount * 2 + 1] = texResult;
+
+            fprintf(stderr, "%d threads: %f vec, %f tex\n", threadCount, vecResult, texResult);
+        }
+
+        for (int threadCount = 1; threadCount <= local_size; threadCount++) {
+            printf("%d,%f,%f\n", threadCount, memDivergenceResults[threadCount * 2], memDivergenceResults[threadCount * 2 + 1]);
+        }
+
+        clReleaseKernel(texKernel);
+        clReleaseKernel(vecKernel);
+        clReleaseProgram(texProg);
+        clReleaseProgram(vecProg);
+        free(memDivergenceResults);
     }
     else if (testType == LocalMemCapacity)
     {
