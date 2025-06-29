@@ -424,6 +424,103 @@ cleanup:
     return bandwidth;
 }
 
+float mixed_buffer_bw_test(cl_context context,
+    cl_command_queue command_queue,
+    cl_kernel kernel,
+    uint32_t thread_count,
+    uint32_t local_size,
+    uint32_t chase_iterations,
+    int64_t* time_ms)
+{
+    size_t global_item_size = thread_count;
+    size_t local_item_size = local_size;
+    float bandwidth, total_data_gb;
+    cl_int ret;
+    int64_t time_diff_ms;
+    cl_mem result_obj;
+
+    uint32_t* A = (uint32_t*)malloc(sizeof(uint32_t) * buffer_test_size);
+    float* result = (uint32_t*)malloc(sizeof(float) * thread_count);
+
+    if (!A || !result)
+    {
+        fprintf(stderr, "Failed to allocate memory for test size %lu KB\n", local_mem_bw_test_size * 4);
+    }
+
+    for (uint32_t i = 0; i < buffer_test_size; i++)
+    {
+        A[i] = i + 1.1f;
+    }
+
+    // copy array to device
+    cl_mem a_mem_obj = clCreateBuffer(context, CL_MEM_READ_ONLY, buffer_test_size * sizeof(uint32_t), NULL, &ret);
+    ret = clEnqueueWriteBuffer(command_queue, a_mem_obj, CL_TRUE, 0, buffer_test_size * sizeof(uint32_t), A, 0, NULL, NULL);
+
+    // handle cl_image stuff
+    cl_image_format imageFormat;
+    imageFormat.image_channel_data_type = CL_FLOAT;
+    imageFormat.image_channel_order = CL_R;
+    cl_image_desc imageDesc;
+    memset(&imageDesc, 0, sizeof(cl_image_desc));
+    imageDesc.buffer = a_mem_obj;
+    imageDesc.image_type = CL_MEM_OBJECT_IMAGE1D_BUFFER;
+    imageDesc.image_width = buffer_test_size; // width in pixels
+    cl_mem tex_obj = tex_obj = clCreateImage(context, CL_MEM_READ_ONLY, &imageFormat, &imageDesc, NULL, &ret);
+
+    size_t origin[] = { 0, 0, 0 };
+    size_t region[] = { imageDesc.image_width, 1, 1 };
+    ret = clEnqueueWriteImage(command_queue, tex_obj, CL_TRUE, origin, region, 0, 0, A, 0, NULL, NULL);
+
+    result_obj = clCreateBuffer(context, CL_MEM_READ_WRITE, sizeof(float) * thread_count, NULL, &ret);
+    ret = clEnqueueWriteBuffer(command_queue, result_obj, CL_TRUE, 0, sizeof(float) * thread_count, result, 0, NULL, NULL);
+
+    clSetKernelArg(kernel, 0, sizeof(cl_mem), (void*)&a_mem_obj);
+    clSetKernelArg(kernel, 1, sizeof(cl_mem), (void*)&tex_obj);
+    clSetKernelArg(kernel, 2, sizeof(cl_int), (void*)&chase_iterations);
+    clSetKernelArg(kernel, 3, sizeof(cl_mem), (void*)&result_obj);
+    clFinish(command_queue);
+
+    start_timing();
+    ret = clEnqueueNDRangeKernel(command_queue, kernel, 1, NULL, &global_item_size, &local_item_size, 0, NULL, NULL);
+    if (ret != CL_SUCCESS)
+    {
+        fprintf(stderr, "Failed to submit kernel to command queue. clEnqueueNDRangeKernel returned %d\n", ret);
+        bandwidth = 0;
+        goto cleanup;
+    }
+
+    ret = clFinish(command_queue); // returns success even when TDR happens?
+    if (ret != CL_SUCCESS)
+    {
+        printf("Failed to finish command queue. clFinish returned %d\n", ret);
+        bandwidth = 0;
+        goto cleanup;
+    }
+
+    time_diff_ms = end_timing();
+    *time_ms = time_diff_ms;
+
+    // each thread does iterations reads
+    total_data_gb = sizeof(float) * ((float)chase_iterations * thread_count) / 1e9;
+    bandwidth = 1000 * (float)total_data_gb / (float)time_diff_ms;
+
+    //fprintf(stderr, "%llu ms, %llu GB\n", time_diff_ms, total_data_gb);
+
+    ret = clEnqueueReadBuffer(command_queue, result_obj, CL_TRUE, 0, sizeof(uint32_t) * thread_count, result, 0, NULL, NULL);
+    if (ret != 0) fprintf(stderr, "enqueue read buffer for result failed. ret = %d\n", ret);
+    clFinish(command_queue);
+
+cleanup:
+    clFlush(command_queue);
+    clFinish(command_queue);
+    clReleaseMemObject(a_mem_obj);
+    clReleaseMemObject(result_obj);
+    free(A);
+    free(result);
+    return bandwidth;
+}
+
+
 float local_chase_bw_test(cl_context context,
     cl_command_queue command_queue,
     cl_kernel kernel,
