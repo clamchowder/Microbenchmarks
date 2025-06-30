@@ -17,53 +17,6 @@ namespace AsmGen
         static void Main(string[] args)
         {
             List<IUarchTest> tests = new List<IUarchTest>();
-            tests.Add(new RobTest(12, 800, 1, initialDependentBranch: false));
-            tests.Add(new MaskRfTest(32, 256, 1));
-
-            tests.Add(new IdrfTest(32, 192, 1));
-            tests.Add(new ZeroRobTest(12, 240, 1, initialDependentBranch: false));
-            tests.Add(new IntRfTest(32, 240, 1, initialDependentBranch: false));
-            tests.Add(new FpRfTest(32, 240, 1, initialDependentBranch: false));;
-            tests.Add(new FlagRfTest(8, 240, 1, initialDependentBranch: false));
-            tests.Add(new LdqTest(10, 240, 1, initialDependentBranch: false));
-            tests.Add(new StqTest(4, 240, 1, initialDependentBranch: false, spaced: true));
-            tests.Add(new MixIntVec128RfTest(4, 600, 1, initialDependentBranch: false));
-            tests.Add(new AddSchedTest(16, 100, 1));
-            tests.Add(new PdepSchedTest(10, 100, 1));
-            tests.Add(new RorSchedTest(10, 110, 1));
-            tests.Add(new ShlSchedTest(10, 100, 1));
-            tests.Add(new MulSchedTest(4, 64, 1));
-            tests.Add(new LeaSchedTest(4, 64, 1));
-            tests.Add(new MaddSchedTest(4, 64, 1));
-            tests.Add(new JumpSchedTest(4, 64, 1));
-            tests.Add(new JumpNsqTest(4, 80, 1));
-            tests.Add(new MixJumpStoreSchedTest(4, 100, 1));
-            tests.Add(new MixJumpStoreDataSched(4, 100, 1));
-            //tests.Add(new MixJumpThenAddSched(20, 160, 1));
-            tests.Add(new TakenJumpSchedTest(4, 64, 1));
-            tests.Add(new LoadSchedTest(4, 72, 1));
-            tests.Add(new StoreNsq(4, 100, 1));
-            tests.Add(new LoadNsq(10, 100, 1));
-            tests.Add(new MixLoadStoreSched(20, 150, 1));
-            tests.Add(new StoreSchedTest(4, 72, 1));
-            tests.Add(new StoreDataNsq(20, 70, 1));
-            tests.Add(new StoreDataSchedTest(4, 80, 1));
-            tests.Add(new MixAddJumpSchedTest(64, 100, 1));
-            tests.Add(new FaddSchedTest(30, 250, 1));
-            tests.Add(new FmulSchedTest(30, 250, 1));
-            tests.Add(new FcmpSchedTest(10, 60, 1));
-            tests.Add(new JsCvtSched(8, 120, 1));
-            tests.Add(new MixAddvJsCvtSched(8, 120, 1));
-            tests.Add(new AddvSched(8, 120, 1));
-            tests.Add(new FmovSched(8, 120, 1));
-            tests.Add(new FaddNsq(4, 64, 1, 110));
-            tests.Add(new AddNsq(4, 128, 1, 128));
-            tests.Add(new Fadd128SchedTest(4, 160, 1));
-            tests.Add(new Fadd256SchedTest(4, 160, 1));
-            tests.Add(new Fma256SchedTest(4, 160, 1));
-            tests.Add(new CvtSchedTest(4, 180, 1));
-            tests.Add(new Fadd128RfTest(200, 400, 1, false));
-            tests.Add(new Fadd256RfTest(50, 300, 1, Fadd256RfTest.TestMode.none));
             tests.Add(new BtbTest(4, BtbTest.BranchType.Unconditional));
             tests.Add(new BtbTest(8, BtbTest.BranchType.Unconditional));
             tests.Add(new BtbTest(16, BtbTest.BranchType.Unconditional));
@@ -73,18 +26,7 @@ namespace AsmGen
             tests.Add(new BtbTest(8, BtbTest.BranchType.Conditional));
             tests.Add(new BtbTest(16, BtbTest.BranchType.Conditional));
             tests.Add(new BtbTest(32, BtbTest.BranchType.Conditional));
-            tests.Add(new ReturnStackTest(1, 128, 1));
-            tests.Add(new BranchBufferTest(4, 200, 1, initialDependentBranch: false));
-            tests.Add(new TakenBranchBufferTest(4, 200, 1, initialDependentBranch: false));
-            tests.Add(new MixBranchStoreTest(4, 100, 1, initialDependentBranch: true));
-            tests.Add(new IndirectBranchTest(false));
             tests.Add(new BranchHistoryTest());
-            tests.Add(new NopLoopTest(512, 1));
-            tests.Add(new AddLoopTest(4, 100, 1));
-            tests.Add(new AeseSchedTest(4, 180, 1));
-            tests.Add(new VecMulNsq(4, 160, 1, 160));
-            tests.Add(new FpStoreDataNsqTest(10, 115, 1));
-            tests.Add(new MmxRfTest(20, 200, 1));
 
             List<Task> tasks = new List<Task>();
             tasks.Add(Task.Run(() => GenerateCFile(tests, IUarchTest.ISA.amd64)));
@@ -262,7 +204,11 @@ namespace AsmGen
             sb.AppendLine("  posix_memalign((void **)&B, 64, sizeof(int) * list_size);\n");
             sb.AppendLine("#endif");
             sb.AppendLine("  for (int i = 0; i < list_size; i++) { B[i] = i; }\n");
+            sb.AppendLine("#ifdef _WIN32");
+            sb.AppendLine("  fpArr = (float*)_aligned_malloc(sizeof(float) * list_size, 64);\n");
+            sb.AppendLine("#else");
             sb.AppendLine("  posix_memalign((void **)&fpArr, 64, sizeof(float) * list_size);");
+            sb.AppendLine("#endif");
             sb.AppendLine("  for (int i = 0;i < list_size; i++) { fpArr[i] = i + .1; }\n");
         }
     }
