@@ -22,8 +22,8 @@ __kernel void local_64_bw_test(__global ulong* A, uint count, __global ulong* re
         idx0 = (idx0 + localSize) & 0x1FF;
         idx1 = (idx1 + localSize) & 0x1FF;
 
-        acc3 ^= local_a[idx0];
-        acc4 ^= local_a[idx1];
+        acc2 ^= local_a[idx0];
+        acc3 ^= local_a[idx1];
         idx0 = (idx0 + localSize) & 0x1FF;
         idx1 = (idx1 + localSize) & 0x1FF;
     }
