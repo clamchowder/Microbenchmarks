@@ -439,21 +439,25 @@ float mixed_buffer_bw_test(cl_context context,
     int64_t time_diff_ms;
     cl_mem result_obj;
 
-    uint32_t* A = (uint32_t*)malloc(sizeof(uint32_t) * buffer_test_size);
+    float* A = (float*)malloc(sizeof(uint32_t) * buffer_test_size);
+    float* B = (float*)malloc(sizeof(float) * buffer_test_size);
     float* result = (uint32_t*)malloc(sizeof(float) * thread_count);
 
-    if (!A || !result)
+    if (!A || !B || !result)
     {
         fprintf(stderr, "Failed to allocate memory for test size %lu KB\n", local_mem_bw_test_size * 4);
+        return 0.0f;
     }
 
     for (uint32_t i = 0; i < buffer_test_size; i++)
     {
         A[i] = i + 1.1f;
+        B[i] = i * 1.2f;
     }
 
     // copy array to device
-    cl_mem a_mem_obj = clCreateBuffer(context, CL_MEM_READ_ONLY, buffer_test_size * sizeof(uint32_t), NULL, &ret);
+    cl_mem a_mem_obj = clCreateBuffer(context, CL_MEM_READ_ONLY, buffer_test_size * sizeof(float), NULL, &ret);
+    cl_mem b_mem_obj = clCreateBuffer(context, CL_MEM_READ_ONLY, buffer_test_size * sizeof(float), NULL, &ret);
     ret = clEnqueueWriteBuffer(command_queue, a_mem_obj, CL_TRUE, 0, buffer_test_size * sizeof(uint32_t), A, 0, NULL, NULL);
 
     // handle cl_image stuff
@@ -462,14 +466,14 @@ float mixed_buffer_bw_test(cl_context context,
     imageFormat.image_channel_order = CL_R;
     cl_image_desc imageDesc;
     memset(&imageDesc, 0, sizeof(cl_image_desc));
-    imageDesc.buffer = a_mem_obj;
+    imageDesc.buffer = b_mem_obj;
     imageDesc.image_type = CL_MEM_OBJECT_IMAGE1D_BUFFER;
     imageDesc.image_width = buffer_test_size; // width in pixels
     cl_mem tex_obj = tex_obj = clCreateImage(context, CL_MEM_READ_ONLY, &imageFormat, &imageDesc, NULL, &ret);
 
     size_t origin[] = { 0, 0, 0 };
     size_t region[] = { imageDesc.image_width, 1, 1 };
-    ret = clEnqueueWriteImage(command_queue, tex_obj, CL_TRUE, origin, region, 0, 0, A, 0, NULL, NULL);
+    ret = clEnqueueWriteImage(command_queue, tex_obj, CL_TRUE, origin, region, 0, 0, B, 0, NULL, NULL);
 
     result_obj = clCreateBuffer(context, CL_MEM_READ_WRITE, sizeof(float) * thread_count, NULL, &ret);
     ret = clEnqueueWriteBuffer(command_queue, result_obj, CL_TRUE, 0, sizeof(float) * thread_count, result, 0, NULL, NULL);
