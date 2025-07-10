@@ -32,10 +32,10 @@ int posix_memalign(void **memptr, size_t alignment, size_t size)
 #define DUMMY_ARR_SIZE 4096
 
 extern uint64_t clktsctest(uint64_t iterations) __attribute((ms_abi));
-extern uint64_t fma_zmm_tsctest(uint64_t iterations, float *arr) __attribute((ms_abi));
+extern uint64_t fma_tsctest(uint64_t iterations, float *arr) __attribute((ms_abi));
 extern uint64_t fma_zmm_st_tsctest(uint64_t iterations, float *arr) __attribute((ms_abi));
 extern uint64_t fma_zmm_add_tsctest(uint64_t iterations, float *arr) __attribute((ms_abi));
-extern uint64_t fma_zmm_regonly_tsctest(uint64_t iterations, float *arr) __attribute((ms_abi));
+extern uint64_t fma_regonly_tsctest(uint64_t iterations, float *arr) __attribute((ms_abi));
 
 int main(int argc, char *argv[]) {
     struct timeval startTv, endTv;
@@ -128,8 +128,8 @@ int main(int argc, char *argv[]) {
         else {
             //fprintf(stderr, "sample %lu of %lu after switch\n", sampleIdx, samples);
             //elapsedTsc = fma_zmm_tsctest(iterations, fpArr);
-            //elapsedTsc = fma_zmm_regonly_tsctest(iterations, fpArr);
-            elapsedTsc = fma_zmm_add_tsctest(iterations, fpArr);
+            elapsedTsc = fma_regonly_tsctest(iterations, fpArr);
+            //elapsedTsc = fma_tsctest(iterations, fpArr);
             isSwitched = 1;
         }
         stop_perf_monitoring();
