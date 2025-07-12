@@ -27,19 +27,25 @@ namespace AsmGen
             tests.Add(new BtbTest(16, BtbTest.BranchType.Conditional));
             tests.Add(new BtbTest(32, BtbTest.BranchType.Conditional));
             tests.Add(new BranchHistoryTest());
+            tests.Add(new IndirectBranchTest(false));
             tests.Add(new ReturnStackTest(2, 128, 1));
             tests.Add(new RobTest(16, 256, 1, false));
             tests.Add(new IntRfTest(16, 256, 1, false));
             tests.Add(new FpRfTest(16, 200, 1, false));
             tests.Add(new Fadd128RfTest(4, 200, 1, false));
+            tests.Add(new LdqTest(4, 90, 1, false));
             tests.Add(new LdqTest(4, 128, 1, initialDependentBranch: true));
             tests.Add(new StqTest(4, 128, 1, false, true));
             tests.Add(new BranchBufferTest(4, 128, 1));
 
             tests.Add(new AddSchedTest(4, 96, 1));
+            tests.Add(new MixAddMulSchedTest(4, 40, 1));
             tests.Add(new JumpSchedTest(4, 64, 1));
-            tests.Add(new RorSchedTest(4, 64, 1));
+            tests.Add(new TakenJumpSchedTest(4, 50, 1));
             tests.Add(new MulSchedTest(4, 64, 1));
+            tests.Add(new MaddSchedTest(4, 64, 1));
+            tests.Add(new CvtSchedTest(4, 64, 1));
+            tests.Add(new FcmpSchedTest(4, 64, 1));
             tests.Add(new FaddSchedTest(4, 64, 1));
             tests.Add(new FmulSchedTest(4, 64, 1));
             tests.Add(new Fadd128SchedTest(4, 64, 1));
@@ -48,6 +54,10 @@ namespace AsmGen
             tests.Add(new StoreDataSchedTest(4, 64, 1));
             tests.Add(new StoreDivSchedTest(4, 64, 1));
             tests.Add(new StoreDataDivNsqTest(4, 64, 1));
+            tests.Add(new AeseSchedTest(4, 40, 1));
+            tests.Add(new FmovSched(4, 64, 1));
+            tests.Add(new JsCvtSched(4, 64, 1));
+            tests.Add(new FcvtSchedTest(4, 64, 1));
 
             List<Task> tasks = new List<Task>();
             tasks.Add(Task.Run(() => GenerateCFile(tests, IUarchTest.ISA.amd64)));
