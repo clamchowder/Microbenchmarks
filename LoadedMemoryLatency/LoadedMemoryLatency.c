@@ -19,6 +19,7 @@ struct BandwidthTestThreadData {
     uint64_t arr_length_bytes;
     char *arr;
     volatile int *flag;
+    int addMethod;
     cpu_set_t cpuset;
     pthread_t handle;
 };
@@ -32,16 +33,18 @@ struct LatencyTestData {
 };
 
 extern uint64_t asm_read(char *arr, uint64_t arr_length, volatile int *flag, int waitfactor) __attribute__((ms_abi)); 
+extern uint64_t asm_add(char *arr, uint64_t arr_length, volatile int *flag, int waitfactor) __attribute__((ms_abi)); 
 void *ReadBandwidthTestThread(void *param);
 void *FillBandwidthTestArr(void *param);
 void FillPatternArr(uint32_t *pattern_arr, uint32_t list_size, uint32_t byte_increment);
 void *RunLatencyTest(void *param);
 float RunTest(cpu_set_t latencyAffinity, cpu_set_t bwAffinity, int bwThreadCount, int hugepages, float *measuredBw); 
 
-uint64_t BandwidthTestMemoryKB = 1048576;
+uint64_t BandwidthTestMemoryKB = 1048576 * 4;
 uint64_t LatencyTestMemoryKB = 1048576;
 uint64_t LatencyTestIterations = 1e5;
 uint64_t throttle = 0;
+int addMethod = 0;
 
 int main(int argc, char *argv[]) {
     int bwThreadCap = get_nprocs() - 1;
@@ -76,7 +79,14 @@ int main(int argc, char *argv[]) {
                 argIdx++;
                 throttle = atoi(argv[argIdx]);
                 fprintf(stderr, "Pulling memory bandwidth test threads back, factor of %d\n", throttle);
-            } else if (strncmp(arg, "bwcores", 7) == 0) {
+            } else if (strncmp(arg, "method", 6) == 0) {
+	        argIdx++;
+		if (strncmp(argv[argIdx], "read", 4) == 0) {
+		    fprintf(stderr, "BW test threads will read\n");
+		} else if (strncmp(argv[argIdx], "add", 3) == 0) {
+		    fprintf(stderr, "BW test threads will add\n");
+		}
+	    } else if (strncmp(arg, "bwcores", 7) == 0) {
                 argIdx++;
                 char *customCoreListStr = argv[argIdx];
                 bwThreadCap = 1;
@@ -163,6 +173,7 @@ float RunTest(cpu_set_t latencyAffinity, cpu_set_t bwAffinity, int bwThreadCount
         bandwidthTestData[threadIdx].arr = (char *)malloc(perThreadArrSizeBytes);
         bandwidthTestData[threadIdx].arr_length_bytes = perThreadArrSizeBytes;
         bandwidthTestData[threadIdx].cpuset = bwAffinity;
+	bandwidthTestData[threadIdx].addMethod = addMethod;
         pthread_create(&(bandwidthTestData[threadIdx].handle), NULL, FillBandwidthTestArr, (void *)(bandwidthTestData + threadIdx));
     }
 
@@ -292,6 +303,9 @@ void *ReadBandwidthTestThread(void *param) {
             else fprintf(stderr, "\tCPU %d is NOT set\n", i);
         }
     }
-    uint64_t totalDataBytes = asm_read(bwTestData->arr, bwTestData->arr_length_bytes, bwTestData->flag, throttle);
+
+    uint64_t totalDataBytes;
+    if (addMethod) totalDataBytes = asm_add(bwTestData->arr, bwTestData->arr_length_bytes, bwTestData->flag, throttle);
+    else totalDataBytes = asm_read(bwTestData->arr, bwTestData->arr_length_bytes, bwTestData->flag, throttle);
     bwTestData->read_bytes = totalDataBytes;
 }
