@@ -14,6 +14,11 @@
 
 #define CACHELINE_SIZE 64
 
+enum TestMethod {
+    Read,
+    Add
+};
+
 struct BandwidthTestThreadData {
     uint64_t read_bytes;
     uint64_t arr_length_bytes;
@@ -21,6 +26,7 @@ struct BandwidthTestThreadData {
     volatile int *flag;
     cpu_set_t cpuset;
     pthread_t handle;
+    enum TestMethod test_method;
 };
 
 struct LatencyTestData {
@@ -36,23 +42,26 @@ int default_test_sizes[] = { 2, 4, 8, 12, 16, 24, 32, 48, 64, 96, 128, 192, 256,
                                131072, 262144, 393216, 524288, 1048576 };
 
 extern uint64_t asm_read(char *arr, uint64_t arr_length, volatile int *flag, int waitfactor) __attribute__((ms_abi)); 
+extern uint64_t asm_add(char *arr, uint64_t arr_length, volatile int *flag, int waitfactor) __attribute__((ms_abi)); 
 void *ReadBandwidthTestThread(void *param);
 void *FillBandwidthTestArr(void *param);
 void FillPatternArr(uint32_t *pattern_arr, uint32_t list_size, uint32_t byte_increment);
 void *RunLatencyTest(void *param);
 float RunTest(cpu_set_t latencyAffinity, cpu_set_t bwAffinity, int bwThreadCount, int hugepages, int sharedLatency, float *measuredBw); 
+float RunBandwidthOnlyTest(cpu_set_t bwAffinity, int bwThreadCount, int sizeKb);
 
-uint64_t BandwidthTestMemoryKB = 16384;
-uint64_t LatencyTestMemoryKB = 2048;
+uint64_t BandwidthTestMemoryKB = 1048576;
+uint64_t LatencyTestMemoryKB = 1048576;
 uint64_t LatencyTestIterations = 1e5;
 uint64_t throttle = 0;
+enum TestMethod testMethod = Read;
 
 int main(int argc, char *argv[]) {
     int bwThreadCap = get_nprocs() - 1;
     int coreCount = get_nprocs();
     int latencyCore = 0;
     int *customCores = NULL;
-    int sharedLatency = 0;
+    int sharedLatency = 0, bwonly = 0;
     if (argc == 1) {
         fprintf(stderr, "Options:\n");
         fprintf(stderr, "-bwthreads [int]: Number of bandwidth test threads\n");
@@ -79,8 +88,8 @@ int main(int argc, char *argv[]) {
                 fprintf(stderr, "Scaling iterations up by a factor of %d\n", scaleFactor);
             } else if (strncmp(arg, "throttle", 8) == 0) {
                 argIdx++;
-                throttle = atoi(argv[argIdx]);
-                fprintf(stderr, "Pulling memory bandwidth test threads back, factor of %d\n", throttle);
+                throttle = atol(argv[argIdx]);
+                fprintf(stderr, "Pulling memory bandwidth test threads back, factor of %lu\n", throttle);
             } else if (strncmp(arg, "bwcores", 7) == 0) {
                 argIdx++;
                 char *customCoreListStr = argv[argIdx];
@@ -112,6 +121,18 @@ int main(int argc, char *argv[]) {
             } else if (strncmp(arg, "sharedlatency", 13) == 0) {
                 fprintf(stderr, "Shared arr bw+latency\n");
                 sharedLatency = 1;
+            } else if (strncmp(arg, "bwonly", 6) == 0) {
+                fprintf(stderr, "Only testing bandwidth\n");
+                bwonly = 1;
+            } else if (strncmp(arg, "method", 6) == 0) {
+                argIdx++;
+                if (strncmp(argv[argIdx], "read", 4) == 0) {
+                    testMethod = Read; 
+                    fprintf(stderr, "Testing with reads\n");
+                } else if (strncmp(argv[argIdx], "add", 3) == 0) {
+                    testMethod = Add;
+                    fprintf(stderr, "Testing with adds (RMW)\n");
+                }
             }
         }
     }
@@ -123,7 +144,40 @@ int main(int argc, char *argv[]) {
     cpu_set_t bw_cpuset;
     CPU_ZERO(&bw_cpuset);
 
-    if (!sharedLatency) {
+    if (bwonly) {
+        fprintf(stderr, "Only testing bandwidth to abuse the iteration logic\n");
+        int testSizeCount = sizeof(default_test_sizes) / sizeof(int);
+        float *bandwidths = (float *)malloc(sizeof(float) * testSizeCount);
+        memset(bandwidths, 0, sizeof(float) * testSizeCount);
+        // set the entire affinity mask right away
+        for (int bwThreadCount = 0; bwThreadCount <= bwThreadCap; bwThreadCount++) {
+            int nextCore;
+             if (bwThreadCount > 0) {
+                if (customCores == NULL) nextCore = coreCount - bwThreadCount - 1;
+                else nextCore = customCores[bwThreadCount - 1] ;
+                fprintf(stderr, "next core is %d\n", nextCore);
+                CPU_SET(nextCore, &bw_cpuset);
+            } 
+        }
+
+        for (int testSizeIdx = 0; testSizeIdx < testSizeCount; testSizeIdx++) {
+            int testSizeKb = default_test_sizes[testSizeIdx];
+            if (testSizeKb < bwThreadCap) {
+                fprintf(stderr, "Skipping size %d because it's too small for specified thread count of %d\n", testSizeKb, bwThreadCap);
+                continue;
+            }
+
+            float bandwidth = RunBandwidthOnlyTest(bw_cpuset, bwThreadCap, testSizeKb);
+            bandwidths[testSizeIdx] = bandwidth;
+            fprintf(stderr, "Test Size %d KB: %f GB/s\n", default_test_sizes[testSizeIdx], bandwidths[testSizeIdx]);
+        }
+
+        for (int testSizeIdx = 0; testSizeIdx < testSizeCount; testSizeIdx++) {
+            if (bandwidths[testSizeIdx] == 0.0f) continue;
+            printf("%d,%f\n", default_test_sizes[testSizeIdx], bandwidths[testSizeIdx]);
+        }
+    }
+    else if (!sharedLatency) {
         fprintf(stderr, "%d cores, will use up to %d for BW threads\n", coreCount, bwThreadCap);
         float *latencies = (float *)malloc(sizeof(float) * bwThreadCap + 1);
         float *bandwidths = (float *)malloc(sizeof(float) * bwThreadCap + 1);
@@ -168,7 +222,7 @@ int main(int argc, char *argv[]) {
         for (int i = 0; i < testSizeCount; i++) {
             LatencyTestMemoryKB = default_test_sizes[i];
             latencies[i] = RunTest(latency_cpuset, bw_cpuset, bwThreadCap, 1, sharedLatency, bandwidths + i);
-            fprintf(stderr, "%d KB: %f ns %f GB/s\n", LatencyTestMemoryKB, latencies[i], bandwidths[i]);
+            fprintf(stderr, "%lu KB: %f ns %f GB/s\n", LatencyTestMemoryKB, latencies[i], bandwidths[i]);
         }
 
         printf("Test Size (KB), Latency (ns), Bandwidth (GB/s)\n");
@@ -184,6 +238,58 @@ int main(int argc, char *argv[]) {
     return 0;
 }
 
+// Caller ensures at least 1 KB per thread. Runs in private mode
+float RunBandwidthOnlyTest(cpu_set_t bwAffinity, int bwThreadCount, int sizeKb) {
+    volatile int flag = 0;
+    struct timeval startTv, endTv;
+    struct timezone startTz, endTz;  
+    struct BandwidthTestThreadData *bandwidthTestData = (struct BandwidthTestThreadData *)malloc(sizeof(struct BandwidthTestThreadData) * bwThreadCount);
+    uint64_t perThreadArrSizeBytes = ceil((double)sizeKb / (double)bwThreadCount) * 1024;
+
+    // Same initialization routine
+    for (int threadIdx = 0; threadIdx < bwThreadCount; threadIdx++) {
+        bandwidthTestData[threadIdx].read_bytes = 0;
+        bandwidthTestData[threadIdx].test_method = testMethod;
+        bandwidthTestData[threadIdx].flag = &flag;
+        bandwidthTestData[threadIdx].cpuset = bwAffinity;
+
+        bandwidthTestData[threadIdx].arr = (char *)malloc(perThreadArrSizeBytes);
+        bandwidthTestData[threadIdx].arr_length_bytes = perThreadArrSizeBytes;
+        pthread_create(&(bandwidthTestData[threadIdx].handle), NULL, FillBandwidthTestArr, (void *)(bandwidthTestData + threadIdx));
+    }
+
+    for (int threadIdx = 0; threadIdx < bwThreadCount; threadIdx++) {
+        pthread_join(bandwidthTestData[threadIdx].handle, NULL);
+    } 
+
+    // Run bandwidth threads for a few seconds and get results
+    gettimeofday(&startTv, &startTz);
+    for (int threadIdx = 0; threadIdx < bwThreadCount; threadIdx++) {
+        pthread_create(&(bandwidthTestData[threadIdx].handle), NULL, ReadBandwidthTestThread, (void *)(bandwidthTestData + threadIdx));
+    }
+
+    sleep(3);
+    flag = 1;
+
+    for (int threadIdx = 0; threadIdx < bwThreadCount; threadIdx++) {
+        pthread_join(bandwidthTestData[threadIdx].handle, NULL);
+    }
+    
+    gettimeofday(&endTv, &endTz);
+
+
+    uint64_t time_diff_ms = 1000 * (endTv.tv_sec - startTv.tv_sec) + ((endTv.tv_usec - startTv.tv_usec) / 1000);
+    float totalReadData = 0;
+    for (int threadIdx = 0; threadIdx < bwThreadCount; threadIdx++) {
+        free(bandwidthTestData[threadIdx].arr);
+        totalReadData += (float)bandwidthTestData[threadIdx].read_bytes;
+    }
+
+    float measuredBw = 1000 * (totalReadData / (float)1e9) / (float)time_diff_ms; 
+    free(bandwidthTestData); 
+
+    return measuredBw;
+}
 // returns latency in ns
 // sets measuredBw = measured bandwidth
 float RunTest(cpu_set_t latencyAffinity, cpu_set_t bwAffinity, int bwThreadCount, int hugepages, int sharedLatency, float *measuredBw) {
@@ -197,6 +303,7 @@ float RunTest(cpu_set_t latencyAffinity, cpu_set_t bwAffinity, int bwThreadCount
     struct BandwidthTestThreadData *bandwidthTestData = (struct BandwidthTestThreadData *)malloc(sizeof(struct BandwidthTestThreadData) * bwThreadCount);
     for (int threadIdx = 0; threadIdx < bwThreadCount; threadIdx++) {
         bandwidthTestData[threadIdx].read_bytes = 0;
+        bandwidthTestData[threadIdx].test_method = testMethod;
         bandwidthTestData[threadIdx].flag = &flag;
         bandwidthTestData[threadIdx].cpuset = bwAffinity;
 
@@ -213,7 +320,7 @@ float RunTest(cpu_set_t latencyAffinity, cpu_set_t bwAffinity, int bwThreadCount
     if (latencyArr == (void *)-1) {  // MAP_FAILED
         fprintf(stderr, "Failed to map hugepages arr, will use madvise\n");
         if (0 != posix_memalign((void **)(&latencyArr), 64, LatencyTestMemoryKB * 1024)) {
-            fprintf(stderr, "Failed to allocate %u KB of memory for latency test\n", LatencyTestMemoryKB);
+            fprintf(stderr, "Failed to allocate %lu KB of memory for latency test\n", LatencyTestMemoryKB);
             return 0.0f;
         }
 
@@ -341,6 +448,10 @@ void *ReadBandwidthTestThread(void *param) {
             else fprintf(stderr, "\tCPU %d is NOT set\n", i);
         }
     }
-    uint64_t totalDataBytes = asm_read(bwTestData->arr, bwTestData->arr_length_bytes, bwTestData->flag, throttle);
+
+    uint64_t totalDataBytes;
+    if (bwTestData->test_method == Read) totalDataBytes = asm_read(bwTestData->arr, bwTestData->arr_length_bytes, bwTestData->flag, throttle);
+    else if (bwTestData->test_method == Add) totalDataBytes = asm_add(bwTestData->arr, bwTestData->arr_length_bytes, bwTestData->flag, throttle);
+    else fprintf(stderr, "Unsupported test method\n");
     bwTestData->read_bytes = totalDataBytes;
 }
