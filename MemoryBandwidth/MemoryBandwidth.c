@@ -94,6 +94,7 @@ extern float asm_add(float *arr, uint64_t arr_length, uint64_t iterations, uint6
 
 #ifdef __aarch64__
 extern void flush_icache(void *arr, uint64_t length);
+extern float asm_mops_copy(float *arr, uint64_t arr_length, uint64_t iterations, uint64_t start);
 #endif
 
 #ifdef __x86_64
@@ -324,6 +325,12 @@ int main(int argc, char *argv[]) {
                     bw_func = repstosd_write;
                     fprintf(stderr, "Using REP STOSD to write\n");
                 }  
+                #endif
+                #ifdef __aarch64__
+                else if (strncmp(argv[argIdx], "cpy", 3) == 0) {
+                    bw_func = asm_mops_copy;
+                    fprintf(stderr, "Using cpyp+cpym+cpye to copy\n");
+                }
                 #endif
         
             }

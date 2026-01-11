@@ -9,6 +9,7 @@
 .global flush_icache
 .global readbankconflict
 .global readbankconflict128
+.global asm_mops_copy
 
 .global _asm_read
 .global _asm_write
@@ -17,6 +18,7 @@
 .global _asm_add
 .global _flush_icache
 .global _readbankconflict
+.global _asm_mops_copy
 
 .balign 4
 
@@ -599,4 +601,38 @@ flush_icache_clean_icache_loop:
   isb
   ldp x14, x15, [sp, #0x10]
   add sp, sp, #0x20
+  ret
+
+/* x0 = ptr to array (was rcx)
+ * x1 = arr length (was rdx)
+ * x2 = iterations (was r8)
+ * x3 = start (was r9)
+ */
+_asm_mops_copy:
+asm_mops_copy:
+  sub sp, sp, #0x30
+  ldp x14, x15, [sp, #0x10]
+  ldp x12, x13, [sp, #0x20]
+  ldp x10, x11, [sp, #0x30]
+  lsl x11, x1, 2    /* copy length = half of array = 32-bit element count / 2 * 4  */
+  mov x10, 0
+  add x10, x0, x11  /* x10 = destination */
+mops_copy_loop:
+  mov x12, x10
+  mov x13, x11
+  mov x14, x0
+  .word 0x1d0e05aa
+  .word 0x1d4e05aa
+  .word 0x1d8e05aa
+  /* all march options give unsupported instruction incl armv9.2-a */
+  /*cpyp [x10]!, [x14]!, x13!
+  cpym [x10]!, [x14]!, x13!
+  cpye [x10]!, [x14]!, x13!*/
+  sub x2, x2, 1
+  cbnz x2, mops_copy_loop
+  ldr x0, [x1]
+  stp x10, x11, [sp, #0x30]
+  stp x12, x13, [sp, #0x20]
+  stp x14, x15, [sp, #0x10]
+  add sp, sp, #0x30
   ret
