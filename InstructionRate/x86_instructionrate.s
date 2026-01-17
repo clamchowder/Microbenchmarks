@@ -26,6 +26,7 @@
 .global depinctest
 .global depdectest
 .global depaddimmtest
+.global memrenametest
 .global addmultest
 .global jmpmultest
 .global addjmptest
@@ -5110,6 +5111,40 @@ depaddimmtest_loop:
   pop %rcx
   pop %rbx
   ret
+
+memrenametest:
+  push %rbx
+  push %rcx
+  push %r8
+  push %r9
+  push %r15
+  push %r14
+  push %r13
+  push %r12
+  push %r11
+  push %r10
+  mov $10, %r10
+  mov $1, %r8
+  mov $20, %r9
+  xor %rbx, %rbx 
+memrenametest_loop:
+  .rept 20
+  mov %r10, (%rsi)
+  mov (%rsi), %r10
+  .endr
+  sub %r9, %rdi
+  jnz memrenametest_loop
+  pop %r10
+  pop %r11
+  pop %r12
+  pop %r13
+  pop %r14
+  pop %r15
+  pop %r9
+  pop %r8
+  pop %rcx
+  pop %rbx
+  ret 
 
 depinctest:
   push %rbx

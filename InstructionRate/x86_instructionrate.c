@@ -113,6 +113,7 @@ extern uint64_t vecsubzerotest(uint64_t iterations) __attribute((sysv_abi));
 extern uint64_t depinctest(uint64_t iterations) __attribute((sysv_abi));
 extern uint64_t depdectest(uint64_t iterations) __attribute((sysv_abi));
 extern uint64_t depaddimmtest(uint64_t iterations) __attribute((sysv_abi));
+extern uint64_t memrenametest(uint64_t iterations, int *arr) __attribute((sysv_abi));
 extern uint64_t spacedstorescalar(uint64_t iterations, int *arr) __attribute((sysv_abi));
 extern uint64_t aesenc128(uint64_t iterations) __attribute((sysv_abi));
 extern uint64_t aesdec128(uint64_t iterations) __attribute((sysv_abi));
@@ -147,6 +148,7 @@ uint64_t store256wrapper(uint64_t iterations) __attribute((sysv_abi));
 uint64_t store512wrapper(uint64_t iterations) __attribute((sysv_abi));
 uint64_t mixfmaandmem256wrapper(uint64_t iterations)  __attribute((sysv_abi));
 uint64_t mixfmaaddmem256wrapper(uint64_t iterations)  __attribute((sysv_abi));
+uint64_t memrenamewrapper(uint64_t iterations) __attribute((sysv_abi));
 
 float measureFunction(uint64_t iterations, float clockSpeedGhz, __attribute((sysv_abi)) uint64_t (*testfunc)(uint64_t));
 
@@ -299,6 +301,7 @@ int main(int argc, char *argv[]) {
     printf("1:4 movs/adds per clk: %.2f\n", measureFunction(iterationsHigh, clockSpeedGhz, addnoptest));
 
   // renamer throughput
+  printf("--- Renamer tests ---\n");
   if (testName == NULL || argc > 1 && strncmp(argv[1], "depmov", 6) == 0)
     printf("Dependent movs per clk: %.2f\n", measureFunction(iterationsHigh, clockSpeedGhz, depmovtest));
   if (testName == NULL || argc > 1 && strncmp(argv[1], "indepmov", 8) == 0)
@@ -325,7 +328,8 @@ int main(int argc, char *argv[]) {
     printf("xor xmm -> 0 per clk: %.2f\n", measureFunction(iterationsHigh, clockSpeedGhz, vecxorzerotest));
   if (testName == NULL || argc > 1 && strncmp(argv[1], "vecsubzero", 10) == 0)
     printf("sub xmm -> 0 per clk: %.2f\n", measureFunction(iterationsHigh, clockSpeedGhz, vecsubzerotest));
-
+  if (testName == NULL || argc > 1 && strncmp(argv[1], "memrename", 9) == 0) 
+    printf("mov -> [r] -> mov latency: %.2f\n", 1 / measureFunction(iterations, clockSpeedGhz, memrenamewrapper));
   // misc mixed integer tests
   if (testName == NULL || argc > 1 && strncmp(argv[1], "miximuladd", 10) == 0)
     printf("4:1 adds/imul per clk: %.2f\n", measureFunction(iterationsHigh, clockSpeedGhz, addmultest));
@@ -590,4 +594,7 @@ __attribute((sysv_abi)) uint64_t mixfmaandmem256wrapper(uint64_t iterations) {
 
 __attribute((sysv_abi)) uint64_t mixfmaaddmem256wrapper(uint64_t iterations) {
   return mixfmaaddmem256(iterations, fpTestArr);
+}
+__attribute((sysv_abi)) uint64_t memrenamewrapper(uint64_t iterations) {
+  return memrenametest(iterations, intSinkArr);
 }
