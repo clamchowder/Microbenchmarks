@@ -10,6 +10,13 @@
 
 #ifndef __MINGW32__
 #include <sys/mman.h>
+#include <sys/syscall.h>
+#include <sys/ioctl.h>
+#include <linux/perf_event.h>
+#include <sys/types.h>
+#include <sys/stat.h>
+#include <fcntl.h> 
+#include "../Common/perfmon.h"
 #endif
 
 #ifdef NUMA
@@ -96,6 +103,7 @@ float (*testFunc)(uint32_t, uint32_t, uint32_t *) = RunTest;
 uint32_t ITERATIONS = 100000000;
 uint32_t pageByPage = 0;
 uint32_t longpattern = 0;
+int pmon = 0;
 
 int main(int argc, char* argv[]) {
     uint32_t maxTestSizeMb = 0;
@@ -207,6 +215,10 @@ int main(int argc, char* argv[]) {
                 argIdx++;
                 singleSize = atoi(argv[argIdx]);
                 fprintf(stderr, "Testing %u KB only\n", singleSize);
+            }
+            else if (strncmp(arg, "pmon", 4) == 0) { 
+                pmon = 1;
+                fprintf(stderr, "Performance monitoring enabled if this is running on Linux/has perf subsystem\n");
             }
 
 #ifdef NUMA
@@ -351,15 +363,26 @@ int main(int argc, char* argv[]) {
 #endif
     else {
         if (singleSize == 0) {
-        printf("Region,Latency (ns)\n");
+        printf("Region,Latency (ns)");
+        if (pmon) {
+          open_perf_monitoring();
+          append_perf_header();
+        }
+        printf("\n");
             for (int i = 0; i < testSizeCount; i++) {
-                if ((maxTestSizeMb == 0) || (default_test_sizes[i] <= maxTestSizeMb * 1024))
-                    printf("%d,%f\n", default_test_sizes[i], testFunc(default_test_sizes[i], ITERATIONS, hugePagesArr));
+                if ((maxTestSizeMb == 0) || (default_test_sizes[i] <= maxTestSizeMb * 1024)) {
+                    printf("%d,%f", default_test_sizes[i], testFunc(default_test_sizes[i], ITERATIONS, hugePagesArr));
+                    if (pmon) append_perf_values();
+                    printf("\n");
+                }
                 else {
                     fprintf(stderr, "Test size %u KB exceeds max test size of %u KB\n", default_test_sizes[i], maxTestSizeMb * 1024);
                     break;
                 }
             }
+          if (pmon) {
+            close_perf_monitoring();
+          }
         } else {
             printf("%d,%f\n", singleSize, testFunc(singleSize, ITERATIONS, hugePagesArr));
         }
@@ -513,14 +536,20 @@ float RunTest(uint32_t size_kb, uint32_t iterations, uint32_t *preallocatedArr) 
     if (!pageByPage) FillPatternArr(A, list_size, CACHELINE_SIZE);
     else FillPageByPage(A, list_size, CACHELINE_SIZE);
 
-    uint32_t scaled_iterations = scale_iterations(size_kb, iterations);
+    uint32_t scaled_iterations = iterations;//scale_iterations(size_kb, iterations);
 
     // Run test
     gettimeofday(&startTv, &startTz);
     current = A[0];
+    if (pmon) {
+        start_perf_monitoring();
+    }
     for (int i = 0; i < scaled_iterations; i++) {
         current = A[current];
         sum += current;
+    }
+    if (pmon) {
+        stop_perf_monitoring();
     }
     gettimeofday(&endTv, &endTz);
     uint64_t time_diff_ms = 1000 * (endTv.tv_sec - startTv.tv_sec) + ((endTv.tv_usec - startTv.tv_usec) / 1000);
@@ -670,12 +699,14 @@ float RunAsmTest(uint32_t size_kb, uint32_t iterations, uint32_t *preallocatedAr
 
     // Run test
     gettimeofday(&startTv, &startTz);
+    if (pmon) start_perf_monitoring();
     #ifdef LONGPATTERN
     if (longpattern)
         sum = longpatternlatencytest(scaled_iterations, A);
     else
         sum = latencytest(scaled_iterations, A);
     #endif
+    if (pmon) stop_perf_monitoring();
     gettimeofday(&endTv, &endTz);
     uint64_t time_diff_ms = 1000 * (endTv.tv_sec - startTv.tv_sec) + ((endTv.tv_usec - startTv.tv_usec) / 1000);
     float latency = 1e6 * (float)time_diff_ms / (float)scaled_iterations;
