@@ -1,7 +1,7 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
-# Visual Studio Version 17
-VisualStudioVersion = 17.6.33815.320
+# Visual Studio Version 18
+VisualStudioVersion = 18.9.12120.119 stable
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "MemoryBandwidth", "MemoryBandwidth.vcxproj", "{E968D202-64A2-43A5-8BBD-D7D010D06564}"
 EndProject
@@ -9,24 +9,34 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "MixedMemoryBandwidthTest", 
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|ARM64 = Debug|ARM64
 		Debug|x64 = Debug|x64
 		Debug|x86 = Debug|x86
+		Release|ARM64 = Release|ARM64
 		Release|x64 = Release|x64
 		Release|x86 = Release|x86
 	EndGlobalSection
 	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{E968D202-64A2-43A5-8BBD-D7D010D06564}.Debug|ARM64.ActiveCfg = Debug|ARM64
+		{E968D202-64A2-43A5-8BBD-D7D010D06564}.Debug|ARM64.Build.0 = Debug|ARM64
 		{E968D202-64A2-43A5-8BBD-D7D010D06564}.Debug|x64.ActiveCfg = Debug|x64
 		{E968D202-64A2-43A5-8BBD-D7D010D06564}.Debug|x64.Build.0 = Debug|x64
 		{E968D202-64A2-43A5-8BBD-D7D010D06564}.Debug|x86.ActiveCfg = Debug|Win32
 		{E968D202-64A2-43A5-8BBD-D7D010D06564}.Debug|x86.Build.0 = Debug|Win32
+		{E968D202-64A2-43A5-8BBD-D7D010D06564}.Release|ARM64.ActiveCfg = Release|ARM64
+		{E968D202-64A2-43A5-8BBD-D7D010D06564}.Release|ARM64.Build.0 = Release|ARM64
 		{E968D202-64A2-43A5-8BBD-D7D010D06564}.Release|x64.ActiveCfg = Release|x64
 		{E968D202-64A2-43A5-8BBD-D7D010D06564}.Release|x64.Build.0 = Release|x64
 		{E968D202-64A2-43A5-8BBD-D7D010D06564}.Release|x86.ActiveCfg = Release|Win32
 		{E968D202-64A2-43A5-8BBD-D7D010D06564}.Release|x86.Build.0 = Release|Win32
+		{5AB9DDE0-C954-4D2F-AA46-BFA87EC585C4}.Debug|ARM64.ActiveCfg = Debug|ARM64
+		{5AB9DDE0-C954-4D2F-AA46-BFA87EC585C4}.Debug|ARM64.Build.0 = Debug|ARM64
 		{5AB9DDE0-C954-4D2F-AA46-BFA87EC585C4}.Debug|x64.ActiveCfg = Debug|x64
 		{5AB9DDE0-C954-4D2F-AA46-BFA87EC585C4}.Debug|x64.Build.0 = Debug|x64
 		{5AB9DDE0-C954-4D2F-AA46-BFA87EC585C4}.Debug|x86.ActiveCfg = Debug|Win32
 		{5AB9DDE0-C954-4D2F-AA46-BFA87EC585C4}.Debug|x86.Build.0 = Debug|Win32
+		{5AB9DDE0-C954-4D2F-AA46-BFA87EC585C4}.Release|ARM64.ActiveCfg = Release|ARM64
+		{5AB9DDE0-C954-4D2F-AA46-BFA87EC585C4}.Release|ARM64.Build.0 = Release|ARM64
 		{5AB9DDE0-C954-4D2F-AA46-BFA87EC585C4}.Release|x64.ActiveCfg = Release|x64
 		{5AB9DDE0-C954-4D2F-AA46-BFA87EC585C4}.Release|x64.Build.0 = Release|x64
 		{5AB9DDE0-C954-4D2F-AA46-BFA87EC585C4}.Release|x86.ActiveCfg = Release|Win32

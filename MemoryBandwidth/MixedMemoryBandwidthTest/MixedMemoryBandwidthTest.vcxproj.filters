@@ -20,7 +20,7 @@
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
-    <CustomBuild Include="MemoryBandwidthFunctions32.asm">
+    <CustomBuild Include="MemoryBandwidthFunctions.asm">
       <Filter>Source Files</Filter>
     </CustomBuild>
   </ItemGroup>
