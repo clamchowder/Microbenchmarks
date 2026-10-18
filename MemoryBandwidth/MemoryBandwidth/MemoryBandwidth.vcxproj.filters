@@ -32,4 +32,9 @@
       <Filter>Source Files</Filter>
     </MARMASM>
   </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="smefuncs.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+  </ItemGroup>
 </Project>

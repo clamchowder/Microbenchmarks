@@ -18,13 +18,17 @@
 #endif
 #include <windows.h>
 
+#ifdef _M_ARM64
+#include "smefuncs.h"
+#endif
+
 #define NUMA_STRIPE 1
 #define NUMA_SEQ 2
 #define NUMA_CROSSNODE 3
 #define NUMA_AUTO 4
 
 #ifdef _WIN64
-int default_test_sizes[39] = { 2, 4, 8, 12, 16, 24, 32, 48, 64, 96, 128, 192, 256, 512, 600, 768, 1024, 1536, 2048,
+int default_test_sizes[] = { 2, 4, 8, 12, 16, 24, 32, 48, 64, 96, 128, 192, 256, 512, 600, 768, 1024, 1536, 2048,
                                3072, 4096, 5120, 6144, 8192, 10240, 12288, 16384, 24567, 32768, 65536, 98304,
                                131072, 262144, 393216, 524288, 1048576, 1572864, 2097152, 3145728 };
 #else
@@ -55,8 +59,11 @@ float _fastcall scalar_read(void* arr, uint32_t arr_length, uint32_t iterations)
 #ifdef _WIN64
 #ifdef _M_ARM64
 extern "C" float neon_asm_read(void* arr, uint64_t arr_length, uint64_t iterations);
+extern "C" float neon_asm_cl_read(void* arr, uint64_t arr_length, uint64_t iterations);
 extern "C" float neon_asm_write(void* arr, uint64_t arr_length, uint64_t iterations);
-float (*bw_func)(void*, uint64_t, uint64_t) = neon_asm_read;
+extern "C" float neon_asm_add(void* arr, uint64_t arr_length, uint64_t iterations);
+extern "C" float sve_gather_read(void* arr, uint64_t arr_length, uint64_t iterations);
+float (*bw_func)(void*, uint64_t, uint64_t) = neon_asm_cl_read;
 #else
 extern "C" float sse_asm_read(void* arr, uint64_t arr_length, uint64_t iterations);
 extern "C" float sse_asm_write(void* arr, uint64_t arr_length, uint64_t iterations);
@@ -132,13 +139,29 @@ int main(int argc, char *argv[]) {
                 argIdx++;
 #ifdef _WIN64
 #ifdef _M_ARM64
-                if (_strnicmp(argv[argIdx], "read_asm_neon", 8) == 0) {
+                if (_strnicmp(argv[argIdx], "read_asm_neon", 14) == 0) {
                     bw_func = neon_asm_read;
                     fprintf(stderr, "Using NEON assembly\n");
                 }
-                else if (_strnicmp(argv[argIdx], "write_asm_neon", 14) == 0) {
+                else if (_strnicmp(argv[argIdx], "write_asm_neon", 15) == 0) {
                     bw_func = neon_asm_write;
                     fprintf(stderr, "Using NEON assembly, writing\n");
+                }
+                else if (_strnicmp(argv[argIdx], "add_asm_neon", 12) == 0) {
+                    bw_func = neon_asm_add;
+                    fprintf(stderr, "Using NEON assembly, add const\n");
+                }
+                else if (_strnicmp(argv[argIdx], "read_sve_gather", 15) == 0) {
+                    bw_func = sve_gather_read;
+                    fprintf(stderr, "SVE gather\n");
+                }
+                else if (_strnicmp(argv[argIdx], "sme_read", 8) == 0) {
+                    bw_func = sme_read;
+                    fprintf(stderr, "SME good luck\n");
+                }
+                else if (_strnicmp(argv[argIdx], "sme_write", 9) == 0) {
+                    bw_func = sme_write;
+                    fprintf(stderr, "SME write good luck\n");
                 }
 #else
                 if (_strnicmp(argv[argIdx], "read_asm_sse", 7) == 0) {

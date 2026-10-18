@@ -234,6 +234,9 @@
   <ItemGroup>
     <MARMASM Include="MemoryBandwidthFunctions_arm64.asm" />
   </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="smefuncs.h" />
+  </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
     <Import Project="$(VCTargetsPath)\BuildCustomizations\marmasm.targets" />
