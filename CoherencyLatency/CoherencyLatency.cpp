@@ -19,6 +19,7 @@ DWORD WINAPI ReadLatencyTestThread(LPVOID param);
 
 LONG64* bouncyBase;
 LONG64* bouncy;
+short indep_splitlock = 0;
 
 typedef struct LatencyThreadData {
     uint64_t start;       // initial value to write into target
@@ -34,6 +35,7 @@ int main(int argc, char *argv[]) {
     float** latencies;
     uint64_t iter = ITERATIONS;
     int offsets = 1;
+    short splitlock = 0;
     float (*test)(unsigned int, unsigned int, uint64_t) = RunTest;
 
     for (int argIdx = 1; argIdx < argc; argIdx++) {
@@ -56,10 +58,18 @@ int main(int argc, char *argv[]) {
                 offsets = atoi(argv[argIdx]);
                 fprintf(stderr, "Offsets: %d\n", offsets);
             }
+            else if (_strnicmp(arg, "splitlock", 9) == 0) {
+                splitlock = 1;
+                fprintf(stderr, "Tested value will cross a 64B boundary\n");
+            }
+            else if (_strnicmp(arg, "indep_splitlock", 15) == 0) {
+                indep_splitlock = 1;
+                fprintf(stderr, "One-off test with non-contended splitlocks\n");
+            }
         }
     }
 
-    bouncyBase = (LONG64*)_aligned_malloc(64 * offsets, 4096);
+    bouncyBase = (LONG64*)_aligned_malloc(256 * offsets, 4096);
     bouncy = bouncyBase;
     if (bouncy == NULL) {
         fprintf(stderr, "Could not allocate aligned mem\n");
@@ -76,6 +86,7 @@ int main(int argc, char *argv[]) {
 
     for (DWORD offsetIdx = 0; offsetIdx < offsets; offsetIdx++) {
         bouncy = (LONG64*)((char*)bouncyBase + offsetIdx * 64);
+        if (splitlock) bouncy = (LONG64*)((char*)bouncy + 62);
         latencies[offsetIdx] = (float*)malloc(sizeof(float) * numProcs * numProcs);
         float* latenciesPtr = latencies[offsetIdx];
 
@@ -163,6 +174,9 @@ float RunTest(unsigned int processor1, unsigned int processor2, uint64_t iter) {
     lat2.iterations = iter;
     lat2.start = 2;
     lat2.target = bouncy;
+    if (indep_splitlock) {
+        lat2.target = (LONG64 *)(((char*)bouncy) + 64);
+    }
 
     latency = TimeThreads(processor1, processor2, iter, lat1, lat2, LatencyTestThread);
     return latency;
@@ -205,13 +219,23 @@ float RunOwnedTest(unsigned int processor1, unsigned int processor2, uint64_t it
 DWORD WINAPI LatencyTestThread(LPVOID param) {
     LatencyData *latencyData = (LatencyData *)param;
     uint64_t current = latencyData->start;
-    while (current <= 2 * latencyData->iterations) {
-        if (_InterlockedCompareExchange64(latencyData->target, current, current - 1) == current - 1) {
+    if (!indep_splitlock) {
+        while (current <= 2 * latencyData->iterations) {
+            if (_InterlockedCompareExchange64(latencyData->target, current, current - 1) == current - 1) {
+                current += 2;
+            }
+        }
+        return current;
+    }
+    else {
+        uint64_t sink = 0;
+        while (current <= 2 * latencyData->iterations) {
+            sink += _InterlockedCompareExchange64(latencyData->target, current, current - 1);
             current += 2;
         }
-    }
 
-    return current;
+        return sink;
+    }
 }
 
 /// <summary>

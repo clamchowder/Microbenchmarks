@@ -41,8 +41,8 @@ public class C2CParse
             {
                 string v1 = inputLatencies[row * inputLines.Length + col];
                 // translate both row and col
-                int newRow = GetCoreIndex(row, 4, 64);
-                int newCol = GetCoreIndex(col, 4, 64);
+                int newRow = GetCoreIndex(row, 2, 32);
+                int newCol = GetCoreIndex(col, 2, 32);
                 outputLatencies[newRow * inputLines.Length + newCol] = v1;
             }
         }
