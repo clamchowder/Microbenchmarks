@@ -11,9 +11,16 @@
     #include <sys\timeb.h>
 #endif
 #include <math.h>
+
+#ifdef _M_AMD64
 #include <intrin.h>
 #include <immintrin.h>
+#endif
 #include <windows.h>
+
+#ifdef _M_ARM64
+#include "smefuncs.h"
+#endif
 
 #define NUMA_STRIPE 1
 #define NUMA_SEQ 2
@@ -21,7 +28,7 @@
 #define NUMA_AUTO 4
 
 #ifdef _WIN64
-int default_test_sizes[39] = { 2, 4, 8, 12, 16, 24, 32, 48, 64, 96, 128, 192, 256, 512, 600, 768, 1024, 1536, 2048,
+int default_test_sizes[] = { 2, 4, 8, 12, 16, 24, 32, 48, 64, 96, 128, 192, 256, 512, 600, 768, 1024, 1536, 2048,
                                3072, 4096, 5120, 6144, 8192, 10240, 12288, 16384, 24567, 32768, 65536, 98304,
                                131072, 262144, 393216, 524288, 1048576, 1572864, 2097152, 3145728 };
 #else
@@ -50,6 +57,14 @@ uint32_t dataGb = 96;
 float _fastcall scalar_read(void* arr, uint32_t arr_length, uint32_t iterations);
 
 #ifdef _WIN64
+#ifdef _M_ARM64
+extern "C" float neon_asm_read(void* arr, uint64_t arr_length, uint64_t iterations);
+extern "C" float neon_asm_cl_read(void* arr, uint64_t arr_length, uint64_t iterations);
+extern "C" float neon_asm_write(void* arr, uint64_t arr_length, uint64_t iterations);
+extern "C" float neon_asm_add(void* arr, uint64_t arr_length, uint64_t iterations);
+extern "C" float sve_gather_read(void* arr, uint64_t arr_length, uint64_t iterations);
+float (*bw_func)(void*, uint64_t, uint64_t) = neon_asm_cl_read;
+#else
 extern "C" float sse_asm_read(void* arr, uint64_t arr_length, uint64_t iterations);
 extern "C" float sse_asm_write(void* arr, uint64_t arr_length, uint64_t iterations);
 extern "C" float sse_asm_ntwrite(void* arr, uint64_t arr_length, uint64_t iterations);
@@ -65,6 +80,7 @@ extern "C" float repmovsb_copy(void* arr, uint64_t arr_length, uint64_t iteratio
 extern "C" float repstosb_write(void* arr, uint64_t arr_length, uint64_t iterations);
 extern "C" float clzero_asm_write(void* arr, uint64_t arr_length, uint64_t iterations);
 float (*bw_func)(void*, uint64_t, uint64_t) = sse_asm_read;
+#endif
 
 #else
 extern "C" float __fastcall scalar_asm_read32(void* arr, uint32_t arr_length, uint32_t iterations);
@@ -122,6 +138,32 @@ int main(int argc, char *argv[]) {
                 methodSet = 1;
                 argIdx++;
 #ifdef _WIN64
+#ifdef _M_ARM64
+                if (_strnicmp(argv[argIdx], "read_asm_neon", 14) == 0) {
+                    bw_func = neon_asm_read;
+                    fprintf(stderr, "Using NEON assembly\n");
+                }
+                else if (_strnicmp(argv[argIdx], "write_asm_neon", 15) == 0) {
+                    bw_func = neon_asm_write;
+                    fprintf(stderr, "Using NEON assembly, writing\n");
+                }
+                else if (_strnicmp(argv[argIdx], "add_asm_neon", 12) == 0) {
+                    bw_func = neon_asm_add;
+                    fprintf(stderr, "Using NEON assembly, add const\n");
+                }
+                else if (_strnicmp(argv[argIdx], "read_sve_gather", 15) == 0) {
+                    bw_func = sve_gather_read;
+                    fprintf(stderr, "SVE gather\n");
+                }
+                else if (_strnicmp(argv[argIdx], "sme_read", 8) == 0) {
+                    bw_func = sme_read;
+                    fprintf(stderr, "SME good luck\n");
+                }
+                else if (_strnicmp(argv[argIdx], "sme_write", 9) == 0) {
+                    bw_func = sme_write;
+                    fprintf(stderr, "SME write good luck\n");
+                }
+#else
                 if (_strnicmp(argv[argIdx], "read_asm_sse", 7) == 0) {
                     bw_func = sse_asm_read;
                     fprintf(stderr, "Using SSE assembly\n");
@@ -178,7 +220,10 @@ int main(int argc, char *argv[]) {
                     bw_func = clzero_asm_write;
                     fprintf(stderr, "Using assembly, clzero to set array contents to 0\n");
                 }
+                // end x86-64
+#endif
 #else
+                // x86 (32-bit)
                 if (_strnicmp(argv[argIdx], "scalar", 6) == 0) {
                     bw_func = scalar_asm_read32;
                     fprintf(stderr, "Using scalar MOV r <- mem32\n");
@@ -267,8 +312,12 @@ int main(int argc, char *argv[]) {
 
     if (!methodSet) {
         // cpuid_data[0] = eax, [1] = ebx, [2] = ecx, [3] = edx
+#ifndef _M_ARM64
         __cpuidex(cpuid_data, 1, 0);
+#endif
 #ifdef _WIN64
+#ifdef _M_ARM64
+#else
         // EDX bit 25 = SSE
         if (cpuid_data[3] & (1UL << 25)) {
             fprintf(stderr, "SSE supported\n");
@@ -285,7 +334,10 @@ int main(int argc, char *argv[]) {
             fprintf(stderr, "AVX512 supported\n");
             bw_func = avx512_asm_read;
         }
+        // end x86-64
+#endif
 #else
+        // x86 (32-bit)
         int choice = 0;
         printf("Pick a method. Choose wisely:\n");
         printf("1. SSE movaps xmm <- mem128");
@@ -531,8 +583,13 @@ void FillInstructionArray(uint64_t* arr, uint64_t sizeKb, enum NopType nopSize)
 {
     char nop8b[8] = { 0x0F, 0x1F, 0x84, 0x00, 0x00, 0x00, 0x00, 0x00 };
 
+#ifdef _M_AMD64
     // zen/piledriver optimization manual uses this pattern
     char nop4b[8] = { 0x0F, 0x1F, 0x40, 0x00, 0x0F, 0x1F, 0x40, 0x00 };
+#endif
+#ifdef _M_ARM64
+    char nop4b[8] = { 0x1F, 0x20, 0x03, 0xD5, 0x1F, 0x20, 0x03, 0xD5 };
+#endif
 
     // athlon64 (K8) optimization manual pattern
     char k8_nop4b[8] = { 0x66, 0x66, 0x66, 0x90, 0x66, 0x66, 0x66, 0x90 };
@@ -559,7 +616,12 @@ void FillInstructionArray(uint64_t* arr, uint64_t sizeKb, enum NopType nopSize)
             arr[nopIdx] = *nopPtr;
         }
 
+#ifdef _M_AMD64
         functionEnd[0] = 0xC3;
+#endif
+#ifdef _M_ARM64
+        ((uint64_t *)(functionEnd))[0] = 0XD65F03C0;
+#endif
     }
     else if (nopSize == TenByte) {
         char* targetArr = (char*)arr;
@@ -630,6 +692,7 @@ float __fastcall scalar_read(void* a, uint32_t arr_length, uint32_t iterations) 
     return sum;
 }
 
+#ifdef _M_AMD64
 // return sum of array
 float sse_read(float* arr, uint64_t arr_length, uint64_t iterations) {
     float sum = 0;
@@ -673,8 +736,9 @@ float sse_read(float* arr, uint64_t arr_length, uint64_t iterations) {
     sum = iterSum;
     return sum;
 }
+#endif
 
-#ifdef _WIN64
+#ifdef _M_AMD64
 float avx_read(float* arr, uint64_t arr_length, uint64_t iterations) {
     float sum = 0;
     float iterSum = 0;

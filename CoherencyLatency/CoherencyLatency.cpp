@@ -247,12 +247,11 @@ DWORD WINAPI LatencyTestThread(LPVOID param) {
 DWORD WINAPI ReadLatencyTestThread(LPVOID param) {
     LatencyData* latencyData = (LatencyData*)param;
     uint64_t current = latencyData->start;
-    uint64_t startTsc = __rdtsc();
     while (current <= 2 * latencyData->iterations) {
         if (*(latencyData->readTarget) == current - 1) {
             *(latencyData->target) = current;
             current += 2;
-            _mm_sfence();
+            //_mm_sfence();
         }
     }
 

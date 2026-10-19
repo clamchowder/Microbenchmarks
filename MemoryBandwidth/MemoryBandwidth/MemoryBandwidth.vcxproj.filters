@@ -27,4 +27,14 @@
       <Filter>Source Files</Filter>
     </CustomBuild>
   </ItemGroup>
+  <ItemGroup>
+    <MARMASM Include="MemoryBandwidthFunctions_arm64.asm">
+      <Filter>Source Files</Filter>
+    </MARMASM>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="smefuncs.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+  </ItemGroup>
 </Project>

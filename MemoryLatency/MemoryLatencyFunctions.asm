@@ -3,6 +3,7 @@ bits 64
 
 global preplatencyarr
 global latencytest
+global gatherlatencytest
 
 preplatencyarr:
   push r15
@@ -28,5 +29,22 @@ latencytest_loop:
   add rax, r15
   dec rcx
   jnz latencytest_loop
+  pop r15
+  ret
+
+gatherlatencytest:
+  push r15
+  xor rax, rax
+  pxor xmm0, xmm0
+  pxor xmm2, xmm2
+gatherlatencytest_loop:
+  ; generate 1s
+  pxor xmm1, xmm1
+  pcmpeqb xmm1, xmm2
+  vpgatherdd xmm3, [rdx + xmm0 * 4], xmm1
+  movdqu xmm0, xmm3
+  add rax, r15
+  dec rcx
+  jnz gatherlatencytest_loop
   pop r15
   ret

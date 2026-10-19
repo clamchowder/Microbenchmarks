@@ -11,22 +11,28 @@
 #include <tchar.h>
 #include <intrin.h>
 
-#define ITERATIONS 400000000
-
-int default_test_sizes[36] = { 2, 4, 8, 12, 16, 24, 32, 48, 64, 96, 128, 192, 256, 512, 600, 768, 1024, 1536, 2048,
-                               3072, 4096, 5120, 6144, 8192, 10240, 12288, 16384, 24567, 32768, 65536, 98304,
+int default_test_sizes[] = { 2, 4, 8, 12, 16, 24, 32, 48, 64, 96, 128, 192, 256, 512, 600, 768, 1024, 1536, 2048,
+                               3072, 4096, 5120, 6144, 8192, 10240, 12288, 14336, 16384, 18432, 19456, 20480, 21504, 22528, 23552, 24567, 32768, 65536, 98304,
                                131072, 262144, 393216, 524288, 1048576 };
 
 float RunTest(uint32_t size_kb, uint64_t iterations, void *mem);
 float RunAsmTest(uint32_t size_kb, uint64_t iterations, void* mem);
+float RunGatherTest(uint32_t size_kb, uint64_t iterations, void* mem);
+float (*latency_test_func)(uint32_t, uint64_t, void*) = RunAsmTest;
 bool GetPrivilege();
 
 extern "C" void preplatencyarr(uint64_t * mem, uint64_t element_count);
 extern "C" uint64_t latencytest(uint64_t iterations, uint64_t *mem);
+extern "C" uint64_t gatherlatencytest(uint64_t iterations, uint32_t* mem);
+
+uint32_t stride = 64;
+uint32_t scaleiterations = 10;
+uint64_t ITERATIONS = 400000000;
 
 int main(int argc, char* argv[]) {
     void* arr = NULL;
     int numa = 0, coreNode = 0, memNode = 0, largepages = 0;
+    uint32_t singlesize = 0;
     for (int argIdx = 1; argIdx < argc; argIdx++) {
         if (*(argv[argIdx]) == '-') {
             char* arg = argv[argIdx] + 1;
@@ -45,6 +51,27 @@ int main(int argc, char* argv[]) {
                 argIdx++;
                 memNode = atoi(argv[argIdx]);
                 fprintf(stderr, "Testing %d -> %d\n", coreNode, memNode);
+            }
+            else if ((_strnicmp(arg, "singlesize", 10) == 0) || (_strnicmp(arg, "sizekb", 6) == 0)) {
+                argIdx++;
+                singlesize = atoi(argv[argIdx]);
+                fprintf(stderr, "Single size %u KB\n", singlesize);
+            }
+            else if (_strnicmp(arg, "stride", 6) == 0) {
+                argIdx++;
+                stride = atoi(argv[argIdx]);
+                fprintf(stderr, "Set stride = %u\n", stride);
+            }
+            else if (_strnicmp(arg, "scaleiterations", 15) == 0) {
+                argIdx++;
+                scaleiterations = atoi(argv[argIdx]);
+                fprintf(stderr, "Scale iterations %u\n", scaleiterations);
+            }
+            else if (_strnicmp(arg, "gather", 6) == 0) {
+                argIdx++;
+                ITERATIONS = 40000000;
+                latency_test_func = RunGatherTest;
+                fprintf(stderr, "gather\n");
             }
         }
     }
@@ -122,14 +149,19 @@ int main(int argc, char* argv[]) {
             }
         }
 
-        printf("Region,Latency (ns)\n");
-        for (int i = 0; i < sizeof(default_test_sizes) / sizeof(int); i++)
-        {
-            printf("%d,%f\n", default_test_sizes[i], RunAsmTest(default_test_sizes[i], ITERATIONS, arr));
+        if (!singlesize) {
+            printf("Region,Latency (ns)\n");
+            for (int i = 0; i < sizeof(default_test_sizes) / sizeof(int); i++)
+            {
+                printf("%d,%f\n", default_test_sizes[i], latency_test_func(default_test_sizes[i], ITERATIONS, arr));
+            }
+        }
+        else {
+            printf("%d KB: %f\n", singlesize, RunTest(singlesize, ITERATIONS, arr));
         }
     }
 
-    printf("If you didn't run this through cmd, now you can copy the results");
+    // printf("If you didn't run this through cmd, now you can copy the results");
 
     return 0;
 }
@@ -141,7 +173,7 @@ int main(int argc, char* argv[]) {
 /// <param name="iterations">base iterations</param>
 /// <returns>scaled iterations</returns>
 uint64_t scale_iterations(uint32_t size_kb, uint64_t iterations) {
-    return 10 * iterations / pow(size_kb, 1.0 / 4.0);
+    return scaleiterations * iterations / pow(size_kb, 1.0 / 4.0);
 }
 
 void FillPatternArr(uint32_t* pattern_arr, uint32_t list_size, uint32_t byte_increment) {
@@ -191,7 +223,7 @@ float RunAsmTest(uint32_t size_kb, uint64_t iterations, void* mem) {
     }
 
     memset(A, 0, 1024 * size_kb);
-    FillPatternArr64(A, size_kb * 1024 / sizeof(uint64_t), 64);
+    FillPatternArr64(A, size_kb * 1024 / sizeof(uint64_t), stride);
     preplatencyarr(A, size_kb * 1024 / sizeof(uint64_t));
     uint64_t scaled_iterations = scale_iterations(size_kb, iterations);
 
@@ -247,6 +279,35 @@ float RunTest(uint32_t size_kb, uint64_t iterations, void *mem) {
     if (mem == NULL) free(A);
 
     if (sum == 0) printf("sum == 0 (???)\n");
+    return latency;
+}
+
+float RunGatherTest(uint32_t size_kb, uint64_t iterations, void* mem) {
+    struct timeb start, end;
+    uint32_t list_size = size_kb * 1024 / 4;
+    uint32_t sum = 0, current;
+
+    // Fill list to create random access pattern
+    uint32_t* A;
+    if (mem == NULL) {
+        A = (uint32_t*)malloc(sizeof(int) * list_size);
+    }
+    else {
+        A = (uint32_t*)mem;
+    }
+
+    FillPatternArr(A, size_kb * 1024 / sizeof(uint64_t), stride);
+    uint64_t scaled_iterations = scale_iterations(size_kb, iterations);
+
+    // Run test
+    ftime(&start);
+    gatherlatencytest(scaled_iterations, A);
+    ftime(&end);
+    int64_t time_diff_ms = 1000 * (end.time - start.time) + (end.millitm - start.millitm);
+    float latency = 1e6 * (float)time_diff_ms / (float)scaled_iterations;
+    if (mem == NULL) free(A);
+
+    //if (sum == 0) printf("sum == 0 (???)\n");
     return latency;
 }
 

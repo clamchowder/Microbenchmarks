@@ -41,7 +41,7 @@ typedef struct LatencyThreadData {
 } LatencyData;
 
 
-#define ALLOC_SIZE 4096
+#define ALLOC_SIZE 262144*1024
 
 // 4K alignment doesn't work
 #define ALLOC_ALIGN 64
@@ -51,6 +51,9 @@ enum TestType {
     BufferSharing,
     Custom
 };
+
+// need to flush from CPU side as well
+uint32_t use_flush_kernel = 0;
 
 int main(int argc, char* argv[])
 {
@@ -64,19 +67,21 @@ int main(int argc, char* argv[])
         if (*(argv[argIdx]) == '-') {
             char* arg = argv[argIdx] + 1;
             if (_strnicmp(arg, "atomics", 7) == 0) {
-                argIdx++;
                 testType = Atomics;
                 fprintf(stderr, "Test type = atomics\n");
             }
+            else if (_strnicmp(arg, "flush", 5) == 0) {
+                argIdx++;
+                use_flush_kernel = atoi(argv[argIdx]);
+                fprintf(stderr, "Flush GPU L2 on no observed set, aggressor arr = %u KB\n", use_flush_kernel);
+            }
             else if (_strnicmp(arg, "buffersharing", 13) == 0)
             {
-                argIdx++;
                 testType = BufferSharing;
                 fprintf(stderr, "Test type = buffer sharing\n");
             }
             else if (_strnicmp(arg, "custom", 6) == 0)
             {
-                argIdx++;
                 testType = Custom;
                 fprintf(stderr, "Test type = custom code\n");
             }
@@ -212,11 +217,13 @@ float runAtomicsTest(cl_context context, cl_command_queue command_queue)
     cl_int ret;
     LatencyData latencyData;
     float latency;
-    size_t gpu_threads = 1;
+    size_t gpu_threads = use_flush_kernel ? 64 : 1;
     uint64_t time_diff_ms;
     uint32_t* testptr, iterations = 1000000;
     cl_program program;
-    cl_kernel atomic_kernel;
+    cl_kernel atomic_kernel, flush_atomic_kernel;
+    float* flush_buffer = NULL;
+    uint32_t flush_buffer_size_f32 = use_flush_kernel * 1024 / 4;
 
     int svmSupport = checkSVMSupport(CL_DEVICE_SVM_ATOMICS);
     if (svmSupport) fprintf(stderr, "Device has SVM support\n");
@@ -227,7 +234,9 @@ float runAtomicsTest(cl_context context, cl_command_queue command_queue)
     }
 
     program = build_program(context, "atomic_latency_kernel.cl", NULL);
-    atomic_kernel = clCreateKernel(program, "atomic_exec_latency_test", &ret);
+    if (use_flush_kernel) atomic_kernel = clCreateKernel(program, "flush_atomic_exec_latency_test", &ret);
+    else atomic_kernel = clCreateKernel(program, "atomic_exec_latency_test", &ret);
+
     testptr = (uint32_t*)clSVMAlloc(context, CL_MEM_READ_WRITE | CL_MEM_SVM_FINE_GRAIN_BUFFER | CL_MEM_SVM_ATOMICS, ALLOC_SIZE, ALLOC_ALIGN);
     if (testptr == NULL)
     {
@@ -235,8 +244,18 @@ float runAtomicsTest(cl_context context, cl_command_queue command_queue)
         goto atomicsend;
     }
 
+    if (use_flush_kernel) {
+        flush_buffer = (float*)clSVMAlloc(context, CL_MEM_READ_WRITE | CL_MEM_SVM_FINE_GRAIN_BUFFER | CL_MEM_SVM_ATOMICS, use_flush_kernel*1024, ALLOC_ALIGN);
+    }
+
     clFinish(command_queue);
     clSetKernelArgSVMPointer(atomic_kernel, 0, testptr);
+    if (use_flush_kernel) {
+        // (__global int* A, int count, __global float4 *B, int b_count_f32)
+        //  test ptr         iterations aggresssor          aggressor size
+        clSetKernelArgSVMPointer(atomic_kernel, 2, flush_buffer);
+        clSetKernelArg(atomic_kernel, 3, sizeof(cl_int), (void*)&flush_buffer_size_f32);
+    }
 
     do {
         clSetKernelArg(atomic_kernel, 1, sizeof(cl_int), (void*)&iterations);
@@ -282,6 +301,7 @@ float runAtomicsTest(cl_context context, cl_command_queue command_queue)
 
 atomicsend:
     clSVMFree(context, testptr);
+    if (use_flush_kernel) clSVMFree(context, flush_buffer);
     clReleaseKernel(atomic_kernel);
     clReleaseProgram(program);
     return latency;
